@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# chronopay-frontend
 
-## Getting Started
+Next.js dashboard and Stellar wallet integration for **ChronoPay** — time tokenization and scheduling on the Stellar network.
 
-First, run the development server:
+## What's in this repo
+
+- **Next.js 16** (App Router) with TypeScript and Tailwind CSS
+- ChronoPay landing and dashboard starter pages
+- Ready for Stellar wallet connection and time token UI
+
+## Prerequisites
+
+- Node.js 20+
+- npm
+
+## Setup
 
 ```bash
+# Clone the repo (or use your fork)
+git clone <repo-url>
+cd chronopay-frontend
+
+# Install dependencies
+npm install
+
+# Lint
+npm run lint
+
+# Build
+npm run build
+
+# Start dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script        | Description              |
+|---------------|--------------------------|
+| `npm run dev` | Start dev server (Turbopack) |
+| `npm run build` | Production build       |
+| `npm run start` | Start production server |
+| `npm run lint`  | Run ESLint              |
+| `npm test`      | Lint + build (CI)       |
 
-## Learn More
+## Project layout
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app/` — App Router pages (e.g. `page.tsx`, `dashboard/page.tsx`)
+- `src/app/layout.tsx` — Root layout and metadata
+- `public/` — Static assets
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Fork the repo and create a branch from `main`.
+2. Install deps: `npm install`. Run lint and build: `npm run lint && npm run build`.
+3. Make changes; keep lint and build green.
+4. Open a pull request. CI must pass (lint, build).
 
-## Deploy on Vercel
+## CI/CD
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+On every push and pull request to `main`, GitHub Actions runs:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Install**: `npm ci`
+- **Lint**: `npm run lint`
+- **Build**: `npm run build`
+
+## License
+
+MIT
