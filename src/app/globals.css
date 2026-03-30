@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #07111f;
+  --foreground: #f4f7fb;
+  --surface: rgba(11, 23, 40, 0.82);
+  --surface-strong: rgba(10, 20, 36, 0.96);
+  --border-subtle: rgba(148, 163, 184, 0.14);
+  --border-strong: rgba(125, 211, 252, 0.22);
+  --accent: #6ee7f9;
+  --accent-strong: #22d3ee;
+  --accent-warm: #f59e0b;
+  --success: #34d399;
+  --danger: #f87171;
+  --muted: #9fb0c7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans:
+    "Segoe UI", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    "SFMono-Regular", "Cascadia Code", "Fira Code", Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at top, rgba(34, 211, 238, 0.18), transparent 34%),
+    linear-gradient(180deg, #09111e 0%, #050b14 100%);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Segoe UI", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+}
+
+a,
+button {
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.24);
+}
+
+.app-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(110, 231, 249, 0.12), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(245, 158, 11, 0.12), transparent 22%),
+    transparent;
+}
+
+.glass-panel {
+  background: linear-gradient(180deg, rgba(15, 27, 46, 0.9) 0%, rgba(9, 18, 33, 0.88) 100%);
+  border: 1px solid var(--border-subtle);
+  box-shadow:
+    0 24px 48px rgba(2, 6, 23, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.text-balance {
+  text-wrap: balance;
 }
