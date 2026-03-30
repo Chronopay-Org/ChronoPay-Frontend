@@ -37,19 +37,29 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-| Script        | Description              |
-|---------------|--------------------------|
-| `npm run dev` | Start dev server (Turbopack) |
-| `npm run build` | Production build       |
-| `npm run start` | Start production server |
-| `npm run lint`  | Run ESLint              |
-| `npm test`      | Lint + build (CI)       |
+| Script          | Description                  |
+| --------------- | ---------------------------- |
+| `npm run dev`   | Start dev server (Turbopack) |
+| `npm run build` | Production build             |
+| `npm run start` | Start production server      |
+| `npm run lint`  | Run ESLint                   |
+| `npm test`      | Lint + build (CI)            |
 
 ## Project layout
 
 - `src/app/` — App Router pages (e.g. `page.tsx`, `dashboard/page.tsx`)
 - `src/app/layout.tsx` — Root layout and metadata
 - `public/` — Static assets
+
+## UX copywriting pass (FE-DESIGN-030)
+
+The dashboard copy was updated to improve clarity, trust, and scan speed:
+
+- Stronger intent labels (for example, `Connect Wallet` and `View booking details`)
+- State-aware microcopy for loading and empty states
+- Added helper text to explain booking and wallet flow in plain language
+
+Scope is intentionally lightweight and contained to `src/app/dashboard/page.tsx` for easy review.
 
 ## Contributing
 
