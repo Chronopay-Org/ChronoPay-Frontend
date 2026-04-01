@@ -1,6 +1,21 @@
 import Link from "next/link";
 import DesignChecklist from "@/components/design/DesignChecklist";
 
+import {
+  bookingStages,
+  BookingProgress,
+  metrics,
+  MetricCard,
+  PanelShell,
+  quickActions,
+  QuickActions,
+  slots,
+  SlotList,
+  StateCard,
+  wallet,
+  WalletCard,
+} from "@/components/dashboard";
+
 export default function Dashboard() {
   // Simulated states (for QA requirement)
   const loading = false;

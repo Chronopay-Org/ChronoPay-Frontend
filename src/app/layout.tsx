@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ChronoPay — Time Economy",
+  title: "ChronoPay - Time Economy",
   description: "Tokenize and trade human time on the Stellar network.",
 };
 

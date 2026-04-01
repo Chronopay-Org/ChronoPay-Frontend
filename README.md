@@ -1,6 +1,6 @@
 # chronopay-frontend
 
-Next.js dashboard and Stellar wallet integration for **ChronoPay** — time tokenization and scheduling on the Stellar network.
+Next.js dashboard and Stellar wallet integration for **ChronoPay** - time tokenization and scheduling on the Stellar network.
 
 ## What's in this repo
 
@@ -47,9 +47,17 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Project layout
 
-- `src/app/` — App Router pages (e.g. `page.tsx`, `dashboard/page.tsx`)
-- `src/app/layout.tsx` — Root layout and metadata
-- `public/` — Static assets
+- `src/app/` - App Router pages such as `page.tsx` and `dashboard/page.tsx`
+- `src/components/dashboard/` - Reusable dashboard overview building blocks
+- `src/app/layout.tsx` - Root layout and metadata
+- `public/` - Static assets
+
+## Dashboard design notes
+
+- The overview is split into small presentational components so the UI is easy to review and extend.
+- Key metrics, wallet status, booking progress, and quick actions stay visible without sacrificing mobile readability.
+- Loading, empty, and error states are treated as first-class layout states to avoid abrupt page shifts.
+- Interactive elements include visible focus rings and semantic headings to support keyboard and screen-reader use.
 
 ## UX copywriting pass (FE-DESIGN-030)
 
