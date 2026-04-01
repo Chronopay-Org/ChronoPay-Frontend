@@ -1,22 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #07111f;
+  --foreground: #f4f7fb;
+  --surface: rgba(11, 23, 40, 0.82);
+  --surface-strong: rgba(10, 20, 36, 0.96);
+  --border-subtle: rgba(148, 163, 184, 0.14);
+  --border-strong: rgba(125, 211, 252, 0.22);
+  --accent: #6ee7f9;
+  --accent-strong: #22d3ee;
+  --accent-warm: #f59e0b;
+  --success: #34d399;
+  --danger: #f87171;
+  --muted: #9fb0c7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans:
+    "Segoe UI", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    "SFMono-Regular", "Cascadia Code", "Fira Code", Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at top, rgba(34, 211, 238, 0.18), transparent 34%),
+    linear-gradient(180deg, #09111e 0%, #050b14 100%);
 }
 
 body {
