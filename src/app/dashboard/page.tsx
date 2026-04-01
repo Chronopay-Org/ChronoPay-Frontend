@@ -41,7 +41,9 @@ export default function Dashboard() {
             ChronoPay
           </Link>
           <div className="flex gap-4 text-sm text-zinc-400">
-            <Link href="/" className="hover:text-zinc-200">Home</Link>
+            <Link href="/" className="hover:text-zinc-200">
+              Home
+            </Link>
           </div>
         </nav>
       </header>
