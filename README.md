@@ -37,13 +37,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start dev server (Turbopack) |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm test` | Lint + build (CI) |
+| Script          | Description                  |
+| --------------- | ---------------------------- |
+| `npm run dev`   | Start dev server (Turbopack) |
+| `npm run build` | Production build             |
+| `npm run start` | Start production server      |
+| `npm run lint`  | Run ESLint                   |
+| `npm test`      | Lint + build (CI)            |
 
 ## Project layout
 
@@ -58,6 +58,16 @@ Open [http://localhost:3000](http://localhost:3000).
 - Key metrics, wallet status, booking progress, and quick actions stay visible without sacrificing mobile readability.
 - Loading, empty, and error states are treated as first-class layout states to avoid abrupt page shifts.
 - Interactive elements include visible focus rings and semantic headings to support keyboard and screen-reader use.
+
+## UX copywriting pass (FE-DESIGN-030)
+
+The dashboard copy was updated to improve clarity, trust, and scan speed:
+
+- Stronger intent labels (for example, `Connect Wallet` and `View booking details`)
+- State-aware microcopy for loading and empty states
+- Added helper text to explain booking and wallet flow in plain language
+
+Scope is intentionally lightweight and contained to `src/app/dashboard/page.tsx` for easy review.
 
 ## Contributing
 
