@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Header } from "./components/Header";
 
 export const metadata: Metadata = {
   title: "ChronoPay - Time Economy",
@@ -13,7 +14,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <div className="min-h-screen">
+          <Header />
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
