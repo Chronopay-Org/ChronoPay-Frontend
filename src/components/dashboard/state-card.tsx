@@ -61,7 +61,7 @@ export function StateCard({ state }: { state: StateType }) {
             <div className="h-10 w-full animate-pulse rounded-2xl bg-white/10" />
           </div>
         ) : (
-          <p className="text-sm leading-6 text-slate-300">{stateMessage[state]}</p>
+          <p className="helper-text">{stateMessage[state]}</p>
         )}
       </div>
       <button

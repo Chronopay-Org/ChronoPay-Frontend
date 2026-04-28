@@ -15,7 +15,7 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-white">{action.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
+              <p className="helper-text mt-2">
                 {action.description}
               </p>
             </div>

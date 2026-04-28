@@ -13,6 +13,13 @@
   --success: #34d399;
   --danger: #f87171;
   --muted: #9fb0c7;
+
+  /* Helper text — secondary explanations beneath labels, statuses, and CTAs. */
+  --helper-text-size: 0.875rem;          /* 14px */
+  --helper-text-leading: 1.5rem;         /* 24px */
+  --helper-text-color: rgb(203 213 225);          /* slate-300, primary helper tone */
+  --helper-text-color-muted: rgb(148 163 184);    /* slate-400, metadata / empty states */
+  --helper-text-color-emphasis: rgb(207 250 254 / 0.8); /* cyan-100/80, accent panels */
 }
 
 @theme inline {
@@ -43,4 +50,25 @@ body {
 ::selection {
   background: rgba(103, 232, 249, 0.35);
   color: #f8fafc;
+}
+
+/*
+ * Helper text — see README "Helper text" section for usage guidance.
+ *  .helper-text             default secondary explanation
+ *  .helper-text--muted      quieter (metadata, empty states)
+ *  .helper-text--emphasis   on accent surfaces (e.g. wallet card)
+ */
+.helper-text {
+  font-size: var(--helper-text-size);
+  line-height: var(--helper-text-leading);
+  color: var(--helper-text-color);
+  overflow-wrap: anywhere;
+}
+
+.helper-text--muted {
+  color: var(--helper-text-color-muted);
+}
+
+.helper-text--emphasis {
+  color: var(--helper-text-color-emphasis);
 }

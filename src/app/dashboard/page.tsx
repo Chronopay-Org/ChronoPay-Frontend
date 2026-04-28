@@ -69,7 +69,7 @@ export default function Dashboard() {
         {/* Title */}
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="mt-2 text-zinc-400">
+          <p className="helper-text mt-2">
             Connect your Stellar wallet to mint and trade time tokens.
           </p>
         </div>
@@ -77,7 +77,7 @@ export default function Dashboard() {
         {/* Wallet Card */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
           <h2 className="text-lg font-semibold mb-2">Wallet Status</h2>
-          <p className="text-sm text-zinc-400">
+          <p className="helper-text">
             Not connected
           </p>
           <button className="mt-4 px-4 py-2 text-sm rounded-lg bg-white text-black hover:bg-zinc-200 transition">
@@ -88,7 +88,7 @@ export default function Dashboard() {
         {/* Time Slots Section */}
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
           <h2 className="text-lg font-semibold mb-4">Available Time Slots</h2>
-          <p className="text-sm text-zinc-500">
+          <p className="helper-text helper-text--muted">
             No time slots listed yet.
           </p>
         </div>

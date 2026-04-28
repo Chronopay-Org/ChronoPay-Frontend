@@ -9,7 +9,7 @@ export function BookingProgress({ stages }: { stages: BookingStage[] }) {
         <div key={stage.label}>
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className="text-sm font-medium text-white">{stage.label}</p>
-            <p className="text-sm text-slate-300">{stage.value} bookings</p>
+            <p className="helper-text">{stage.value} bookings</p>
           </div>
           <div
             className="h-2.5 rounded-full bg-white/10"

@@ -23,7 +23,7 @@ export function PanelShell({
           <div>
             <h2 className="text-xl font-semibold text-white">{title}</h2>
             {description ? (
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-300">
+              <p className="helper-text mt-1 max-w-2xl">
                 {description}
               </p>
             ) : null}

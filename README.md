@@ -59,6 +59,48 @@ Open [http://localhost:3000](http://localhost:3000).
 - Loading, empty, and error states are treated as first-class layout states to avoid abrupt page shifts.
 - Interactive elements include visible focus rings and semantic headings to support keyboard and screen-reader use.
 
+### Helper text
+
+Secondary explanations beneath labels, statuses, CTAs, and inside cards use a single shared pattern instead of one-off Tailwind combinations. This keeps scan-rhythm consistent and prevents ad-hoc text styles from accumulating.
+
+The pattern is defined in `src/app/globals.css` as three classes backed by CSS custom properties:
+
+| Class                     | When to use it                                          | Token                              |
+| ------------------------- | ------------------------------------------------------- | ---------------------------------- |
+| `.helper-text`            | Default secondary explanation under a label or heading  | `--helper-text-color` (slate-300)  |
+| `.helper-text--muted`     | Quieter metadata, empty-state copy, low-priority hints  | `--helper-text-color-muted` (slate-400) |
+| `.helper-text--emphasis`  | Helper copy on accent surfaces (e.g. wallet card)       | `--helper-text-color-emphasis` (cyan-100/80) |
+
+Modifiers stack with the base: `class="helper-text helper-text--muted"`.
+
+**Size and rhythm tokens**
+
+- `--helper-text-size: 0.875rem` (14px)
+- `--helper-text-leading: 1.5rem` (24px)
+
+**Spacing convention** — the class only owns the text itself; spacing stays at the call site so it can adapt to context:
+
+- `mt-1` between a heading and its helper line (tight)
+- `mt-2` between a card title and its intro paragraph
+- `mt-3`–`mt-6` when separating helper copy from a CTA or value display
+
+**Edge cases**
+
+- Long URLs and unbroken tokens wrap with `overflow-wrap: anywhere` instead of overflowing their container.
+- Multi-line wrapping uses `line-height: 1.5rem` so two-line helper copy stays comfortably readable next to 14px labels.
+- Modifiers only override color, so size/leading/wrapping are preserved across tones.
+
+**Usage example**
+
+```tsx
+<h2 className="text-lg font-semibold">Wallet Status</h2>
+<p className="helper-text">Not connected</p>
+
+<p className="helper-text helper-text--muted">No time slots listed yet.</p>
+
+<p className="helper-text helper-text--emphasis">Primary wallet</p>
+```
+
 ## UX copywriting pass (FE-DESIGN-030)
 
 The dashboard copy was updated to improve clarity, trust, and scan speed:
