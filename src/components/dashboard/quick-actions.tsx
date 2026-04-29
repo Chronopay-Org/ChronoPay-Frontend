@@ -24,7 +24,7 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
         <Link
           key={action.title}
           href={action.href}
-          className="group rounded-[24px] border border-white/10 bg-slate-900/80 p-5 transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          className="group rounded-[24px] border border-white/10 bg-slate-900/80 p-5 motion-safe:transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-slate-900 active:-translate-y-0 active:border-cyan-300/60 active:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -32,9 +32,10 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
               <p className="helper-text mt-2">
                 {action.description}
               </p>
-            </Link>
+            </div>
+            <StatusChip tone={action.tone} />
           </div>
-        );
+        </Link>
       })}
     </div>
   );

@@ -71,6 +71,24 @@ Open [http://localhost:3000](http://localhost:3000).
 - Empty slot views distinguish between no inventory and no filtered results, with microcopy that tells the user whether to add availability or widen filters.
 - Slot list data is rendered as text-only React content with no HTML injection, preserving the UI-only security boundary for availability labels and filter copy.
 
+## Card interaction affordances
+
+Clickable cards and panels use consistent hover and press (active) styles to clarify interactivity and provide visual feedback:
+
+- **Hover**: Subtle border color change and lift effect for cards, background tint for buttons
+- **Press (active)**: Enhanced border color and background changes to indicate pressed state
+- **Focus**: High-contrast cyan ring for keyboard navigation
+- **Non-interactive cards**: No hover/press styles to avoid misleading users
+
+**Implementation details**
+
+- Quick action cards: `hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-slate-900 active:-translate-y-0 active:border-cyan-300/60 active:bg-slate-800`
+- Wallet card: `hover:border-cyan-400/40` (article) with button `hover:bg-white/8 active:bg-white/12`
+- Buttons: `hover:bg-white/8 active:bg-white/12` with focus ring
+- Edge cases: Transitions respect `prefers-reduced-motion`; active styles work on touch devices
+
+This ensures users can easily identify interactive elements while maintaining a clean, non-cluttered interface.
+
 ## Help text / tooltip pattern
 
 For complex concepts like booking progress, wallet state, and fees, we use accessible help tooltips:

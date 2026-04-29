@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
 import type { WalletSnapshot } from "./types";
@@ -34,16 +35,21 @@ function truncateAddress(address: string) {
 export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
   const showDetails = wallet.connection === "connected";
 
+  const titleId = useId();
+  const balanceId = useId();
+  const securityId = useId();
+  const statusId = useId();
+
   return (
     <article
-      className="rounded-[24px] border border-cyan-400/20 bg-[linear-gradient(160deg,rgba(14,116,144,0.18),rgba(15,23,42,0.92))] p-5"
+      className="rounded-[24px] border border-cyan-400/20 bg-[linear-gradient(160deg,rgba(14,116,144,0.18),rgba(15,23,42,0.92))] p-5 motion-safe:transition hover:border-cyan-400/40"
       aria-labelledby={titleId}
       aria-describedby={`${balanceId} ${securityId} ${statusId}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm text-cyan-100/80">Primary wallet</p>
-          <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+          <p id={titleId} className="text-sm text-cyan-100/80">Primary wallet</p>
+          <p id={balanceId} className="mt-3 truncate text-2xl font-semibold tracking-tight text-white sm:text-3xl">
             {wallet.balance}
           </p>
         </div>
@@ -58,7 +64,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
       </div>
       <dl className="mt-6 space-y-4">
         <div className="flex items-center justify-between gap-4 text-sm">
-          <dt className="text-slate-300 flex items-center gap-2">
+          <dt id={securityId} className="text-slate-300 flex items-center gap-2">
             Pending escrow
             <Tooltip content="Time tokens held in escrow for active bookings. Released upon completion or cancellation." />
           </dt>
@@ -80,6 +86,12 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
       >
         {wallet.status}
       </p>
+      <button
+        type="button"
+        className="mt-6 inline-flex rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white motion-safe:transition hover:bg-white/8 active:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+      >
+        {actionLabel[wallet.connection]}
+      </button>
     </article>
   );
 }
