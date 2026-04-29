@@ -1,10 +1,7 @@
 import Link from "next/link";
-import type { LinkProps } from "next/link";
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
 
-type ButtonLinkProps = LinkProps & {
-  children: ReactNode;
-  className?: string;
+type ButtonLinkProps = ComponentProps<typeof Link> & {
   variant?: "primary" | "secondary" | "ghost";
 };
 

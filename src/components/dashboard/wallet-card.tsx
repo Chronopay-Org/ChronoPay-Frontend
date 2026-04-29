@@ -1,29 +1,85 @@
 import { StatusChip } from "./status-chip";
+import { Tooltip } from "@/app/components/ui/tooltip";
 import type { WalletSnapshot } from "./types";
 
+const statusTone = {
+  connected: "positive",
+  disconnected: "warning",
+  error: "critical",
+} as const;
+
+const actionLabel = {
+  connected: "Review wallet",
+  disconnected: "Connect wallet",
+  error: "Retry connection",
+} as const;
+
+const statusCopy = {
+  connected:
+    "Your wallet is linked for viewing balance and payout details. No transfers happen without your explicit authorization.",
+  disconnected:
+    "Connect your Stellar wallet to start minting and managing time-token bookings in ChronoPay.",
+  error:
+    "Wallet connection was interrupted. Retry to refresh your connection before continuing.",
+} as const;
+
+function truncateAddress(address: string) {
+  if (address.length <= 24) {
+    return address;
+  }
+
+  return `${address.slice(0, 10)}…${address.slice(-10)}`;
+}
+
 export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
+  const showDetails = wallet.connection === "connected";
+
   return (
-    <article className="rounded-[24px] border border-cyan-400/20 bg-[linear-gradient(160deg,rgba(14,116,144,0.18),rgba(15,23,42,0.92))] p-5">
+    <article
+      className="rounded-[24px] border border-cyan-400/20 bg-[linear-gradient(160deg,rgba(14,116,144,0.18),rgba(15,23,42,0.92))] p-5"
+      aria-labelledby={titleId}
+      aria-describedby={`${balanceId} ${securityId} ${statusId}`}
+    >
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="helper-text helper-text--emphasis">Primary wallet</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-white">
+        <div className="min-w-0">
+          <p className="text-sm text-cyan-100/80">Primary wallet</p>
+          <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-white sm:text-3xl">
             {wallet.balance}
           </p>
         </div>
-        <StatusChip tone="neutral">secured</StatusChip>
+
+        <StatusChip tone={statusTone[wallet.connection]}>
+          {wallet.connection === "connected"
+            ? "Connected"
+            : wallet.connection === "error"
+            ? "Connection issue"
+            : "Disconnected"}
+        </StatusChip>
       </div>
       <dl className="mt-6 space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <dt className="helper-text">Pending escrow</dt>
-          <dd className="text-sm font-medium text-white">{wallet.pending}</dd>
+        <div className="flex items-center justify-between gap-4 text-sm">
+          <dt className="text-slate-300 flex items-center gap-2">
+            Pending escrow
+            <Tooltip content="Time tokens held in escrow for active bookings. Released upon completion or cancellation." />
+          </dt>
+          <dd className="font-medium text-white">{wallet.pending}</dd>
         </div>
-        <div className="flex items-center justify-between gap-4">
-          <dt className="helper-text">Next payout</dt>
-          <dd className="text-sm font-medium text-white">{wallet.nextPayout}</dd>
+        <div className="flex items-center justify-between gap-4 text-sm">
+          <dt className="text-slate-300 flex items-center gap-2">
+            Next payout
+            <Tooltip content="Scheduled release of earnings from completed time token transactions." />
+          </dt>
+          <dd className="font-medium text-white">{wallet.nextPayout}</dd>
         </div>
       </dl>
-      <p className="helper-text helper-text--emphasis mt-6">{wallet.status}</p>
+      <p
+        id={statusId}
+        className="mt-6 text-sm text-cyan-100/75"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {wallet.status}
+      </p>
     </article>
   );
 }

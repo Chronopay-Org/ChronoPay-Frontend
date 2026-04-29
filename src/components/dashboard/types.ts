@@ -5,10 +5,12 @@ export type AvailabilityLevel = "Healthy" | "Tight" | "Busy";
 export type Slot = {
   id: string;
   title: string;
-  window: string;
+  dateLabel: string;
+  timeRange: string;
   demand: string;
   rate: string;
   status: AvailabilityLevel;
+  isNextAvailable?: boolean;
 };
 
 export type QuickAction = {
@@ -31,8 +33,10 @@ export type BookingStage = {
 };
 
 export type WalletSnapshot = {
-  balance: string;
-  pending: string;
-  nextPayout: string;
+  connection: "connected" | "disconnected" | "error";
+  address?: string;
+  balance?: string;
+  pending?: string;
+  nextPayout?: string;
   status: string;
 };

@@ -1,11 +1,25 @@
 import Link from "next/link";
 
 import { StatusChip } from "./status-chip";
-import type { QuickAction } from "./types";
+import type { QuickAction, Tone } from "./types";
+
+const toneLabels: Record<Tone, string> = {
+  neutral: "Available",
+  positive: "Ready",
+  warning: "Needs review",
+  critical: "Needs attention",
+};
+
+function toElementId(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
 
 export function QuickActions({ actions }: { actions: QuickAction[] }) {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
       {actions.map((action) => (
         <Link
           key={action.title}
@@ -18,14 +32,10 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
               <p className="helper-text mt-2">
                 {action.description}
               </p>
-            </div>
-            <StatusChip tone={action.tone}>{action.tone}</StatusChip>
+            </Link>
           </div>
-          <p className="mt-5 text-sm font-medium text-cyan-200 transition group-hover:text-cyan-100">
-            Open workflow
-          </p>
-        </Link>
-      ))}
+        );
+      })}
     </div>
   );
 }

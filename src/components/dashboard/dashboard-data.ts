@@ -37,15 +37,18 @@ export const slots: Slot[] = [
   {
     id: "slot-1",
     title: "Product strategy call",
-    window: "Tue, Apr 1 • 10:00-11:30",
+    dateLabel: "Tue, Apr 1",
+    timeRange: "10:00-11:30",
     demand: "6 interested buyers",
     rate: "120 XLM / hr",
     status: "Healthy",
+    isNextAvailable: true,
   },
   {
     id: "slot-2",
     title: "UX design review",
-    window: "Wed, Apr 2 • 14:00-15:00",
+    dateLabel: "Wed, Apr 2",
+    timeRange: "14:00-15:00",
     demand: "2 open offers",
     rate: "95 XLM / hr",
     status: "Tight",
@@ -53,7 +56,8 @@ export const slots: Slot[] = [
   {
     id: "slot-3",
     title: "Founder office hours",
-    window: "Thu, Apr 3 • 09:00-10:00",
+    dateLabel: "Thu, Apr 3",
+    timeRange: "09:00-10:00",
     demand: "Waitlist enabled",
     rate: "140 XLM / hr",
     status: "Busy",
@@ -61,6 +65,8 @@ export const slots: Slot[] = [
 ];
 
 export const wallet: WalletSnapshot = {
+  connection: "connected",
+  address: "GCDQ7M3F6JH2K4N8Q5RLP9TZB3YH4W8F1S7N6U0X2A5V8E1C",
   balance: "1,240 XLM",
   pending: "180 XLM",
   nextPayout: "Friday, April 4",
