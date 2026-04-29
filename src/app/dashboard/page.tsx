@@ -22,7 +22,11 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-400">
+      <div
+        className="min-h-screen flex items-center justify-center text-zinc-400"
+        role="status"
+        aria-live="polite"
+      >
         Loading dashboard...
       </div>
     );
@@ -30,7 +34,10 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
+      <div
+        className="min-h-screen flex items-center justify-center text-red-500"
+        role="alert"
+      >
         Something went wrong.
       </div>
     );
@@ -38,7 +45,10 @@ export default function Dashboard() {
 
   if (!hasData) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-400">
+      <div
+        className="min-h-screen flex items-center justify-center text-zinc-400"
+        role="status"
+      >
         No data available.
       </div>
     );

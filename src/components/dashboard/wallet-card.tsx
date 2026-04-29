@@ -35,7 +35,11 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
   const showDetails = wallet.connection === "connected";
 
   return (
-    <article className="rounded-[24px] border border-cyan-400/20 bg-[linear-gradient(160deg,rgba(14,116,144,0.18),rgba(15,23,42,0.92))] p-5">
+    <article
+      className="rounded-[24px] border border-cyan-400/20 bg-[linear-gradient(160deg,rgba(14,116,144,0.18),rgba(15,23,42,0.92))] p-5"
+      aria-labelledby={titleId}
+      aria-describedby={`${balanceId} ${securityId} ${statusId}`}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm text-cyan-100/80">Primary wallet</p>
@@ -68,7 +72,14 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
           <dd className="font-medium text-white">{wallet.nextPayout}</dd>
         </div>
       </dl>
-      <p className="mt-6 text-sm text-cyan-100/75">{wallet.status}</p>
+      <p
+        id={statusId}
+        className="mt-6 text-sm text-cyan-100/75"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {wallet.status}
+      </p>
     </article>
   );
 }

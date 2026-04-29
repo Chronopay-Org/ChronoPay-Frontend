@@ -1,3 +1,5 @@
+import type { HTMLAttributes, ReactNode } from "react";
+
 import type { Tone } from "./types";
 
 const toneClasses: Record<Tone, string> = {
@@ -10,13 +12,17 @@ const toneClasses: Record<Tone, string> = {
 export function StatusChip({
   tone,
   children,
+  className = "",
+  ...props
 }: {
   tone: Tone;
-  children: React.ReactNode;
-}) {
+  children: ReactNode;
+  className?: string;
+} & Omit<HTMLAttributes<HTMLSpanElement>, "className">) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-[0.18em] uppercase ${toneClasses[tone]}`}
+      {...props}
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-[0.18em] uppercase ${toneClasses[tone]} ${className}`}
     >
       {children}
     </span>

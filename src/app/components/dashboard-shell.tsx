@@ -8,9 +8,16 @@ export function DashboardShell({ children }: DashboardShellProps) {
   return (
     <div className="app-shell min-h-screen text-slate-50">
       <header className="border-b border-white/8 bg-slate-950/40 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-6">
+        <nav
+          className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-6"
+          aria-label="Dashboard navigation"
+        >
           <div>
-            <Link href="/" className="text-lg font-semibold tracking-tight text-white">
+            <Link
+              href="/"
+              className="text-lg font-semibold tracking-tight text-white"
+              aria-label="ChronoPay home"
+            >
               ChronoPay
             </Link>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">

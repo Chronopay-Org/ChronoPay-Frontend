@@ -14,6 +14,13 @@ function mapTone(status: Slot["status"]) {
   return "critical";
 }
 
+function toElementId(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 export function SlotList({ slots }: { slots: Slot[] }) {
   return (
     <ul className="space-y-3" aria-label="Available time slots">
