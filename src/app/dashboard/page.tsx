@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DashboardError from "./error";
 
 import {
   bookingStages,
@@ -34,12 +35,7 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center text-red-500"
-        role="alert"
-      >
-        Something went wrong.
-      </div>
+      <DashboardError error={new Error("Dashboard error")} reset={() => {}} />
     );
   }
 
