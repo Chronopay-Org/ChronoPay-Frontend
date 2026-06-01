@@ -80,7 +80,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
               <Link
                 key={r.href}
                 href={r.href}
-                className="rounded-full px-3 py-2 hover:bg-white/6 hover:text-white"
+                className="rounded-full px-3 py-2 hover:bg-white/6 hover:text-white focus-ring-white"
               >
                 {r.label}
               </Link>
@@ -89,14 +89,14 @@ export function DashboardShell({ children }: DashboardShellProps) {
               href="https://stellar.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 px-3 py-2 hover:border-cyan-200/30 hover:bg-white/6 hover:text-white"
+              className="rounded-full border border-white/10 px-3 py-2 hover:border-cyan-200/30 hover:bg-white/6 hover:text-white focus-ring-white"
             >
               Stellar
             </a>
           </div>
           {/* Hamburger for mobile */}
           <button
-            className="md:hidden rounded-md p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="md:hidden rounded-md p-2 focus-ring-white"
             aria-label="Open navigation menu"
             onClick={() => setIsOpen(true)}
           >
@@ -124,7 +124,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         >
           <aside className="w-64 bg-slate-900 text-slate-100 h-full p-4">
             <button
-              className="mb-4 rounded-md p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="mb-4 rounded-md p-2 focus-ring-white"
               aria-label="Close navigation menu"
               onClick={() => setIsOpen(false)}
             >
@@ -143,7 +143,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 <Link
                   key={r.href}
                   href={r.href}
-                  className="block rounded-md px-3 py-2 hover:bg-slate-800"
+                  className="block rounded-md px-3 py-2 hover:bg-slate-800 focus-ring-white"
                   onClick={() => setIsOpen(false)}
                 >
                   {r.label}
@@ -166,7 +166,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
               <Link
                 key={r.href}
                 href={r.href}
-                className="flex flex-col items-center text-xs hover:text-white"
+                className="flex flex-col items-center text-xs hover:text-white focus-ring-white"
                 onClick={() => setIsOpen(false)}
               >
                 {/* Simple icon placeholders using Unicode characters */}

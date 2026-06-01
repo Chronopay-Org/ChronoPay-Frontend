@@ -68,10 +68,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
       >
         {wallet.status}
       </p>
-      <button
-        type="button"
-        className="mt-6 inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 px-4 py-2.5 text-sm border border-white/12 bg-white/6 text-slate-100 hover:border-cyan-200/30 hover:bg-white/10"
-      >
+      <button type="button" className="focus-ring-cyan">
         {actionLabel[wallet.connection]}
       </button>
     </article>
