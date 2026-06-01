@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { DashboardShell } from "../components/dashboard-shell";
 
 import {
   bookingStages,
@@ -55,25 +55,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-
-      {/* Header */}
-      <header className="border-b border-zinc-800 px-4 py-4 sm:px-6">
-        <nav className="flex items-center justify-between max-w-5xl mx-auto">
-          <Link href="/" className="text-lg font-semibold">
-            ChronoPay
-          </Link>
-          <div className="flex gap-4 text-sm text-zinc-400">
-            <Link href="/" className="hover:text-zinc-200">
-              Home
-            </Link>
-          </div>
-        </nav>
-      </header>
-
-      {/* Main */}
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6 sm:px-6 sm:py-12 sm:space-y-8 md:py-16 md:space-y-10">
-
+    <DashboardShell>
+      <div className="space-y-6 sm:space-y-8 md:space-y-10">
         {/* Title */}
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
@@ -108,8 +91,7 @@ export default function Dashboard() {
         <PanelShell title="Available Time Slots">
           <SlotList slots={slots} />
         </PanelShell>
-
-      </main>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }
