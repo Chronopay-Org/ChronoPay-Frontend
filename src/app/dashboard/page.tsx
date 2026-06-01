@@ -100,12 +100,12 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <PanelShell title="Quick Actions">
+        <PanelShell id="quick-actions" title="Quick Actions">
           <QuickActions actions={quickActions} />
         </PanelShell>
 
         {/* Time Slots */}
-        <PanelShell title="Available Time Slots">
+        <PanelShell id="available-time-slots" title="Available Time Slots">
           <SlotList slots={slots} />
         </PanelShell>
 

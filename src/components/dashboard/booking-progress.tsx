@@ -1,12 +1,4 @@
-import { Tooltip } from "@/app/components/ui/tooltip";
 import type { BookingStage } from "./types";
-
-function toElementId(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 export function BookingProgress({ stages }: { stages: BookingStage[] }) {
   const maxValue = Math.max(...stages.map((stage) => stage.value), 1);
