@@ -1,4 +1,5 @@
 import { StatusChip } from "./status-chip";
+import { Card, CardHeader, CardBody } from "./card";
 import type { Metric, Tone } from "./types";
 
 const toneLabels: Record<Tone, string> = {
@@ -24,12 +25,11 @@ export function MetricCard({ metric }: { metric: Metric }) {
   const statusLabel = toneLabels[metric.tone];
 
   return (
-    <article
-      className="rounded-[24px] border border-white/10 bg-white/5 p-5"
+    <Card
       aria-labelledby={labelId}
       aria-describedby={`${valueId} ${detailId} ${statusId}`}
     >
-      <div className="flex items-start justify-between gap-4">
+      <CardHeader>
         <div>
           <p id={labelId} className="text-sm text-slate-300">
             {metric.label}
@@ -50,10 +50,13 @@ export function MetricCard({ metric }: { metric: Metric }) {
         >
           {statusLabel}
         </StatusChip>
-      </div>
-      <p id={detailId} className="mt-4 text-sm leading-6 text-slate-400">
-        {metric.detail}
-      </p>
-    </article>
+      </CardHeader>
+      <CardBody className="mt-4">
+        <p id={detailId} className="text-sm leading-6 text-slate-400">
+          {metric.detail}
+        </p>
+      </CardBody>
+    </Card>
   );
 }
+
