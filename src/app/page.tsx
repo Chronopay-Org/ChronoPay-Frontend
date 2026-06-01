@@ -1,7 +1,7 @@
 export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-      <main className="mx-auto max-w-3xl px-6 py-24">
+      <main id="main-content" className="mx-auto max-w-3xl px-6 py-24">
         <h1 className="text-4xl font-bold tracking-tight">
           ChronoPay
         </h1>
