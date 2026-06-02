@@ -1,5 +1,5 @@
 import { useId } from "react";
-
+import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { Tone } from "./types";
 
 type StateType = "loading" | "empty" | "error";
@@ -34,13 +34,12 @@ export function StateCard({ state }: { state: StateType }) {
       : `Review ${state} dashboard state details`;
 
   return (
-    <article
-      className="rounded-[24px] border border-white/10 bg-white/5 p-5"
+    <Card
       aria-labelledby={titleId}
       aria-describedby={`${messageId} ${statusId}`}
       aria-live={state === "loading" ? "polite" : undefined}
     >
-      <div className="flex items-center justify-between gap-4">
+      <CardHeader>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
             {stateTitle[state]}
@@ -66,8 +65,8 @@ export function StateCard({ state }: { state: StateType }) {
         >
           {state}
         </span>
-      </div>
-      <div className="mt-5">
+      </CardHeader>
+      <CardBody className="mt-5">
         {state === "loading" ? (
           <>
             <p id={messageId} className="sr-only">
@@ -84,15 +83,17 @@ export function StateCard({ state }: { state: StateType }) {
             {stateMessage[state]}
           </p>
         )}
-      </div>
-      <button
-        type="button"
-        aria-label={buttonLabel}
-        aria-describedby={messageId}
-        className="mt-5 inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 px-4 py-2.5 text-sm border border-white/12 bg-white/6 text-slate-100 hover:border-cyan-200/30 hover:bg-white/10"
-      >
-        {state === "error" ? "Retry sync" : "Review details"}
-      </button>
-    </article>
+      </CardBody>
+      <CardFooter className="mt-5">
+        <button
+          type="button"
+          aria-label={buttonLabel}
+          aria-describedby={messageId}
+          className="inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 px-4 py-2.5 text-sm border border-white/12 bg-white/6 text-slate-100 hover:border-cyan-200/30 hover:bg-white/10"
+        >
+          {state === "error" ? "Retry sync" : "Review details"}
+        </button>
+      </CardFooter>
+    </Card>
   );
 }

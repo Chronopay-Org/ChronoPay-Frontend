@@ -18,6 +18,7 @@ export type QuickAction = {
   description: string;
   href: string;
   tone: Tone;
+  icon: string; // lucide-react icon name
 };
 
 export type Metric = {

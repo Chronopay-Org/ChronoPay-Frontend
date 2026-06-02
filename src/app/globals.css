@@ -1,4 +1,13 @@
-@import "tailwindcss";
+/* Focus ring utilities */
+@layer utilities {
+  .focus-ring-cyan {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+  }
+  .focus-ring-white {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+  }
+}
+
 
 :root {
   --background: #07111f;
@@ -20,6 +29,12 @@
   --helper-text-color: rgb(203 213 225);          /* slate-300, primary helper tone */
   --helper-text-color-muted: rgb(148 163 184);    /* slate-400, metadata / empty states */
   --helper-text-color-emphasis: rgb(207 250 254 / 0.8); /* cyan-100/80, accent panels */
+
+  /* Reusable Card design tokens */
+  --radius-md: 24px;
+  --radius-lg: 28px;
+  --radius-xl: 32px;
+  --border: 1px solid var(--border-subtle);
 }
 
 @theme inline {
@@ -71,4 +86,107 @@ body {
 
 .helper-text--emphasis {
   color: var(--helper-text-color-emphasis);
+}
+
+/*
+ * Reusable Card Design Pattern
+ * Source of consistency for borders, backgrounds, spacing, and hover feedback.
+ */
+.card {
+  border-radius: var(--radius-md);
+  border: var(--border);
+  background-color: var(--surface);
+  padding: 1.25rem; /* p-5 (20px) */
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.card-body {
+  flex: 1 1 auto;
+}
+
+.card-footer {
+  margin-top: 1.25rem; /* mt-5 */
+}
+
+/* Panel Shell Variant */
+.card--panel {
+  border-radius: var(--radius-lg);
+  background-color: rgba(15, 23, 42, 0.7); /* slate-950/70 */
+  backdrop-filter: blur(8px);
+  padding: 1rem; /* p-4 */
+  box-shadow: 0 24px 80px -40px rgba(15, 23, 42, 0.95);
+}
+
+@media (min-width: 640px) {
+  .card--panel {
+    padding: 1.25rem; /* sm:p-5 */
+  }
+}
+
+@media (min-width: 1280px) {
+  .card--panel {
+    padding: 1.5rem; /* xl:p-6 */
+  }
+}
+
+/* Glass Card Variant (used by empty states) */
+.card--glass {
+  border-radius: var(--radius-xl); /* 2rem */
+  background: rgba(11, 23, 40, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  padding: 1.25rem; /* p-5 */
+}
+
+@media (min-width: 640px) {
+  .card--glass {
+    padding: 1.5rem; /* sm:p-6 */
+  }
+}
+
+/* Accent Card Variant (used by Wallet Card) */
+.card--accent {
+  border-color: rgba(34, 211, 238, 0.2); /* border-cyan-400/20 */
+  background: linear-gradient(160deg, rgba(14, 116, 144, 0.18), rgba(15, 23, 42, 0.92));
+}
+
+.card--accent:hover {
+  border-color: rgba(34, 211, 238, 0.4); /* hover:border-cyan-400/40 */
+}
+
+/* Interactive Card Modifier (hover, active, transition effects) */
+.card--interactive {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card--interactive {
+    transition-duration: 200ms;
+  }
+  .card--interactive:hover {
+    transform: translateY(-2px);
+  }
+  .card--interactive:active {
+    transform: translateY(0);
+  }
+}
+
+.card--interactive:hover {
+  border-color: rgba(103, 232, 249, 0.4); /* hover:border-cyan-300/40 */
+  background-color: rgb(15, 23, 42); /* hover:bg-slate-900 */
+}
+
+.card--interactive:active {
+  border-color: rgba(103, 232, 249, 0.6); /* active:border-cyan-300/60 */
+  background-color: rgb(30, 41, 59); /* active:bg-slate-800 */
 }
