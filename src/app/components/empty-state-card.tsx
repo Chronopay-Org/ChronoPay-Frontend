@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from "react";
 import { EmptyStateIllustration } from "./empty-state-illustration";
 import { StatusChip } from "./ui/status-chip";
+import { Card, CardHeader, CardBody, CardFooter } from "@/components/dashboard";
 
 type EmptyStateCardProps = {
   eyebrow: string;
@@ -30,12 +31,13 @@ export function EmptyStateCard({
   const statusId = `${cardId}-status`;
 
   return (
-    <section
-      className="glass-panel rounded-[2rem] p-5 sm:p-6"
+    <Card
+      as="section"
+      variant="glass"
       aria-labelledby={titleId}
       aria-describedby={`${descriptionId} ${statusId}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <CardHeader className="flex-wrap items-center justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
           {eyebrow}
         </p>
@@ -46,29 +48,33 @@ export function EmptyStateCard({
         >
           {status.label}
         </StatusChip>
-      </div>
-      <div className="mt-4">
+      </CardHeader>
+      <CardBody className="mt-4">
         <EmptyStateIllustration accentLabel={accentLabel} />
-      </div>
-      <div className="mt-5 space-y-3">
-        <h2 id={titleId} className="text-xl font-semibold text-white">
-          {title}
-        </h2>
-        <p id={descriptionId} className="max-w-xl text-sm leading-6 text-slate-300">
-          {description}
-        </p>
-        <ul className="space-y-2 text-sm text-slate-300" aria-label={`${title} guidance`}>
-          {guidance.map((item) => (
-            <li
-              key={item}
-              className="rounded-2xl border border-white/8 bg-white/4 px-4 py-3"
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-      {actions ? <div className="mt-5 flex flex-wrap gap-3">{actions}</div> : null}
-    </section>
+        <div className="mt-5 space-y-3">
+          <h2 id={titleId} className="text-xl font-semibold text-white">
+            {title}
+          </h2>
+          <p id={descriptionId} className="max-w-xl text-sm leading-6 text-slate-300">
+            {description}
+          </p>
+          <ul className="space-y-2 text-sm text-slate-300" aria-label={`${title} guidance`}>
+            {guidance.map((item) => (
+              <li
+                key={item}
+                className="rounded-2xl border border-white/8 bg-white/4 px-4 py-3"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </CardBody>
+      {actions ? (
+        <CardFooter className="mt-5 flex flex-wrap gap-3">
+          {actions}
+        </CardFooter>
+      ) : null}
+    </Card>
   );
 }

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { DashboardShell } from "../components/dashboard-shell";
 
 import {
   bookingStages,
@@ -13,12 +13,36 @@ import {
   wallet,
   WalletCard,
 } from "@/components/dashboard";
+import { useToast } from "@/hooks/use-toast";
+import { AsyncButton } from "@/app/components/ui/async-button";
+
+// ─── Simulated async time-token actions ───────────────────────────────────────
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+async function simulateMint() {
+  await delay(2000);
+}
+
+async function simulateBuy() {
+  await delay(1800);
+}
+
+async function simulateEscrowRelease() {
+  await delay(2200);
+  // Simulate a failure ~30% of the time for demo
+  if (Math.random() < 0.3) throw new Error("Escrow release rejected by contract");
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  // Simulated states (for QA requirement)
   const loading = false;
   const error = false;
   const hasData = true;
+  const { toast } = useToast();
 
   if (loading) {
     return (
@@ -27,19 +51,14 @@ export default function Dashboard() {
         role="status"
         aria-live="polite"
       >
-        Loading dashboard...
+        Loading dashboard…
       </div>
     );
   }
 
   if (error) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center text-red-500"
-        role="alert"
-      >
-        Something went wrong.
-      </div>
+      <DashboardError error={new Error("Dashboard error")} reset={() => {}} />
     );
   }
 
@@ -55,25 +74,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-
-      {/* Header */}
-      <header className="border-b border-zinc-800 px-4 py-4 sm:px-6">
-        <nav className="flex items-center justify-between max-w-5xl mx-auto">
-          <Link href="/" className="text-lg font-semibold">
-            ChronoPay
-          </Link>
-          <div className="flex gap-4 text-sm text-zinc-400">
-            <Link href="/" className="hover:text-zinc-200">
-              Home
-            </Link>
-          </div>
-        </nav>
-      </header>
-
-      {/* Main */}
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6 sm:px-6 sm:py-12 sm:space-y-8 md:py-16 md:space-y-10">
-
+    <DashboardShell>
+      <div className="space-y-6 sm:space-y-8 md:space-y-10">
         {/* Title */}
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
@@ -108,8 +110,7 @@ export default function Dashboard() {
         <PanelShell id="available-time-slots" title="Available Time Slots">
           <SlotList slots={slots} />
         </PanelShell>
-
-      </main>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }

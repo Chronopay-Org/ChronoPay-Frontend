@@ -85,17 +85,20 @@ export const quickActions: QuickAction[] = [
     description: "Open a fresh availability block with default pricing.",
     href: "/dashboard",
     tone: "positive",
+    icon: "Plus",
   },
   {
     title: "Review wallet",
     description: "Check payout timing, escrow, and pending transfers.",
     href: "/dashboard",
     tone: "neutral",
+    icon: "Wallet",
   },
   {
     title: "Confirm bookings",
     description: "Resolve the three requests waiting on your approval.",
     href: "/dashboard",
     tone: "warning",
+    icon: "CheckCircle",
   },
 ];

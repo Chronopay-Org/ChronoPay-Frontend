@@ -1,4 +1,5 @@
 import { useId, type ReactNode } from "react";
+import { Card, CardHeader, CardBody } from "./card";
 
 export function PanelShell({
   title,
@@ -46,8 +47,8 @@ export function PanelShell({
           </div>
         </div>
         {action}
-      </div>
-      <div className="pt-5">{children}</div>
-    </section>
+      </CardHeader>
+      <CardBody className="pt-5">{children}</CardBody>
+    </Card>
   );
 }
