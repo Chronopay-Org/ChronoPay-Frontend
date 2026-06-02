@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ToastProvider } from "@/hooks/use-toast";
+import { ToastContainer } from "@/app/components/ui/toast-container";
 
 export const metadata: Metadata = {
   title: "ChronoPay - Time Economy",
@@ -20,7 +22,10 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        {children}
+        <ToastProvider>
+          {children}
+          <ToastContainer />
+        </ToastProvider>
       </body>
     </html>
   );
