@@ -1,4 +1,13 @@
-@import "tailwindcss";
+/* Focus ring utilities */
+@layer utilities {
+  .focus-ring-cyan {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+  }
+  .focus-ring-white {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+  }
+}
+
 
 :root {
   --background: #07111f;
