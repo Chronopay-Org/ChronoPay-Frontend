@@ -94,10 +94,7 @@ export default function Dashboard() {
       </header>
 
       {/* Main */}
-      <main
-        id="main-content"
-        className="max-w-5xl mx-auto px-4 py-8 space-y-6 sm:px-6 sm:py-12 sm:space-y-8 md:py-16 md:space-y-10"
-      >
+      <main id="main-content" className="max-w-5xl mx-auto px-4 py-8 space-y-6 sm:px-6 sm:py-12 sm:space-y-8 md:py-16 md:space-y-10">
 
         {/* Title */}
         <div>
