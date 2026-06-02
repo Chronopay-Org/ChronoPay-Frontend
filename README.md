@@ -59,6 +59,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - **Focus visibility** — Interactive elements carry visible focus rings (Tailwind `focus:ring-*`). The skip link renders a high-contrast cyan badge on focus so keyboard users can always see it.
 - **Heading hierarchy** — Each page starts at `<h1>` and does not skip levels.
 - **Validation** — Changes were verified with `npm run lint && npm run build`. Manual keyboard-tab testing confirms the skip link appears on first Tab press and moves focus to `#main-content` on Enter.
+- **Design Review** — All UI changes must pass the [Design Review Checklist](docs/design-review-checklist.md) ([Live Preview](/design-review)) before merging.
 
 ## Dashboard design notes
 
@@ -206,8 +207,8 @@ Scope is intentionally lightweight and contained to `src/app/dashboard/page.tsx`
 
 1. Fork the repo and create a branch from `main`.
 2. Install deps: `npm install`. Run lint and build: `npm run lint && npm run build`.
-3. Make changes; keep lint and build green.
-4. Open a pull request. CI must pass (lint, build).
+3. Make changes; keep lint and build green. Ensure your UI changes follow the [Design Review Checklist](docs/design-review-checklist.md).
+4. Open a pull request using the provided template. CI must pass (lint, build).
 
 ## CI/CD
 
