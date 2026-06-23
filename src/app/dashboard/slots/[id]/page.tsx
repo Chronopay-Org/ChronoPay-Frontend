@@ -779,7 +779,7 @@ export default function SlotDetailPage({
                   <div className="flex justify-between items-start gap-4">
                     <span className="text-slate-400 shrink-0">Escrow Contract</span>
                     <span className="font-mono text-slate-300 truncate max-w-[160px]">
-                      GCSW67F2Y...T9H3K2
+                      GCSW67...T9H3K2
                     </span>
                   </div>
 

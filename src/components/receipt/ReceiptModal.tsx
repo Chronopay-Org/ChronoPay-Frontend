@@ -38,7 +38,12 @@ export function ReceiptModal({
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // Stop the Escape from also reaching the booking modal's window-level
+      // listener; otherwise a single press would close both stacked dialogs.
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
