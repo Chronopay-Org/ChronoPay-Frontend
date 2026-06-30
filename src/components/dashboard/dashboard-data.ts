@@ -1,9 +1,9 @@
 import type {
-  BookingStage,
   Metric,
   QuickAction,
   Slot,
   WalletSnapshot,
+  TimelineItem,
 } from "./types";
 
 export const metrics: Metric[] = [
@@ -73,10 +73,32 @@ export const wallet: WalletSnapshot = {
   status: "Synced 2 minutes ago",
 };
 
-export const bookingStages: BookingStage[] = [
-  { label: "Reserved", value: 12 },
-  { label: "Confirmed", value: 8 },
-  { label: "Completed", value: 5 },
+export const bookingTimeline: TimelineItem[] = [
+  {
+    id: "1",
+    title: "Reserved",
+    status: "completed",
+    timestamp: "2026-06-30 09:00 AM",
+    actor: "Buyer",
+    details: "Slot reserved for 30 minutes.",
+  },
+  {
+    id: "2",
+    title: "Confirmed",
+    status: "completed",
+    timestamp: "2026-06-30 09:30 AM",
+    actor: "System",
+    details: "Booking confirmed by seller.",
+  },
+  {
+    id: "3",
+    title: "Completed",
+    status: "pending",
+    timestamp: "2026-06-30 10:30 AM",
+    actor: "Seller",
+    details: "Awaiting final review.",
+    isCurrent: true,
+  },
 ];
 
 export const quickActions: QuickAction[] = [
