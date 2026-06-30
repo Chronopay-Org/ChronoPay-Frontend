@@ -181,6 +181,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
             ))}
           </nav>
 
+      {/* Main content */}
+      <main id="main-content" className="mx-auto max-w-6xl px-5 py-6 sm:px-6">
+        {children}
+      </main>
+
     </div>
   );
 }

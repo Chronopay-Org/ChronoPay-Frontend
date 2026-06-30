@@ -5,22 +5,6 @@ import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
-import { useState, useEffect } from "react";
-import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
-
-// Define the wallet providers used in the picker. Icons are placeholders; replace with real SVGs.
-const walletProviders: WalletProvider[] = [
-  {
-    id: "freighter",
-    name: "Freighter",
-    icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l9 21H3L12 2z"/></svg>,
-  },
-  {
-    id: "albedo",
-    name: "Albedo",
-    icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/></svg>,
-  },
-];
 
 const statusTone = {
   connected: "positive",
@@ -34,69 +18,11 @@ const actionLabel = {
   error: "Retry connection",
 } as const;
 
-/** Simulated async wallet action — replace with real Stellar SDK call. */
-async function simulateWalletAction(
-  connection: WalletSnapshot["connection"],
-): Promise<void> {
-  await new Promise<void>((resolve, reject) =>
-    setTimeout(() => {
-      // Simulate occasional failure for demo purposes
-      if (connection === "error") {
-        reject(new Error("RPC node unreachable"));
-      } else {
-        resolve();
-      }
-    }, 1800),
-  );
-}
-
 export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
   const titleId = useId();
   const balanceId = useId();
   const securityId = useId();
   const statusId = useId();
-  const { toast } = useToast();
-
-  const isConnected = wallet.connection === "connected";
-
-  async function handleWalletAction() {
-    await simulateWalletAction(wallet.connection);
-
-    if (wallet.connection === "disconnected") {
-      toast({
-        variant: "success",
-        title: "Wallet connected",
-        description: `Address ${wallet.address?.slice(0, 8)}… linked to your account.`,
-      });
-    } else if (wallet.connection === "connected") {
-      toast({
-        variant: "info",
-        title: "Wallet details",
-        description: "Your wallet is already connected and synced.",
-      });
-    }
-  }
-
-  const buttonLabels = {
-    connected: {
-      idle: "Review wallet",
-      pending: "Loading…",
-      confirmed: "Loaded",
-      error: "Retry",
-    },
-    disconnected: {
-      idle: "Connect wallet",
-      pending: "Connecting…",
-      confirmed: "Connected",
-      error: "Retry connection",
-    },
-    error: {
-      idle: "Retry connection",
-      pending: "Retrying…",
-      confirmed: "Connected",
-      error: "Still failing",
-    },
-  };
 
   return (
     <Card

@@ -1,6 +1,7 @@
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
+import { SocialProofBadges } from "./social-proof-badges";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 
@@ -81,6 +82,11 @@ export function SlotList({ slots }: { slots: Slot[] }) {
                   Rate details
                   <Tooltip content="Hourly rate in Stellar Lumens. Includes network fees and escrow protection." />
                 </span>
+                {slot.badges && slot.badges.length > 0 ? (
+                  <div className="mt-2 w-full">
+                    <SocialProofBadges badges={slot.badges} maxVisible={2} />
+                  </div>
+                ) : null}
               </div>
             </article>
           </li>
