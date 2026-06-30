@@ -1,6 +1,7 @@
 // src/app/components/dashboard-shell.tsx
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { FocusTrap } from "@/components/common/FocusTrap";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -21,32 +22,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen]);
 
-  // Focus trap
-  useEffect(() => {
-    if (!isOpen) return;
-    const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
-      "a[href], button:not([disabled])"
-    );
-    const first = focusable?.[0];
-    const last = focusable?.[focusable.length - 1];
-    const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== "Tab" || !focusable) return;
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", handleTab);
-    first?.focus();
-    return () => document.removeEventListener("keydown", handleTab);
-  }, [isOpen]);
 
   const routes = [
     { href: "/", label: "Home" },
@@ -117,46 +92,55 @@ export function DashboardShell({ children }: DashboardShellProps) {
       {/* Mobile Drawer */}
       {isOpen && (
         <div
-          ref={drawerRef}
-          role="dialog"
-          aria-modal="true"
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end"
+          role="presentation"
         >
-          <aside className="w-64 bg-slate-900 text-slate-100 h-full p-4">
-            <button
-              className="mb-4 rounded-md p-2 focus-ring-white"
-              aria-label="Close navigation menu"
-              onClick={() => setIsOpen(false)}
+          <FocusTrap>
+            <div
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Mobile navigation"
+              className="flex h-full"
             >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
-              {routes.map((r) => (
-                <Link
-                  key={r.href}
-                  href={r.href}
-                  className="block rounded-md px-3 py-2 hover:bg-slate-800 focus-ring-white"
+              <aside className="w-64 bg-slate-900 text-slate-100 h-full p-4 relative z-10">
+                <button
+                  className="mb-4 rounded-md p-2 focus-ring-white"
+                  aria-label="Close navigation menu"
                   onClick={() => setIsOpen(false)}
                 >
-                  {r.label}
-                </Link>
-              ))}
-            </nav>
-          </aside>
-          {/* Click outside to close */}
-          <button
-            className="flex-1"
-            onClick={() => setIsOpen(false)}
-            aria-label="Close navigation drawer"
-          />
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <nav aria-label="Mobile navigation links" className="flex flex-col gap-2">
+                  {routes.map((r) => (
+                    <Link
+                      key={r.href}
+                      href={r.href}
+                      className="block rounded-md px-3 py-2 hover:bg-slate-800 focus-ring-white"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {r.label}
+                    </Link>
+                  ))}
+                </nav>
+              </aside>
+              {/* Click outside to close */}
+              <button
+                className="fixed inset-0 w-full h-full cursor-default"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close navigation drawer"
+                tabIndex={-1}
+              />
+            </div>
+          </FocusTrap>
         </div>
       )}
 
