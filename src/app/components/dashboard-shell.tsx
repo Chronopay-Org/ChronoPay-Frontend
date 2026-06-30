@@ -1,6 +1,10 @@
+"use client";
+
 // src/app/components/dashboard-shell.tsx
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Plus } from "lucide-react";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -8,7 +12,9 @@ type DashboardShellProps = {
 
 export function DashboardShell({ children }: DashboardShellProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   // Close on Escape
   useEffect(() => {
@@ -48,12 +54,58 @@ export function DashboardShell({ children }: DashboardShellProps) {
     return () => document.removeEventListener("keydown", handleTab);
   }, [isOpen]);
 
+  // Scroll detection for inset shadow
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const routes = [
     { href: "/", label: "Home" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/calendar", label: "Calendar" },
     { href: "/history", label: "History" },
   ];
+
+  // Animation variants for active tab indicator
+  const tabIndicatorVariants = {
+    inactive: {
+      scale: 0.8,
+      opacity: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.2,
+      },
+    },
+    active: {
+      scale: 1,
+      opacity: 1,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.3,
+        ease: "easeOut",
+      },
+    },
+  };
+
+  // FAB animation variants
+  const fabVariants = {
+    idle: {
+      scale: 1,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.2,
+      },
+    },
+    pressed: {
+      scale: 0.95,
+      y: 2,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.1,
+      },
+    },
+  };
 
   return (
     <div className="app-shell min-h-screen text-slate-50">
@@ -160,27 +212,62 @@ export function DashboardShell({ children }: DashboardShellProps) {
         </div>
       )}
 
-          {/* Mobile Bottom Bar */}
-          <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 text-slate-100 md:hidden flex justify-around items-center py-2">
-            {routes.map((r) => (
-              <Link
-                key={r.href}
-                href={r.href}
-                className="flex flex-col items-center text-xs hover:text-white focus-ring-white"
-                onClick={() => setIsOpen(false)}
-              >
-                {/* Simple icon placeholders using Unicode characters */}
-                <span aria-hidden="true" className="text-lg">
-                  {r.label === 'Home' && '🏠'}
-                  {r.label === 'Marketplace' && '🛒'}
-                  {r.label === 'Calendar' && '📅'}
-                  {r.label === 'History' && '🕘'}
-                </span>
-                <span>{r.label}</span>
-              </Link>
-            ))}
-          </nav>
+      {/* Mobile Bottom Bar with Elevated FAB */}
+      <nav
+        className={`fixed bottom-0 left-0 right-0 md:hidden ${
+          isScrolled
+            ? "bg-slate-900/95 backdrop-blur-lg shadow-[0_-4px_20px_rgba(0,0,0,0.3)]"
+            : "bg-slate-900"
+        }`}
+        aria-label="Mobile bottom navigation"
+      >
+        <div className="flex justify-around items-center py-2 pb-safe">
+          {routes.map((r, index) => (
+            <Link
+              key={r.href}
+              href={r.href}
+              className="relative flex flex-col items-center text-xs hover:text-white focus-ring-white min-w-[64px] py-1"
+              onClick={() => setIsOpen(false)}
+              aria-current={index === 0 ? "page" : undefined}
+            >
+              {/* Active indicator with morph animation */}
+              <motion.div
+                className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-cyan-400 rounded-full"
+                variants={tabIndicatorVariants}
+                initial="inactive"
+                animate="active"
+                aria-hidden="true"
+              />
+              {/* Icon placeholder */}
+              <span aria-hidden="true" className="text-lg mb-1">
+                {r.label === 'Home' && '🏠'}
+                {r.label === 'Marketplace' && '🛒'}
+                {r.label === 'Calendar' && '📅'}
+                {r.label === 'History' && '🕘'}
+              </span>
+              <span>{r.label}</span>
+            </Link>
+          ))}
 
+          {/* Elevated Center FAB for Mint/Book action */}
+          <motion.button
+            className="relative -mt-8 w-14 h-14 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full shadow-lg shadow-cyan-500/50 flex items-center justify-center text-white hover:from-cyan-400 hover:to-cyan-500 focus-ring-cyan min-w-[44px] min-h-[44px]"
+            variants={fabVariants}
+            initial="idle"
+            whileTap="pressed"
+            whileHover="idle"
+            aria-label="Mint or Book new item"
+            title="Mint/Book"
+          >
+            <Plus className="w-6 h-6" aria-hidden="true" />
+            {/* FAB ring effect */}
+            <span className="absolute inset-0 rounded-full ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-slate-900" aria-hidden="true" />
+          </motion.button>
+        </div>
+      </nav>
+
+      {/* Main content with bottom padding for mobile nav */}
+      <main className="pb-20 md:pb-0">{children}</main>
     </div>
   );
 }
