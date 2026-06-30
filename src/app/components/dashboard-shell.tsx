@@ -84,7 +84,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
       opacity: 1,
       transition: {
         duration: shouldReduceMotion ? 0 : 0.3,
-        ease: "easeOut",
       },
     },
   };
