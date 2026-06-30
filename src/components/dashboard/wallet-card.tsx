@@ -2,23 +2,32 @@
 
 import { useId } from "react";
 import { StatusChip } from "./status-chip";
-import { Tooltip } from "@/app/components/ui/tooltip";
+import { HelpPopover } from "@/app/components/ui/help-popover";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
-import { useState, useEffect } from "react";
 import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
+import { useToast } from "@/hooks/use-toast";
+import { glossary } from "@/lib/glossary";
 
 // Define the wallet providers used in the picker. Icons are placeholders; replace with real SVGs.
 const walletProviders: WalletProvider[] = [
   {
     id: "freighter",
     name: "Freighter",
-    icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l9 21H3L12 2z"/></svg>,
+    icon: (
+      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 2l9 21H3L12 2z" />
+      </svg>
+    ),
   },
   {
     id: "albedo",
     name: "Albedo",
-    icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/></svg>,
+    icon: (
+      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10" />
+      </svg>
+    ),
   },
 ];
 
@@ -127,23 +136,28 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
               : "Disconnected"}
         </StatusChip>
       </CardHeader>
+
       <CardBody className="mt-6">
         <dl className="space-y-4">
+          {/* Pending escrow — jargon annotated with HelpPopover */}
           <div className="flex items-center justify-between gap-4 text-sm">
             <dt id={securityId} className="text-slate-300 flex items-center gap-2">
               Pending escrow
-              <Tooltip content="Time tokens held in escrow for active bookings. Released upon completion or cancellation." />
+              <HelpPopover term={glossary.pendingEscrow} />
             </dt>
             <dd className="font-medium text-white">{wallet.pending}</dd>
           </div>
+
+          {/* Next payout — jargon annotated with HelpPopover */}
           <div className="flex items-center justify-between gap-4 text-sm">
             <dt className="text-slate-300 flex items-center gap-2">
               Next payout
-              <Tooltip content="Scheduled release of earnings from completed time token transactions." />
+              <HelpPopover term={glossary.nextPayout} />
             </dt>
             <dd className="font-medium text-white">{wallet.nextPayout}</dd>
           </div>
         </dl>
+
         <p
           id={statusId}
           className="mt-6 text-sm text-cyan-100/75"
@@ -153,6 +167,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
           {wallet.status}
         </p>
       </CardBody>
+
       <CardFooter className="mt-6">
         <button
           type="button"

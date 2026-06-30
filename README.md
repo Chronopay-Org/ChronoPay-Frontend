@@ -37,13 +37,15 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-| Script          | Description                  |
-| --------------- | ---------------------------- |
-| `npm run dev`   | Start dev server (Turbopack) |
-| `npm run build` | Production build             |
-| `npm run start` | Start production server      |
-| `npm run lint`  | Run ESLint                   |
-| `npm test`      | Lint + build (CI)            |
+| Script               | Description                                  |
+| -------------------- | -------------------------------------------- |
+| `npm run dev`        | Start dev server (Turbopack)                 |
+| `npm run build`      | Production build                             |
+| `npm run start`      | Start production server                      |
+| `npm run lint`       | Run ESLint                                   |
+| `npm test`           | Lint + build (CI)                            |
+| `npm run test:unit`  | Run Vitest unit tests                        |
+| `npm run test:coverage` | Unit tests with V8 coverage report        |
 
 ## Project layout
 
@@ -125,6 +127,63 @@ Example:
   <Tooltip content="Time tokens held in escrow for active bookings. Released upon completion or cancellation." />
 </dt>
 ```
+
+## Contextual help popovers (HelpPopover)
+
+For domain-specific jargon (escrow, mint, redemption, time token, XLM) we use the richer `HelpPopover` pattern. Unlike `Tooltip`, it:
+
+- Persists on click (does not dismiss on hover-out) — suitable for longer definitions
+- Renders structured content: title, body text, and an optional "Learn more" link
+- Uses `role="dialog"` with a focus trap so keyboard users can navigate the full content and activate the link before dismissing
+- Meets WCAG 2.1 AA — visible focus rings, `aria-expanded`, `aria-labelledby`, `aria-describedby`
+
+**Files**
+| File | Purpose |
+|------|---------|
+| `src/app/components/ui/help-popover.tsx` | HelpPopover component |
+| `src/lib/glossary.ts` | Centralised term definitions |
+| `src/__tests__/help-popover.test.tsx` | Unit tests (48 cases, 97%+ coverage) |
+
+**Usage**
+```tsx
+import { HelpPopover } from "@/app/components/ui/help-popover";
+import { glossary } from "@/lib/glossary";
+
+<dt className="text-slate-300 flex items-center gap-2">
+  Pending escrow
+  <HelpPopover term={glossary.pendingEscrow} />
+</dt>
+```
+
+**Props**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `term` | `GlossaryTerm` | required | Term definition from `glossary.ts` |
+| `triggerLabel` | `string` | `"Help: {term.title}"` | `aria-label` for the trigger button |
+| `className` | `string` | `""` | Extra classes on the wrapper `<span>` |
+
+**Adding a new term**
+1. Add an entry to `src/lib/glossary.ts` with `title` (≤ 6 words), `body` (≤ 2 sentences), and optional `learnMoreHref`.
+2. Import `glossary` and `HelpPopover` in the component.
+3. Place `<HelpPopover term={glossary.yourTerm} />` next to the jargon term.
+
+**Keyboard behaviour**
+- `Enter` / `Space` on trigger: open/close
+- `Escape`: close and return focus to trigger
+- `Tab` / `Shift+Tab` while open: cycles through close button and learn-more link without leaving the popover
+- Click outside: close
+
+**Placement**
+The popover opens above the trigger by default. If there is insufficient space above (viewport collision), it opens below.
+
+**Annotated terms (as of this release)**
+- `glossary.pendingEscrow` — "Pending escrow" label in wallet card
+- `glossary.nextPayout` — "Next payout" label in wallet card
+- `glossary.rate` — rate badge in slot list rows
+- `glossary.xlm` — "Rate details" label in slot list rows
+- `glossary.bookingStages` — "Booking stages" heading in booking progress panel
+- `glossary.mint` — "mint" in dashboard subtitle
+- `glossary.timeToken` — "time tokens" in dashboard subtitle
 
 ### Above-the-fold spacing (laptop viewports)
 
