@@ -1,10 +1,15 @@
-/* Focus ring utilities */
+/* Focus ring utilities — plain CSS nesting (Tailwind v4 does not support variant
+   prefixes inside @apply, so we use native :focus-visible selectors instead). */
 @layer utilities {
-  .focus-ring-cyan {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+  .focus-ring-cyan:focus-visible {
+    outline: none;
+    /* 2px offset (slate-950 bg) + 2px ring (cyan-300) */
+    box-shadow: 0 0 0 2px #07111f, 0 0 0 4px #67e8f9;
   }
-  .focus-ring-white {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+  .focus-ring-white:focus-visible {
+    outline: none;
+    /* 2px offset (slate-950 bg) + 2px ring (white) */
+    box-shadow: 0 0 0 2px #07111f, 0 0 0 4px #ffffff;
   }
 }
 

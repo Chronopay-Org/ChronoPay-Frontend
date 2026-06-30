@@ -1,6 +1,9 @@
+"use client";
+
 // src/app/components/dashboard-shell.tsx
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { HeaderSearch } from "@/app/components/header-search";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -59,9 +62,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
     <div className="app-shell min-h-screen text-slate-50">
       <header className="border-b border-white/8 bg-slate-950/40 backdrop-blur-xl">
         <nav
-          className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-6"
+          className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6 md:py-4"
           aria-label="Dashboard navigation"
         >
+          {/* Brand */}
           <div>
             <Link
               href="/"
@@ -74,7 +78,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
               Time economy dashboard
             </p>
           </div>
-          {/* Inline links for larger screens */}
+
+          {/* Desktop: inline links + search */}
           <div className="hidden md:flex items-center gap-3 text-sm text-slate-300">
             {routes.map((r) => (
               <Link
@@ -93,24 +98,34 @@ export function DashboardShell({ children }: DashboardShellProps) {
             >
               Stellar
             </a>
+            {/* Header search affordance */}
+            <HeaderSearch />
           </div>
-          {/* Hamburger for mobile */}
-          <button
-            className="md:hidden rounded-md p-2 focus-ring-white"
-            aria-label="Open navigation menu"
-            onClick={() => setIsOpen(true)}
-          >
-            {/* Simple burger icon */}
-            <svg
-              className="h-6 w-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+
+          {/* Mobile: search + hamburger */}
+          <div className="flex items-center gap-1 md:hidden">
+            <HeaderSearch />
+            <button
+              className="rounded-md p-2 focus-ring-white"
+              aria-label="Open navigation menu"
+              onClick={() => setIsOpen(true)}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+              <svg
+                className="h-6 w-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
         </nav>
       </header>
 
@@ -120,7 +135,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           ref={drawerRef}
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-40"
         >
           <aside className="w-64 bg-slate-900 text-slate-100 h-full p-4">
             <button
@@ -135,7 +150,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
             <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
@@ -160,27 +180,27 @@ export function DashboardShell({ children }: DashboardShellProps) {
         </div>
       )}
 
-          {/* Mobile Bottom Bar */}
-          <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 text-slate-100 md:hidden flex justify-around items-center py-2">
-            {routes.map((r) => (
-              <Link
-                key={r.href}
-                href={r.href}
-                className="flex flex-col items-center text-xs hover:text-white focus-ring-white"
-                onClick={() => setIsOpen(false)}
-              >
-                {/* Simple icon placeholders using Unicode characters */}
-                <span aria-hidden="true" className="text-lg">
-                  {r.label === 'Home' && '🏠'}
-                  {r.label === 'Marketplace' && '🛒'}
-                  {r.label === 'Calendar' && '📅'}
-                  {r.label === 'History' && '🕘'}
-                </span>
-                <span>{r.label}</span>
-              </Link>
-            ))}
-          </nav>
+      {/* Mobile Bottom Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 text-slate-100 md:hidden flex justify-around items-center py-2 z-30">
+        {routes.map((r) => (
+          <Link
+            key={r.href}
+            href={r.href}
+            className="flex flex-col items-center text-xs hover:text-white focus-ring-white"
+            onClick={() => setIsOpen(false)}
+          >
+            <span aria-hidden="true" className="text-lg">
+              {r.label === "Home" && "🏠"}
+              {r.label === "Marketplace" && "🛒"}
+              {r.label === "Calendar" && "📅"}
+              {r.label === "History" && "🕘"}
+            </span>
+            <span>{r.label}</span>
+          </Link>
+        ))}
+      </nav>
 
+      {children}
     </div>
   );
 }
