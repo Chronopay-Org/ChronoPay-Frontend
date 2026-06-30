@@ -1,3 +1,55 @@
+/*
+ * Empty-state illustration animations
+ * All motion is gated behind prefers-reduced-motion: no-preference.
+ * Animations pause automatically when the illustration leaves the viewport
+ * (handled via IntersectionObserver in empty-state-illustration.tsx).
+ *
+ * .es-drift-slow   — gentle vertical drift for the inner card panel (8s loop)
+ * .es-drift-fast   — slightly faster drift for the right column (6s loop)
+ * .es-glow-pulse   — soft opacity pulse on the radial glow layer (7s loop)
+ * .es-paused       — pauses all animations (applied when off-screen)
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes es-drift {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  @keyframes es-glow-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+
+  .es-drift-slow {
+    animation: es-drift 8s ease-in-out infinite;
+  }
+
+  .es-drift-fast {
+    animation: es-drift 6s ease-in-out infinite;
+    animation-delay: -2s; /* offset so columns drift at different phases */
+  }
+
+  .es-glow-pulse {
+    animation: es-glow-pulse 7s ease-in-out infinite;
+  }
+
+  .es-paused .es-drift-slow,
+  .es-paused .es-drift-fast,
+  .es-paused .es-glow-pulse {
+    animation-play-state: paused;
+  }
+}
+
 /* Focus ring utilities */
 @layer utilities {
   .focus-ring-cyan {
