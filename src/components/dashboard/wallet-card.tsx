@@ -3,10 +3,12 @@
 import { useId } from "react";
 import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
+import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
 import { useState, useEffect } from "react";
 import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
+import { useToast } from "@/hooks/use-toast";
 
 // Define the wallet providers used in the picker. Icons are placeholders; replace with real SVGs.
 const walletProviders: WalletProvider[] = [
@@ -129,6 +131,30 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
       </CardHeader>
       <CardBody className="mt-6">
         <dl className="space-y-4">
+          {wallet.address && (
+            <div className="flex items-center justify-between gap-4 text-sm">
+              <dt className="text-slate-300 flex items-center gap-2">
+                Wallet address
+                <Tooltip content="Public wallet address for receiving payments." />
+              </dt>
+              <dd className="flex items-center gap-2 font-mono text-white text-xs">
+                <span className="truncate">{wallet.address.slice(0, 8)}…{wallet.address.slice(-6)}</span>
+                <CopyButton
+                  text={wallet.address}
+                  variant="icon"
+                  label="Copy address"
+                  onCopied={() => {
+                    toast({
+                      variant: "success",
+                      title: "Copied",
+                      description: "Wallet address copied to clipboard.",
+                      duration: 2000,
+                    });
+                  }}
+                />
+              </dd>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-4 text-sm">
             <dt id={securityId} className="text-slate-300 flex items-center gap-2">
               Pending escrow
