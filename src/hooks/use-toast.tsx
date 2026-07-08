@@ -20,8 +20,8 @@ import {
   useId,
   useReducer,
   useRef,
-  type ReactNode,
 } from "react";
+import type { ReactNode } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { Card, CardHeader, CardBody } from "./card";
+import { CardBody } from "./card";
 
 export function PanelShell({
   title,
