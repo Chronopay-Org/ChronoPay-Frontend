@@ -53,10 +53,18 @@
 /* Focus ring utilities */
 @layer utilities {
   .focus-ring-cyan {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+    outline: none;
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px #f0fdfa, 0 0 0 4px #22d3ee;
+    }
   }
   .focus-ring-white {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+    outline: none;
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px #ffffff;
+    }
   }
 }
 

@@ -48,7 +48,7 @@ export function PanelShell({
         </div>
         {action}
       </div>
-      <CardBody className="pt-5">{children}</CardBody>
+      <div className="pt-5">{children}</div>
     </section>
   );
 }

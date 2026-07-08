@@ -1,8 +1,10 @@
-'use client';
+"use client";
+
 // src/app/components/dashboard-shell.tsx
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { ThemeSwitcher } from "./ui/theme-switcher";
+import { motion, useReducedMotion } from "framer-motion";
+import { Plus } from "lucide-react";
 
 // ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
 // Icons come from the NavItem definition in role-nav.ts and are displayed with
@@ -13,8 +15,9 @@ import { ThemeSwitcher } from "./ui/theme-switcher";
 function ShellInner({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const liveRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   const routes = getNavForRole(role);
   const meta = ROLE_META[role];
@@ -71,6 +74,58 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     first?.focus();
     return () => document.removeEventListener("keydown", handleTab);
   }, [isOpen]);
+
+  // Scroll detection for inset shadow
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const routes = [
+    { href: "/", label: "Home" },
+    { href: "/marketplace", label: "Marketplace" },
+    { href: "/calendar", label: "Calendar" },
+    { href: "/history", label: "History" },
+  ];
+
+  // Animation variants for active tab indicator
+  const tabIndicatorVariants = {
+    inactive: {
+      scale: 0.8,
+      opacity: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.2,
+      },
+    },
+    active: {
+      scale: 1,
+      opacity: 1,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.3,
+      },
+    },
+  };
+
+  // FAB animation variants
+  const fabVariants = {
+    idle: {
+      scale: 1,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.2,
+      },
+    },
+    pressed: {
+      scale: 0.95,
+      y: 2,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.1,
+      },
+    },
+  };
 
   return (
     <div
@@ -250,62 +305,62 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Main content */}
-      <main id="main-content" className="mx-auto max-w-6xl px-5 py-8 sm:px-6 pb-24 md:pb-8">
-        {children}
-      </main>
-
-      {/* Mobile Bottom Bar */}
+      {/* Mobile Bottom Bar with Elevated FAB */}
       <nav
-        className="fixed bottom-0 left-0 right-0 md:hidden flex justify-around items-center py-2 border-t z-40"
-        style={{
-          background: "var(--shell-bottom-bar-bg)",
-          color: "var(--shell-text)",
-          borderColor: "var(--border-subtle)",
-        }}
+        className={`fixed bottom-0 left-0 right-0 md:hidden ${
+          isScrolled
+            ? "bg-slate-900/95 backdrop-blur-lg shadow-[0_-4px_20px_rgba(0,0,0,0.3)]"
+            : "bg-slate-900"
+        }`}
         aria-label="Mobile bottom navigation"
       >
-        {routes.map((r) => (
-          <Link
-            key={r.href}
-            href={r.href}
-            className="flex flex-col items-center text-xs hover:opacity-80 focus-ring-white"
-            style={{ color: "var(--shell-text-muted)" }}
-            onClick={() => setIsOpen(false)}
+        <div className="flex justify-around items-center py-2 pb-safe">
+          {routes.map((r, index) => (
+            <Link
+              key={r.href}
+              href={r.href}
+              className="relative flex flex-col items-center text-xs hover:text-white focus-ring-white min-w-[64px] py-1"
+              onClick={() => setIsOpen(false)}
+              aria-current={index === 0 ? "page" : undefined}
+            >
+              {/* Active indicator with morph animation */}
+              <motion.div
+                className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-cyan-400 rounded-full"
+                variants={tabIndicatorVariants}
+                initial="inactive"
+                animate="active"
+                aria-hidden="true"
+              />
+              {/* Icon placeholder */}
+              <span aria-hidden="true" className="text-lg mb-1">
+                {r.label === 'Home' && '🏠'}
+                {r.label === 'Marketplace' && '🛒'}
+                {r.label === 'Calendar' && '📅'}
+                {r.label === 'History' && '🕘'}
+              </span>
+              <span>{r.label}</span>
+            </Link>
+          ))}
+
+          {/* Elevated Center FAB for Mint/Book action */}
+          <motion.button
+            className="relative -mt-8 w-14 h-14 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full shadow-lg shadow-cyan-500/50 flex items-center justify-center text-white hover:from-cyan-400 hover:to-cyan-500 focus-ring-cyan min-w-[44px] min-h-[44px]"
+            variants={fabVariants}
+            initial="idle"
+            whileTap="pressed"
+            whileHover="idle"
+            aria-label="Mint or Book new item"
+            title="Mint/Book"
           >
-            <span aria-hidden="true" className="text-lg">
-              {r.label === "Home" && "🏠"}
-              {r.label === "Marketplace" && "🛒"}
-              {r.label === "Calendar" && "📅"}
-              {r.label === "History" && "🕘"}
-            </span>
-            <span>{r.label}</span>
-          </Link>
-        ))}
+            <Plus className="w-6 h-6" aria-hidden="true" />
+            {/* FAB ring effect */}
+            <span className="absolute inset-0 rounded-full ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-slate-900" aria-hidden="true" />
+          </motion.button>
+        </div>
       </nav>
+
+      {/* Main content with bottom padding for mobile nav */}
+      <main className="pb-20 md:pb-0">{children}</main>
     </div>
-  );
-}
-
-// ─── Public export (wraps inner shell with RoleProvider) ─────────────────────
-
-type DashboardShellProps = {
-  children: React.ReactNode;
-  /**
-   * Seed role — used during SSR and as the fallback before hydration.
-   * In production this would come from the authenticated session / JWT claim.
-   * Defaults to "buyer".
-   */
-  initialRole?: "supplier" | "buyer" | "admin";
-};
-
-export function DashboardShell({
-  children,
-  initialRole = "buyer",
-}: DashboardShellProps) {
-  return (
-    <RoleProvider initialRole={initialRole}>
-      <ShellInner>{children}</ShellInner>
-    </RoleProvider>
   );
 }
