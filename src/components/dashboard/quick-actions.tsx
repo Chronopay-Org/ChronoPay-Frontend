@@ -1,6 +1,5 @@
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
-import { Card, CardHeader, CardFooter } from "./card";
 import type { QuickAction, Tone } from "./types";
 import * as Icons from "lucide-react";
 

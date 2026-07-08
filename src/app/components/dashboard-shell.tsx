@@ -4,26 +4,48 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { ThemeSwitcher } from "./ui/theme-switcher";
 
-type DashboardShellProps = {
-  children: React.ReactNode;
-};
+// ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
+// Icons come from the NavItem definition in role-nav.ts and are displayed with
+// aria-hidden="true" alongside the text label.
 
-export function DashboardShell({ children }: DashboardShellProps) {
+// ─── Inner shell (consumes RoleContext) ───────────────────────────────────────
+
+function ShellInner({ children }: { children: React.ReactNode }) {
+  const { role } = useRole();
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const liveRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape
+  const routes = getNavForRole(role);
+  const meta = ROLE_META[role];
+
+  // ── Announce role change to screen readers ──────────────────────────────
+  useEffect(() => {
+    const handleRoleChange = (e: Event) => {
+      const { role: newRole } = (e as CustomEvent<{ role: string }>).detail;
+      const newMeta = ROLE_META[newRole as keyof typeof ROLE_META];
+      if (liveRef.current && newMeta) {
+        liveRef.current.textContent = `Role switched to ${newMeta.label}. Navigation updated.`;
+        // Clear after announcement so repeat switches are re-announced
+        setTimeout(() => {
+          if (liveRef.current) liveRef.current.textContent = "";
+        }, 3000);
+      }
+    };
+    window.addEventListener("chronopay:rolechange", handleRoleChange);
+    return () => window.removeEventListener("chronopay:rolechange", handleRoleChange);
+  }, []);
+
+  // ── Close drawer on Escape ──────────────────────────────────────────────
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        setIsOpen(false);
-      }
+      if (e.key === "Escape" && isOpen) setIsOpen(false);
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen]);
 
-  // Focus trap
+  // ── Focus trap for mobile drawer ────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
@@ -50,13 +72,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
     return () => document.removeEventListener("keydown", handleTab);
   }, [isOpen]);
 
-  const routes = [
-    { href: "/", label: "Home" },
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/calendar", label: "Calendar" },
-    { href: "/history", label: "History" },
-  ];
-
   return (
     <div
       className="app-shell min-h-screen"
@@ -70,9 +85,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
         }}
       >
         <nav
-          className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-6"
+          className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6 md:py-4"
           aria-label="Dashboard navigation"
         >
+          {/* Brand */}
           <div>
             <Link
               href="/"
@@ -99,7 +115,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 className="rounded-full px-3 py-2 hover:bg-white/6 focus-ring-white transition-colors"
                 style={{ color: "var(--shell-text-muted)" }}
               >
-                {r.label}
+                <span aria-hidden="true">{r.icon}</span>
+                <span>{r.label}</span>
               </Link>
             ))}
             <ThemeSwitcher />
@@ -145,7 +162,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         </nav>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* ── Mobile drawer ──────────────────────────────────────────────────── */}
       {isOpen && (
         <div
           ref={drawerRef}
@@ -191,16 +208,44 @@ export function DashboardShell({ children }: DashboardShellProps) {
                   style={{ color: "var(--shell-text)" }}
                   onClick={() => setIsOpen(false)}
                 >
-                  {r.label}
+                  <span aria-hidden="true" className="text-base">{r.icon}</span>
+                  <span>{r.label}</span>
                 </Link>
               ))}
             </nav>
+
+            {/* Primary CTA in drawer */}
+            <div className="mt-6 px-1">
+              <ButtonLink
+                href={meta.primaryCta.href}
+                variant="primary"
+                size="md"
+                className="w-full justify-center"
+              >
+                {meta.primaryCta.label}
+              </ButtonLink>
+            </div>
+
+            {/* Stellar link in drawer */}
+            <div className="mt-auto pt-6 border-t border-white/8">
+              <a
+                href="https://stellar.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 focus-ring-white"
+              >
+                <span aria-hidden="true">🌐</span>
+                <span>Stellar network</span>
+              </a>
+            </div>
           </aside>
-          {/* Click outside to close */}
+
+          {/* Scrim — click to close */}
           <button
-            className="flex-1"
+            className="flex-1 cursor-default"
             onClick={() => setIsOpen(false)}
             aria-label="Close navigation drawer"
+            tabIndex={-1}
           />
         </div>
       )}
@@ -239,5 +284,28 @@ export function DashboardShell({ children }: DashboardShellProps) {
         ))}
       </nav>
     </div>
+  );
+}
+
+// ─── Public export (wraps inner shell with RoleProvider) ─────────────────────
+
+type DashboardShellProps = {
+  children: React.ReactNode;
+  /**
+   * Seed role — used during SSR and as the fallback before hydration.
+   * In production this would come from the authenticated session / JWT claim.
+   * Defaults to "buyer".
+   */
+  initialRole?: "supplier" | "buyer" | "admin";
+};
+
+export function DashboardShell({
+  children,
+  initialRole = "buyer",
+}: DashboardShellProps) {
+  return (
+    <RoleProvider initialRole={initialRole}>
+      <ShellInner>{children}</ShellInner>
+    </RoleProvider>
   );
 }

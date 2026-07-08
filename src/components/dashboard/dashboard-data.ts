@@ -3,8 +3,10 @@ import type {
   Metric,
   QuickAction,
   Slot,
+  Supplier,
   WalletSnapshot,
 } from "./types";
+import { BADGE_PRESETS } from "./social-proof-badge";
 
 export const metrics: Metric[] = [
   {
@@ -43,6 +45,10 @@ export const slots: Slot[] = [
     rate: "120 XLM / hr",
     status: "Healthy",
     isNextAvailable: true,
+    badges: [
+      { type: "topRated", ...BADGE_PRESETS.topRated },
+      { type: "verified", ...BADGE_PRESETS.verified },
+    ],
   },
   {
     id: "slot-2",
@@ -52,6 +58,9 @@ export const slots: Slot[] = [
     demand: "2 open offers",
     rate: "95 XLM / hr",
     status: "Tight",
+    badges: [
+      { type: "verified", ...BADGE_PRESETS.verified },
+    ],
   },
   {
     id: "slot-3",
@@ -100,5 +109,36 @@ export const quickActions: QuickAction[] = [
     href: "/dashboard",
     tone: "warning",
     icon: "CheckCircle",
+  },
+];
+
+export const suppliers: Supplier[] = [
+  {
+    id: "supplier-1",
+    name: "Alex Rivera",
+    title: "Product & Strategy Consultant",
+    badges: [
+      { type: "topRated", ...BADGE_PRESETS.topRated },
+      { type: "highPayouts", ...BADGE_PRESETS.highPayouts },
+      { type: "repeatBuyers", ...BADGE_PRESETS.repeatBuyers },
+      { type: "fastResponse", ...BADGE_PRESETS.fastResponse },
+      { type: "verified", ...BADGE_PRESETS.verified },
+      { type: "earlyAdopter", ...BADGE_PRESETS.earlyAdopter },
+    ],
+  },
+  {
+    id: "supplier-2",
+    name: "Morgan Chen",
+    title: "UX Design Lead",
+    badges: [
+      { type: "verified", ...BADGE_PRESETS.verified },
+      { type: "fastResponse", ...BADGE_PRESETS.fastResponse },
+    ],
+  },
+  {
+    id: "supplier-3",
+    name: "Jordan Taylor",
+    title: "Executive Coach",
+    badges: [],
   },
 ];

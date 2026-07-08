@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { DashboardShell } from "../components/dashboard-shell";
 import { EmptyStateIllustration } from "../components/empty-state-illustration";
 
-export default function DashboardError({
+export function DashboardError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
+  error?: Error & { digest?: string };
   reset: () => void;
 }) {
   useEffect(() => {
@@ -40,3 +41,5 @@ export default function DashboardError({
     </DashboardShell>
   );
 }
+
+export default DashboardError;
