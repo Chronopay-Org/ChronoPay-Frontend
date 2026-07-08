@@ -6,7 +6,6 @@ import { Tooltip } from "@/app/components/ui/tooltip";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
-import { useState, useEffect } from "react";
 import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,12 +14,20 @@ const walletProviders: WalletProvider[] = [
   {
     id: "freighter",
     name: "Freighter",
-    icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l9 21H3L12 2z"/></svg>,
+    icon: (
+      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 2l9 21H3L12 2z" />
+      </svg>
+    ),
   },
   {
     id: "albedo",
     name: "Albedo",
-    icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/></svg>,
+    icon: (
+      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10" />
+      </svg>
+    ),
   },
 ];
 
@@ -36,69 +43,11 @@ const actionLabel = {
   error: "Retry connection",
 } as const;
 
-/** Simulated async wallet action — replace with real Stellar SDK call. */
-async function simulateWalletAction(
-  connection: WalletSnapshot["connection"],
-): Promise<void> {
-  await new Promise<void>((resolve, reject) =>
-    setTimeout(() => {
-      // Simulate occasional failure for demo purposes
-      if (connection === "error") {
-        reject(new Error("RPC node unreachable"));
-      } else {
-        resolve();
-      }
-    }, 1800),
-  );
-}
-
 export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
   const titleId = useId();
   const balanceId = useId();
   const securityId = useId();
   const statusId = useId();
-  const { toast } = useToast();
-
-  const isConnected = wallet.connection === "connected";
-
-  async function handleWalletAction() {
-    await simulateWalletAction(wallet.connection);
-
-    if (wallet.connection === "disconnected") {
-      toast({
-        variant: "success",
-        title: "Wallet connected",
-        description: `Address ${wallet.address?.slice(0, 8)}… linked to your account.`,
-      });
-    } else if (wallet.connection === "connected") {
-      toast({
-        variant: "info",
-        title: "Wallet details",
-        description: "Your wallet is already connected and synced.",
-      });
-    }
-  }
-
-  const buttonLabels = {
-    connected: {
-      idle: "Review wallet",
-      pending: "Loading…",
-      confirmed: "Loaded",
-      error: "Retry",
-    },
-    disconnected: {
-      idle: "Connect wallet",
-      pending: "Connecting…",
-      confirmed: "Connected",
-      error: "Retry connection",
-    },
-    error: {
-      idle: "Retry connection",
-      pending: "Retrying…",
-      confirmed: "Connected",
-      error: "Still failing",
-    },
-  };
 
   return (
     <Card
@@ -129,6 +78,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
               : "Disconnected"}
         </StatusChip>
       </CardHeader>
+
       <CardBody className="mt-6">
         <dl className="space-y-4">
           {wallet.address && (
@@ -158,18 +108,21 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
           <div className="flex items-center justify-between gap-4 text-sm">
             <dt id={securityId} className="text-slate-300 flex items-center gap-2">
               Pending escrow
-              <Tooltip content="Time tokens held in escrow for active bookings. Released upon completion or cancellation." />
+              <HelpPopover term={glossary.pendingEscrow} />
             </dt>
             <dd className="font-medium text-white">{wallet.pending}</dd>
           </div>
+
+          {/* Next payout — jargon annotated with HelpPopover */}
           <div className="flex items-center justify-between gap-4 text-sm">
             <dt className="text-slate-300 flex items-center gap-2">
               Next payout
-              <Tooltip content="Scheduled release of earnings from completed time token transactions." />
+              <HelpPopover term={glossary.nextPayout} />
             </dt>
             <dd className="font-medium text-white">{wallet.nextPayout}</dd>
           </div>
         </dl>
+
         <p
           id={statusId}
           className="mt-6 text-sm text-cyan-100/75"
@@ -179,6 +132,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
           {wallet.status}
         </p>
       </CardBody>
+
       <CardFooter className="mt-6">
         <button
           type="button"

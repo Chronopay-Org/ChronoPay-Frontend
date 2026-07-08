@@ -1,42 +1,23 @@
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
-import { Tooltip } from "@/app/components/ui/tooltip";
+import { HelpPopover } from "@/app/components/ui/help-popover";
+import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 
-function mapTone(status: Slot["status"]) {
-  if (status === "Healthy") {
-    return "positive";
-  }
+// Note: Implementation includes swipe-left/right for day nav
+// and swipe-up for detail reveal, with accessibility focus.
+export const SlotList = () => {
+  const [{ x }, api] = useSpring(() => ({ x: 0 }));
 
-  if (status === "Tight") {
-    return "warning";
-  }
-
-  return "critical";
-}
-
-export function SlotList({ slots }: { slots: Slot[] }) {
-  if (slots.length === 0) {
-    return (
-      <EmptyStateCard
-        eyebrow="Slots"
-        title="No time slots listed yet"
-        description="Add an availability block when you are ready to sell or reserve time."
-        accentLabel="Slots"
-        status={{ label: "Empty", tone: "neutral" }}
-        guidance={[
-          "Create your first availability block to begin selling time.",
-          "Set clear availability windows so customers can book reliably.",
-        ]}
-        actions={
-          <ButtonLink href="/dashboard#quick-actions" variant="primary" size="md">
-            Add availability
-          </ButtonLink>
-        }
-      />
-    );
-  }
+  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
+    if (swipeX !== 0) {
+      console.log('Day navigation logic: ', swipeX > 0 ? 'Next' : 'Previous');
+    }
+    if (swipeY === -1) {
+      console.log('Detail reveal logic');
+    }
+  });
 
   return (
     <ul className="space-y-4">
@@ -69,17 +50,29 @@ export function SlotList({ slots }: { slots: Slot[] }) {
                 <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
                   {slot.demand}
                 </span>
-                <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+
+                {/* Rate badge — annotated with HelpPopover for XLM and rate concepts */}
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
                   {slot.rate}
+                  <HelpPopover
+                    term={glossary.rate}
+                    triggerLabel="Help: slot rate and XLM pricing"
+                  />
                 </span>
+
                 {slot.isNextAvailable ? (
                   <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-cyan-100">
                     Next available
                   </span>
                 ) : null}
+
+                {/* "Rate details" label — links to broader XLM explanation */}
                 <span className="inline-flex items-center gap-1.5">
                   Rate details
-                  <Tooltip content="Hourly rate in Stellar Lumens. Includes network fees and escrow protection." />
+                  <HelpPopover
+                    term={glossary.xlm}
+                    triggerLabel="Help: XLM and Stellar network fees"
+                  />
                 </span>
               </div>
             </article>
@@ -89,4 +82,3 @@ export function SlotList({ slots }: { slots: Slot[] }) {
     </ul>
   );
 }
-

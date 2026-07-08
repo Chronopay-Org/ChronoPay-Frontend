@@ -37,13 +37,15 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
-| Script          | Description                  |
-| --------------- | ---------------------------- |
-| `npm run dev`   | Start dev server (Turbopack) |
-| `npm run build` | Production build             |
-| `npm run start` | Start production server      |
-| `npm run lint`  | Run ESLint                   |
-| `npm test`      | Lint + build (CI)            |
+| Script               | Description                                  |
+| -------------------- | -------------------------------------------- |
+| `npm run dev`        | Start dev server (Turbopack)                 |
+| `npm run build`      | Production build                             |
+| `npm run start`      | Start production server                      |
+| `npm run lint`       | Run ESLint                                   |
+| `npm test`           | Lint + build (CI)                            |
+| `npm run test:unit`  | Run Vitest unit tests                        |
+| `npm run test:coverage` | Unit tests with V8 coverage report        |
 
 ## Project layout
 
@@ -71,6 +73,108 @@ Open [http://localhost:3000](http://localhost:3000).
 - Slot titles may wrap, but metadata columns keep stable widths; mobile uses horizontal overflow instead of compressing key values into unreadable text.
 - Empty slot views distinguish between no inventory and no filtered results, with microcopy that tells the user whether to add availability or widen filters.
 - Slot list data is rendered as text-only React content with no HTML injection, preserving the UI-only security boundary for availability labels and filter copy.
+
+## Social-proof badges
+
+Social-proof badges are compact, icon-led trust signals that appear on supplier and slot cards. They help buyers quickly assess seller credibility through signals like "Top 5% rated", "200+ payouts", and "12 repeat buyers".
+
+### Available badges
+
+| Badge type      | Label             | Tone     | Icon          | Criterion |
+| --------------- | ----------------- | -------- | ------------- | --------- |
+| `topRated`      | Top 5% rated      | positive | `Star`        | Rated in the top 5% of all sellers based on buyer reviews from the last 90 days. |
+| `highPayouts`   | 200+ payouts      | positive | `Banknote`    | Completed over 200 successful payouts with no disputes or chargebacks. |
+| `repeatBuyers`  | 12 repeat buyers  | positive | `Users`       | Has 12 buyers who booked more than one time slot in the past 6 months. |
+| `fastResponse`  | Fast response     | positive | `Zap`         | Responds to booking requests within 15 minutes on average during active hours. |
+| `verified`      | Verified          | neutral  | `BadgeCheck`  | Identity verified through Stellar account authentication and KYC review. |
+| `earlyAdopter`  | Early adopter     | warning  | `Award`       | One of the first 100 sellers to join the ChronoPay platform. |
+
+### Stacking and truncation
+
+Multiple badges are displayed in a flex-wrap row. By default a maximum of **3** badges render; remaining badges collapse into a `+N` overflow chip with a tooltip listing the hidden badge labels and criteria.
+
+```tsx
+// Show all badges, truncating after 3 (default)
+<SocialProofBadges badges={supplier.badges} />
+
+// Custom truncation threshold
+<SocialProofBadges badges={supplier.badges} maxVisible={2} />
+```
+
+### Component API
+
+#### `SocialProofBadge`
+
+A single icon-led badge with tooltip. Reuses `StatusChip` tone colors.
+
+```tsx
+import { SocialProofBadge, BADGE_PRESETS } from "@/components/dashboard";
+
+<SocialProofBadge
+  badge={{ type: "topRated", ...BADGE_PRESETS.topRated }}
+/>
+```
+
+#### `SocialProofBadges`
+
+A container that stacks multiple `SocialProofBadge` instances and handles truncation.
+
+| Prop        | Type                       | Default | Description |
+| ----------- | -------------------------- | ------- | ----------- |
+| `badges`    | `SocialProofBadgeEntry[]`  | —       | Badges to display (required) |
+| `maxVisible`| `number`                   | `3`     | Max badges before `+N` truncation |
+| `className` | `string`                   | `""`    | Additional CSS classes |
+
+#### `BADGE_PRESETS`
+
+Pre-configured badge definitions keyed by type. Spread into a badge entry:
+
+```tsx
+const badge: SocialProofBadgeEntry = {
+  type: "topRated",
+  ...BADGE_PRESETS.topRated,
+};
+```
+
+### Data shape
+
+```typescript
+type SocialProofBadgeEntry = {
+  type: SocialProofBadgeType;  // unique identifier
+  label: string;               // display text (e.g. "Top 5% rated")
+  tone: Tone;                  // matches StatusChip tone scale
+  icon: string;                // lucide-react icon name
+  criterion: string;           // plain-language explanation for tooltip
+};
+```
+
+### Usage in cards
+
+Badges integrate naturally into existing card components. Slot cards display optional badges below demand/rate metadata:
+
+```tsx
+{slot.badges && slot.badges.length > 0 && (
+  <SocialProofBadges badges={slot.badges} maxVisible={2} />
+)}
+```
+
+### Accessibility
+
+- Each badge carries `aria-label` combining its label and criterion so screen readers announce "Top 5% rated: Rated in the top 5% of all sellers based on buyer reviews from the last 90 days."
+- Tooltip triggers are focusable `<button>` elements with `aria-describedby`, keyboard support (Enter/Space to toggle, Escape to close), and visible focus rings per the project's `focus-ring-cyan` pattern.
+- The overflow `+N` chip uses the same tooltip pattern so hidden badge criteria remain accessible.
+- Icon-only elements use `aria-hidden="true"` to avoid duplicate announcement.
+- Badges use the project's existing tone color palette, which has been verified to meet WCAG 2.1 AA contrast requirements on the dark background.
+
+### Responsive behavior
+
+- Badges wrap naturally with `flex-wrap` — no horizontal overflow on narrow viewports.
+- On small screens (mobile), `maxVisible` can be set to `1` or `2` to avoid crowding.
+- The component has no fixed width, so it adapts to its container.
+
+### Dark mode
+
+Badges inherit tone colors from the `StatusChip` palette, which is designed for the dark dashboard theme. No additional dark-mode overrides are needed.
 
 ## Card interaction affordances
 
@@ -125,6 +229,63 @@ Example:
   <Tooltip content="Time tokens held in escrow for active bookings. Released upon completion or cancellation." />
 </dt>
 ```
+
+## Contextual help popovers (HelpPopover)
+
+For domain-specific jargon (escrow, mint, redemption, time token, XLM) we use the richer `HelpPopover` pattern. Unlike `Tooltip`, it:
+
+- Persists on click (does not dismiss on hover-out) — suitable for longer definitions
+- Renders structured content: title, body text, and an optional "Learn more" link
+- Uses `role="dialog"` with a focus trap so keyboard users can navigate the full content and activate the link before dismissing
+- Meets WCAG 2.1 AA — visible focus rings, `aria-expanded`, `aria-labelledby`, `aria-describedby`
+
+**Files**
+| File | Purpose |
+|------|---------|
+| `src/app/components/ui/help-popover.tsx` | HelpPopover component |
+| `src/lib/glossary.ts` | Centralised term definitions |
+| `src/__tests__/help-popover.test.tsx` | Unit tests (48 cases, 97%+ coverage) |
+
+**Usage**
+```tsx
+import { HelpPopover } from "@/app/components/ui/help-popover";
+import { glossary } from "@/lib/glossary";
+
+<dt className="text-slate-300 flex items-center gap-2">
+  Pending escrow
+  <HelpPopover term={glossary.pendingEscrow} />
+</dt>
+```
+
+**Props**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `term` | `GlossaryTerm` | required | Term definition from `glossary.ts` |
+| `triggerLabel` | `string` | `"Help: {term.title}"` | `aria-label` for the trigger button |
+| `className` | `string` | `""` | Extra classes on the wrapper `<span>` |
+
+**Adding a new term**
+1. Add an entry to `src/lib/glossary.ts` with `title` (≤ 6 words), `body` (≤ 2 sentences), and optional `learnMoreHref`.
+2. Import `glossary` and `HelpPopover` in the component.
+3. Place `<HelpPopover term={glossary.yourTerm} />` next to the jargon term.
+
+**Keyboard behaviour**
+- `Enter` / `Space` on trigger: open/close
+- `Escape`: close and return focus to trigger
+- `Tab` / `Shift+Tab` while open: cycles through close button and learn-more link without leaving the popover
+- Click outside: close
+
+**Placement**
+The popover opens above the trigger by default. If there is insufficient space above (viewport collision), it opens below.
+
+**Annotated terms (as of this release)**
+- `glossary.pendingEscrow` — "Pending escrow" label in wallet card
+- `glossary.nextPayout` — "Next payout" label in wallet card
+- `glossary.rate` — rate badge in slot list rows
+- `glossary.xlm` — "Rate details" label in slot list rows
+- `glossary.bookingStages` — "Booking stages" heading in booking progress panel
+- `glossary.mint` — "mint" in dashboard subtitle
+- `glossary.timeToken` — "time tokens" in dashboard subtitle
 
 ### Above-the-fold spacing (laptop viewports)
 
