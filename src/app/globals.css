@@ -1,3 +1,55 @@
+/*
+ * Empty-state illustration animations
+ * All motion is gated behind prefers-reduced-motion: no-preference.
+ * Animations pause automatically when the illustration leaves the viewport
+ * (handled via IntersectionObserver in empty-state-illustration.tsx).
+ *
+ * .es-drift-slow   — gentle vertical drift for the inner card panel (8s loop)
+ * .es-drift-fast   — slightly faster drift for the right column (6s loop)
+ * .es-glow-pulse   — soft opacity pulse on the radial glow layer (7s loop)
+ * .es-paused       — pauses all animations (applied when off-screen)
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes es-drift {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  @keyframes es-glow-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+
+  .es-drift-slow {
+    animation: es-drift 8s ease-in-out infinite;
+  }
+
+  .es-drift-fast {
+    animation: es-drift 6s ease-in-out infinite;
+    animation-delay: -2s; /* offset so columns drift at different phases */
+  }
+
+  .es-glow-pulse {
+    animation: es-glow-pulse 7s ease-in-out infinite;
+  }
+
+  .es-paused .es-drift-slow,
+  .es-paused .es-drift-fast,
+  .es-paused .es-glow-pulse {
+    animation-play-state: paused;
+  }
+}
+
 /* Focus ring utilities */
 @layer utilities {
   .focus-ring-cyan {
@@ -189,4 +241,50 @@ body {
 .card--interactive:active {
   border-color: rgba(103, 232, 249, 0.6); /* active:border-cyan-300/60 */
   background-color: rgb(30, 41, 59); /* active:bg-slate-800 */
+}
+
+/*
+ * On-chain receipt print stylesheet.
+ * Scoped to .receipt-printable so only the receipt prints (or saves to PDF
+ * via the browser dialog). Switches to dark-on-white for high contrast on
+ * paper, keeps full-text labels, and drops interactive-only controls.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-printable,
+  .receipt-printable * {
+    visibility: visible;
+  }
+
+  .receipt-printable {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    padding: 1.5rem;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff !important;
+    color: #0f172a !important; /* slate-900 on white for AA contrast */
+    backdrop-filter: none;
+  }
+
+  /* Force readable ink for every receipt element. */
+  .receipt-printable :where(p, span, dt, dd, h2, h3, li, a) {
+    color: #0f172a !important;
+  }
+
+  /* Keep dividers visible on paper. */
+  .receipt-printable :where(header, section, footer, .border-t, .border-b) {
+    border-color: #cbd5e1 !important; /* slate-300 */
+  }
+
+  /* Copy / explorer / share controls are not useful on paper. */
+  .receipt-no-print {
+    display: none !important;
+  }
 }
