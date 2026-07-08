@@ -1,42 +1,8 @@
-"use client";
-
-/**
- * dashboard-shell.tsx
- *
- * Top-level layout shell for the ChronoPay dashboard.
- *
- * Role-aware navigation (FE-ROLE-NAV)
- * ────────────────────────────────────
- * The shell now renders per-role nav inventories instead of a static list:
- *   • supplier — Availability, Earnings, History
- *   • buyer    — Marketplace, My Bookings, Calendar, History
- *   • admin    — Users, Analytics, Settings
- *
- * A <RoleChip> in the header lets users see and switch their active role.
- * Role state is provided by <RoleProvider> (localStorage-persisted) and
- * consumed via useRole().
- *
- * Accessibility
- * ─────────────
- * • All nav items carry icon + text — never icon alone (WCAG 1.4.1).
- * • An aria-live="polite" region announces role changes to screen readers.
- * • Focus trap is preserved in the mobile drawer via the existing inline
- *   implementation (matches APG Modal pattern).
- * • Mobile bottom bar uses the same role-scoped items as the desktop nav.
- * • RoleChip satisfies WCAG 1.4.1 with text+icon and a checkmark affordance.
- *
- * Transitions
- * ───────────
- * Role switches do not hard-navigate. The RoleContext preserves the current
- * URL so breadcrumb / scroll context is maintained (issue requirement).
- */
-
+'use client';
+// src/app/components/dashboard-shell.tsx
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { RoleProvider, useRole } from "./navigation/RoleContext";
-import { getNavForRole, ROLE_META } from "./navigation/role-nav";
-import { RoleChip } from "./ui/RoleChip";
-import { ButtonLink } from "./ui/button-link";
+import { ThemeSwitcher } from "./ui/theme-switcher";
 
 // ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
 // Icons come from the NavItem definition in role-nav.ts and are displayed with
@@ -107,19 +73,17 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   }, [isOpen]);
 
   return (
-    <div className="app-shell min-h-screen text-slate-50">
-
-      {/* ── Screen-reader live region for role change announcements ────────── */}
-      <div
-        ref={liveRef}
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      />
-
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <header className="border-b border-white/8 bg-slate-950/40 backdrop-blur-xl">
+    <div
+      className="app-shell min-h-screen"
+      style={{ color: "var(--shell-text)" }}
+    >
+      <header
+        className="border-b backdrop-blur-xl"
+        style={{
+          background: "var(--shell-header-bg)",
+          borderColor: "var(--shell-header-border)",
+        }}
+      >
         <nav
           className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6 md:py-4"
           aria-label="Dashboard navigation"
@@ -128,69 +92,63 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           <div>
             <Link
               href="/"
-              className="text-lg font-semibold tracking-tight text-white"
+              className="text-lg font-semibold tracking-tight"
+              style={{ color: "var(--shell-text)" }}
               aria-label="ChronoPay home"
             >
               ChronoPay
             </Link>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+            <p
+              className="text-xs uppercase tracking-[0.2em]"
+              style={{ color: "var(--shell-text-muted)" }}
+            >
               Time economy dashboard
             </p>
           </div>
 
-          {/* Desktop nav links */}
-          <div className="hidden md:flex items-center gap-1 text-sm text-slate-300">
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-3 text-sm">
             {routes.map((r) => (
               <Link
                 key={r.href}
                 href={r.href}
-                aria-label={r.ariaLabel ?? r.label}
-                className="flex items-center gap-1.5 rounded-full px-3 py-2 hover:bg-white/6 hover:text-white focus-ring-white"
+                className="rounded-full px-3 py-2 hover:bg-white/6 focus-ring-white transition-colors"
+                style={{ color: "var(--shell-text-muted)" }}
               >
                 <span aria-hidden="true">{r.icon}</span>
                 <span>{r.label}</span>
               </Link>
             ))}
-
-            {/* Stellar external link — shared across all roles */}
+            <ThemeSwitcher />
             <a
               href="https://stellar.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 px-3 py-2 hover:border-cyan-200/30 hover:bg-white/6 hover:text-white focus-ring-white"
+              className="rounded-full border px-3 py-2 hover:bg-white/6 focus-ring-white transition-colors"
+              style={{
+                borderColor: "var(--border-subtle)",
+                color: "var(--shell-text-muted)",
+              }}
             >
               Stellar
             </a>
           </div>
 
-          {/* Right-side controls: RoleChip + primary CTA + hamburger */}
-          <div className="flex items-center gap-3">
-            {/* Role chip — always visible */}
-            <RoleChip />
-
-            {/* Primary CTA for the current role — hidden on smallest screens */}
-            <div className="hidden sm:block">
-              <ButtonLink
-                href={meta.primaryCta.href}
-                variant="primary"
-                size="sm"
-              >
-                {meta.primaryCta.label}
-              </ButtonLink>
-            </div>
-
-            {/* Hamburger — mobile only */}
+          {/* Mobile: theme switcher + hamburger */}
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeSwitcher />
             <button
-              className="md:hidden rounded-md p-2 focus-ring-white"
+              className="rounded-md p-2 focus-ring-white"
               aria-label="Open navigation menu"
               onClick={() => setIsOpen(true)}
             >
               <svg
-                className="h-6 w-6 text-white"
+                className="h-6 w-6"
+                style={{ color: "var(--shell-text)" }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   strokeLinecap="round"
@@ -211,52 +169,43 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           role="dialog"
           aria-modal="true"
           aria-label="Navigation menu"
-          className="fixed inset-0 z-40 flex justify-end bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-50"
         >
-          <aside className="w-72 bg-slate-900 text-slate-100 h-full flex flex-col p-4 overflow-y-auto">
-            {/* Drawer header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span aria-hidden="true" className="text-lg">{meta.icon}</span>
-                <span className="text-sm font-semibold text-white">
-                  {meta.label} menu
-                </span>
-              </div>
-              <button
-                className="rounded-md p-2 focus-ring-white"
-                aria-label="Close navigation menu"
-                onClick={() => setIsOpen(false)}
+          <aside
+            className="w-64 h-full p-4"
+            style={{
+              background: "var(--shell-drawer-bg)",
+              color: "var(--shell-text)",
+            }}
+          >
+            <button
+              className="mb-4 rounded-md p-2 focus-ring-white"
+              aria-label="Close navigation menu"
+              onClick={() => setIsOpen(false)}
+            >
+              <svg
+                className="h-6 w-6"
+                style={{ color: "var(--shell-text)" }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Role chip in drawer */}
-            <div className="mb-4 px-1">
-              <RoleChip />
-            </div>
-
-            {/* Nav links */}
-            <nav aria-label="Mobile navigation" className="flex flex-col gap-1">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
               {routes.map((r) => (
                 <Link
                   key={r.href}
                   href={r.href}
-                  aria-label={r.ariaLabel ?? r.label}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-slate-800 focus-ring-white text-sm"
+                  className="block rounded-md px-3 py-2 hover:bg-white/10 focus-ring-white transition-colors"
+                  style={{ color: "var(--shell-text)" }}
                   onClick={() => setIsOpen(false)}
                 >
                   <span aria-hidden="true" className="text-base">{r.icon}</span>
@@ -301,16 +250,39 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* ── Page content ──────────────────────────────────────────────────── */}
-      <main id="main-content" className="pb-16 md:pb-0">
-        {children}
-      </main>
-
       {/* Main content */}
-      <main id="main-content" className="mx-auto max-w-6xl px-5 py-6 sm:px-6">
+      <main id="main-content" className="mx-auto max-w-6xl px-5 py-8 sm:px-6 pb-24 md:pb-8">
         {children}
       </main>
 
+      {/* Mobile Bottom Bar */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 md:hidden flex justify-around items-center py-2 border-t z-40"
+        style={{
+          background: "var(--shell-bottom-bar-bg)",
+          color: "var(--shell-text)",
+          borderColor: "var(--border-subtle)",
+        }}
+        aria-label="Mobile bottom navigation"
+      >
+        {routes.map((r) => (
+          <Link
+            key={r.href}
+            href={r.href}
+            className="flex flex-col items-center text-xs hover:opacity-80 focus-ring-white"
+            style={{ color: "var(--shell-text-muted)" }}
+            onClick={() => setIsOpen(false)}
+          >
+            <span aria-hidden="true" className="text-lg">
+              {r.label === "Home" && "🏠"}
+              {r.label === "Marketplace" && "🛒"}
+              {r.label === "Calendar" && "📅"}
+              {r.label === "History" && "🕘"}
+            </span>
+            <span>{r.label}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }
