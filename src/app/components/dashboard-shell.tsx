@@ -3,8 +3,7 @@
 // src/app/components/dashboard-shell.tsx
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { HeaderSearch } from "@/app/components/header-search";
 
 // ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
 // Icons come from the NavItem definition in role-nav.ts and are displayed with
@@ -161,8 +160,8 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             </p>
           </div>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-3 text-sm">
+          {/* Desktop: inline links + search */}
+          <div className="hidden md:flex items-center gap-3 text-sm text-slate-300">
             {routes.map((r) => (
               <Link
                 key={r.href}
@@ -187,19 +186,20 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             >
               Stellar
             </a>
+            {/* Header search affordance */}
+            <HeaderSearch />
           </div>
 
-          {/* Mobile: theme switcher + hamburger */}
-          <div className="md:hidden flex items-center gap-2">
-            <ThemeSwitcher />
+          {/* Mobile: search + hamburger */}
+          <div className="flex items-center gap-1 md:hidden">
+            <HeaderSearch />
             <button
               className="rounded-md p-2 focus-ring-white"
               aria-label="Open navigation menu"
               onClick={() => setIsOpen(true)}
             >
               <svg
-                className="h-6 w-6"
-                style={{ color: "var(--shell-text)" }}
+                className="h-6 w-6 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -223,8 +223,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           ref={drawerRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation menu"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-40"
         >
           <aside
             className="w-64 h-full p-4"
@@ -305,62 +304,27 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Mobile Bottom Bar with Elevated FAB */}
-      <nav
-        className={`fixed bottom-0 left-0 right-0 md:hidden ${
-          isScrolled
-            ? "bg-slate-900/95 backdrop-blur-lg shadow-[0_-4px_20px_rgba(0,0,0,0.3)]"
-            : "bg-slate-900"
-        }`}
-        aria-label="Mobile bottom navigation"
-      >
-        <div className="flex justify-around items-center py-2 pb-safe">
-          {routes.map((r, index) => (
-            <Link
-              key={r.href}
-              href={r.href}
-              className="relative flex flex-col items-center text-xs hover:text-white focus-ring-white min-w-[64px] py-1"
-              onClick={() => setIsOpen(false)}
-              aria-current={index === 0 ? "page" : undefined}
-            >
-              {/* Active indicator with morph animation */}
-              <motion.div
-                className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-cyan-400 rounded-full"
-                variants={tabIndicatorVariants}
-                initial="inactive"
-                animate="active"
-                aria-hidden="true"
-              />
-              {/* Icon placeholder */}
-              <span aria-hidden="true" className="text-lg mb-1">
-                {r.label === 'Home' && '🏠'}
-                {r.label === 'Marketplace' && '🛒'}
-                {r.label === 'Calendar' && '📅'}
-                {r.label === 'History' && '🕘'}
-              </span>
-              <span>{r.label}</span>
-            </Link>
-          ))}
-
-          {/* Elevated Center FAB for Mint/Book action */}
-          <motion.button
-            className="relative -mt-8 w-14 h-14 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full shadow-lg shadow-cyan-500/50 flex items-center justify-center text-white hover:from-cyan-400 hover:to-cyan-500 focus-ring-cyan min-w-[44px] min-h-[44px]"
-            variants={fabVariants}
-            initial="idle"
-            whileTap="pressed"
-            whileHover="idle"
-            aria-label="Mint or Book new item"
-            title="Mint/Book"
+      {/* Mobile Bottom Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 text-slate-100 md:hidden flex justify-around items-center py-2 z-30">
+        {routes.map((r) => (
+          <Link
+            key={r.href}
+            href={r.href}
+            className="flex flex-col items-center text-xs hover:text-white focus-ring-white"
+            onClick={() => setIsOpen(false)}
           >
-            <Plus className="w-6 h-6" aria-hidden="true" />
-            {/* FAB ring effect */}
-            <span className="absolute inset-0 rounded-full ring-2 ring-cyan-400/50 ring-offset-2 ring-offset-slate-900" aria-hidden="true" />
-          </motion.button>
-        </div>
+            <span aria-hidden="true" className="text-lg">
+              {r.label === "Home" && "🏠"}
+              {r.label === "Marketplace" && "🛒"}
+              {r.label === "Calendar" && "📅"}
+              {r.label === "History" && "🕘"}
+            </span>
+            <span>{r.label}</span>
+          </Link>
+        ))}
       </nav>
 
-      {/* Main content with bottom padding for mobile nav */}
-      <main className="pb-20 md:pb-0">{children}</main>
+      {children}
     </div>
   );
 }

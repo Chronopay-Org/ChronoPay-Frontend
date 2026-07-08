@@ -7,6 +7,7 @@ export interface CardProps {
   className?: string;
   variant?: "default" | "panel" | "glass" | "accent";
   interactive?: boolean;
+  [key: string]: unknown;
 }
 
 export function Card({
@@ -39,7 +40,11 @@ export function CardHeader({
   children,
   className,
   ...props
-}: { children: ReactNode; className?: string } & Omit<ComponentPropsWithoutRef<"div">, "children" | "className">) {
+}: {
+  children: ReactNode;
+  className?: string;
+  [key: string]: unknown;
+}) {
   return (
     <div className={clsx("card-header", className)} {...props}>
       {children}
@@ -51,7 +56,11 @@ export function CardBody({
   children,
   className,
   ...props
-}: { children: ReactNode; className?: string } & Omit<ComponentPropsWithoutRef<"div">, "children" | "className">) {
+}: {
+  children: ReactNode;
+  className?: string;
+  [key: string]: unknown;
+}) {
   return (
     <div className={clsx("card-body", className)} {...props}>
       {children}
@@ -63,7 +72,11 @@ export function CardFooter({
   children,
   className,
   ...props
-}: { children: ReactNode; className?: string } & Omit<ComponentPropsWithoutRef<"div">, "children" | "className">) {
+}: {
+  children: ReactNode;
+  className?: string;
+  [key: string]: unknown;
+}) {
   return (
     <div className={clsx("card-footer", className)} {...props}>
       {children}

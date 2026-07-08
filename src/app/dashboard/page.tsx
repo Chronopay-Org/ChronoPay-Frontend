@@ -1,5 +1,7 @@
-'use client';
+"use client";
+
 import { DashboardShell } from "../components/dashboard-shell";
+import DashboardError from "./error";
 
 import {
   bookingStages,
@@ -14,7 +16,6 @@ import {
   wallet,
   WalletCard,
 } from "@/components/dashboard";
-import { DashboardError } from "./error";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 

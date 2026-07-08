@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/app/components/dashboard-shell";
 import { StatusChip } from "@/components/dashboard/status-chip";
@@ -175,28 +175,49 @@ export default function SlotDetailPage({
     setAnnouncement(msg);
   };
 
-  // Keyboard navigation & focus management inside checkout modal
-  useEffect(() => {
-    if (isModalOpen) {
-      lastActiveElementRef.current = document.activeElement as HTMLElement;
-      if (modalRef.current) {
-        modalRef.current.focus();
-      }
-    } else if (lastActiveElementRef.current) {
-      lastActiveElementRef.current.focus();
-    }
-  }, [isModalOpen]);
-
   const handleOpenModal = () => {
     if (!isWalletReady || !hasFunds) return;
     setPurchaseStep("confirm");
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setPurchaseStep("confirm");
-  };
+  }, []);
+
+  // Keyboard navigation & focus management inside checkout modal
+  useEffect(() => {
+    if (isModalOpen) {
+      lastActiveElementRef.current = document.activeElement as HTMLElement;
+
+      // Move focus to modal container
+      if (modalRef.current) {
+        modalRef.current.focus();
+      }
+      // Defer state update so it does not run synchronously inside the effect
+      const raf = requestAnimationFrame(() => {
+        announce("Confirm purchase modal opened. Press Tab to navigate.");
+      });
+      return () => cancelAnimationFrame(raf);
+    } else {
+      // Restore focus
+      if (lastActiveElementRef.current) {
+        lastActiveElementRef.current.focus();
+      }
+    }
+  }, [isModalOpen]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isModalOpen) {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isModalOpen, handleCloseModal]);
 
   // Handle ESC key to close modal
   useEffect(() => {
@@ -244,9 +265,9 @@ export default function SlotDetailPage({
   };
 
   const mapTone = (status: typeof slot.status) => {
-    if (status === "Healthy") return "success";
-    if (status === "Tight") return "warning";
-    return "danger";
+    if (status === "Healthy") return "positive" as const;
+    if (status === "Tight") return "warning" as const;
+    return "critical" as const;
   };
 
   return (
