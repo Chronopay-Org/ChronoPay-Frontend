@@ -1,27 +1,85 @@
-// src/app/components/dashboard-shell.tsx
+"use client";
+
+/**
+ * dashboard-shell.tsx
+ *
+ * Top-level layout shell for the ChronoPay dashboard.
+ *
+ * Role-aware navigation (FE-ROLE-NAV)
+ * ────────────────────────────────────
+ * The shell now renders per-role nav inventories instead of a static list:
+ *   • supplier — Availability, Earnings, History
+ *   • buyer    — Marketplace, My Bookings, Calendar, History
+ *   • admin    — Users, Analytics, Settings
+ *
+ * A <RoleChip> in the header lets users see and switch their active role.
+ * Role state is provided by <RoleProvider> (localStorage-persisted) and
+ * consumed via useRole().
+ *
+ * Accessibility
+ * ─────────────
+ * • All nav items carry icon + text — never icon alone (WCAG 1.4.1).
+ * • An aria-live="polite" region announces role changes to screen readers.
+ * • Focus trap is preserved in the mobile drawer via the existing inline
+ *   implementation (matches APG Modal pattern).
+ * • Mobile bottom bar uses the same role-scoped items as the desktop nav.
+ * • RoleChip satisfies WCAG 1.4.1 with text+icon and a checkmark affordance.
+ *
+ * Transitions
+ * ───────────
+ * Role switches do not hard-navigate. The RoleContext preserves the current
+ * URL so breadcrumb / scroll context is maintained (issue requirement).
+ */
+
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { RoleProvider, useRole } from "./navigation/RoleContext";
+import { getNavForRole, ROLE_META } from "./navigation/role-nav";
+import { RoleChip } from "./ui/RoleChip";
+import { ButtonLink } from "./ui/button-link";
 
-type DashboardShellProps = {
-  children: React.ReactNode;
-};
+// ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
+// Icons come from the NavItem definition in role-nav.ts and are displayed with
+// aria-hidden="true" alongside the text label.
 
-export function DashboardShell({ children }: DashboardShellProps) {
+// ─── Inner shell (consumes RoleContext) ───────────────────────────────────────
+
+function ShellInner({ children }: { children: React.ReactNode }) {
+  const { role } = useRole();
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const liveRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape
+  const routes = getNavForRole(role);
+  const meta = ROLE_META[role];
+
+  // ── Announce role change to screen readers ──────────────────────────────
+  useEffect(() => {
+    const handleRoleChange = (e: Event) => {
+      const { role: newRole } = (e as CustomEvent<{ role: string }>).detail;
+      const newMeta = ROLE_META[newRole as keyof typeof ROLE_META];
+      if (liveRef.current && newMeta) {
+        liveRef.current.textContent = `Role switched to ${newMeta.label}. Navigation updated.`;
+        // Clear after announcement so repeat switches are re-announced
+        setTimeout(() => {
+          if (liveRef.current) liveRef.current.textContent = "";
+        }, 3000);
+      }
+    };
+    window.addEventListener("chronopay:rolechange", handleRoleChange);
+    return () => window.removeEventListener("chronopay:rolechange", handleRoleChange);
+  }, []);
+
+  // ── Close drawer on Escape ──────────────────────────────────────────────
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        setIsOpen(false);
-      }
+      if (e.key === "Escape" && isOpen) setIsOpen(false);
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen]);
 
-  // Focus trap
+  // ── Focus trap for mobile drawer ────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
@@ -48,20 +106,25 @@ export function DashboardShell({ children }: DashboardShellProps) {
     return () => document.removeEventListener("keydown", handleTab);
   }, [isOpen]);
 
-  const routes = [
-    { href: "/", label: "Home" },
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/calendar", label: "Calendar" },
-    { href: "/history", label: "History" },
-  ];
-
   return (
     <div className="app-shell min-h-screen text-slate-50">
+
+      {/* ── Screen-reader live region for role change announcements ────────── */}
+      <div
+        ref={liveRef}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      />
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="border-b border-white/8 bg-slate-950/40 backdrop-blur-xl">
         <nav
-          className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-6"
+          className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6 md:py-4"
           aria-label="Dashboard navigation"
         >
+          {/* Brand */}
           <div>
             <Link
               href="/"
@@ -74,17 +137,22 @@ export function DashboardShell({ children }: DashboardShellProps) {
               Time economy dashboard
             </p>
           </div>
-          {/* Inline links for larger screens */}
-          <div className="hidden md:flex items-center gap-3 text-sm text-slate-300">
+
+          {/* Desktop nav links */}
+          <div className="hidden md:flex items-center gap-1 text-sm text-slate-300">
             {routes.map((r) => (
               <Link
                 key={r.href}
                 href={r.href}
-                className="rounded-full px-3 py-2 hover:bg-white/6 hover:text-white focus-ring-white"
+                aria-label={r.ariaLabel ?? r.label}
+                className="flex items-center gap-1.5 rounded-full px-3 py-2 hover:bg-white/6 hover:text-white focus-ring-white"
               >
-                {r.label}
+                <span aria-hidden="true">{r.icon}</span>
+                <span>{r.label}</span>
               </Link>
             ))}
+
+            {/* Stellar external link — shared across all roles */}
             <a
               href="https://stellar.org"
               target="_blank"
@@ -94,92 +162,149 @@ export function DashboardShell({ children }: DashboardShellProps) {
               Stellar
             </a>
           </div>
-          {/* Hamburger for mobile */}
-          <button
-            className="md:hidden rounded-md p-2 focus-ring-white"
-            aria-label="Open navigation menu"
-            onClick={() => setIsOpen(true)}
-          >
-            {/* Simple burger icon */}
-            <svg
-              className="h-6 w-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+
+          {/* Right-side controls: RoleChip + primary CTA + hamburger */}
+          <div className="flex items-center gap-3">
+            {/* Role chip — always visible */}
+            <RoleChip />
+
+            {/* Primary CTA for the current role — hidden on smallest screens */}
+            <div className="hidden sm:block">
+              <ButtonLink
+                href={meta.primaryCta.href}
+                variant="primary"
+                size="sm"
+              >
+                {meta.primaryCta.label}
+              </ButtonLink>
+            </div>
+
+            {/* Hamburger — mobile only */}
+            <button
+              className="md:hidden rounded-md p-2 focus-ring-white"
+              aria-label="Open navigation menu"
+              onClick={() => setIsOpen(true)}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+              <svg
+                className="h-6 w-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
         </nav>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* ── Mobile drawer ──────────────────────────────────────────────────── */}
       {isOpen && (
         <div
           ref={drawerRef}
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end"
+          aria-label="Navigation menu"
+          className="fixed inset-0 z-40 flex justify-end bg-black/50 backdrop-blur-sm"
         >
-          <aside className="w-64 bg-slate-900 text-slate-100 h-full p-4">
-            <button
-              className="mb-4 rounded-md p-2 focus-ring-white"
-              aria-label="Close navigation menu"
-              onClick={() => setIsOpen(false)}
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+          <aside className="w-72 bg-slate-900 text-slate-100 h-full flex flex-col p-4 overflow-y-auto">
+            {/* Drawer header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span aria-hidden="true" className="text-lg">{meta.icon}</span>
+                <span className="text-sm font-semibold text-white">
+                  {meta.label} menu
+                </span>
+              </div>
+              <button
+                className="rounded-md p-2 focus-ring-white"
+                aria-label="Close navigation menu"
+                onClick={() => setIsOpen(false)}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Role chip in drawer */}
+            <div className="mb-4 px-1">
+              <RoleChip />
+            </div>
+
+            {/* Nav links */}
+            <nav aria-label="Mobile navigation" className="flex flex-col gap-1">
               {routes.map((r) => (
                 <Link
                   key={r.href}
                   href={r.href}
-                  className="block rounded-md px-3 py-2 hover:bg-slate-800 focus-ring-white"
+                  aria-label={r.ariaLabel ?? r.label}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-slate-800 focus-ring-white text-sm"
                   onClick={() => setIsOpen(false)}
                 >
-                  {r.label}
+                  <span aria-hidden="true" className="text-base">{r.icon}</span>
+                  <span>{r.label}</span>
                 </Link>
               ))}
             </nav>
+
+            {/* Primary CTA in drawer */}
+            <div className="mt-6 px-1">
+              <ButtonLink
+                href={meta.primaryCta.href}
+                variant="primary"
+                size="md"
+                className="w-full justify-center"
+              >
+                {meta.primaryCta.label}
+              </ButtonLink>
+            </div>
+
+            {/* Stellar link in drawer */}
+            <div className="mt-auto pt-6 border-t border-white/8">
+              <a
+                href="https://stellar.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 focus-ring-white"
+              >
+                <span aria-hidden="true">🌐</span>
+                <span>Stellar network</span>
+              </a>
+            </div>
           </aside>
-          {/* Click outside to close */}
+
+          {/* Scrim — click to close */}
           <button
-            className="flex-1"
+            className="flex-1 cursor-default"
             onClick={() => setIsOpen(false)}
             aria-label="Close navigation drawer"
+            tabIndex={-1}
           />
         </div>
       )}
 
-          {/* Mobile Bottom Bar */}
-          <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 text-slate-100 md:hidden flex justify-around items-center py-2">
-            {routes.map((r) => (
-              <Link
-                key={r.href}
-                href={r.href}
-                className="flex flex-col items-center text-xs hover:text-white focus-ring-white"
-                onClick={() => setIsOpen(false)}
-              >
-                {/* Simple icon placeholders using Unicode characters */}
-                <span aria-hidden="true" className="text-lg">
-                  {r.label === 'Home' && '🏠'}
-                  {r.label === 'Marketplace' && '🛒'}
-                  {r.label === 'Calendar' && '📅'}
-                  {r.label === 'History' && '🕘'}
-                </span>
-                <span>{r.label}</span>
-              </Link>
-            ))}
-          </nav>
+      {/* ── Page content ──────────────────────────────────────────────────── */}
+      <main id="main-content" className="pb-16 md:pb-0">
+        {children}
+      </main>
 
       {/* Main content */}
       <main id="main-content" className="mx-auto max-w-6xl px-5 py-6 sm:px-6">
@@ -187,5 +312,28 @@ export function DashboardShell({ children }: DashboardShellProps) {
       </main>
 
     </div>
+  );
+}
+
+// ─── Public export (wraps inner shell with RoleProvider) ─────────────────────
+
+type DashboardShellProps = {
+  children: React.ReactNode;
+  /**
+   * Seed role — used during SSR and as the fallback before hydration.
+   * In production this would come from the authenticated session / JWT claim.
+   * Defaults to "buyer".
+   */
+  initialRole?: "supplier" | "buyer" | "admin";
+};
+
+export function DashboardShell({
+  children,
+  initialRole = "buyer",
+}: DashboardShellProps) {
+  return (
+    <RoleProvider initialRole={initialRole}>
+      <ShellInner>{children}</ShellInner>
+    </RoleProvider>
   );
 }

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { DashboardShell } from "@/app/components/dashboard-shell";
 import { StatusChip } from "@/components/dashboard/status-chip";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
+import { ReceiptModal } from "@/components/receipt";
+import type { ReceiptData } from "@/components/receipt";
 import {
   ArrowLeft,
   Wallet,
@@ -17,6 +19,7 @@ import {
   Loader2,
   Sparkles,
   Check,
+  Receipt,
   Users
 } from "lucide-react";
 
@@ -129,6 +132,38 @@ export default function SlotDetailPage({
   const [loadingMessage, setLoadingMessage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [announcement, setAnnouncement] = useState(""); // Screen reader announcer
+
+  // RECEIPT STATE (only meaningful once the transaction has settled)
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const isSettled = purchaseStep === "success" && txHash !== "";
+
+  const receipt: ReceiptData | null = isSettled
+    ? {
+        id: slot.id,
+        assetCode: `CHRONO-${slot.id.toUpperCase()}`,
+        title: slot.title,
+        status: "settled",
+        settledAt: `${slot.dateLabel} · ${slot.timeRange}`,
+        buyer: { name: "You", role: "Buyer", address: mockAddress },
+        seller: { name: details.seller.name, role: details.seller.role },
+        lineItems: [
+          { label: "Token subtotal", value: `${subtotal.toFixed(2)} XLM`, note: `${slot.rate} × ${details.durationHours} hrs` },
+          { label: "Smart escrow fee", value: `${escrowFee.toFixed(4)} XLM`, note: "1.5% held in contract" },
+          { label: "Stellar network fee", value: `${stellarFee.toFixed(4)} XLM`, note: "Paid to validators" },
+        ],
+        net: `${subtotal.toFixed(2)} XLM`,
+        total: `${totalCost.toFixed(4)} XLM`,
+        txHash,
+        escrowContract: "GCSW67F2Y3MQK4N8Q5RLP9TZB3YH4W8F1S7N6U0X2A5V8T9H3K2",
+        trace: [
+          { label: "Stellar transaction initiated", status: "complete" },
+          { label: "Trustline established for asset", status: "complete" },
+          { label: "Funds locked in multi-sig escrow", status: "complete" },
+          { label: "Token minted and funds released", status: "complete" },
+        ],
+        explorerBaseUrl: "https://stellar.expert/explorer/public/tx",
+      }
+    : null;
   
   // Refs for accessibility / focus trap
   const modalRef = useRef<HTMLDivElement>(null);
@@ -585,196 +620,205 @@ export default function SlotDetailPage({
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all animate-fade-in"
           role="presentation"
         >
-          <div
-            ref={modalRef}
-            tabIndex={-1}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-headline"
-            className="w-full max-w-md rounded-3xl border border-white/12 bg-slate-900 p-6 sm:p-8 shadow-2xl relative focus:outline-none animate-scale-up"
-          >
-            
-            {/* CLOSE BUTTON (Only visible in confirm/success states) */}
-            {purchaseStep !== "loading" && (
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
-                aria-label="Close modal dialog"
-              >
-                ✕
-              </button>
-            )}
+          <FocusTrap>
+            <div
+              ref={modalRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-headline"
+              className="w-full max-w-md rounded-3xl border border-white/12 bg-slate-900 p-6 sm:p-8 shadow-2xl relative focus:outline-none animate-scale-up"
+            >
+              
+              {/* CLOSE BUTTON (Only visible in confirm/success states) */}
+              {purchaseStep !== "loading" && (
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  aria-label="Close modal dialog"
+                >
+                  ✕
+                </button>
+              )}
 
-            {/* STEP 1: INITIAL CONFIRMATION DETAILS */}
-            {purchaseStep === "confirm" && (
-              <div className="space-y-6">
-                <div className="text-center space-y-2">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
-                    <ShieldCheck className="h-6 w-6" />
+              {/* STEP 1: INITIAL CONFIRMATION DETAILS */}
+              {purchaseStep === "confirm" && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <h3 id="modal-headline" className="text-xl font-bold text-white">
+                      Confirm Escrow Booking
+                    </h3>
+                    <p className="text-xs leading-relaxed text-slate-400 max-w-xs mx-auto">
+                      You are committing Stellar funds into smart escrow to tokenize availability.
+                    </p>
                   </div>
-                  <h3 id="modal-headline" className="text-xl font-bold text-white">
-                    Confirm Escrow Booking
-                  </h3>
-                  <p className="text-xs leading-relaxed text-slate-400 max-w-xs mx-auto">
-                    You are committing Stellar funds into smart escrow to tokenize availability.
-                  </p>
-                </div>
 
-                <div className="rounded-2xl border border-white/5 bg-slate-950/40 p-4 space-y-3.5 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Time Token</span>
-                    <span className="font-semibold text-white max-w-[180px] truncate text-right">
-                      {slot.title}
-                    </span>
+                  <div className="rounded-2xl border border-white/5 bg-slate-950/40 p-4 space-y-3.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Time Token</span>
+                      <span className="font-semibold text-white max-w-[180px] truncate text-right">
+                        {slot.title}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Scheduled Date</span>
+                      <span className="font-semibold text-white">{slot.dateLabel}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Seller</span>
+                      <span className="font-semibold text-white">{details.seller.name}</span>
+                    </div>
+
+                    <div className="flex justify-between border-t border-white/5 pt-3.5">
+                      <span className="text-slate-400">Network + Escrow Fee</span>
+                      <span className="font-semibold text-slate-200">{(escrowFee + stellarFee).toFixed(4)} XLM</span>
+                    </div>
+
+                    <div className="flex justify-between text-base font-bold border-t border-white/5 pt-3.5">
+                      <span className="text-cyan-300">Total locked</span>
+                      <span className="text-cyan-300 font-extrabold">{totalCost.toFixed(4)} XLM</span>
+                    </div>
+                  </div>
+
+                  {/* Confirm / Commit Action CTAs */}
+                  <div className="flex flex-col gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleProceedPurchase}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200"
+                    >
+                      Confirm & Lock Funds
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white px-5 py-3 text-sm border border-white/10 text-slate-300 hover:bg-white/5"
+                    >
+                      Cancel Booking
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: BLOCKCHAIN TX LOG LOADING STATE */}
+              {purchaseStep === "loading" && (
+                <div className="text-center py-6 space-y-6">
+                  <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
+                    <Loader2 className="h-10 w-10 text-cyan-400 animate-spin" />
+                    <span className="absolute inset-0 rounded-full border-2 border-cyan-400/20 animate-ping" />
                   </div>
                   
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Scheduled Date</span>
-                    <span className="font-semibold text-white">{slot.dateLabel}</span>
+                  <div className="space-y-2">
+                    <h3 id="modal-headline" className="text-lg font-bold text-white">
+                      Stellar Blockchain Syncing
+                    </h3>
+                    <p className="text-xs text-slate-400 max-w-xs mx-auto h-8 flex items-center justify-center">
+                      {loadingMessage}
+                    </p>
                   </div>
 
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Seller</span>
-                    <span className="font-semibold text-white">{details.seller.name}</span>
-                  </div>
-
-                  <div className="flex justify-between border-t border-white/5 pt-3.5">
-                    <span className="text-slate-400">Network + Escrow Fee</span>
-                    <span className="font-semibold text-slate-200">{(escrowFee + stellarFee).toFixed(4)} XLM</span>
-                  </div>
-
-                  <div className="flex justify-between text-base font-bold border-t border-white/5 pt-3.5">
-                    <span className="text-cyan-300">Total locked</span>
-                    <span className="text-cyan-300 font-extrabold">{totalCost.toFixed(4)} XLM</span>
-                  </div>
-                </div>
-
-                {/* Confirm / Commit Action CTAs */}
-                <div className="flex flex-col gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleProceedPurchase}
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200"
-                  >
-                    Confirm & Lock Funds
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white px-5 py-3 text-sm border border-white/10 text-slate-300 hover:bg-white/5"
-                  >
-                    Cancel Booking
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 2: BLOCKCHAIN TX LOG LOADING STATE */}
-            {purchaseStep === "loading" && (
-              <div className="text-center py-6 space-y-6">
-                <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
-                  <Loader2 className="h-10 w-10 text-cyan-400 animate-spin" />
-                  <span className="absolute inset-0 rounded-full border-2 border-cyan-400/20 animate-ping" />
-                </div>
-                
-                <div className="space-y-2">
-                  <h3 id="modal-headline" className="text-lg font-bold text-white">
-                    Stellar Blockchain Syncing
-                  </h3>
-                  <p className="text-xs text-slate-400 max-w-xs mx-auto h-8 flex items-center justify-center">
-                    {loadingMessage}
-                  </p>
-                </div>
-
-                <div className="max-w-[240px] mx-auto space-y-2" aria-hidden="true">
-                  <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-                    <div className="h-full bg-cyan-400 animate-[loading-bar_4s_ease-out_forwards]" />
-                  </div>
-                  <span className="text-[10px] text-slate-500 block uppercase tracking-wider">
-                    Ledger validation in progress
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 3: TRANSACTION SUCCESS CONFIRMATION RECEIPT */}
-            {purchaseStep === "success" && (
-              <div className="space-y-6 animate-scale-up">
-                <div className="text-center space-y-2">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
-                    <Check className="h-6 w-6" />
-                  </div>
-                  <h3 id="modal-headline" className="text-xl font-bold text-white flex items-center justify-center gap-1.5">
-                    Time Token Purchased
-                    <Sparkles className="h-4 w-4 text-cyan-300 shrink-0" />
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Your availability block has been secured and tokenized on Stellar ledger.
-                  </p>
-                </div>
-
-                {/* Successful Tx Receipt Table */}
-                <div className="rounded-2xl border border-white/8 bg-slate-950/60 p-4 space-y-3.5 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Minted Asset Code</span>
-                    <span className="font-mono text-cyan-300 font-semibold uppercase">
-                      CHRONO-{slot.id.toUpperCase()}
+                  <div className="max-w-[240px] mx-auto space-y-2" aria-hidden="true">
+                    <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                      <div className="h-full bg-cyan-400 animate-[loading-bar_4s_ease-out_forwards]" />
+                    </div>
+                    <span className="text-[10px] text-slate-500 block uppercase tracking-wider">
+                      Ledger validation in progress
                     </span>
                   </div>
+                </div>
+              )}
 
-                  <div className="flex justify-between items-start gap-4">
-                    <span className="text-slate-400 shrink-0">Stellar Txn Hash</span>
-                    <span className="font-mono text-slate-300 truncate max-w-[160px]" title={txHash}>
-                      {txHash}
-                    </span>
+              {/* STEP 3: TRANSACTION SUCCESS CONFIRMATION RECEIPT */}
+              {purchaseStep === "success" && (
+                <div className="space-y-6 animate-scale-up">
+                  <div className="text-center space-y-2">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
+                      <Check className="h-6 w-6" />
+                    </div>
+                    <h3 id="modal-headline" className="text-xl font-bold text-white flex items-center justify-center gap-1.5">
+                      Time Token Purchased
+                      <Sparkles className="h-4 w-4 text-cyan-300 shrink-0" />
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Your availability block has been secured and tokenized on Stellar ledger.
+                    </p>
                   </div>
 
-                  <div className="flex justify-between items-start gap-4">
-                    <span className="text-slate-400 shrink-0">Escrow Contract</span>
-                    <span className="font-mono text-slate-300 truncate max-w-[160px]">
-                      GCSW67F2Y...T9H3K2
-                    </span>
+                  {/* Successful Tx Receipt Table */}
+                  <div className="rounded-2xl border border-white/8 bg-slate-950/60 p-4 space-y-3.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Minted Asset Code</span>
+                      <span className="font-mono text-cyan-300 font-semibold uppercase">
+                        CHRONO-{slot.id.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-start gap-4">
+                      <span className="text-slate-400 shrink-0">Stellar Txn Hash</span>
+                      <span className="font-mono text-slate-300 truncate max-w-[160px]" title={txHash}>
+                        {txHash}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-start gap-4">
+                      <span className="text-slate-400 shrink-0">Escrow Contract</span>
+                      <span className="font-mono text-slate-300 truncate max-w-[160px]">
+                        GCSW67F2Y...T9H3K2
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between border-t border-white/5 pt-3.5">
+                      <span className="text-slate-400">Total Locked</span>
+                      <span className="font-bold text-white">{totalCost.toFixed(4)} XLM</span>
+                    </div>
                   </div>
 
-                  <div className="flex justify-between border-t border-white/5 pt-3.5">
-                    <span className="text-slate-400">Total Locked</span>
-                    <span className="font-bold text-white">{totalCost.toFixed(4)} XLM</span>
+                  {/* Auxiliary Booking CTAs */}
+                  <div className="flex flex-col gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => alert("Simulated Calendar Link: Dynamic Google Calendar invite dispatched successfully.")}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-cyan-400/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20"
+                    >
+                      Add Booking to Calendar
+                    </button>
+
+                    <a
+                      href="https://stellar.expert"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center rounded-full font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white px-4 py-2.5 text-xs border border-white/10 text-slate-300 hover:bg-white/5"
+                    >
+                      View Ledger Transaction
+                      <ExternalLink className="h-3 w-3 ml-1.5" />
+                    </a>
+
+                    <Link
+                      href="/dashboard"
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 text-center mt-2"
+                    >
+                      Return to Dashboard
+                    </Link>
                   </div>
                 </div>
-
-                {/* Auxiliary Booking CTAs */}
-                <div className="flex flex-col gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => alert("Simulated Calendar Link: Dynamic Google Calendar invite dispatched successfully.")}
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-cyan-400/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20"
-                  >
-                    Add Booking to Calendar
-                  </button>
-
-                  <a
-                    href="https://stellar.expert"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center rounded-full font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white px-4 py-2.5 text-xs border border-white/10 text-slate-300 hover:bg-white/5"
-                  >
-                    View Ledger Transaction
-                    <ExternalLink className="h-3 w-3 ml-1.5" />
-                  </a>
-
-                  <Link
-                    href="/dashboard"
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 text-center mt-2"
-                  >
-                    Return to Dashboard
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </FocusTrap>
         </div>
       )}
+
+      {/* ----------------- ON-CHAIN RECEIPT DIALOG ----------------- */}
+      <ReceiptModal
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
+        receipt={receipt}
+      />
     </DashboardShell>
   );
 }
