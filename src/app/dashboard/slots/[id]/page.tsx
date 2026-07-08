@@ -7,6 +7,8 @@ import { FocusTrap } from "@/components/common/FocusTrap";
 import { DashboardShell } from "@/app/components/dashboard-shell";
 import { StatusChip } from "@/components/dashboard/status-chip";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
+import { ReceiptModal } from "@/components/receipt";
+import type { ReceiptData } from "@/components/receipt";
 import {
   ArrowLeft,
   Wallet,
@@ -21,6 +23,7 @@ import {
   Loader2,
   Sparkles,
   Check,
+  Receipt,
   Users
 } from "lucide-react";
 
@@ -134,6 +137,38 @@ export default function SlotDetailPage({
   const [loadingMessage, setLoadingMessage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [announcement, setAnnouncement] = useState(""); // Screen reader announcer
+
+  // RECEIPT STATE (only meaningful once the transaction has settled)
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const isSettled = purchaseStep === "success" && txHash !== "";
+
+  const receipt: ReceiptData | null = isSettled
+    ? {
+        id: slot.id,
+        assetCode: `CHRONO-${slot.id.toUpperCase()}`,
+        title: slot.title,
+        status: "settled",
+        settledAt: `${slot.dateLabel} · ${slot.timeRange}`,
+        buyer: { name: "You", role: "Buyer", address: mockAddress },
+        seller: { name: details.seller.name, role: details.seller.role },
+        lineItems: [
+          { label: "Token subtotal", value: `${subtotal.toFixed(2)} XLM`, note: `${slot.rate} × ${details.durationHours} hrs` },
+          { label: "Smart escrow fee", value: `${escrowFee.toFixed(4)} XLM`, note: "1.5% held in contract" },
+          { label: "Stellar network fee", value: `${stellarFee.toFixed(4)} XLM`, note: "Paid to validators" },
+        ],
+        net: `${subtotal.toFixed(2)} XLM`,
+        total: `${totalCost.toFixed(4)} XLM`,
+        txHash,
+        escrowContract: "GCSW67F2Y3MQK4N8Q5RLP9TZB3YH4W8F1S7N6U0X2A5V8T9H3K2",
+        trace: [
+          { label: "Stellar transaction initiated", status: "complete" },
+          { label: "Trustline established for asset", status: "complete" },
+          { label: "Funds locked in multi-sig escrow", status: "complete" },
+          { label: "Token minted and funds released", status: "complete" },
+        ],
+        explorerBaseUrl: "https://stellar.expert/explorer/public/tx",
+      }
+    : null;
   
   // Refs for accessibility / focus trap
   const modalRef = useRef<HTMLDivElement>(null);
@@ -777,6 +812,13 @@ export default function SlotDetailPage({
           </FocusTrap>
         </div>
       )}
+
+      {/* ----------------- ON-CHAIN RECEIPT DIALOG ----------------- */}
+      <ReceiptModal
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
+        receipt={receipt}
+      />
     </DashboardShell>
   );
 }

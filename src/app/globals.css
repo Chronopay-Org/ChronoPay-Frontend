@@ -190,3 +190,49 @@ body {
   border-color: rgba(103, 232, 249, 0.6); /* active:border-cyan-300/60 */
   background-color: rgb(30, 41, 59); /* active:bg-slate-800 */
 }
+
+/*
+ * On-chain receipt print stylesheet.
+ * Scoped to .receipt-printable so only the receipt prints (or saves to PDF
+ * via the browser dialog). Switches to dark-on-white for high contrast on
+ * paper, keeps full-text labels, and drops interactive-only controls.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-printable,
+  .receipt-printable * {
+    visibility: visible;
+  }
+
+  .receipt-printable {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    padding: 1.5rem;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff !important;
+    color: #0f172a !important; /* slate-900 on white for AA contrast */
+    backdrop-filter: none;
+  }
+
+  /* Force readable ink for every receipt element. */
+  .receipt-printable :where(p, span, dt, dd, h2, h3, li, a) {
+    color: #0f172a !important;
+  }
+
+  /* Keep dividers visible on paper. */
+  .receipt-printable :where(header, section, footer, .border-t, .border-b) {
+    border-color: #cbd5e1 !important; /* slate-300 */
+  }
+
+  /* Copy / explorer / share controls are not useful on paper. */
+  .receipt-no-print {
+    display: none !important;
+  }
+}
