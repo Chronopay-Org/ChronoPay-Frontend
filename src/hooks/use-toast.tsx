@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * useToast — lightweight toast context for ChronoPay async feedback.
+ * useToast -- lightweight toast context for ChronoPay async feedback.
  *
  * Usage:
  *   const { toast } = useToast();
@@ -9,8 +9,8 @@
  *   toast({ variant: "error",   title: "Mint failed", description: "Insufficient balance." });
  *
  * Variants map to WCAG live-region roles:
- *   success | info  → role="status"  aria-live="polite"
- *   warning | error → role="alert"   aria-live="assertive"
+ *   success | info  --> role="status"  aria-live="polite"
+ *   warning | error --> role="alert"   aria-live="assertive"
  */
 
 import {
@@ -20,10 +20,10 @@ import {
   useId,
   useReducer,
   useRef,
-  type ReactNode,
 } from "react";
+import type { ReactNode } from "react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export type ToastVariant = "success" | "info" | "warning" | "error";
 
@@ -38,7 +38,7 @@ export interface ToastItem {
 
 export type ToastInput = Omit<ToastItem, "id">;
 
-// ─── Reducer ──────────────────────────────────────────────────────────────────
+// Reducer
 
 type Action =
   | { type: "ADD"; toast: ToastItem }
@@ -56,7 +56,7 @@ function reducer(state: ToastItem[], action: Action): ToastItem[] {
   }
 }
 
-// ─── Context ──────────────────────────────────────────────────────────────────
+// Context
 
 interface ToastContextValue {
   toasts: ToastItem[];
@@ -66,7 +66,7 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
+// Provider
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, dispatch] = useReducer(reducer, []);
@@ -94,7 +94,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+// Hook
 
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
