@@ -1,4 +1,4 @@
-import { ReactNode, ElementType } from "react";
+import { ReactNode, ElementType, ComponentPropsWithoutRef } from "react";
 import clsx from "clsx";
 
 export interface CardProps {
@@ -7,7 +7,7 @@ export interface CardProps {
   className?: string;
   variant?: "default" | "panel" | "glass" | "accent";
   interactive?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export function Card({
@@ -17,7 +17,7 @@ export function Card({
   variant = "default",
   interactive = false,
   ...props
-}: CardProps) {
+}: CardProps & ComponentPropsWithoutRef<typeof Component>) {
   const cardClassName = clsx(
     "card",
     {
@@ -43,7 +43,7 @@ export function CardHeader({
 }: {
   children: ReactNode;
   className?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
   return (
     <div className={clsx("card-header", className)} {...props}>
@@ -59,7 +59,7 @@ export function CardBody({
 }: {
   children: ReactNode;
   className?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
   return (
     <div className={clsx("card-body", className)} {...props}>
@@ -75,7 +75,7 @@ export function CardFooter({
 }: {
   children: ReactNode;
   className?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }) {
   return (
     <div className={clsx("card-footer", className)} {...props}>
