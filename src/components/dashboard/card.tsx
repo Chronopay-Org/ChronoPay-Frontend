@@ -1,4 +1,4 @@
-import { ReactNode, ElementType } from "react";
+import { ReactNode, ElementType, ComponentPropsWithoutRef } from "react";
 import clsx from "clsx";
 
 export interface CardProps {
@@ -17,7 +17,7 @@ export function Card({
   variant = "default",
   interactive = false,
   ...props
-}: CardProps) {
+}: CardProps & ComponentPropsWithoutRef<typeof Component>) {
   const cardClassName = clsx(
     "card",
     {

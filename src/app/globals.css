@@ -29,17 +29,77 @@
   --muted: #9fb0c7;
 
   /* Helper text — secondary explanations beneath labels, statuses, and CTAs. */
-  --helper-text-size: 0.875rem;          /* 14px */
-  --helper-text-leading: 1.5rem;         /* 24px */
-  --helper-text-color: rgb(203 213 225);          /* slate-300, primary helper tone */
-  --helper-text-color-muted: rgb(148 163 184);    /* slate-400, metadata / empty states */
-  --helper-text-color-emphasis: rgb(207 250 254 / 0.8); /* cyan-100/80, accent panels */
+  --helper-text-size: 0.875rem;
+  --helper-text-leading: 1.5rem;
+  --helper-text-color: rgb(203 213 225);
+  --helper-text-color-muted: rgb(148 163 184);
+  --helper-text-color-emphasis: rgb(207 250 254 / 0.8);
 
   /* Reusable Card design tokens */
   --radius-md: 24px;
   --radius-lg: 28px;
   --radius-xl: 32px;
   --border: 1px solid var(--border-subtle);
+
+  /* Shell surfaces */
+  --shell-header-bg: rgba(7, 17, 31, 0.4);
+  --shell-header-border: rgba(148, 163, 184, 0.08);
+  --shell-drawer-bg: #0f172a;
+  --shell-bottom-bar-bg: #0f172a;
+  --shell-text: #f4f7fb;
+  --shell-text-muted: #9fb0c7;
+}
+
+/* Light theme — explicit user selection */
+[data-theme="light"] {
+  --background: #f0f5fb;
+  --foreground: #0a1628;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-strong: rgba(255, 255, 255, 0.98);
+  --border-subtle: rgba(15, 23, 42, 0.10);
+  --border-strong: rgba(8, 145, 178, 0.28);
+  --accent: #0891b2;
+  --accent-strong: #06b6d4;
+  --accent-warm: #d97706;
+  --success: #059669;
+  --danger: #dc2626;
+  --muted: #4a6080;
+  --helper-text-color: rgb(30 58 138);
+  --helper-text-color-muted: rgb(71 85 105);
+  --helper-text-color-emphasis: rgb(8 145 178 / 0.9);
+  --shell-header-bg: rgba(240, 245, 251, 0.75);
+  --shell-header-border: rgba(15, 23, 42, 0.10);
+  --shell-drawer-bg: #ffffff;
+  --shell-bottom-bar-bg: #f8fafc;
+  --shell-text: #0a1628;
+  --shell-text-muted: #4a6080;
+}
+
+/* Auto mode — follow system preference when no explicit theme is set */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --background: #f0f5fb;
+    --foreground: #0a1628;
+    --surface: rgba(255, 255, 255, 0.88);
+    --surface-strong: rgba(255, 255, 255, 0.98);
+    --border-subtle: rgba(15, 23, 42, 0.10);
+    --border-strong: rgba(8, 145, 178, 0.28);
+    --accent: #0891b2;
+    --accent-strong: #06b6d4;
+    --accent-warm: #d97706;
+    --success: #059669;
+    --danger: #dc2626;
+    --muted: #4a6080;
+    --helper-text-color: rgb(30 58 138);
+    --helper-text-color-muted: rgb(71 85 105);
+    --helper-text-color-emphasis: rgb(8 145 178 / 0.9);
+    --shell-header-bg: rgba(240, 245, 251, 0.75);
+    --shell-header-border: rgba(15, 23, 42, 0.10);
+    --shell-drawer-bg: #ffffff;
+    --shell-bottom-bar-bg: #f8fafc;
+    --shell-text: #0a1628;
+    --shell-text-muted: #4a6080;
+  }
 }
 
 @theme inline {
@@ -59,6 +119,20 @@ html {
   background:
     radial-gradient(circle at top, rgba(34, 211, 238, 0.18), transparent 34%),
     linear-gradient(180deg, #09111e 0%, #050b14 100%);
+}
+
+html[data-theme="light"] {
+  background:
+    radial-gradient(circle at top, rgba(8, 145, 178, 0.10), transparent 30%),
+    linear-gradient(180deg, #e8f4f8 0%, #f0f5fb 100%);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme="dark"]) {
+    background:
+      radial-gradient(circle at top, rgba(8, 145, 178, 0.10), transparent 30%),
+      linear-gradient(180deg, #e8f4f8 0%, #f0f5fb 100%);
+  }
 }
 
 body {
@@ -194,4 +268,50 @@ body {
 .card--interactive:active {
   border-color: rgba(103, 232, 249, 0.6); /* active:border-cyan-300/60 */
   background-color: rgb(30, 41, 59); /* active:bg-slate-800 */
+}
+
+/*
+ * On-chain receipt print stylesheet.
+ * Scoped to .receipt-printable so only the receipt prints (or saves to PDF
+ * via the browser dialog). Switches to dark-on-white for high contrast on
+ * paper, keeps full-text labels, and drops interactive-only controls.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-printable,
+  .receipt-printable * {
+    visibility: visible;
+  }
+
+  .receipt-printable {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    padding: 1.5rem;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff !important;
+    color: #0f172a !important; /* slate-900 on white for AA contrast */
+    backdrop-filter: none;
+  }
+
+  /* Force readable ink for every receipt element. */
+  .receipt-printable :where(p, span, dt, dd, h2, h3, li, a) {
+    color: #0f172a !important;
+  }
+
+  /* Keep dividers visible on paper. */
+  .receipt-printable :where(header, section, footer, .border-t, .border-b) {
+    border-color: #cbd5e1 !important; /* slate-300 */
+  }
+
+  /* Copy / explorer / share controls are not useful on paper. */
+  .receipt-no-print {
+    display: none !important;
+  }
 }

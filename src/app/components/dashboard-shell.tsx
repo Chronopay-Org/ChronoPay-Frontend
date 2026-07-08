@@ -5,26 +5,49 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { HeaderSearch } from "@/app/components/header-search";
 
-type DashboardShellProps = {
-  children: React.ReactNode;
-};
+// ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
+// Icons come from the NavItem definition in role-nav.ts and are displayed with
+// aria-hidden="true" alongside the text label.
 
-export function DashboardShell({ children }: DashboardShellProps) {
+// ─── Inner shell (consumes RoleContext) ───────────────────────────────────────
+
+function ShellInner({ children }: { children: React.ReactNode }) {
+  const { role } = useRole();
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
 
-  // Close on Escape
+  const routes = getNavForRole(role);
+  const meta = ROLE_META[role];
+
+  // ── Announce role change to screen readers ──────────────────────────────
+  useEffect(() => {
+    const handleRoleChange = (e: Event) => {
+      const { role: newRole } = (e as CustomEvent<{ role: string }>).detail;
+      const newMeta = ROLE_META[newRole as keyof typeof ROLE_META];
+      if (liveRef.current && newMeta) {
+        liveRef.current.textContent = `Role switched to ${newMeta.label}. Navigation updated.`;
+        // Clear after announcement so repeat switches are re-announced
+        setTimeout(() => {
+          if (liveRef.current) liveRef.current.textContent = "";
+        }, 3000);
+      }
+    };
+    window.addEventListener("chronopay:rolechange", handleRoleChange);
+    return () => window.removeEventListener("chronopay:rolechange", handleRoleChange);
+  }, []);
+
+  // ── Close drawer on Escape ──────────────────────────────────────────────
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        setIsOpen(false);
-      }
+      if (e.key === "Escape" && isOpen) setIsOpen(false);
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen]);
 
-  // Focus trap
+  // ── Focus trap for mobile drawer ────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
@@ -51,6 +74,15 @@ export function DashboardShell({ children }: DashboardShellProps) {
     return () => document.removeEventListener("keydown", handleTab);
   }, [isOpen]);
 
+  // Scroll detection for inset shadow
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const routes = [
     { href: "/", label: "Home" },
     { href: "/marketplace", label: "Marketplace" },
@@ -58,9 +90,54 @@ export function DashboardShell({ children }: DashboardShellProps) {
     { href: "/history", label: "History" },
   ];
 
+  // Animation variants for active tab indicator
+  const tabIndicatorVariants = {
+    inactive: {
+      scale: 0.8,
+      opacity: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.2,
+      },
+    },
+    active: {
+      scale: 1,
+      opacity: 1,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.3,
+      },
+    },
+  };
+
+  // FAB animation variants
+  const fabVariants = {
+    idle: {
+      scale: 1,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.2,
+      },
+    },
+    pressed: {
+      scale: 0.95,
+      y: 2,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.1,
+      },
+    },
+  };
+
   return (
-    <div className="app-shell min-h-screen text-slate-50">
-      <header className="border-b border-white/8 bg-slate-950/40 backdrop-blur-xl">
+    <div
+      className="app-shell min-h-screen"
+      style={{ color: "var(--shell-text)" }}
+    >
+      <header
+        className="border-b backdrop-blur-xl"
+        style={{
+          background: "var(--shell-header-bg)",
+          borderColor: "var(--shell-header-border)",
+        }}
+      >
         <nav
           className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6 md:py-4"
           aria-label="Dashboard navigation"
@@ -69,12 +146,16 @@ export function DashboardShell({ children }: DashboardShellProps) {
           <div>
             <Link
               href="/"
-              className="text-lg font-semibold tracking-tight text-white"
+              className="text-lg font-semibold tracking-tight"
+              style={{ color: "var(--shell-text)" }}
               aria-label="ChronoPay home"
             >
               ChronoPay
             </Link>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+            <p
+              className="text-xs uppercase tracking-[0.2em]"
+              style={{ color: "var(--shell-text-muted)" }}
+            >
               Time economy dashboard
             </p>
           </div>
@@ -85,16 +166,23 @@ export function DashboardShell({ children }: DashboardShellProps) {
               <Link
                 key={r.href}
                 href={r.href}
-                className="rounded-full px-3 py-2 hover:bg-white/6 hover:text-white focus-ring-white"
+                className="rounded-full px-3 py-2 hover:bg-white/6 focus-ring-white transition-colors"
+                style={{ color: "var(--shell-text-muted)" }}
               >
-                {r.label}
+                <span aria-hidden="true">{r.icon}</span>
+                <span>{r.label}</span>
               </Link>
             ))}
+            <ThemeSwitcher />
             <a
               href="https://stellar.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 px-3 py-2 hover:border-cyan-200/30 hover:bg-white/6 hover:text-white focus-ring-white"
+              className="rounded-full border px-3 py-2 hover:bg-white/6 focus-ring-white transition-colors"
+              style={{
+                borderColor: "var(--border-subtle)",
+                color: "var(--shell-text-muted)",
+              }}
             >
               Stellar
             </a>
@@ -129,7 +217,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         </nav>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* ── Mobile drawer ──────────────────────────────────────────────────── */}
       {isOpen && (
         <div
           ref={drawerRef}
@@ -137,7 +225,13 @@ export function DashboardShell({ children }: DashboardShellProps) {
           aria-modal="true"
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-40"
         >
-          <aside className="w-64 bg-slate-900 text-slate-100 h-full p-4">
+          <aside
+            className="w-64 h-full p-4"
+            style={{
+              background: "var(--shell-drawer-bg)",
+              color: "var(--shell-text)",
+            }}
+          >
             <button
               className="mb-4 rounded-md p-2 focus-ring-white"
               aria-label="Close navigation menu"
@@ -145,6 +239,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
             >
               <svg
                 className="h-6 w-6"
+                style={{ color: "var(--shell-text)" }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -163,19 +258,48 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 <Link
                   key={r.href}
                   href={r.href}
-                  className="block rounded-md px-3 py-2 hover:bg-slate-800 focus-ring-white"
+                  className="block rounded-md px-3 py-2 hover:bg-white/10 focus-ring-white transition-colors"
+                  style={{ color: "var(--shell-text)" }}
                   onClick={() => setIsOpen(false)}
                 >
-                  {r.label}
+                  <span aria-hidden="true" className="text-base">{r.icon}</span>
+                  <span>{r.label}</span>
                 </Link>
               ))}
             </nav>
+
+            {/* Primary CTA in drawer */}
+            <div className="mt-6 px-1">
+              <ButtonLink
+                href={meta.primaryCta.href}
+                variant="primary"
+                size="md"
+                className="w-full justify-center"
+              >
+                {meta.primaryCta.label}
+              </ButtonLink>
+            </div>
+
+            {/* Stellar link in drawer */}
+            <div className="mt-auto pt-6 border-t border-white/8">
+              <a
+                href="https://stellar.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 focus-ring-white"
+              >
+                <span aria-hidden="true">🌐</span>
+                <span>Stellar network</span>
+              </a>
+            </div>
           </aside>
-          {/* Click outside to close */}
+
+          {/* Scrim — click to close */}
           <button
-            className="flex-1"
+            className="flex-1 cursor-default"
             onClick={() => setIsOpen(false)}
             aria-label="Close navigation drawer"
+            tabIndex={-1}
           />
         </div>
       )}
