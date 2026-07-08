@@ -1,6 +1,7 @@
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
+import { SocialProofBadges } from "./social-proof-badges";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 import Link from "next/link";
@@ -82,21 +83,18 @@ export function SlotList({ slots }: { slots: Slot[] }) {
                   <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
                     {slot.demand}
                   </span>
-                  <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                    {slot.rate}
-                  </span>
-                  {slot.isNextAvailable ? (
-                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-cyan-100">
-                      Next available
-                    </span>
-                  ) : null}
-                  <span className="inline-flex items-center gap-1.5">
-                    Rate details
-                    <Tooltip content="Hourly rate in Stellar Lumens. Includes network fees and escrow protection." />
-                  </span>
-                </div>
-              </article>
-            </Link>
+                ) : null}
+                <span className="inline-flex items-center gap-1.5">
+                  Rate details
+                  <Tooltip content="Hourly rate in Stellar Lumens. Includes network fees and escrow protection." />
+                </span>
+                {slot.badges && slot.badges.length > 0 ? (
+                  <div className="mt-2 w-full">
+                    <SocialProofBadges badges={slot.badges} maxVisible={2} />
+                  </div>
+                ) : null}
+              </div>
+            </article>
           </li>
         );
       })}

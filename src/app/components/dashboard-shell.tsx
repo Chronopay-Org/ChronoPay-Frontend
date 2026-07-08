@@ -306,25 +306,11 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* ── Mobile bottom bar ─────────────────────────────────────────────── */}
-      <nav
-        aria-label="Mobile bottom navigation"
-        className="fixed bottom-0 left-0 right-0 z-30 bg-slate-900/95 backdrop-blur-xl border-t border-white/8 text-slate-100 md:hidden flex justify-around items-center py-2"
-      >
-        {routes.map((r) => (
-          <Link
-            key={r.href}
-            href={r.href}
-            aria-label={r.ariaLabel ?? r.label}
-            className="flex flex-col items-center text-xs gap-0.5 px-2 py-1 rounded-lg hover:text-white focus-ring-white"
-          >
-            <span aria-hidden="true" className="text-lg leading-none">
-              {r.icon}
-            </span>
-            <span className="truncate max-w-[4rem]">{r.label}</span>
-          </Link>
-        ))}
-      </nav>
+      {/* Main content */}
+      <main id="main-content" className="mx-auto max-w-6xl px-5 py-6 sm:px-6">
+        {children}
+      </main>
+
     </div>
   );
 }

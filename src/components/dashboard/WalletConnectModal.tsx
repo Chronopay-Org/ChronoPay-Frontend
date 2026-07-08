@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FocusTrap } from '@/components/common/FocusTrap';
 import { LiveRegion } from '@/components/common/LiveRegion';
 import { StatusChip } from '@/components/dashboard/status-chip';
@@ -42,7 +42,6 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   isOpen,
   onClose,
   providers,
-  selectedProviderId,
   status,
   errorMessage,
   onConnect,

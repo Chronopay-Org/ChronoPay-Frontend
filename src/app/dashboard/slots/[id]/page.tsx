@@ -2,8 +2,6 @@
 
 import { use, useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FocusTrap } from "@/components/common/FocusTrap";
 import { DashboardShell } from "@/app/components/dashboard-shell";
 import { StatusChip } from "@/components/dashboard/status-chip";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
@@ -12,12 +10,10 @@ import type { ReceiptData } from "@/components/receipt";
 import {
   ArrowLeft,
   Wallet,
-  CheckCircle2,
   AlertCircle,
   Calendar,
   Clock,
   ShieldCheck,
-  HelpCircle,
   Info,
   ExternalLink,
   Loader2,
@@ -103,7 +99,6 @@ export default function SlotDetailPage({
 }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
-  const router = useRouter();
 
   // Find the current slot, fallback to slot-1 if invalid
   const slot = mockSlots.find((s) => s.id === id) || mockSlots[0];
@@ -183,19 +178,13 @@ export default function SlotDetailPage({
   // Keyboard navigation & focus management inside checkout modal
   useEffect(() => {
     if (isModalOpen) {
-      announce("Confirm purchase modal opened. Press Tab to navigate.");
-    }
-  }, [isModalOpen]);
-
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isModalOpen) {
-        handleCloseModal();
+      lastActiveElementRef.current = document.activeElement as HTMLElement;
+      if (modalRef.current) {
+        modalRef.current.focus();
       }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    } else if (lastActiveElementRef.current) {
+      lastActiveElementRef.current.focus();
+    }
   }, [isModalOpen]);
 
   const handleOpenModal = () => {
@@ -208,6 +197,17 @@ export default function SlotDetailPage({
     setIsModalOpen(false);
     setPurchaseStep("confirm");
   };
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isModalOpen) {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isModalOpen]);
 
   // Simulated blockchain transaction workflow
   const handleProceedPurchase = () => {
