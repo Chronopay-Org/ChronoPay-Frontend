@@ -11,6 +11,7 @@ export type Slot = {
   rate: string;
   status: AvailabilityLevel;
   isNextAvailable?: boolean;
+  badges?: SocialProofBadgeEntry[];
 };
 
 export type QuickAction = {
@@ -40,4 +41,27 @@ export type WalletSnapshot = {
   pending?: string;
   nextPayout?: string;
   status: string;
+};
+
+export type SocialProofBadgeType =
+  | "topRated"
+  | "highPayouts"
+  | "repeatBuyers"
+  | "fastResponse"
+  | "verified"
+  | "earlyAdopter";
+
+export type SocialProofBadgeEntry = {
+  type: SocialProofBadgeType;
+  label: string;
+  tone: Tone;
+  icon: string;
+  criterion: string;
+};
+
+export type Supplier = {
+  id: string;
+  name: string;
+  title: string;
+  badges: SocialProofBadgeEntry[];
 };

@@ -44,7 +44,6 @@ export default function Dashboard() {
   const loading = false;
   const error = false;
   const hasData = true;
-  const { toast } = useToast();
 
   // Suppress lint warnings for demo simulation functions
   void simulateMint;

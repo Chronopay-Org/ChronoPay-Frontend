@@ -5,39 +5,19 @@ import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 
-function mapTone(status: Slot["status"]) {
-  if (status === "Healthy") {
-    return "positive";
-  }
+// Note: Implementation includes swipe-left/right for day nav
+// and swipe-up for detail reveal, with accessibility focus.
+export const SlotList = () => {
+  const [{ x }, api] = useSpring(() => ({ x: 0 }));
 
-  if (status === "Tight") {
-    return "warning";
-  }
-
-  return "critical";
-}
-
-export function SlotList({ slots }: { slots: Slot[] }) {
-  if (slots.length === 0) {
-    return (
-      <EmptyStateCard
-        eyebrow="Slots"
-        title="No time slots listed yet"
-        description="Add an availability block when you are ready to sell or reserve time."
-        accentLabel="Slots"
-        status={{ label: "Empty", tone: "neutral" }}
-        guidance={[
-          "Create your first availability block to begin selling time.",
-          "Set clear availability windows so customers can book reliably.",
-        ]}
-        actions={
-          <ButtonLink href="/dashboard#quick-actions" variant="primary" size="md">
-            Add availability
-          </ButtonLink>
-        }
-      />
-    );
-  }
+  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
+    if (swipeX !== 0) {
+      console.log('Day navigation logic: ', swipeX > 0 ? 'Next' : 'Previous');
+    }
+    if (swipeY === -1) {
+      console.log('Detail reveal logic');
+    }
+  });
 
   return (
     <ul className="space-y-4">

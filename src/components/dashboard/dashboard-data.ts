@@ -1,10 +1,12 @@
 import type {
-  BookingStage,
   Metric,
   QuickAction,
   Slot,
+  Supplier,
   WalletSnapshot,
+  TimelineItem,
 } from "./types";
+import { BADGE_PRESETS } from "./social-proof-badge";
 
 export const metrics: Metric[] = [
   {
@@ -43,6 +45,10 @@ export const slots: Slot[] = [
     rate: "120 XLM / hr",
     status: "Healthy",
     isNextAvailable: true,
+    badges: [
+      { type: "topRated", ...BADGE_PRESETS.topRated },
+      { type: "verified", ...BADGE_PRESETS.verified },
+    ],
   },
   {
     id: "slot-2",
@@ -52,6 +58,9 @@ export const slots: Slot[] = [
     demand: "2 open offers",
     rate: "95 XLM / hr",
     status: "Tight",
+    badges: [
+      { type: "verified", ...BADGE_PRESETS.verified },
+    ],
   },
   {
     id: "slot-3",
@@ -73,10 +82,32 @@ export const wallet: WalletSnapshot = {
   status: "Synced 2 minutes ago",
 };
 
-export const bookingStages: BookingStage[] = [
-  { label: "Reserved", value: 12 },
-  { label: "Confirmed", value: 8 },
-  { label: "Completed", value: 5 },
+export const bookingTimeline: TimelineItem[] = [
+  {
+    id: "1",
+    title: "Reserved",
+    status: "completed",
+    timestamp: "2026-06-30 09:00 AM",
+    actor: "Buyer",
+    details: "Slot reserved for 30 minutes.",
+  },
+  {
+    id: "2",
+    title: "Confirmed",
+    status: "completed",
+    timestamp: "2026-06-30 09:30 AM",
+    actor: "System",
+    details: "Booking confirmed by seller.",
+  },
+  {
+    id: "3",
+    title: "Completed",
+    status: "pending",
+    timestamp: "2026-06-30 10:30 AM",
+    actor: "Seller",
+    details: "Awaiting final review.",
+    isCurrent: true,
+  },
 ];
 
 export const quickActions: QuickAction[] = [
@@ -100,5 +131,36 @@ export const quickActions: QuickAction[] = [
     href: "/dashboard",
     tone: "warning",
     icon: "CheckCircle",
+  },
+];
+
+export const suppliers: Supplier[] = [
+  {
+    id: "supplier-1",
+    name: "Alex Rivera",
+    title: "Product & Strategy Consultant",
+    badges: [
+      { type: "topRated", ...BADGE_PRESETS.topRated },
+      { type: "highPayouts", ...BADGE_PRESETS.highPayouts },
+      { type: "repeatBuyers", ...BADGE_PRESETS.repeatBuyers },
+      { type: "fastResponse", ...BADGE_PRESETS.fastResponse },
+      { type: "verified", ...BADGE_PRESETS.verified },
+      { type: "earlyAdopter", ...BADGE_PRESETS.earlyAdopter },
+    ],
+  },
+  {
+    id: "supplier-2",
+    name: "Morgan Chen",
+    title: "UX Design Lead",
+    badges: [
+      { type: "verified", ...BADGE_PRESETS.verified },
+      { type: "fastResponse", ...BADGE_PRESETS.fastResponse },
+    ],
+  },
+  {
+    id: "supplier-3",
+    name: "Jordan Taylor",
+    title: "Executive Coach",
+    badges: [],
   },
 ];
