@@ -12,6 +12,17 @@ interface TooltipProps {
 
 type Placement = "top" | "bottom";
 
+/** Measure collision and return the preferred placement. */
+function computePlacement(
+  triggerEl: HTMLButtonElement,
+  tooltipEl: HTMLDivElement,
+  margin = 8,
+): Placement {
+  const triggerRect = triggerEl.getBoundingClientRect();
+  const tooltipRect = tooltipEl.getBoundingClientRect();
+  return triggerRect.top - tooltipRect.height - margin > 0 ? "top" : "bottom";
+}
+
 export function Tooltip({ content, children, className = "" }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [placement, setPlacement] = useState<Placement>("top");
@@ -19,9 +30,30 @@ export function Tooltip({ content, children, className = "" }: TooltipProps) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipId = `tooltip-${useId()}`;
 
-  const showTooltip = () => setIsVisible(true);
+  const updatePlacement = () => {
+    if (!triggerRef.current || !tooltipRef.current) return;
+    setPlacement(computePlacement(triggerRef.current, tooltipRef.current));
+  };
+
+  const showTooltip = () => {
+    setIsVisible(true);
+    // Schedule placement after the tooltip becomes visible in DOM
+    requestAnimationFrame(() => {
+      if (triggerRef.current && tooltipRef.current) {
+        setPlacement(computePlacement(triggerRef.current, tooltipRef.current));
+      }
+    });
+  };
+
   const hideTooltip = () => setIsVisible(false);
-  const toggleTooltip = () => setIsVisible((v) => !v);
+
+  const toggleTooltip = () => {
+    if (isVisible) {
+      hideTooltip();
+    } else {
+      showTooltip();
+    }
+  };
 
   // Keyboard activation (Enter / Space) and Escape handling
   const handleKeyDown = (e: ReactKeyboardEvent) => {
@@ -34,7 +66,7 @@ export function Tooltip({ content, children, className = "" }: TooltipProps) {
     }
   };
 
-  // Click outside & Escape cleanup
+  // Click outside cleanup
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -56,25 +88,25 @@ export function Tooltip({ content, children, className = "" }: TooltipProps) {
 
   // Touch support – tap toggles tooltip
   const handleTouch = (e: React.TouchEvent) => {
-    e.preventDefault(); // prevent simulated mouse event
+    e.preventDefault();
     toggleTooltip();
   };
 
-  // Positioning – compute collision with viewport edges
+  // Re-measure placement on window resize while visible
   useEffect(() => {
-    if (!isVisible || !triggerRef.current || !tooltipRef.current) return;
-    const triggerRect = triggerRef.current.getBoundingClientRect();
-    const tooltipRect = tooltipRef.current.getBoundingClientRect();
-    const margin = 8; // space between trigger and tooltip
-    // Prefer top placement; if not enough space, place bottom
-    const canPlaceTop = triggerRect.top - tooltipRect.height - margin > 0;
-    setPlacement(canPlaceTop ? "top" : "bottom");
+    if (!isVisible) return;
+    const handleResize = () => updatePlacement();
+    window.addEventListener("resize", handleResize, { passive: true });
+    return () => window.removeEventListener("resize", handleResize);
   }, [isVisible]);
 
   // Styling helpers
   const tooltipBaseClasses =
     "absolute z-50 max-w-xs px-3 py-2 text-sm text-white bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg transition-opacity duration-150";
-  const placementClasses = placement === "top" ? "bottom-full mb-2 left-1/2 -translate-x-1/2" : "top-full mt-2 left-1/2 -translate-x-1/2";
+  const placementClasses =
+    placement === "top"
+      ? "bottom-full mb-2 left-1/2 -translate-x-1/2"
+      : "top-full mt-2 left-1/2 -translate-x-1/2";
 
   return (
     <div className={`relative inline-block ${className}`}>
@@ -106,10 +138,14 @@ export function Tooltip({ content, children, className = "" }: TooltipProps) {
           {content}
           {/* Arrow */}
           <div
-            className={`absolute w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${placement === "top" ? "-bottom-1 left-1/2 -translate-x-1/2 border-b-zinc-800" : "-top-1 left-1/2 -translate-x-1/2 border-t-zinc-800"}`}
+            className={`absolute w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${
+              placement === "top"
+                ? "-bottom-1 left-1/2 -translate-x-1/2 border-b-zinc-800"
+                : "-top-1 left-1/2 -translate-x-1/2 border-t-zinc-800"
+            }`}
           />
         </div>
       )}
     </div>
   );
-}
+}
