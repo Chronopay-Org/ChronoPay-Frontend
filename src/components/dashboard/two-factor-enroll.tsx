@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { FormField } from '@/app/components/ui/form-field';
 
 export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => void }) {
   const [step, setStep] = useState<'intro' | 'qr' | 'verify' | 'recovery' | 'success'>('intro');
@@ -64,14 +65,18 @@ export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => voi
 
       {step === 'verify' && (
         <div>
-          <label className="block text-sm mb-3 font-medium">Enter the 6-digit code from your authenticator app</label>
-          <input
+          <FormField
+            label="Enter the 6-digit code from your authenticator app"
+            autoComplete="one-time-code"
+            name="verification-code"
+            inputMode="numeric"
             type="text"
             maxLength={6}
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
-            className="w-full text-center text-4xl font-mono tracking-[0.5em] bg-slate-950 border border-slate-700 rounded-xl py-6 focus:border-cyan-400 focus:outline-none"
+            className="text-center text-4xl font-mono tracking-[0.5em] py-6"
             placeholder="000000"
+            required
           />
           <Button onClick={handleVerify} disabled={code.length !== 6} className="mt-6 bg-cyan-500 hover:bg-cyan-400 text-black">
             Verify Code
