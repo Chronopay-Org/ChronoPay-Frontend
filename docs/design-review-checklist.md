@@ -39,6 +39,16 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Keyboard operable**: Enter/Space opens; Escape closes; Tab/Shift+Tab cycles within the open popover.
 - [ ] **Click-outside**: Clicking outside the popover closes it without disrupting other interactions.
 
+## 🔐 Password Manager & Autofill Support
+- [ ] **FormField primitive**: All form inputs use the `FormField` component from `src/app/components/ui/form-field.tsx`.
+- [ ] **Autocomplete attribute**: Every input has a valid HTML5 `autocomplete` value (e.g., `email`, `current-password`, `one-time-code`).
+- [ ] **Name attribute compatibility**: The `name` attribute aligns with the `autocomplete` value (e.g., `autocomplete="email"` → `name="email"`).
+- [ ] **Input mode optimization**: Mobile inputs use appropriate `inputMode` (e.g., `inputMode="numeric"` for codes, `inputMode="email"` for emails).
+- [ ] **Label association**: Every input has a visible label properly associated via `htmlFor`/`id`.
+- [ ] **ARIA descriptions**: Helper text and error messages are linked via `aria-describedby`.
+- [ ] **Required fields**: Required inputs have the `required` attribute and visible asterisk indicator.
+- [ ] **Error states**: Error messages use `role="alert"` and `aria-invalid="true"` on the input.
+
 ---
 
 *To use this in a PR, copy and paste the relevant sections above into your PR description.*
