@@ -1,5 +1,6 @@
 import DesignChecklist from "@/components/design/DesignChecklist";
 import Link from "next/link";
+import { TrustStrip } from "@/components/checkout/TrustStrip";
 
 export default function DesignReviewPage() {
   return (
@@ -41,6 +42,16 @@ export default function DesignReviewPage() {
                 Live Checklist
               </h2>
               <DesignChecklist />
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                Trust and Safety Strip (Checkout)
+              </h2>
+              <div className="p-6 rounded-xl border border-white/5 bg-white/5">
+                <TrustStrip />
+              </div>
             </div>
 
             <div className="space-y-6">
