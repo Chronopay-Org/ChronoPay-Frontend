@@ -13,6 +13,8 @@ import {
   SlotList,
   wallet,
   WalletCard,
+  NotificationList,
+  notifications,
 } from "@/components/dashboard";
 import { useToast } from "@/hooks/use-toast";
 import { HelpPopover } from "@/app/components/ui/help-popover";
@@ -133,6 +135,15 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <PanelShell id="quick-actions" title="Quick Actions">
           <QuickActions actions={quickActions} />
+        </PanelShell>
+
+        {/* Notifications */}
+        <PanelShell id="notifications" title="Notifications">
+          <NotificationList
+            notifications={notifications}
+            onMarkAsRead={(ids) => console.log("Mark as read:", ids)}
+            onArchive={(ids) => console.log("Archive:", ids)}
+          />
         </PanelShell>
 
         {/* Time Slots */}
