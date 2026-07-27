@@ -14,7 +14,7 @@ import {
   wallet,
   WalletCard,
 } from "@/components/dashboard";
-import { useToast } from "@/hooks/use-toast";
+import { ReviewsPanel } from "@/components/dashboard/reviews-panel";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
@@ -49,7 +49,6 @@ export default function Dashboard() {
   void simulateMint;
   void simulateBuy;
   void simulateEscrowRelease;
-  void toast;
 
   if (loading) {
     return (
@@ -139,6 +138,9 @@ export default function Dashboard() {
         <PanelShell id="available-time-slots" title="Available Time Slots">
           <SlotList slots={slots} />
         </PanelShell>
+
+        {/* Reviews with sentiment chip filter */}
+        <ReviewsPanel />
       </div>
     </DashboardShell>
   );

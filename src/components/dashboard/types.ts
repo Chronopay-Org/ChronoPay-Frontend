@@ -65,3 +65,27 @@ export type Supplier = {
   title: string;
   badges: SocialProofBadgeEntry[];
 };
+
+// ─── Sentiment filter ─────────────────────────────────────────────────────────
+
+/**
+ * The three sentiment buckets a review can belong to.
+ * "all" is the virtual unfiltered state.
+ */
+export type SentimentBucket = "all" | "positive" | "mixed" | "critical";
+
+/** One data point in the sentiment sparkline series (one period = one week). */
+export type SentimentDataPoint = {
+  /** ISO date string for the period start, e.g. "2026-06-01" */
+  period: string;
+  positive: number;
+  mixed: number;
+  critical: number;
+};
+
+/** Review counts broken down by sentiment bucket. */
+export type SentimentCounts = {
+  positive: number;
+  mixed: number;
+  critical: number;
+};
