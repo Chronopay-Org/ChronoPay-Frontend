@@ -19,6 +19,8 @@ const walletProviders: WalletProvider[] = [
         <path d="M12 2l9 21H3L12 2z" />
       </svg>
     ),
+    capabilities: ["multi-sig", "hardware"],
+    recommended: true,
   },
   {
     id: "albedo",
@@ -28,6 +30,7 @@ const walletProviders: WalletProvider[] = [
         <circle cx="12" cy="12" r="10" />
       </svg>
     ),
+    capabilities: ["mobile"],
   },
 ];
 
