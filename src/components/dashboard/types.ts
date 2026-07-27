@@ -22,11 +22,20 @@ export type QuickAction = {
   icon: string; // lucide-react icon name
 };
 
+export type EarningsSegment = {
+  id: string;
+  label: string;
+  value: number;
+  formattedValue: string;
+  colorClass: string;
+};
+
 export type Metric = {
   label: string;
   value: string;
   detail: string;
   tone: Tone;
+  breakdown?: EarningsSegment[];
 };
 
 export type BookingStage = {

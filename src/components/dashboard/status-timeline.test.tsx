@@ -31,9 +31,9 @@ describe("StatusTimeline", () => {
 
   it("expands details when clicked", () => {
     render(<StatusTimeline items={mockItems} />);
-    const button = screen.getByText("Show Details");
-    fireEvent.click(button);
-    expect(screen.getByText("Hide Details")).toBeInTheDocument();
+    const buttons = screen.getAllByText("Show Details");
+    fireEvent.click(buttons[0]);
+    expect(screen.getAllByText("Hide Details")[0]).toBeInTheDocument();
     expect(screen.getByText("Actor: Actor 1")).toBeInTheDocument();
     expect(screen.getByText("Details 1")).toBeInTheDocument();
   });

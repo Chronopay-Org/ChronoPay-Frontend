@@ -22,10 +22,9 @@ export function useScrollRestoration(listId: string) {
         // Only restore if within reasonable time (e.g., 1 hour) to avoid stale data, 
         // or just rely on manual clears (e.g. on filter change)
         if (Date.now() - data.timestamp < 3600000) {
-          setRestoredItemId(data.itemId);
-          
           // Wait for render
           requestAnimationFrame(() => {
+            setRestoredItemId(data.itemId);
             const element = document.getElementById(`list-item-${data.itemId}`);
             if (element) {
               element.scrollIntoView({ behavior: "instant", block: "center" });

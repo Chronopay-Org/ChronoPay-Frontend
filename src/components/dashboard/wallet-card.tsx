@@ -6,30 +6,6 @@ import { Tooltip } from "@/app/components/ui/tooltip";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
-import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
-import { useToast } from "@/hooks/use-toast";
-
-// Define the wallet providers used in the picker. Icons are placeholders; replace with real SVGs.
-const walletProviders: WalletProvider[] = [
-  {
-    id: "freighter",
-    name: "Freighter",
-    icon: (
-      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M12 2l9 21H3L12 2z" />
-      </svg>
-    ),
-  },
-  {
-    id: "albedo",
-    name: "Albedo",
-    icon: (
-      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <circle cx="12" cy="12" r="10" />
-      </svg>
-    ),
-  },
-];
 
 const statusTone = {
   connected: "positive",
@@ -94,12 +70,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
                   variant="icon"
                   label="Copy address"
                   onCopied={() => {
-                    toast({
-                      variant: "success",
-                      title: "Copied",
-                      description: "Wallet address copied to clipboard.",
-                      duration: 2000,
-                    });
+                    // copied
                   }}
                 />
               </dd>
@@ -108,7 +79,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
           <div className="flex items-center justify-between gap-4 text-sm">
             <dt id={securityId} className="text-slate-300 flex items-center gap-2">
               Pending escrow
-              <HelpPopover term={glossary.pendingEscrow} />
+              <Tooltip content="Escrow details" />
             </dt>
             <dd className="font-medium text-white">{wallet.pending}</dd>
           </div>
@@ -117,7 +88,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
           <div className="flex items-center justify-between gap-4 text-sm">
             <dt className="text-slate-300 flex items-center gap-2">
               Next payout
-              <HelpPopover term={glossary.nextPayout} />
+              <Tooltip content="Payout details" />
             </dt>
             <dd className="font-medium text-white">{wallet.nextPayout}</dd>
           </div>
