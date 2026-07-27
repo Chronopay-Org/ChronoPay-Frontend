@@ -12,6 +12,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov", "html"],
       include: [
+        "src/app/components/ui/tooltip.tsx",
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
         "src/components/dashboard/social-proof-badge.tsx",
