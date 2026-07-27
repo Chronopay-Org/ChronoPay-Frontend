@@ -25,6 +25,7 @@ import {
 } from "react";
 import { Search, X, Clock, TrendingUp } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
+import { EmptyStateCard } from "./empty-state-card";
 
 // Types
 
@@ -55,6 +56,18 @@ export function HeaderSearch() {
 
   const inputId = useId();
   const listboxId = `${inputId}-listbox`;
+
+  const firstSuggestionRef = useRef<HTMLButtonElement>(null);
+  const isZeroState = query.trim() !== "" && suggestions.length === 0;
+
+  useEffect(() => {
+    if (isOpen && isZeroState) {
+      // Small delay to ensure the card is rendered
+      requestAnimationFrame(() => {
+        firstSuggestionRef.current?.focus();
+      });
+    }
+  }, [isOpen, isZeroState]);
 
   /**
    * Wrap setQuery so that changing the query always resets the active list
@@ -378,10 +391,41 @@ export function HeaderSearch() {
                 )}
 
                 {/* No suggestions found */}
-                {query.trim() !== "" && suggestions.length === 0 && (
-                  <p className="px-3 py-4 text-sm text-slate-500 text-center">
-                    No results for &ldquo;{query}&rdquo;
-                  </p>
+                {isZeroState && (
+                  <div className="p-2">
+                    <EmptyStateCard
+                      eyebrow="Zero Results"
+                      title={`No matches for "${query}"`}
+                      description="We couldn't find any items matching your search."
+                      accentLabel="Search"
+                      status={{ label: "Not found", tone: "neutral" }}
+                      guidance={[
+                        "Try broadening your filters",
+                        "Search for nearby dates",
+                        "Check for typos"
+                      ]}
+                      actions={
+                        <div className="flex w-full flex-col gap-2">
+                          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                            Popular Searches
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {["Consultation", "Design Review", "Code Audit"].map((s, idx) => (
+                              <button
+                                key={s}
+                                type="button"
+                                ref={idx === 0 ? firstSuggestionRef : undefined}
+                                onClick={() => submitSearch(s)}
+                                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    />
+                  </div>
                 )}
 
                 {/* Keyboard hint footer */}
