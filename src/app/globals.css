@@ -34,6 +34,8 @@
   --helper-text-color: rgb(203 213 225);
   --helper-text-color-muted: rgb(148 163 184);
   --helper-text-color-emphasis: rgb(207 250 254 / 0.8);
+  --skeleton-base: rgba(148, 163, 184, 0.14);
+  --skeleton-highlight: rgba(207, 250, 254, 0.18);
 
   /* Reusable Card design tokens */
   --radius-md: 24px;
@@ -67,6 +69,8 @@
   --helper-text-color: rgb(30 58 138);
   --helper-text-color-muted: rgb(71 85 105);
   --helper-text-color-emphasis: rgb(8 145 178 / 0.9);
+  --skeleton-base: rgba(71, 85, 105, 0.14);
+  --skeleton-highlight: rgba(255, 255, 255, 0.55);
   --shell-header-bg: rgba(240, 245, 251, 0.75);
   --shell-header-border: rgba(15, 23, 42, 0.10);
   --shell-drawer-bg: #ffffff;
@@ -93,6 +97,8 @@
     --helper-text-color: rgb(30 58 138);
     --helper-text-color-muted: rgb(71 85 105);
     --helper-text-color-emphasis: rgb(8 145 178 / 0.9);
+    --skeleton-base: rgba(71, 85, 105, 0.14);
+    --skeleton-highlight: rgba(255, 255, 255, 0.55);
     --shell-header-bg: rgba(240, 245, 251, 0.75);
     --shell-header-border: rgba(15, 23, 42, 0.10);
     --shell-drawer-bg: #ffffff;
@@ -165,6 +171,49 @@ body {
 
 .helper-text--emphasis {
   color: var(--helper-text-color-emphasis);
+}
+
+/*
+ * Loading skeletons shimmer only when the user has not requested reduced
+ * motion. The base tint remains visible as a stable fallback.
+ */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton-base);
+}
+
+.skeleton::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--skeleton-highlight) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after {
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    content: none;
+    animation: none;
+    transform: none;
+  }
 }
 
 /*
