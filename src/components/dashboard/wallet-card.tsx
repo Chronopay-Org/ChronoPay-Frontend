@@ -8,6 +8,9 @@ import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
 import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
 import { useToast } from "@/hooks/use-toast";
+import { HelpPopover } from "@/app/components/ui/help-popover";
+import { glossary } from "@/lib/glossary";
+
 
 // Define the wallet providers used in the picker. Icons are placeholders; replace with real SVGs.
 const walletProviders: WalletProvider[] = [

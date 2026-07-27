@@ -137,8 +137,9 @@ export default function Dashboard() {
 
         {/* Time Slots */}
         <PanelShell id="available-time-slots" title="Available Time Slots">
-          <SlotList slots={slots} />
+          <SlotList slots={slots} supplierId="supplier-1" />
         </PanelShell>
+
       </div>
     </DashboardShell>
   );
