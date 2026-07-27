@@ -30,6 +30,15 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Hierarchy**: Heading levels (`h1` → `h6`) follow a logical, non-skipping hierarchy.
 - [ ] **Consistency**: Card padding and border-radius match existing dashboard patterns.
 
+## 💬 Contextual Help (HelpPopover)
+- [ ] **Jargon annotated**: Domain-specific terms (escrow, mint, time token, XLM, etc.) have an inline `HelpPopover`.
+- [ ] **Glossary entry**: Each annotated term has a corresponding entry in `src/lib/glossary.ts` (title ≤ 6 words, body ≤ 2 sentences).
+- [ ] **Learn-more link**: Every glossary term includes a `learnMoreHref` pointing to the relevant docs section.
+- [ ] **ARIA correct**: Popover uses `role="dialog"`, `aria-labelledby`, `aria-describedby`, and `aria-expanded` on the trigger.
+- [ ] **Focus management**: Opening moves focus to the close button; closing returns focus to the trigger.
+- [ ] **Keyboard operable**: Enter/Space opens; Escape closes; Tab/Shift+Tab cycles within the open popover.
+- [ ] **Click-outside**: Clicking outside the popover closes it without disrupting other interactions.
+
 ---
 
 *To use this in a PR, copy and paste the relevant sections above into your PR description.*

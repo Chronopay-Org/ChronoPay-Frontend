@@ -1,7 +1,7 @@
 // src/app/components/ui/button-link.tsx
 "use client";
 
-import Link, { type LinkProps } from "next/link";
+import Link from "next/link";
 import { type ComponentProps, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -52,7 +52,7 @@ export function ButtonLink({
   return (
     <Link
       href={href}
-      {...(props as LinkProps)}
+      {...props}
       aria-disabled={isDisabled}
       tabIndex={isDisabled ? -1 : undefined}
       className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${

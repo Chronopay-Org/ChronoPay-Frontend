@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { Card, CardHeader, CardBody } from "./card";
+import { CardBody } from "./card";
 
 export function PanelShell({
   title,
@@ -23,6 +23,8 @@ export function PanelShell({
   return (
     <section
       id={id}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6"
     >
       <div className="flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-end sm:justify-between">
@@ -47,8 +49,8 @@ export function PanelShell({
           </div>
         </div>
         {action}
-      </CardHeader>
+      </div>
       <CardBody className="pt-5">{children}</CardBody>
-    </Card>
+    </section>
   );
 }

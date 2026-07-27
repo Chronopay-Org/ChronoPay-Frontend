@@ -1,3 +1,5 @@
+import { HelpPopover } from "@/app/components/ui/help-popover";
+import { glossary } from "@/lib/glossary";
 import type { BookingStage } from "./types";
 
 export function BookingProgress({ stages }: { stages: BookingStage[] }) {
@@ -5,6 +7,17 @@ export function BookingProgress({ stages }: { stages: BookingStage[] }) {
 
   return (
     <div className="space-y-5">
+      {/* Heading row — "Booking stages" label with lifecycle explanation */}
+      <div className="flex items-center gap-2 mb-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          Booking stages
+        </p>
+        <HelpPopover
+          term={glossary.bookingStages}
+          triggerLabel="Help: booking lifecycle stages"
+        />
+      </div>
+
       {stages.map((stage, index) => {
         const labelId = `booking-label-${index}`;
         const valueId = `booking-value-${index}`;
