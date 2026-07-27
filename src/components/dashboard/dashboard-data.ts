@@ -4,9 +4,10 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
 } from "./types";
+import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
+import type { DayAvailability } from "./availability-strip";
 
 export const metrics: Metric[] = [
   {
@@ -163,4 +164,66 @@ export const suppliers: Supplier[] = [
     title: "Executive Coach",
     badges: [],
   },
+];
+
+// Generate 7-day availability data starting from today
+export const generateAvailabilityData = (): DayAvailability[] => {
+  const days: DayAvailability[] = [];
+  const today = new Date();
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    
+    const dayName = dayNames[date.getDay()];
+    const dateLabel = `${dayNames[date.getDay()]}, ${monthNames[date.getMonth()]} ${date.getDate()}`;
+    
+    // Simulate availability based on day of week
+    const dayOfWeek = date.getDay();
+    let slotCount = 0;
+    let status: DayAvailability["status"] = "none";
+    
+    // Weekend: fewer slots
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      slotCount = Math.floor(Math.random() * 3);
+      status = slotCount > 0 ? (slotCount > 1 ? "limited" : "available") : "none";
+    } 
+    // Weekdays: more slots
+    else {
+      slotCount = Math.floor(Math.random() * 6) + 2;
+      if (slotCount >= 4) {
+        status = "available";
+      } else if (slotCount >= 2) {
+        status = "limited";
+      } else {
+        status = slotCount === 1 ? "limited" : "none";
+      }
+    }
+    
+    // Randomly make some days full
+    if (Math.random() < 0.15 && slotCount > 0) {
+      status = "full";
+    }
+
+    days.push({
+      date,
+      dayName,
+      dateLabel,
+      slotCount,
+      status,
+    });
+  }
+
+  return days;
+};
+
+export const availabilityDays = generateAvailabilityData();
+
+export const bookingStages = [
+  { label: "Reserved", value: 25 },
+  { label: "Confirmed", value: 50 },
+  { label: "In Progress", value: 75 },
+  { label: "Completed", value: 100 },
 ];

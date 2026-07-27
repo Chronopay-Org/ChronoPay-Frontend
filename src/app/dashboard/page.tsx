@@ -2,6 +2,8 @@
 
 import { DashboardShell } from "../components/dashboard-shell";
 import {
+  availabilityDays,
+  AvailabilityStrip,
   bookingStages,
   BookingProgress,
   metrics,
@@ -112,6 +114,9 @@ export default function Dashboard() {
             </span>
           </p>
         </div>
+
+        {/* Availability Strip - Quick Book */}
+        <AvailabilityStrip days={availabilityDays} />
 
         {/* Metrics */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
