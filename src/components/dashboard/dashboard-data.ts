@@ -140,6 +140,7 @@ export const suppliers: Supplier[] = [
     name: "Alex Rivera",
     title: "Product & Strategy Consultant",
     badges: [
+      { type: "verifiedPayouts", ...BADGE_PRESETS.verifiedPayouts },
       { type: "topRated", ...BADGE_PRESETS.topRated },
       { type: "highPayouts", ...BADGE_PRESETS.highPayouts },
       { type: "repeatBuyers", ...BADGE_PRESETS.repeatBuyers },
@@ -153,6 +154,7 @@ export const suppliers: Supplier[] = [
     name: "Morgan Chen",
     title: "UX Design Lead",
     badges: [
+      { type: "verifiedPayouts", ...BADGE_PRESETS.verifiedPayouts },
       { type: "verified", ...BADGE_PRESETS.verified },
       { type: "fastResponse", ...BADGE_PRESETS.fastResponse },
     ],
