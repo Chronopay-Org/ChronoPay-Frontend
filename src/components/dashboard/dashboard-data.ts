@@ -62,6 +62,16 @@ export const slots: Slot[] = [
     rate: "140 XLM / hr",
     status: "Busy",
   },
+  {
+    id: "slot-4",
+    title: "Architecture sync",
+    dateLabel: "Fri, Apr 4",
+    timeRange: "13:00-14:00",
+    demand: "Sold out",
+    rate: "150 XLM / hr",
+    status: "Sold Out",
+    nextAvailableHint: "Mon 10am",
+  },
 ];
 
 export const wallet: WalletSnapshot = {
