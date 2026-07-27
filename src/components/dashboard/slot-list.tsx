@@ -5,20 +5,15 @@ import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 
-// Note: Implementation includes swipe-left/right for day nav
-// and swipe-up for detail reveal, with accessibility focus.
-export const SlotList = () => {
-  const [{ x }, api] = useSpring(() => ({ x: 0 }));
+import { slots as defaultSlots } from "./dashboard-data";
 
-  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
-    if (swipeX !== 0) {
-      console.log('Day navigation logic: ', swipeX > 0 ? 'Next' : 'Previous');
-    }
-    if (swipeY === -1) {
-      console.log('Detail reveal logic');
-    }
-  });
+function mapTone(status: string) {
+  if (status === "available") return "positive";
+  if (status === "booked") return "neutral";
+  return "warning";
+}
 
+export const SlotList = ({ slots = defaultSlots }: { slots?: Slot[] } = {}) => {
   return (
     <ul className="space-y-4">
       {slots.map((slot) => {

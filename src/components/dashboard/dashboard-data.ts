@@ -4,8 +4,8 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
 } from "./types";
+import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
 
 export const metrics: Metric[] = [
@@ -163,4 +163,10 @@ export const suppliers: Supplier[] = [
     title: "Executive Coach",
     badges: [],
   },
+];
+
+export const bookingStages = [
+  { label: "Created", value: 12 },
+  { label: "In Escrow", value: 8 },
+  { label: "Completed", value: 24 },
 ];

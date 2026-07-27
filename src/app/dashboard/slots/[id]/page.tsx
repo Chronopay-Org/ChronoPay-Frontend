@@ -23,6 +23,10 @@ import {
   Users
 } from "lucide-react";
 
+function FocusTrap({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
 // Robust metadata/details mapper for slots
 const slotDetailsMap: Record<
   string,

@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { HeaderSearch } from "@/app/components/header-search";
+import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 
 // ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
 // Icons come from the NavItem definition in role-nav.ts and are displayed with
@@ -11,32 +12,13 @@ import { HeaderSearch } from "@/app/components/header-search";
 
 // ─── Inner shell (consumes RoleContext) ───────────────────────────────────────
 
-function ShellInner({ children }: { children: React.ReactNode }) {
-  const { role } = useRole();
+export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
 
-  const routes = getNavForRole(role);
-  const meta = ROLE_META[role];
 
-  // ── Announce role change to screen readers ──────────────────────────────
-  useEffect(() => {
-    const handleRoleChange = (e: Event) => {
-      const { role: newRole } = (e as CustomEvent<{ role: string }>).detail;
-      const newMeta = ROLE_META[newRole as keyof typeof ROLE_META];
-      if (liveRef.current && newMeta) {
-        liveRef.current.textContent = `Role switched to ${newMeta.label}. Navigation updated.`;
-        // Clear after announcement so repeat switches are re-announced
-        setTimeout(() => {
-          if (liveRef.current) liveRef.current.textContent = "";
-        }, 3000);
-      }
-    };
-    window.addEventListener("chronopay:rolechange", handleRoleChange);
-    return () => window.removeEventListener("chronopay:rolechange", handleRoleChange);
-  }, []);
+
+
 
   // ── Close drawer on Escape ──────────────────────────────────────────────
   useEffect(() => {
@@ -74,14 +56,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("keydown", handleTab);
   }, [isOpen]);
 
-  // Scroll detection for inset shadow
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
 
   const routes = [
     { href: "/", label: "Home" },
@@ -90,41 +65,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     { href: "/history", label: "History" },
   ];
 
-  // Animation variants for active tab indicator
-  const tabIndicatorVariants = {
-    inactive: {
-      scale: 0.8,
-      opacity: 0,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.2,
-      },
-    },
-    active: {
-      scale: 1,
-      opacity: 1,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.3,
-      },
-    },
-  };
 
-  // FAB animation variants
-  const fabVariants = {
-    idle: {
-      scale: 1,
-      y: 0,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.2,
-      },
-    },
-    pressed: {
-      scale: 0.95,
-      y: 2,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.1,
-      },
-    },
-  };
 
   return (
     <div
@@ -169,7 +110,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 className="rounded-full px-3 py-2 hover:bg-white/6 focus-ring-white transition-colors"
                 style={{ color: "var(--shell-text-muted)" }}
               >
-                <span aria-hidden="true">{r.icon}</span>
                 <span>{r.label}</span>
               </Link>
             ))}
@@ -262,22 +202,18 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                   style={{ color: "var(--shell-text)" }}
                   onClick={() => setIsOpen(false)}
                 >
-                  <span aria-hidden="true" className="text-base">{r.icon}</span>
                   <span>{r.label}</span>
                 </Link>
               ))}
             </nav>
 
-            {/* Primary CTA in drawer */}
             <div className="mt-6 px-1">
-              <ButtonLink
-                href={meta.primaryCta.href}
-                variant="primary"
-                size="md"
-                className="w-full justify-center"
+              <Link
+                href="/"
+                className="w-full justify-center flex items-center rounded-xl bg-cyan-500 py-2.5 text-sm font-medium text-slate-950 hover:bg-cyan-400 focus-ring-white"
               >
-                {meta.primaryCta.label}
-              </ButtonLink>
+                Get Started
+              </Link>
             </div>
 
             {/* Stellar link in drawer */}

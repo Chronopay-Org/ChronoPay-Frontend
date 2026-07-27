@@ -28,8 +28,10 @@ export function ThemeSwitcher() {
 
   useEffect(() => {
     const stored = (localStorage.getItem(STORAGE_KEY) ?? 'auto') as Theme;
-    setTheme(stored);
-    setMounted(true);
+    requestAnimationFrame(() => {
+      setTheme(stored);
+      setMounted(true);
+    });
   }, []);
 
   function handleChange(next: Theme) {

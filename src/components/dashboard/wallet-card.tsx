@@ -6,30 +6,10 @@ import { Tooltip } from "@/app/components/ui/tooltip";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
-import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
-import { useToast } from "@/hooks/use-toast";
+import { HelpPopover } from "@/app/components/ui/help-popover";
+import { glossary } from "@/lib/glossary";
 
-// Define the wallet providers used in the picker. Icons are placeholders; replace with real SVGs.
-const walletProviders: WalletProvider[] = [
-  {
-    id: "freighter",
-    name: "Freighter",
-    icon: (
-      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M12 2l9 21H3L12 2z" />
-      </svg>
-    ),
-  },
-  {
-    id: "albedo",
-    name: "Albedo",
-    icon: (
-      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <circle cx="12" cy="12" r="10" />
-      </svg>
-    ),
-  },
-];
+
 
 const statusTone = {
   connected: "positive",
@@ -93,14 +73,6 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
                   text={wallet.address}
                   variant="icon"
                   label="Copy address"
-                  onCopied={() => {
-                    toast({
-                      variant: "success",
-                      title: "Copied",
-                      description: "Wallet address copied to clipboard.",
-                      duration: 2000,
-                    });
-                  }}
                 />
               </dd>
             </div>

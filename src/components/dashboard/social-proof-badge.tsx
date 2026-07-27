@@ -17,7 +17,7 @@ export function SocialProofBadge({
   className?: string;
 }) {
   const IconComponent = Icons[badge.icon as keyof typeof Icons] as
-    | React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>
+    | React.ComponentType<{ className?: string; "aria-hidden"?: boolean | string }>
     | undefined;
 
   return (
