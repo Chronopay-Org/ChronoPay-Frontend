@@ -15,6 +15,10 @@ export default defineConfig({
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
         "src/components/dashboard/cancellation-reason-picker.tsx",
+        "src/components/dashboard/sample-badge.tsx",
+        "src/components/dashboard/clear-samples-banner.tsx",
+        "src/components/dashboard/onboarding-walkthrough.tsx",
+        "src/hooks/use-onboarding-samples.ts",
       ],
       thresholds: {
         lines: 95,

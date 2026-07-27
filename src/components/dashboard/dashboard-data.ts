@@ -5,8 +5,20 @@ import type {
   Supplier,
   WalletSnapshot,
   TimelineItem,
+  BookingStage,
 } from "./types";
 import { BADGE_PRESETS } from "./social-proof-badge";
+
+/** localStorage key — set when the user clears onboarding sample rows. */
+export const SAMPLES_CLEARED_STORAGE_KEY =
+  "chronopay.onboarding.samplesCleared";
+
+/** localStorage key — set when the user skips or finishes the guided tour. */
+export const TOUR_DISMISSED_STORAGE_KEY =
+  "chronopay.onboarding.tourDismissed";
+
+export const SAMPLE_TOOLTIP =
+  "This row is sample data for new users. Clear samples when you are ready to use your own listings.";
 
 export const metrics: Metric[] = [
   {
@@ -14,24 +26,28 @@ export const metrics: Metric[] = [
     value: "18.5h",
     detail: "4 slots open across consulting, coaching, and onboarding.",
     tone: "positive",
+    isSample: true,
   },
   {
     label: "Wallet balance",
     value: "1,240 XLM",
     detail: "Up 8.4% since the last payout window closed.",
     tone: "neutral",
+    isSample: true,
   },
   {
     label: "Bookings in progress",
     value: "12",
     detail: "3 need confirmation before Tuesday, April 1.",
     tone: "warning",
+    isSample: true,
   },
   {
     label: "Conversion rate",
     value: "74%",
     detail: "Strong demand on weekday afternoons this cycle.",
     tone: "positive",
+    isSample: true,
   },
 ];
 
@@ -45,6 +61,7 @@ export const slots: Slot[] = [
     rate: "120 XLM / hr",
     status: "Healthy",
     isNextAvailable: true,
+    isSample: true,
     badges: [
       { type: "topRated", ...BADGE_PRESETS.topRated },
       { type: "verified", ...BADGE_PRESETS.verified },
@@ -58,9 +75,8 @@ export const slots: Slot[] = [
     demand: "2 open offers",
     rate: "95 XLM / hr",
     status: "Tight",
-    badges: [
-      { type: "verified", ...BADGE_PRESETS.verified },
-    ],
+    isSample: true,
+    badges: [{ type: "verified", ...BADGE_PRESETS.verified }],
   },
   {
     id: "slot-3",
@@ -70,6 +86,7 @@ export const slots: Slot[] = [
     demand: "Waitlist enabled",
     rate: "140 XLM / hr",
     status: "Busy",
+    isSample: true,
   },
 ];
 
@@ -81,6 +98,12 @@ export const wallet: WalletSnapshot = {
   nextPayout: "Friday, April 4",
   status: "Synced 2 minutes ago",
 };
+
+export const bookingStages: BookingStage[] = [
+  { label: "Reserved", value: 8 },
+  { label: "Confirmed", value: 5 },
+  { label: "Completed", value: 3 },
+];
 
 export const bookingTimeline: TimelineItem[] = [
   {
