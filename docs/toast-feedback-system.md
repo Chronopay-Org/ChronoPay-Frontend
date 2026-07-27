@@ -40,8 +40,57 @@ immediately because the user needs to act.
 - **Desktop (md+):** fixed bottom-right, `bottom-6 right-6`
 - **Mobile:** fixed bottom-center, `bottom-4`, full-width up to `max-w-sm`
 - **Stack order:** newest toast appears on top (`flex-col-reverse`)
-- **Max visible:** 5 toasts (oldest is dropped when the 6th arrives)
+- **Max visible:** `TOAST_STACK_LIMIT` = 5 entries (oldest dropped when limit exceeded)
 - **Gap between toasts:** `gap-2` (8 px)
+- **Clear all:** appears when ≥ 2 entries are visible; dismisses entire stack
+
+---
+
+## Grouping by Category
+
+When multiple toasts share the same `category` string they are collapsed into
+a single grouped entry in the stack.
+
+```
+┌──────────────────────────────────────────┐
+│ ✓  3 transactions confirmed       [∨][×] │
+│    "Slot #42 purchased"                  │
+└──────────────────────────────────────────┘
+```
+
+- The **count badge** shows how many messages are in the group.
+- The **chevron button** (`aria-expanded`) expands an inline panel listing
+  every individual message with a relative timestamp.
+- Expanding a group **pauses** its auto-dismiss timer so the user can read.
+- A **"Dismiss all"** shortcut inside the panel dismisses the whole group.
+- Groups that receive a new message are **bubbled to the top** of the stack.
+
+### Category API
+
+```tsx
+toast({
+  variant: "success",
+  title: "Slot #42 purchased",
+  category: "transactions",   // ← grouping key
+});
+
+toast({
+  variant: "success",
+  title: "Slot #43 purchased",
+  category: "transactions",   // ← same key → merged into one card
+});
+```
+
+### Edge cases
+
+| Case | Behaviour |
+|---|---|
+| Burst of 20+ same-category toasts | All merged into one group entry; count badge shows real count; stack stays ≤ 5 |
+| All entries grouped | Each group is one stack slot; "Clear all" dismisses every group |
+| No category | Toast is never grouped; treated as individual entry |
+| Expanded group auto-dismiss | Timer is paused while panel is open |
+| RTL | Flex layout reverses naturally; no explicit overrides needed |
+| Reduced motion | `panelVariants` height animation omitted; opacity-only via `motion-reduce:*` classes |
 
 ---
 
@@ -84,7 +133,7 @@ appears/disappears with opacity only — no translate or scale animation.
 ### `useToast()`
 
 ```tsx
-const { toast, dismiss, toasts } = useToast();
+const { toast, dismiss, dismissAll, toasts } = useToast();
 
 // Fire a toast
 const id = toast({
@@ -92,15 +141,33 @@ const id = toast({
   title: "Wallet connected",
   description: "Optional detail line.",  // optional
   duration: 5000,              // optional, default 5000, 0 = persistent
+  category: "transactions",   // optional — toasts with the same category
+                               // are grouped into one stacked card
 });
 
-// Dismiss programmatically
+// Dismiss one entry (or group) by id
 dismiss(id);
+
+// Dismiss every visible entry at once
+dismissAll();
 ```
 
 Must be called inside a component that is a descendant of `<ToastProvider>`.
 `ToastProvider` is mounted in `src/app/layout.tsx` so it is available
 everywhere in the app.
+
+### `ToastItem` shape
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `string` | Stable identifier (`group:{category}` for groups) |
+| `variant` | `ToastVariant` | Tone / role |
+| `title` | `string` | Primary text (most recent message for groups) |
+| `description` | `string?` | Secondary text |
+| `duration` | `number?` | Auto-dismiss ms |
+| `category` | `string?` | Grouping key |
+| `count` | `number` | Messages in group (1 = ungrouped) |
+| `messages` | `ToastMessage[]` | Individual entries shown in expanded panel |
 
 ---
 
@@ -186,26 +253,35 @@ meets AA against the same backgrounds.
 
 | Case | Behaviour |
 |---|---|
-| 6th toast arrives | Oldest is dropped from state (reducer caps at 5) |
+| 6th entry arrives (ungrouped) | Oldest is dropped (reducer caps at `TOAST_STACK_LIMIT = 5`) |
+| Burst of 20+ same-category | All merged into one group; count badge reflects real count |
 | User hovers during auto-dismiss | Timer pauses; resumes on mouse-leave |
 | User focuses dismiss button | Timer pauses; resumes on blur |
+| Expanded group | Auto-dismiss paused; resumes when collapsed |
 | `duration: 0` | No auto-dismiss; user must click × |
 | `onAction` throws synchronously | Caught by `handleClick`, sets `error` state |
 | Multiple rapid clicks | `if (state === "pending") return` guard prevents re-entry |
-| Reduced motion | Framer Motion skips translate/scale; opacity-only transition |
+| Reduced motion | Framer Motion skips translate/scale; opacity-only transition; panel height animation skipped |
+| Dark mode | Uses existing `slate`/`cyan` palette — no change needed |
+| RTL | Flex layout reverses naturally |
 
 ---
 
 ## Accessibility Checklist
 
-- [x] `role="status"` / `role="alert"` on each toast
-- [x] `aria-live="polite"` / `aria-live="assertive"` scoped to each toast
+- [x] `role="status"` / `role="alert"` on each toast / group
+- [x] `aria-live="polite"` / `aria-live="assertive"` scoped to each entry
 - [x] `aria-atomic="true"` — full toast content read as one unit
+- [x] Grouped toast has `aria-label="{count} {category} notifications: {title}"`
+- [x] Count badge has `aria-label="{count} notifications in this group"`
+- [x] Expand button has `aria-expanded` + `aria-controls` pointing to panel
+- [x] Expanded panel is `role="list"` with `aria-label`
 - [x] Dismiss button has descriptive `aria-label="Dismiss: {title}"`
 - [x] Dismiss button has visible focus ring (`focus-visible:ring-2 focus-visible:ring-cyan-300`)
+- [x] "Clear all" button dismisses entire stack
 - [x] `AsyncButton` uses `aria-busy` + `disabled` during pending
 - [x] `AsyncButton` has hidden `aria-live="polite"` span for state announcements
-- [x] Timer pauses on hover and focus
+- [x] Timer pauses on hover, focus, and while expanded
 - [x] Reduced-motion: opacity-only transition
 - [x] Contrast ≥ 4.5:1 on all variants (WCAG 2.1 AA)
 - [x] `ToastContainer` has `aria-label="Notifications"` landmark
