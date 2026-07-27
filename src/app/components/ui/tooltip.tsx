@@ -102,7 +102,7 @@ export function Tooltip({ content, children, className = "" }: TooltipProps) {
 
   // Styling helpers
   const tooltipBaseClasses =
-    "absolute z-50 max-w-xs px-3 py-2 text-sm text-white bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg transition-opacity duration-150";
+    "elevation-2 absolute z-50 max-w-xs px-3 py-2 text-sm text-white bg-zinc-800 border border-zinc-600 rounded-lg transition-opacity duration-150";
   const placementClasses =
     placement === "top"
       ? "bottom-full mb-2 left-1/2 -translate-x-1/2"

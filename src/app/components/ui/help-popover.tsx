@@ -246,7 +246,7 @@ export function HelpPopover({
           }}
           className={[
             "absolute z-50 w-72 max-w-[calc(100vw-2rem)]",
-            "rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl",
+            "elevation-3 rounded-2xl border border-zinc-700 bg-zinc-900",
             "ring-1 ring-inset ring-white/5",
             "animate-in fade-in-0 zoom-in-95 duration-150",
             placementClasses,

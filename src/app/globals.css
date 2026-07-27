@@ -11,6 +11,13 @@
     /* 2px offset (slate-950 bg) + 2px ring (white) */
     box-shadow: 0 0 0 2px #07111f, 0 0 0 4px #ffffff;
   }
+
+  /* Shared elevation scale: use the smallest level that communicates stacking. */
+  .elevation-1 { box-shadow: var(--elevation-1); }
+  .elevation-2 { box-shadow: var(--elevation-2); }
+  .elevation-3 { box-shadow: var(--elevation-3); }
+  .elevation-4 { box-shadow: var(--elevation-4); }
+  .elevation-5 { box-shadow: var(--elevation-5); }
 }
 
 
@@ -41,6 +48,13 @@
   --radius-xl: 32px;
   --border: 1px solid var(--border-subtle);
 
+  /* Dark-mode elevation uses cool ambient light instead of opaque black. */
+  --elevation-1: 0 1px 2px rgba(34, 211, 238, 0.12), 0 6px 18px -12px rgba(56, 189, 248, 0.38);
+  --elevation-2: 0 2px 4px rgba(34, 211, 238, 0.14), 0 12px 28px -14px rgba(56, 189, 248, 0.44);
+  --elevation-3: 0 4px 8px rgba(34, 211, 238, 0.16), 0 18px 40px -16px rgba(59, 130, 246, 0.48);
+  --elevation-4: 0 8px 16px rgba(34, 211, 238, 0.18), 0 28px 64px -20px rgba(59, 130, 246, 0.54);
+  --elevation-5: 0 12px 24px rgba(34, 211, 238, 0.20), 0 40px 88px -24px rgba(99, 102, 241, 0.58);
+
   /* Shell surfaces */
   --shell-header-bg: rgba(7, 17, 31, 0.4);
   --shell-header-border: rgba(148, 163, 184, 0.08);
@@ -67,6 +81,11 @@
   --helper-text-color: rgb(30 58 138);
   --helper-text-color-muted: rgb(71 85 105);
   --helper-text-color-emphasis: rgb(8 145 178 / 0.9);
+  --elevation-1: 0 1px 2px rgba(15, 23, 42, 0.10), 0 4px 12px -8px rgba(8, 145, 178, 0.18);
+  --elevation-2: 0 2px 5px rgba(15, 23, 42, 0.12), 0 10px 24px -12px rgba(8, 145, 178, 0.22);
+  --elevation-3: 0 4px 10px rgba(15, 23, 42, 0.14), 0 16px 36px -14px rgba(8, 145, 178, 0.24);
+  --elevation-4: 0 8px 18px rgba(15, 23, 42, 0.16), 0 24px 52px -18px rgba(8, 145, 178, 0.28);
+  --elevation-5: 0 12px 26px rgba(15, 23, 42, 0.18), 0 36px 72px -22px rgba(8, 145, 178, 0.32);
   --shell-header-bg: rgba(240, 245, 251, 0.75);
   --shell-header-border: rgba(15, 23, 42, 0.10);
   --shell-drawer-bg: #ffffff;
@@ -93,6 +112,11 @@
     --helper-text-color: rgb(30 58 138);
     --helper-text-color-muted: rgb(71 85 105);
     --helper-text-color-emphasis: rgb(8 145 178 / 0.9);
+    --elevation-1: 0 1px 2px rgba(15, 23, 42, 0.10), 0 4px 12px -8px rgba(8, 145, 178, 0.18);
+    --elevation-2: 0 2px 5px rgba(15, 23, 42, 0.12), 0 10px 24px -12px rgba(8, 145, 178, 0.22);
+    --elevation-3: 0 4px 10px rgba(15, 23, 42, 0.14), 0 16px 36px -14px rgba(8, 145, 178, 0.24);
+    --elevation-4: 0 8px 18px rgba(15, 23, 42, 0.16), 0 24px 52px -18px rgba(8, 145, 178, 0.28);
+    --elevation-5: 0 12px 26px rgba(15, 23, 42, 0.18), 0 36px 72px -22px rgba(8, 145, 178, 0.32);
     --shell-header-bg: rgba(240, 245, 251, 0.75);
     --shell-header-border: rgba(15, 23, 42, 0.10);
     --shell-drawer-bg: #ffffff;
@@ -178,6 +202,7 @@ body {
   padding: 1.25rem; /* p-5 (20px) */
   display: flex;
   flex-direction: column;
+  box-shadow: var(--elevation-1);
 }
 
 .card-header {
@@ -201,7 +226,7 @@ body {
   background-color: rgba(15, 23, 42, 0.7); /* slate-950/70 */
   backdrop-filter: blur(8px);
   padding: 1rem; /* p-4 */
-  box-shadow: 0 24px 80px -40px rgba(15, 23, 42, 0.95);
+  box-shadow: var(--elevation-2);
 }
 
 @media (min-width: 640px) {
@@ -223,6 +248,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
   padding: 1.25rem; /* p-5 */
+  box-shadow: var(--elevation-1);
 }
 
 @media (min-width: 640px) {
