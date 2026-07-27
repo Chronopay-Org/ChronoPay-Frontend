@@ -19,7 +19,7 @@ export type QuickAction = {
   description: string;
   href: string;
   tone: Tone;
-  icon: string; // lucide-react icon name
+  icon: string;
 };
 
 export type Metric = {
@@ -65,3 +65,28 @@ export type Supplier = {
   title: string;
   badges: SocialProofBadgeEntry[];
 };
+
+export type CalendarSyncProvider = {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  scopes: string[];
+};
+
+export type CalendarDefinition = {
+  id: string;
+  providerId: string;
+  title: string;
+  description: string;
+  color: string;
+};
+
+export type SyncDirection = "off" | "read" | "write" | "bidirectional";
+
+export type AuthorizationState =
+  | { status: "idle" }
+  | { status: "connecting"; providerId: string }
+  | { status: "authorizing"; providerId: string }
+  | { status: "authorized"; providerId: string; calendars: CalendarDefinition[] }
+  | { status: "denied"; providerId: string; deniedScopes: string[]; error: string };
