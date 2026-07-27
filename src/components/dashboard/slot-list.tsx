@@ -1,23 +1,18 @@
-import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
-import { EmptyStateCard } from "../../app/components/empty-state-card";
 
-// Note: Implementation includes swipe-left/right for day nav
-// and swipe-up for detail reveal, with accessibility focus.
-export const SlotList = () => {
-  const [{ x }, api] = useSpring(() => ({ x: 0 }));
+function mapTone(status: Slot["status"]) {
+  if (status === "Healthy") return "positive" as const;
+  if (status === "Tight") return "warning" as const;
+  return "critical" as const;
+}
 
-  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
-    if (swipeX !== 0) {
-      console.log('Day navigation logic: ', swipeX > 0 ? 'Next' : 'Previous');
-    }
-    if (swipeY === -1) {
-      console.log('Detail reveal logic');
-    }
-  });
+export function SlotList({ slots }: { slots: Slot[] }) {
+  if (slots.length === 0) {
+    return <p className="helper-text helper-text--muted">No time slots available right now.</p>;
+  }
 
   return (
     <ul className="space-y-4">
@@ -51,7 +46,6 @@ export const SlotList = () => {
                   {slot.demand}
                 </span>
 
-                {/* Rate badge — annotated with HelpPopover for XLM and rate concepts */}
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
                   {slot.rate}
                   <HelpPopover
@@ -66,7 +60,6 @@ export const SlotList = () => {
                   </span>
                 ) : null}
 
-                {/* "Rate details" label — links to broader XLM explanation */}
                 <span className="inline-flex items-center gap-1.5">
                   Rate details
                   <HelpPopover

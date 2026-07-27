@@ -1,4 +1,5 @@
 export * from "./booking-progress";
+export * from "./order-summary-drawer";
 export * from "./status-timeline";
 export * from "./timeline-types";
 export * from "./dashboard-data";

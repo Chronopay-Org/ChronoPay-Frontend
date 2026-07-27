@@ -165,7 +165,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
         {/* Tone icon */}
         <Icon
           className={clsx("mt-0.5 h-5 w-5 shrink-0", config.iconClass)}
-          aria-hidden="true"
+          aria-hidden={true}
         />
 
         {/* Text content */}
@@ -185,7 +185,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
           aria-label={`Dismiss: ${title}`}
           className="ml-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent"
         >
-          <X className="h-3.5 w-3.5" aria-hidden="true" />
+          <X className="h-3.5 w-3.5" aria-hidden={true} />
         </button>
       </div>
     </motion.div>

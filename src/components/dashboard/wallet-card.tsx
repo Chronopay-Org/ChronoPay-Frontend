@@ -3,11 +3,13 @@
 import { useId } from "react";
 import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
+import { HelpPopover } from "@/app/components/ui/help-popover";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
 import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
 import { useToast } from "@/hooks/use-toast";
+import { glossary } from "@/lib/glossary";
 
 // Define the wallet providers used in the picker. Icons are placeholders; replace with real SVGs.
 const walletProviders: WalletProvider[] = [
@@ -48,6 +50,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
   const balanceId = useId();
   const securityId = useId();
   const statusId = useId();
+  const { toast } = useToast();
 
   return (
     <Card

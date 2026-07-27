@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/hooks/use-toast";
 import { ToastContainer } from "@/app/components/ui/toast-container";
+import { RoleProvider } from "@/app/components/navigation/RoleContext";
 
 export const metadata: Metadata = {
   title: "ChronoPay - Time Economy",
@@ -28,8 +29,10 @@ export default function RootLayout({
           Skip to content
         </a>
         <ToastProvider>
-          {children}
-          <ToastContainer />
+          <RoleProvider initialRole="buyer">
+            {children}
+            <ToastContainer />
+          </RoleProvider>
         </ToastProvider>
       </body>
     </html>
