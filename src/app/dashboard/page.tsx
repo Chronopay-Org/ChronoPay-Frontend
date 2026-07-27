@@ -13,6 +13,7 @@ import {
   SlotList,
   wallet,
   WalletCard,
+  OnboardingWidget,
 } from "@/components/dashboard";
 import { useToast } from "@/hooks/use-toast";
 import { HelpPopover } from "@/app/components/ui/help-popover";
@@ -112,6 +113,9 @@ export default function Dashboard() {
             </span>
           </p>
         </div>
+
+        {/* Onboarding */}
+        <OnboardingWidget />
 
         {/* Metrics */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
