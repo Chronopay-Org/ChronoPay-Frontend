@@ -3,6 +3,7 @@
 import { use, useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/app/components/dashboard-shell";
+import { BreadcrumbOverflow } from "@/app/components/ui/breadcrumb-overflow";
 import { StatusChip } from "@/components/dashboard/status-chip";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { ReceiptModal } from "@/components/receipt";
@@ -279,7 +280,7 @@ export default function SlotDetailPage({
 
       <div className="space-y-6">
         {/* Breadcrumb Navigation & Back Button */}
-        <nav aria-label="Breadcrumb" className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/dashboard"
             className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/40 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-cyan-300/30 hover:bg-slate-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
@@ -287,11 +288,17 @@ export default function SlotDetailPage({
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             Back to Dashboard
           </Link>
-          
-          <span className="text-xs text-slate-500 uppercase tracking-widest hidden sm:inline">
-            Slot Booking / Details
-          </span>
-        </nav>
+
+          <BreadcrumbOverflow
+            className="relative"
+            items={[
+              { label: "Dashboard", href: "/dashboard" },
+              { label: "Slots", href: "/dashboard/slots" },
+              { label: "Booking", href: "/dashboard/slots/123" },
+              { label: "Details" },
+            ]}
+          />
+        </div>
 
         {/* ----------------- SCENARIO SIMULATOR (TESTING UTILITY) ----------------- */}
         <section
