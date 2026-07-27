@@ -5,7 +5,7 @@ export interface CardProps {
   as?: ElementType;
   children: ReactNode;
   className?: string;
-  variant?: "default" | "panel" | "glass" | "accent";
+  variant?: "default" | "panel" | "glass" | "accent" | "compact-list";
   interactive?: boolean;
   [key: string]: unknown;
 }
@@ -24,6 +24,7 @@ export function Card({
       "card--panel": variant === "panel",
       "card--glass": variant === "glass",
       "card--accent": variant === "accent",
+      "card--compact-list": variant === "compact-list",
       "card--interactive": interactive,
     },
     className
