@@ -103,7 +103,9 @@ describe("validateRow", () => {
 
   it("flags over-long descriptions", () => {
     const result = validateRow(
-      sample({ description: "x".repeat(SERVICES_STEP_LIMITS.descriptionMaxLength + 1) }),
+      sample({
+        description: "x".repeat(SERVICES_STEP_LIMITS.descriptionMaxLength + 1),
+      }),
     );
     expect(result.valid).toBe(false);
     expect(result.errors.description).toMatch(/280/);
@@ -170,8 +172,9 @@ describe("useServicesStep", () => {
     });
 
     it("blocks addItem once the cap is reached", () => {
-      const many = Array.from({ length: SERVICES_STEP_LIMITS.maxItems }, (_, i) =>
-        sample({ id: `svc-${i}` }),
+      const many = Array.from(
+        { length: SERVICES_STEP_LIMITS.maxItems },
+        (_, i) => sample({ id: `svc-${i}` }),
       );
       const { result } = renderHook(() =>
         useServicesStep({ initialItems: many, createId: makeId }),
@@ -248,7 +251,10 @@ describe("useServicesStep", () => {
 
     it("ignores unknown source ids", () => {
       const { result } = renderHook(() =>
-        useServicesStep({ initialItems: [sample({ id: "a" })], createId: makeId }),
+        useServicesStep({
+          initialItems: [sample({ id: "a" })],
+          createId: makeId,
+        }),
       );
       act(() => result.current.duplicateItem("unknown"));
       expect(result.current.items.length).toBe(1);
@@ -278,13 +284,32 @@ describe("useServicesStep", () => {
       expect(result.current.items.map((i) => i.id)).toEqual(["b", "a"]);
     });
 
-    it("ignores out-of-bounds moveItem coordinates", () => {
+    it("ignores out-of-bounds moveItem coordinates (over-length)", () => {
       const seeded = [sample({ id: "a" }), sample({ id: "b" })];
       const { result } = renderHook(() =>
         useServicesStep({ initialItems: seeded, createId: makeId }),
       );
       act(() => result.current.moveItem(0, 10));
       expect(result.current.items.map((i) => i.id)).toEqual(["a", "b"]);
+    });
+
+    it("ignores out-of-bounds moveItem coordinates (negative)", () => {
+      const seeded = [sample({ id: "a" }), sample({ id: "b" })];
+      const { result } = renderHook(() =>
+        useServicesStep({ initialItems: seeded, createId: makeId }),
+      );
+      act(() => result.current.moveItem(-1, 1));
+      expect(result.current.items.map((i) => i.id)).toEqual(["a", "b"]);
+    });
+
+    it("ignores same-index moveItem coordinates", () => {
+      const seeded = [sample({ id: "a" }), sample({ id: "b" })];
+      const { result } = renderHook(() =>
+        useServicesStep({ initialItems: seeded, createId: makeId }),
+      );
+      const before = result.current.items.slice();
+      act(() => result.current.moveItem(0, 0));
+      expect(result.current.items).toEqual(before);
     });
 
     it("moveItemUp swaps the row with its left neighbour", () => {
@@ -341,7 +366,9 @@ describe("useServicesStep", () => {
       const { result } = renderHook(() =>
         useServicesStep({ initialItems: [sample()], createId: makeId }),
       );
-      act(() => result.current.updateItem("svc-test", "basePriceXLM", "42.5"));
+      act(() =>
+        result.current.updateItem("svc-test", "basePriceXLM", "42.5"),
+      );
       expect(result.current.items[0].basePriceXLM).toBeCloseTo(42.5);
     });
 
@@ -358,6 +385,45 @@ describe("useServicesStep", () => {
         useServicesStep({ initialItems: [sample()], createId: makeId }),
       );
       act(() => result.current.updateItem("svc-test", "basePriceXLM", "abc"));
+      expect(result.current.items[0].basePriceXLM).toBe(0);
+    });
+
+    it("parses a leading-decimal string like '.5' to 0.5", () => {
+      const { result } = renderHook(() =>
+        useServicesStep({
+          initialItems: [sample({ basePriceXLM: 0 })],
+          createId: makeId,
+        }),
+      );
+      act(() =>
+        result.current.updateItem("svc-test", "basePriceXLM", ".5"),
+      );
+      expect(result.current.items[0].basePriceXLM).toBeCloseTo(0.5);
+    });
+
+    it("falls back to 0 for a whitespace-only numeric input", () => {
+      const { result } = renderHook(() =>
+        useServicesStep({
+          initialItems: [sample({ durationMinutes: 30 })],
+          createId: makeId,
+        }),
+      );
+      act(() =>
+        result.current.updateItem("svc-test", "durationMinutes", "   "),
+      );
+      expect(result.current.items[0].durationMinutes).toBe(0);
+    });
+
+    it("falls back to 0 for the literal string 'NaN'", () => {
+      const { result } = renderHook(() =>
+        useServicesStep({
+          initialItems: [sample({ basePriceXLM: 5 })],
+          createId: makeId,
+        }),
+      );
+      act(() =>
+        result.current.updateItem("svc-test", "basePriceXLM", "NaN"),
+      );
       expect(result.current.items[0].basePriceXLM).toBe(0);
     });
   });
@@ -411,7 +477,9 @@ describe("useServicesStep", () => {
       const seeded = Array.from({ length: 25 }, (_, i) =>
         sample({ id: `seed-${i}`, title: `Row ${i + 1}` }),
       );
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
       const { result } = renderHook(() =>
         useServicesStep({ initialItems: seeded, createId: makeId }),
       );

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, act, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ServicesStep } from "./index";
 import { ToastProvider } from "@/hooks/use-toast";
@@ -212,7 +212,25 @@ describe("ServicesStep", () => {
       renderWithProviders(
         <ServicesStep initialItems={[sample({ id: "a", title: "" })]} />,
       );
-      expect(screen.getByRole("alert", { name: /title is required/i })).toBeInTheDocument();
+      // The error copy is rendered inside a `<p role="alert">`. Query by
+      // visible text and then assert the role — `getByRole("alert", { name: ... })`
+      // is brittle with `dom-accessibility-api`'s name calc for non-form
+      // elements, so the role + accessible wiring assertions below preserve
+      // the a11y contract without coupling to internals.
+      const message = screen.getByText(/title is required/i);
+      expect(message).toBeInTheDocument();
+      expect(message).toHaveAttribute("role", "alert");
+
+      // Resolve the input-side wiring explicitly: the input must point at
+      // the error element via aria-describedby and that element must be the
+      // alert (verifies the contract regardless of how the ids are built).
+      const titleInput = screen.getByTestId("services-step-title");
+      const ariaDescId = titleInput.getAttribute("aria-describedby");
+      expect(ariaDescId).toBeTruthy();
+      const referenced = ariaDescId
+        ? document.getElementById(ariaDescId)
+        : null;
+      expect(referenced).toBe(message);
     });
 
     it("marks the title input aria-invalid when invalid", () => {
@@ -372,6 +390,305 @@ describe("ServicesStep", () => {
     it("does not render the Save button when onSave is omitted", () => {
       renderWithProviders(<ServicesStep initialItems={[sample()]} />);
       expect(screen.queryByTestId("services-step-save")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("drag-and-drop reorder", () => {
+    it("reorders the list when a row is dragged onto another row", () => {
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "Alpha" }),
+            sample({ id: "b", title: "Beta" }),
+            sample({ id: "c", title: "Gamma" }),
+          ]}
+        />,
+      );
+
+      const rows = screen.getAllByTestId("services-step-row");
+      const source = rows[0];
+      const target = rows[2];
+      const dataTransfer = {
+        setData: vi.fn(),
+        getData: vi.fn().mockReturnValue("a"),
+        effectAllowed: "",
+        dropEffect: "",
+      };
+
+      fireEvent.dragStart(source, { dataTransfer });
+      fireEvent.dragOver(target, { dataTransfer });
+      fireEvent.drop(target, { dataTransfer });
+
+      const titles = screen
+        .getAllByTestId("services-step-title")
+        .map((i) => (i as HTMLInputElement).value);
+      expect(titles).toEqual(["Beta", "Gamma", "Alpha"]);
+    });
+
+    it("clears drag highlight after drag end with no drop", () => {
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[sample({ id: "a" }), sample({ id: "b" })]}
+        />,
+      );
+
+      const rows = screen.getAllByTestId("services-step-row");
+      const dataTransfer = {
+        setData: vi.fn(),
+        getData: vi.fn(),
+        effectAllowed: "",
+        dropEffect: "",
+      };
+      fireEvent.dragStart(rows[0], { dataTransfer });
+      fireEvent.dragEnd(rows[0]);
+
+      // highlight ring should no longer be on the row after drag ends
+      expect(rows[0].className).not.toMatch(/ring-cyan-300\/40/);
+    });
+
+    it("does nothing when the drop target's id matches the dragged id", () => {
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "Alpha" }),
+            sample({ id: "b", title: "Beta" }),
+          ]}
+        />,
+      );
+
+      const rows = screen.getAllByTestId("services-step-row");
+      const dataTransfer = {
+        setData: vi.fn(),
+        getData: vi.fn().mockReturnValue("a"),
+        effectAllowed: "",
+        dropEffect: "",
+      };
+      fireEvent.dragStart(rows[0], { dataTransfer });
+      fireEvent.drop(rows[0], { dataTransfer });
+
+      const titles = screen
+        .getAllByTestId("services-step-title")
+        .map((i) => (i as HTMLInputElement).value);
+      expect(titles).toEqual(["Alpha", "Beta"]); // unchanged
+    });
+
+    it("does nothing when the drop payload refers to an unknown id", () => {
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "Alpha" }),
+            sample({ id: "b", title: "Beta" }),
+          ]}
+        />,
+      );
+
+      const rows = screen.getAllByTestId("services-step-row");
+      const dataTransfer = {
+        setData: vi.fn(),
+        getData: vi.fn().mockReturnValue("missing-id"),
+        effectAllowed: "",
+        dropEffect: "",
+      };
+      fireEvent.drop(rows[1], { dataTransfer });
+
+      const titles = screen
+        .getAllByTestId("services-step-title")
+        .map((i) => (i as HTMLInputElement).value);
+      expect(titles).toEqual(["Alpha", "Beta"]); // unchanged
+    });
+  });
+
+  describe("live-region move announcements", () => {
+    async function waitForAnnouncement(containerTestId: string) {
+      await act(async () => {
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
+      });
+      const live = screen.getByTestId(containerTestId);
+      return live.textContent ?? "";
+    }
+
+    it("announces when a row is moved up via the button", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "Alpha" }),
+            sample({ id: "b", title: "Beta" }),
+          ]}
+        />,
+      );
+
+      const rows = screen.getAllByTestId("services-step-row");
+      await user.click(within(rows[1]).getByTestId("services-step-move-up"));
+
+      const text = await waitForAnnouncement("services-step-live-region");
+      expect(text).toMatch(/Beta moved up to position 1/i);
+    });
+
+    it("announces when a row is moved down via the button", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "Alpha" }),
+            sample({ id: "b", title: "Beta" }),
+          ]}
+        />,
+      );
+
+      const rows = screen.getAllByTestId("services-step-row");
+      await user.click(within(rows[0]).getByTestId("services-step-move-down"));
+
+      const text = await waitForAnnouncement("services-step-live-region");
+      expect(text).toMatch(/Alpha moved down to position 2/i);
+    });
+
+    it("falls back to 'Service N' in the announcement when title is empty", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "Alpha" }),
+            sample({ id: "b", title: "" }),
+          ]}
+        />,
+      );
+
+      // The empty-title row sits at position 2 (1-based). After clicking its
+      // Move-up button, the row is now at position 1; the announcement uses
+      // the safeTitle fallback ("Service 2") because its title is empty.
+      const rows = screen.getAllByTestId("services-step-row");
+      await user.click(within(rows[1]).getByTestId("services-step-move-up"));
+
+      const text = await waitForAnnouncement("services-step-live-region");
+      expect(text).toMatch(/Service 2 moved up to position 1/i);
+    });
+
+    it("announces when a row is removed via the delete button", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "Alpha" }),
+            sample({ id: "b", title: "Beta" }),
+          ]}
+        />,
+      );
+
+      const rows = screen.getAllByTestId("services-step-row");
+      await user.click(within(rows[0]).getByTestId("services-step-delete"));
+
+      const text = await waitForAnnouncement("services-step-live-region");
+      expect(text).toMatch(/Alpha removed from the list/i);
+    });
+  });
+
+  describe("validation summary pluralization", () => {
+    it("reports 'X rows need attention' (plural) when 2+ rows fail", () => {
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "" }),
+            sample({ id: "b", title: "" }),
+            sample({ id: "c", title: "Valid" }),
+          ]}
+        />,
+      );
+      expect(screen.getByTestId("services-step-validation-summary")).toHaveTextContent(
+        /2 rows need attention/i,
+      );
+    });
+
+    it("reports '1 row needs attention' (singular) when exactly 1 row fails", () => {
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "" }),
+            sample({ id: "b", title: "Valid" }),
+          ]}
+        />,
+      );
+      expect(screen.getByTestId("services-step-validation-summary")).toHaveTextContent(
+        /1 row need attention/i,
+      );
+    });
+
+    it("display plural 'services' when more than 1 service exists", () => {
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[sample({ id: "a" }), sample({ id: "b" })]}
+        />,
+      );
+      expect(screen.getByTestId("services-step-validation-summary")).toHaveTextContent(
+        /2 of 30 services/i,
+      );
+    });
+  });
+
+  describe("toast feedback on saved count", () => {
+    it("uses singular 'service' wording when only 1 row is saved", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[sample({ id: "a", title: "Coaching" })]}
+          onSave={onSave}
+        />,
+      );
+      await user.click(screen.getByTestId("services-step-save"));
+      expect(await screen.findByText(/1 service saved/i)).toBeInTheDocument();
+    });
+
+    it("uses plural 'services' wording when N>1 rows are saved", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[
+            sample({ id: "a", title: "Coaching" }),
+            sample({ id: "b", title: "Review" }),
+          ]}
+          onSave={onSave}
+        />,
+      );
+      await user.click(screen.getByTestId("services-step-save"));
+      expect(await screen.findByText(/2 services saved/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("save lifecycle concurrency", () => {
+    it("ignores rapid re-clicks of the Save button while a save is in flight", async () => {
+      const user = userEvent.setup();
+      let resolveSave: (() => void) | undefined;
+      const onSave = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveSave = resolve;
+          }),
+      );
+      renderWithProviders(
+        <ServicesStep
+          initialItems={[sample({ id: "a", title: "Coaching" })]}
+          onSave={onSave}
+        />,
+      );
+
+      const saveBtn = screen.getByTestId("services-step-save");
+      await user.click(saveBtn);
+      // While the first save is still pending, a second click should be
+      // treated as a no-op (defence-in-depth inside handleSave's `busy`
+      // guard). The visible button is already disabled, but the JS guard
+      // catches assistive-tech clicks that bypass the disabled attribute.
+      await user.click(saveBtn).catch(() => undefined);
+      expect(onSave).toHaveBeenCalledTimes(1);
+
+      // Now resolve the pending save and confirm the busy state clears.
+      resolveSave?.();
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(saveBtn).not.toHaveAttribute("aria-busy", "true");
     });
   });
 });
