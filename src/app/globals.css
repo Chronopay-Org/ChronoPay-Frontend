@@ -11,6 +11,23 @@
     /* 2px offset (slate-950 bg) + 2px ring (white) */
     box-shadow: 0 0 0 2px #07111f, 0 0 0 4px #ffffff;
   }
+
+  /*
+   * Directional icon contract
+   *
+   * Apply to icons whose meaning follows inline reading direction (back,
+   * forward, previous, next). :dir() follows the computed direction, so the
+   * utility also works inside nested RTL regions without JavaScript.
+   * Media controls and other physically fixed symbols must not use this class.
+   */
+  .icon-directional {
+    transform: scaleX(1);
+    transform-origin: center;
+  }
+
+  .icon-directional:dir(rtl) {
+    transform: scaleX(-1);
+  }
 }
 
 
