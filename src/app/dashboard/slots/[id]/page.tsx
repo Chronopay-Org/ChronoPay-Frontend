@@ -7,6 +7,7 @@ import { StatusChip } from "@/components/dashboard/status-chip";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { ReceiptModal } from "@/components/receipt";
 import type { ReceiptData } from "@/components/receipt";
+import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
 import {
   ArrowLeft,
   Wallet,
@@ -122,8 +123,15 @@ export default function SlotDetailPage({
   const stellarFee = 0.0001;
   const totalCost = subtotal + escrowFee + stellarFee;
 
+  useEffect(() => {
+    setDiscountPercent(0);
+    setDiscountedTotal(totalCost);
+  }, [id, totalCost]);
+
+  const effectiveTotalCost = discountPercent > 0 ? discountedTotal : totalCost;
+
   // Validation
-  const hasFunds = availableFunds >= totalCost;
+  const hasFunds = availableFunds >= effectiveTotalCost;
   const isWalletReady = simWallet === "connected";
 
   // MODAL / CHECKOUT STATE
@@ -132,6 +140,8 @@ export default function SlotDetailPage({
   const [loadingMessage, setLoadingMessage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [announcement, setAnnouncement] = useState(""); // Screen reader announcer
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountedTotal, setDiscountedTotal] = useState(totalCost);
 
   // RECEIPT STATE (only meaningful once the transaction has settled)
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -499,7 +509,7 @@ export default function SlotDetailPage({
                     <div>
                       <p className="font-semibold">Insufficient Balance</p>
                       <p className="helper-text helper-text--muted mt-1">
-                        Your balance ({availableFunds} XLM) is lower than the total cost ({totalCost.toFixed(4)} XLM).
+                        Your balance ({availableFunds} XLM) is lower than the total cost ({effectiveTotalCost.toFixed(4)} XLM).
                       </p>
                     </div>
                   </div>
@@ -568,12 +578,40 @@ export default function SlotDetailPage({
                   </div>
 
                   {/* Total Cost */}
+                  <div className="space-y-2 rounded-xl border border-cyan-400/10 bg-cyan-400/5 p-3 text-sm">
+                    {discountPercent > 0 ? (
+                      <div className="flex justify-between text-cyan-100">
+                        <dt>Discounted total</dt>
+                        <dd className="font-semibold">{discountedTotal.toFixed(4)} XLM</dd>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between text-cyan-100">
+                        <dt>Base total</dt>
+                        <dd className="font-semibold">{totalCost.toFixed(4)} XLM</dd>
+                      </div>
+                    )}
+                    {discountPercent > 0 && (
+                      <div className="flex justify-between text-xs text-cyan-200/80">
+                        <dt>{discountPercent}% promo applied</dt>
+                        <dd>{(totalCost - discountedTotal).toFixed(4)} XLM saved</dd>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex justify-between text-base font-bold text-white pt-1">
                     <dt className="text-cyan-300">Total Purchase Cost</dt>
-                    <dd className="text-cyan-300 font-extrabold">{totalCost.toFixed(4)} XLM</dd>
+                    <dd className="text-cyan-300 font-extrabold">{effectiveTotalCost.toFixed(4)} XLM</dd>
                   </div>
                 </dl>
               </div>
+
+              <PromoCodeEntry
+                baseTotal={totalCost}
+                onDiscountApplied={({ percent, discountedTotal: nextTotal }) => {
+                  setDiscountPercent(percent);
+                  setDiscountedTotal(nextTotal);
+                }}
+              />
 
               {/* Escrow Guarantee Statement */}
               <div className="rounded-xl bg-white/4 border border-white/8 p-3.5 text-[11px] text-slate-300 flex gap-2">
@@ -703,7 +741,7 @@ export default function SlotDetailPage({
 
                     <div className="flex justify-between text-base font-bold border-t border-white/5 pt-3.5">
                       <span className="text-cyan-300">Total locked</span>
-                      <span className="text-cyan-300 font-extrabold">{totalCost.toFixed(4)} XLM</span>
+                      <span className="text-cyan-300 font-extrabold">{effectiveTotalCost.toFixed(4)} XLM</span>
                     </div>
                   </div>
 
@@ -796,7 +834,7 @@ export default function SlotDetailPage({
 
                     <div className="flex justify-between border-t border-white/5 pt-3.5">
                       <span className="text-slate-400">Total Locked</span>
-                      <span className="font-bold text-white">{totalCost.toFixed(4)} XLM</span>
+                      <span className="font-bold text-white">{effectiveTotalCost.toFixed(4)} XLM</span>
                     </div>
                   </div>
 
