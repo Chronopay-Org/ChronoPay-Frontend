@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { TimelineItem, statusToneMap } from "./timeline-types";
 import { StatusChip } from "../app/components/ui/status-chip";
+import { KycLivenessCapture } from "./kyc-liveness-capture";
 
 interface StatusTimelineProps {
   items: TimelineItem[];
@@ -49,6 +50,11 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
         <div className="mt-3 p-3 rounded bg-white/5 text-sm text-slate-300" id={`details-${item.id}`}>
           {item.actor && <p>Actor: {item.actor}</p>}
           {item.details && <p className="mt-1">{item.details}</p>}
+          {item.id === 'kyc-liveness' && item.status === 'pending' && (
+            <div className="mt-4">
+              <KycLivenessCapture onCaptureComplete={() => {}} />
+            </div>
+          )}
         </div>
       )}
     </li>
