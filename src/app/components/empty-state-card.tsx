@@ -14,6 +14,8 @@ type EmptyStateCardProps = {
   };
   guidance: string[];
   actions?: ReactNode;
+  variant?: "default" | "error" | "offline" | "blocked";
+  alt?: string;
 };
 
 export function EmptyStateCard({
@@ -24,6 +26,8 @@ export function EmptyStateCard({
   status,
   guidance,
   actions,
+  variant,
+  alt,
 }: EmptyStateCardProps) {
   const cardId = useId();
   const titleId = `${cardId}-title`;
@@ -50,7 +54,7 @@ export function EmptyStateCard({
         </StatusChip>
       </CardHeader>
       <CardBody className="mt-4">
-        <EmptyStateIllustration accentLabel={accentLabel} />
+        <EmptyStateIllustration accentLabel={accentLabel} variant={variant} alt={alt} />
         <div className="mt-5 space-y-3">
           <h2 id={titleId} className="text-xl font-semibold text-white">
             {title}
