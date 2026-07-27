@@ -36,6 +36,7 @@ import {
   useEffect,
   useId,
   KeyboardEvent as ReactKeyboardEvent,
+  type FocusEvent as ReactFocusEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { HelpCircle, X, ExternalLink } from "lucide-react";
@@ -58,6 +59,84 @@ export interface HelpPopoverProps {
 }
 
 type Placement = "top" | "bottom";
+type HelpModeListener = (active: boolean) => void;
+
+let helpModeActive = false;
+const helpModeListeners = new Set<HelpModeListener>();
+let hasRegisteredGlobalKeydown = false;
+
+function notifyHelpModeChange(active: boolean) {
+  helpModeActive = active;
+  for (const listener of helpModeListeners) {
+    listener(active);
+  }
+}
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return (
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.tagName === "SELECT" ||
+    target.isContentEditable
+  );
+}
+
+function focusHelpTrigger(direction: "next" | "previous" = "next") {
+  if (typeof document === "undefined") return;
+
+  const triggers = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-help-popover-trigger='true']")
+  );
+
+  if (triggers.length === 0) return;
+
+  const activeElement = document.activeElement;
+  const currentIndex = triggers.findIndex(
+    (trigger) =>
+      trigger === activeElement ||
+      (activeElement instanceof HTMLElement && trigger.contains(activeElement))
+  );
+
+  const nextIndex =
+    currentIndex === -1
+      ? 0
+      : (currentIndex + (direction === "previous" ? -1 : 1) + triggers.length) %
+        triggers.length;
+
+  triggers[nextIndex]?.focus();
+}
+
+function registerGlobalHelpModeShortcut() {
+  if (typeof window === "undefined" || hasRegisteredGlobalKeydown) return;
+
+  hasRegisteredGlobalKeydown = true;
+
+  document.addEventListener("keydown", (event) => {
+    if ((event.key === "?" || event.key === "/") && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      if (isEditableTarget(event.target)) return;
+      event.preventDefault();
+      notifyHelpModeChange(!helpModeActive);
+      if (!helpModeActive) {
+        focusHelpTrigger("next");
+      }
+      return;
+    }
+
+    if (event.key === "Tab" && helpModeActive && !isEditableTarget(event.target)) {
+      event.preventDefault();
+      focusHelpTrigger(event.shiftKey ? "previous" : "next");
+      return;
+    }
+
+    if (event.key === "Escape" && helpModeActive) {
+      event.preventDefault();
+      notifyHelpModeChange(false);
+    }
+  });
+}
+
+registerGlobalHelpModeShortcut();
 
 // ---------------------------------------------------------------------------
 // Component
@@ -69,6 +148,9 @@ export function HelpPopover({
   className = "",
 }: HelpPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isHelpModeActive, setIsHelpModeActive] = useState(helpModeActive);
+  const [isTriggerFocused, setIsTriggerFocused] = useState(false);
   const [placement, setPlacement] = useState<Placement>("top");
 
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -81,11 +163,29 @@ export function HelpPopover({
 
   const ariaLabel = triggerLabel ?? `Help: ${term.title}`;
 
+  useEffect(() => {
+    const handleHelpModeChange = (active: boolean) => {
+      setIsHelpModeActive(active);
+      if (!active) {
+        setIsPreviewOpen(false);
+      }
+    };
+
+    helpModeListeners.add(handleHelpModeChange);
+    return () => {
+      helpModeListeners.delete(handleHelpModeChange);
+    };
+  }, []);
+
   // ── Open / close helpers ──────────────────────────────────────────────────
 
-  const open = () => setIsOpen(true);
+  const open = () => {
+    setIsOpen(true);
+    setIsPreviewOpen(false);
+  };
   const close = () => {
     setIsOpen(false);
+    setIsPreviewOpen(false);
     // Return focus to the trigger so keyboard users don't get lost
     triggerRef.current?.focus();
   };
@@ -97,9 +197,12 @@ export function HelpPopover({
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       toggle();
-    } else if (e.key === "Escape" && isOpen) {
+    } else if (e.key === "Escape" && (isOpen || isPreviewOpen)) {
       e.preventDefault();
       close();
+    } else if (e.key === "Tab" && isHelpModeActive) {
+      e.preventDefault();
+      focusHelpTrigger(e.shiftKey ? "previous" : "next");
     }
   };
 
@@ -117,6 +220,35 @@ export function HelpPopover({
   const handleTriggerTouch = (e: React.TouchEvent<HTMLButtonElement>) => {
     e.preventDefault(); // prevent ghost click
     toggle();
+  };
+
+  const handleTriggerMouseEnter = () => {
+    if (isHelpModeActive) {
+      setIsPreviewOpen(true);
+    }
+  };
+
+  const handleTriggerMouseLeave = () => {
+    if (!isOpen && isHelpModeActive) {
+      setIsPreviewOpen(false);
+    }
+  };
+
+  const handleTriggerFocus = () => {
+    setIsTriggerFocused(true);
+    if (isHelpModeActive) {
+      setIsPreviewOpen(true);
+    }
+  };
+
+  const handleTriggerBlur = (e: ReactFocusEvent<HTMLButtonElement>) => {
+    setIsTriggerFocused(false);
+    if (!isOpen && isHelpModeActive) {
+      const nextTarget = e.relatedTarget;
+      if (!(nextTarget instanceof Node) || !e.currentTarget.parentElement?.contains(nextTarget)) {
+        setIsPreviewOpen(false);
+      }
+    }
   };
 
   // ── Click-outside dismiss ─────────────────────────────────────────────────
@@ -211,19 +343,51 @@ export function HelpPopover({
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  const activeHelpMode = isHelpModeActive || helpModeActive;
+  const shouldShowPopover =
+    isOpen || (activeHelpMode && (isPreviewOpen || isTriggerFocused));
+  const showHighlight = activeHelpMode || isPreviewOpen || isTriggerFocused;
+  const highlightClasses = showHighlight
+    ? "ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-950 shadow-[0_0_0_3px_rgba(34,211,238,0.2)]"
+    : "";
+
   return (
     <span className={`relative inline-block ${className}`}>
+      <div
+        role="status"
+        aria-live="polite"
+        className="sr-only"
+      >
+        {activeHelpMode
+          ? "What's this mode is on. Hover or focus a labeled region to learn more."
+          : "What's this mode is off."}
+      </div>
+
       {/* Trigger button */}
       <button
         ref={triggerRef}
         type="button"
         aria-label={ariaLabel}
-        aria-expanded={isOpen}
-        aria-controls={isOpen ? popoverId : undefined}
-        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-zinc-700/60 hover:bg-zinc-600 focus:bg-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950 transition-colors align-middle"
+        aria-expanded={shouldShowPopover}
+        aria-controls={shouldShowPopover ? popoverId : undefined}
+        data-help-popover-trigger="true"
+        className={[
+          "inline-flex items-center justify-center w-5 h-5 rounded-full",
+          "bg-zinc-700/60 hover:bg-zinc-600 focus:bg-zinc-600",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400",
+          "focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950",
+          "transition-colors align-middle cursor-help",
+          activeHelpMode ? "cursor-help" : "",
+          showHighlight ? highlightClasses : "",
+          activeHelpMode && !isPreviewOpen ? "motion-reduce:transition-none" : "",
+        ].join(" ")}
         onClick={toggle}
         onKeyDown={handleTriggerKeyDown}
         onTouchStart={handleTriggerTouch}
+        onMouseEnter={handleTriggerMouseEnter}
+        onMouseLeave={handleTriggerMouseLeave}
+        onFocus={handleTriggerFocus}
+        onBlur={handleTriggerBlur}
       >
         <HelpCircle
           className="w-3.5 h-3.5 text-zinc-300 hover:text-cyan-300"
@@ -232,7 +396,7 @@ export function HelpPopover({
       </button>
 
       {/* Popover panel */}
-      {isOpen && (
+      {shouldShowPopover && (
         <div
           ref={popoverRef}
           id={popoverId}
@@ -248,7 +412,7 @@ export function HelpPopover({
             "absolute z-50 w-72 max-w-[calc(100vw-2rem)]",
             "rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl",
             "ring-1 ring-inset ring-white/5",
-            "animate-in fade-in-0 zoom-in-95 duration-150",
+            "animate-in fade-in-0 zoom-in-95 duration-150 motion-reduce:animate-none",
             placementClasses,
           ].join(" ")}
           // Prevent clicks inside the popover from closing it via the
