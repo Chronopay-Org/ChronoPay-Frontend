@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { HeaderSearch } from "@/app/components/header-search";
+import { AccountSwitcher } from "@/app/components/account-switcher";
 
 // ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
 // Icons come from the NavItem definition in role-nav.ts and are displayed with
@@ -173,6 +174,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 <span>{r.label}</span>
               </Link>
             ))}
+            <AccountSwitcher />
             <ThemeSwitcher />
             <a
               href="https://stellar.org"
