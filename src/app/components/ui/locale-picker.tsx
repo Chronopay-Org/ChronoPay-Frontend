@@ -8,6 +8,7 @@ const locales = [
   { code: "fr", label: "Français", dir: "ltr" },
   { code: "de", label: "Deutsch", dir: "ltr" },
   { code: "ar", label: "العربية", dir: "rtl" },
+  { code: "he", label: "עברית", dir: "rtl" },
   { code: "hi", label: "हिन्दी", dir: "ltr" },
 ];
 
