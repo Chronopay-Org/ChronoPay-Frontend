@@ -90,3 +90,20 @@ export type AuthorizationState =
   | { status: "authorizing"; providerId: string }
   | { status: "authorized"; providerId: string; calendars: CalendarDefinition[] }
   | { status: "denied"; providerId: string; deniedScopes: string[]; error: string };
+
+export type QueuedActionStatus = "pending" | "retrying" | "completed" | "failed";
+
+export type QueuedAction = {
+  id: string;
+  label: string;
+  status: QueuedActionStatus;
+  queuedAt: string;
+  error?: string;
+};
+
+export type OfflineQueueConnectionState = "online" | "offline" | "reconnecting";
+
+export type OfflineQueueState = {
+  connection: OfflineQueueConnectionState;
+  queue: QueuedAction[];
+};

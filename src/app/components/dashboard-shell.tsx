@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { HeaderSearch } from "@/app/components/header-search";
-import { ButtonLink } from "@/app/components/ui/button-link";
+import { useState, useEffect, useRef } from "react";
 import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
-import { useRole } from "@/app/components/navigation/RoleContext";
-import { getNavForRole, ROLE_META } from "@/app/components/navigation/role-nav";
+import { HeaderSearch } from "@/app/components/header-search";
+import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
@@ -87,6 +85,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
             <ThemeSwitcher />
+            <OfflineQueueIndicator />
             <a
               href="https://stellar.org"
               target="_blank"

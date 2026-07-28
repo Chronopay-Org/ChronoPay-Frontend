@@ -1,16 +1,14 @@
-"use client";
-
-import TwoFactorEnroll from "@/components/dashboard/two-factor-enroll";
-import { DensitySwitcher } from "@/app/components/ui/density-switcher";
+import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
+import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sync-connect';
 
 export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 md:p-10">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2">Settings</h1>
-        <p className="text-slate-400 mb-10">
-          Manage your account security and preferences.
-        </p>
+      <div className="max-w-3xl mx-auto space-y-8">
+        <div>
+          <h1 className="text-4xl font-bold mb-2">Settings</h1>
+          <p className="text-slate-400">Manage your account security and preferences.</p>
+        </div>
 
         <section aria-label="Calendar sync" className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6">
           <div className="space-y-1 pb-4 sm:pb-6">
