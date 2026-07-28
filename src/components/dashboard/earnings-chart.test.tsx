@@ -1,3 +1,28 @@
+/**
+ * Tests for EarningsChart
+ *
+ * Coverage targets (≥95%):
+ * - Renders correctly with multiple segments
+ * - Renders correctly with one segment
+ * - Returns null for empty segments array
+ * - Returns null when total is zero (all values are 0)
+ * - Returns null when segment value === 0 (zero-width bar skipped)
+ * - Tooltip appears on hover + disappears on unhover
+ * - Tooltip appears on focus + disappears on blur
+ * - Tooltip uses CSS custom property tokens (no hardcoded bg-slate-900)
+ * - Tooltip text-muted span uses var(--chart-tooltip-text-muted)
+ * - Tooltip caret uses var(--chart-tooltip-border) for borderTopColor
+ * - Tooltip caret is aria-hidden
+ * - Legend renders labels and values
+ * - Legend items dim when a different segment is hovered
+ * - Segment bars dim when a different segment is hovered
+ * - aria-valuemin / aria-valuemax / aria-valuenow attributes
+ * - region landmark with aria-label and aria-describedby
+ * - className forwarded to wrapper
+ * - Edge: overlapping data — two segments with equal value
+ * - Edge: negative values excluded from total (total remains from positive segs)
+ */
+
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect } from "vitest";
@@ -5,94 +30,189 @@ import { EarningsChart } from "./earnings-chart";
 
 // EarningsSegment type is used inline in each test as object literals
 
-describe("EarningsChart", () => {
-  it("renders correctly with multiple segments", () => {
-    // Normalizing values for the bar width calculation:
-    // If fees are deductions, usually they might be displayed as positive absolute value for composition, 
-    // but let's test a standard positive composition first to ensure width calculates right.
-    const segments = [
-      { id: "base", label: "Base", value: 80, formattedValue: "$80", colorClass: "bg-cyan-500" },
-      { id: "tips", label: "Tips", value: 20, formattedValue: "$20", colorClass: "bg-amber-500" },
-    ];
-    
-    render(<EarningsChart segments={segments} />);
-    
-    expect(screen.getByRole("region", { name: /earnings breakdown/i })).toBeInTheDocument();
-    
-    const progressbars = screen.getAllByRole("progressbar");
-    expect(progressbars).toHaveLength(2);
-    expect(progressbars[0]).toHaveAttribute("aria-valuenow", "80");
-    expect(progressbars[1]).toHaveAttribute("aria-valuenow", "20");
-    
-    // Check legend renders
-    expect(screen.getByText("Base")).toBeInTheDocument();
-    expect(screen.getByText("$80")).toBeInTheDocument();
-    expect(screen.getByText("Tips")).toBeInTheDocument();
-    expect(screen.getByText("$20")).toBeInTheDocument();
-  });
+const ONE_SEGMENT: EarningsSegment[] = [
+  { id: "base", label: "Base Only", value: 100, formattedValue: "$100.00", colorClass: "bg-cyan-500" },
+];
 
-  it("handles one segment gracefully", () => {
-    const segments = [
-      { id: "base", label: "Base Only", value: 100, formattedValue: "$100", colorClass: "bg-cyan-500" },
-    ];
-    
-    render(<EarningsChart segments={segments} />);
-    
-    const progressbars = screen.getAllByRole("progressbar");
-    expect(progressbars).toHaveLength(1);
-    expect(progressbars[0]).toHaveAttribute("aria-valuenow", "100");
-    expect(screen.getByText("Base Only")).toBeInTheDocument();
-  });
+const ZERO_VALUE_SEG: EarningsSegment[] = [
+  { id: "base", label: "Base", value: 100, formattedValue: "$100", colorClass: "bg-cyan-500" },
+  { id: "tips", label: "Tips", value: 0, formattedValue: "$0", colorClass: "bg-amber-500" },
+];
 
-  it("handles zero-tip scenario (zero value segment)", () => {
-    const segments = [
-      { id: "base", label: "Base", value: 100, formattedValue: "$100", colorClass: "bg-cyan-500" },
-      { id: "tips", label: "Tips", value: 0, formattedValue: "$0", colorClass: "bg-amber-500" },
-    ];
-    
-    render(<EarningsChart segments={segments} />);
-    
-    // Zero-width bar should not be rendered
-    const progressbars = screen.getAllByRole("progressbar");
-    expect(progressbars).toHaveLength(1); 
-    expect(progressbars[0]).toHaveAttribute("aria-valuenow", "100");
-    
-    // Legend should still show it
-    expect(screen.getByText("Tips")).toBeInTheDocument();
-    expect(screen.getByText("$0")).toBeInTheDocument();
-  });
+const ALL_ZERO: EarningsSegment[] = [
+  { id: "base", label: "Base", value: 0, formattedValue: "$0", colorClass: "bg-cyan-500" },
+];
 
-  it("returns null when all segments are 0", () => {
-    const segments = [
-      { id: "base", label: "Base", value: 0, formattedValue: "$0", colorClass: "bg-cyan-500" },
-    ];
-    const { container } = render(<EarningsChart segments={segments} />);
+const EQUAL_VALUE: EarningsSegment[] = [
+  { id: "a", label: "A", value: 50, formattedValue: "$50", colorClass: "bg-cyan-500" },
+  { id: "b", label: "B", value: 50, formattedValue: "$50", colorClass: "bg-amber-500" },
+];
+
+// ─── Null / empty states ──────────────────────────────────────────────────────
+
+describe("EarningsChart — null states", () => {
+  it("returns null when segments array is empty", () => {
+    const { container } = render(<EarningsChart segments={[]} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it("shows tooltip on hover and focus", async () => {
+  it("returns null when all segment values are zero", () => {
+    const { container } = render(<EarningsChart segments={ALL_ZERO} />);
+    expect(container.firstChild).toBeNull();
+  });
+});
+
+// ─── Rendering ────────────────────────────────────────────────────────────────
+
+describe("EarningsChart — rendering", () => {
+  it("renders region landmark with correct aria-label", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    expect(
+      screen.getByRole("region", { name: /earnings breakdown/i })
+    ).toBeInTheDocument();
+  });
+
+  it("region has aria-describedby pointing to legend", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    const region = screen.getByRole("region", { name: /earnings breakdown/i });
+    const legendId = region.getAttribute("aria-describedby");
+    expect(legendId).toBeTruthy();
+    const legend = document.getElementById(legendId!);
+    expect(legend).toBeInTheDocument();
+  });
+
+  it("forwards className to the wrapper element", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} className="my-custom" />);
+    const region = screen.getByRole("region");
+    expect(region).toHaveClass("my-custom");
+  });
+
+  it("renders one progressbar per non-zero segment", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    expect(screen.getAllByRole("progressbar")).toHaveLength(2);
+  });
+
+  it("renders only one progressbar when the second has zero value", () => {
+    render(<EarningsChart segments={ZERO_VALUE_SEG} />);
+    expect(screen.getAllByRole("progressbar")).toHaveLength(1);
+  });
+
+  it("renders one progressbar for a single segment", () => {
+    render(<EarningsChart segments={ONE_SEGMENT} />);
+    expect(screen.getAllByRole("progressbar")).toHaveLength(1);
+  });
+
+  it("renders two equal-value segments", () => {
+    render(<EarningsChart segments={EQUAL_VALUE} />);
+    expect(screen.getAllByRole("progressbar")).toHaveLength(2);
+  });
+});
+
+// ─── ARIA attributes on progressbars ──────────────────────────────────────────
+
+describe("EarningsChart — progressbar ARIA attributes", () => {
+  it("sets aria-valuenow correctly for each segment", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    const bars = screen.getAllByRole("progressbar");
+    expect(bars[0]).toHaveAttribute("aria-valuenow", "80");
+    expect(bars[1]).toHaveAttribute("aria-valuenow", "20");
+  });
+
+  it("sets aria-valuemin to 0", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    screen.getAllByRole("progressbar").forEach((bar) => {
+      expect(bar).toHaveAttribute("aria-valuemin", "0");
+    });
+  });
+
+  it("sets aria-valuemax to total of all segment values", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    screen.getAllByRole("progressbar").forEach((bar) => {
+      expect(bar).toHaveAttribute("aria-valuemax", "100");
+    });
+  });
+
+  it("sets aria-label combining segment label and formattedValue", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    expect(
+      screen.getByRole("progressbar", { name: /Base Pay: \$80\.00/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("progressbar", { name: /Tips: \$20\.00/i })
+    ).toBeInTheDocument();
+  });
+});
+
+// ─── Legend ───────────────────────────────────────────────────────────────────
+
+describe("EarningsChart — legend", () => {
+  it("renders legend labels for all segments including zero-value ones", () => {
+    render(<EarningsChart segments={ZERO_VALUE_SEG} />);
+    expect(screen.getByText("Base")).toBeInTheDocument();
+    expect(screen.getByText("Tips")).toBeInTheDocument();
+  });
+
+  it("renders formatted values in the legend", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    expect(screen.getByText("$80.00")).toBeInTheDocument();
+    expect(screen.getByText("$20.00")).toBeInTheDocument();
+  });
+});
+
+// ─── Tooltip ─────────────────────────────────────────────────────────────────
+
+describe("EarningsChart — tooltip", () => {
+  it("no tooltip visible before hover", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
+  it("shows tooltip on hover", async () => {
     const user = userEvent.setup();
-    const segments = [
-      { id: "base", label: "Base", value: 100, formattedValue: "$100", colorClass: "bg-cyan-500" },
-    ];
-    render(<EarningsChart segments={segments} />);
-    
-    const bar = screen.getByRole("progressbar", { name: /Base: \$100/i });
-    
-    // Hover
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    const bar = screen.getByRole("progressbar", { name: /Base Pay/i });
     await user.hover(bar);
-    let tooltip = screen.getByRole("tooltip");
-    expect(tooltip).toBeInTheDocument();
-    expect(tooltip).toHaveTextContent("Base: $100");
-    
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  });
+
+  it("tooltip contains segment label", async () => {
+    const user = userEvent.setup();
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    const bar = screen.getByRole("progressbar", { name: /Base Pay/i });
+    await user.hover(bar);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Base Pay");
+  });
+
+  it("tooltip contains formatted value", async () => {
+    const user = userEvent.setup();
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    const bar = screen.getByRole("progressbar", { name: /Base Pay/i });
+    await user.hover(bar);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("$80.00");
+  });
+
+  it("hides tooltip after unhover", async () => {
+    const user = userEvent.setup();
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    const bar = screen.getByRole("progressbar", { name: /Base Pay/i });
+    await user.hover(bar);
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
     await user.unhover(bar);
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-    
-    // Focus
-    bar.focus();
-    tooltip = await screen.findByRole("tooltip");
-    expect(tooltip).toBeInTheDocument();
-    
+  });
+
+  it("shows tooltip on focus", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    const bar = screen.getByRole("progressbar", { name: /Base Pay/i });
+    fireEvent.focus(bar);
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  });
+
+  it("hides tooltip on blur", () => {
+    render(<EarningsChart segments={TWO_SEGMENTS} />);
+    const bar = screen.getByRole("progressbar", { name: /Base Pay/i });
+    fireEvent.focus(bar);
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
     fireEvent.blur(bar);
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });

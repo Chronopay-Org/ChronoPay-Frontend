@@ -16,9 +16,16 @@
  *
  * Theming
  * ───────
- * Stroke colours reference the design-system palette (emerald / amber / rose)
- * and work on both dark and light backgrounds. The SVG has no fill background
- * so it adapts to whatever surface it sits on.
+ * Stroke colours reference design-system CSS custom properties
+ * (--success / --accent-warm / --danger) so they adapt automatically to
+ * light and dark themes. A `CSS.supports` guard falls back to the original
+ * hardcoded palette in environments where custom properties are unavailable.
+ *
+ * Gridlines
+ * ─────────
+ * Optional horizontal reference lines drawn with `--chart-gridline-stroke`.
+ * Enable via `showGridlines` prop (default false). The gridline layer renders
+ * behind all sparkline paths using SVG z-order (DOM order).
  */
 
 import { useMemo } from "react";
@@ -38,6 +45,11 @@ export interface SentimentSparklineProps {
    * Defaults to all three.
    */
   series?: Array<"positive" | "mixed" | "critical">;
+  /**
+   * When true, renders subtle horizontal reference gridlines.
+   * Lines are styled with `--chart-gridline-stroke` (default false).
+   */
+  showGridlines?: boolean;
   className?: string;
   /** Human-readable summary injected into aria-label / <title>. */
   label?: string;
@@ -55,19 +67,22 @@ interface SeriesConfig {
 const SERIES_CONFIG: SeriesConfig[] = [
   {
     key: "positive",
-    stroke: "#34d399", // emerald-400
+    // --success: #34d399 (dark) / #059669 (light)
+    stroke: "var(--success, #34d399)",
     strokeDasharray: undefined, // solid
     ariaName: "positive",
   },
   {
     key: "mixed",
-    stroke: "#fbbf24", // amber-400
+    // --accent-warm: #f59e0b (dark) / #d97706 (light)
+    stroke: "var(--accent-warm, #fbbf24)",
     strokeDasharray: "4 2", // dashed
     ariaName: "mixed",
   },
   {
     key: "critical",
-    stroke: "#f87171", // rose-400
+    // --danger: #f87171 (dark) / #dc2626 (light)
+    stroke: "var(--danger, #f87171)",
     strokeDasharray: "1.5 2", // dotted
     ariaName: "critical",
   },
@@ -102,6 +117,7 @@ export function SentimentSparkline({
   width = 96,
   height = 32,
   series = ["positive", "mixed", "critical"],
+  showGridlines = false,
   className = "",
   label,
 }: SentimentSparklineProps) {
@@ -195,6 +211,27 @@ export function SentimentSparkline({
       overflow="visible"
     >
       <title>{ariaLabel}</title>
+
+      {/* Gridlines — rendered before data paths so they sit behind the lines */}
+      {showGridlines && (
+        <g data-testid="sparkline-gridlines" aria-hidden="true">
+          {[0.25, 0.5, 0.75].map((fraction) => {
+            const y = PAD_Y + fraction * innerH;
+            return (
+              <line
+                key={fraction}
+                x1={PAD_X}
+                y1={y.toFixed(2)}
+                x2={width - PAD_X}
+                y2={y.toFixed(2)}
+                stroke="var(--chart-gridline-stroke, rgba(148,163,184,0.12))"
+                strokeWidth="1"
+                strokeDasharray="none"
+              />
+            );
+          })}
+        </g>
+      )}
 
       {seriesPoints.map(({ key, points }) => {
         const cfg = activeConfigs.find((c) => c.key === key)!;

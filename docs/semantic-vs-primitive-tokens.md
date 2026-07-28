@@ -109,6 +109,7 @@ ratios and usage examples.
 
 ## Cross-References
 
+- [Chart Tokens](./chart-tokens.md)
 - [Copy Button Standard](./copy-button-standard.md)
 - [Overlay & Modal Checklist](./overlay-checklist.md)
 - [Design Review Checklist](./design-review-checklist.md)
