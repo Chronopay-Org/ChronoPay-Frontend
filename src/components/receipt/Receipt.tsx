@@ -27,6 +27,7 @@ import type { Tone } from "@/components/dashboard/types";
 import { truncateHash } from "./masking";
 import { NotesEditor } from "./NotesEditor";
 import type { ReceiptData, ReceiptStatus } from "./types";
+import { RefundConversionNote } from "./RefundConversionNote";
 
 const statusTone: Record<ReceiptStatus, Tone> = {
   settled: "positive",
@@ -149,6 +150,11 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
             <dt className="text-cyan-300">Total settled</dt>
             <dd className="shrink-0 font-extrabold text-cyan-300">{receipt.total}</dd>
           </div>
+          {receipt.refundConversion && (
+            <div className="col-span-full">
+              <RefundConversionNote conversion={receipt.refundConversion} />
+            </div>
+          )}
         </dl>
       </section>
 
