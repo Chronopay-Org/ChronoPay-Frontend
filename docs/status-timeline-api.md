@@ -1,54 +1,91 @@
 # StatusTimeline Component API
 
-The `StatusTimeline` component renders an accessible ordered timeline for dispute, booking, and escrow events. It supports milestone filtering and now includes a dedicated mediator-assigned card for dispute workflows.
+The `StatusTimeline` component provides a vertical, accessible, and collapsible timeline for tracking lifecycle stages in bookings and escrows. It includes a **Milestones mode** toggle that filters to show only high-signal events, useful for auditors and quick-scan reviews, and **branching support** for parallel events (e.g., dispute + refund proceeding independently) with rejoin markers when they converge.
 
 ## Props
 
 | Prop | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `items` | `TimelineItem[]` | Yes | Ordered timeline items to display. |
+| `items` | `TimelineNode[]` | Yes | Array of timeline nodes (items and/or branch groups) to display. |
 
-## Timeline item structure
+## Types
 
-```ts
-type MediatorAssignmentDetails = {
-  name: string;
-  responseSlaLabel?: string;
-  responseDueLabel?: string;
-  slaProgress?: number;
-  directMessageHref?: string;
-  directMessageLabel?: string;
-};
+### TimelineItem (individual event)
 
 type TimelineItem = {
   id: string;
   title: string;
   status: "pending" | "completed" | "failed" | "warning";
   timestamp: string;
-  variant?: "default" | "mediator_assigned";
   actor?: string;
   details?: string;
-  mediator?: MediatorAssignmentDetails;
   isCurrent?: boolean;
   isMilestone?: boolean;
 };
 ```
 
-## Mediator-assigned block
+### TimelineBranchGroup (parallel fork)
 
-When a timeline item uses `variant: "mediator_assigned"` and provides a `mediator` object, the entry renders a card with:
+```typescript
+type TimelineBranchGroup = {
+  type: "branch-group";
+  id: string;
+  label: string;          // Fork label (e.g. "Dispute Initiated")
+  branches: TimelineItem[][];  // Each inner array is one parallel track
+  rejoinLabel?: string;   // Convergence label (e.g. "Case Closed")
+};
+```
 
-- Mediator name
-- Response SLA label
-- Due-date label
-- Direct-message action
-- Progress meter for SLA elapsed time
+### TimelineNode (union)
+
+```typescript
+type TimelineNode = TimelineItem | TimelineBranchGroup;
+```
+
+## Branching
+
+The timeline supports rendering parallel event tracks via `TimelineBranchGroup`. Each branch group:
+
+- Renders a **fork indicator** (amber dot with GitFork icon) at the branching point.
+- Displays a **fork label** (e.g. "Dispute Initiated") and branch count.
+- Renders each parallel track as a **sub-timeline** with its own vertical line, offset from the main timeline.
+- Each branch has a **"Branch N" heading** and a lighter connector line showing the divergence from the main timeline.
+- When `rejoinLabel` is provided, a **rejoin marker** (emerald dot with GitMerge icon) is rendered after all branches, indicating convergence.
+- **Keyboard navigation**: Arrow keys (Left/Right, Up/Down) cycle focus between parallel branches within a group.
+- Milestones filtering works across branches: in milestones-only mode, branches that contain no milestone items are hidden entirely.
+
+### Branch Accessibility
+
+- Each branch group has `role="group"` with an `aria-label` describing the fork point.
+- Each individual branch container has `tabIndex={0}`, `role="group"`, and an `aria-label` listing its events.
+- Rejoin markers have `role="region"` with an `aria-label` (e.g. "Rejoin: Case Closed").
+- Branch containers are focusable and show visible focus rings for keyboard-only users.
+
+## Milestones Mode
+
+When at least one timeline item (including items inside branches) has `isMilestone: true`, the component renders a **toggle switch** (`role="switch"`) labeled "Milestones only".
+
+- **Toggle on**: Only items with `isMilestone: true` are displayed. Branch groups that contain no milestone items are hidden entirely.
+- **Toggle off** (default): All items are displayed.
+- **Scroll position** is preserved when toggling modes.
+- **Screen reader announcement**: A polite `aria-live="polite"` region announces the mode change.
+- **Milestone badge**: Each milestone item shows a "Milestone" chip inline next to the title.
+- **Toggle hidden**: The toggle is not rendered when no items (including those inside branches) have `isMilestone` set.
 
 The component announces mediator assignment changes through a polite live region so screen-reader users hear the update without moving focus.
 
-## Milestones mode
+- The toggle uses `role="switch"` with `aria-checked` for correct ARIA semantics.
+- The toggle has a dynamic `aria-label` that changes with state.
+- Mode changes are announced via `role="status"` with `aria-live="polite"`.
+- All interactive elements have visible focus rings.
+- The timeline uses semantic `<ol>` with `role="list"`.
+- Current step is marked with `aria-current="step"`.
+- Branch groups use `role="group"` with descriptive `aria-label`.
+- Branch containers are focusable and navigable via arrow keys.
 
-When at least one item has `isMilestone: true`, the timeline shows a `role="switch"` toggle.
+## Usage Examples
+
+### Basic (no branching)
 
 - Off: all timeline events are shown.
 - On: only milestone entries are shown.
@@ -64,14 +101,66 @@ When at least one item has `isMilestone: true`, the timeline shows a `role="swit
 - Exposes the SLA bar as a `progressbar` with `aria-valuetext`.
 - Direct-message CTA and detail toggles use visible focus states.
 
-## Responsive and RTL behavior
+### With branching and rejoin
 
-- The mediator card stacks its action below the summary on narrow screens.
-- The timeline uses logical spacing (`ms-*`, `border-s`) so it mirrors cleanly in RTL layouts.
-- Long mediator names and due-date labels wrap without overlapping the CTA.
+```tsx
+import { StatusTimeline } from "@/components/dashboard/status-timeline";
+import type { TimelineNode } from "./timeline-types";
 
-## Manual review notes
+const items: TimelineNode[] = [
+  {
+    id: "1",
+    title: "Payment Received",
+    status: "completed",
+    timestamp: "2026-06-30 09:00 AM",
+  },
+  {
+    type: "branch-group",
+    id: "dispute-branch",
+    label: "Dispute Initiated",
+    branches: [
+      [
+        {
+          id: "dispute-review",
+          title: "Dispute Under Review",
+          status: "warning",
+          timestamp: "2026-06-30 10:00 AM",
+        },
+        {
+          id: "dispute-resolved",
+          title: "Dispute Resolved",
+          status: "completed",
+          timestamp: "2026-06-30 12:00 PM",
+          isMilestone: true,
+        },
+      ],
+      [
+        {
+          id: "refund-processing",
+          title: "Refund Processing",
+          status: "pending",
+          timestamp: "2026-06-30 10:30 AM",
+        },
+      ],
+    ],
+    rejoinLabel: "Case Closed",
+  },
+  {
+    id: "2",
+    title: "Rating Submitted",
+    status: "completed",
+    timestamp: "2026-06-30 01:00 PM",
+  },
+];
 
-- Reassignment: supply a newer `mediator_assigned` item and the latest one is announced.
-- No SLA: omit `responseSlaLabel` or `slaProgress` and the card falls back to neutral copy.
-- Dark mode: the card uses the same slate/cyan contrast system as the rest of the dashboard.
+<StatusTimeline items={items} />
+```
+
+## Edge cases
+
+- **Three-way branches**: Three or more branches render correctly with individual vertical lines and connector lines.
+- **Empty branches**: A branch group with an empty `branches` array renders gracefully (fork label visible, no branch items).
+- **Branches without rejoin**: When `rejoinLabel` is omitted, branches end without a convergence marker.
+- **Milestones across branches**: Milestones filter applies to items inside branches; branches with no milestones are hidden in milestones-only mode.
+- **RTL**: The timeline respects the document direction via relative positioning.
+- **Dark mode**: All colours use project design tokens compatible with the dark theme.
