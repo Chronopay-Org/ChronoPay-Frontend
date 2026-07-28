@@ -1,5 +1,6 @@
 import { StatusChip } from "./status-chip";
 import { Card, CardHeader, CardBody } from "./card";
+import { SampleBadge } from "./sample-badge";
 import type { Metric, Tone } from "./types";
 
 const toneLabels: Record<Tone, string> = {
@@ -31,9 +32,12 @@ export function MetricCard({ metric }: { metric: Metric }) {
     >
       <CardHeader>
         <div>
-          <p id={labelId} className="text-sm text-slate-300">
-            {metric.label}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p id={labelId} className="text-sm text-slate-300">
+              {metric.label}
+            </p>
+            {metric.isSample ? <SampleBadge /> : null}
+          </div>
           <p
             id={valueId}
             className="mt-3 text-3xl font-semibold tracking-tight text-white"

@@ -36,7 +36,7 @@ export function SocialProofBadge({
       aria-label={`${badge.label}: ${badge.criterion}`}
     >
       {IconComponent ? (
-        <IconComponent className="h-3 w-3 shrink-0" aria-hidden="true" />
+        <IconComponent className="h-3 w-3 shrink-0" aria-hidden={true} />
       ) : null}
       <span className="truncate">{badge.label}</span>
       <Tooltip content={badge.criterion} />
