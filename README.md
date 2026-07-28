@@ -287,6 +287,31 @@ The popover opens above the trigger by default. If there is insufficient space a
 - `glossary.mint` — "mint" in dashboard subtitle
 - `glossary.timeToken` — "time tokens" in dashboard subtitle
 
+## Cancellation reason picker
+
+Before a buyer cancels or rebooks, ChronoPay collects an optional short reason via chip selection plus free-text (max 240 characters). The control reuses `PanelShell` so it matches dashboard panel chrome.
+
+**Files**
+| File | Purpose |
+|------|---------|
+| `src/components/dashboard/cancellation-reason-picker.tsx` | Reason chips + free-text + live announce |
+| `src/components/dashboard/panel-shell.tsx` | Shared panel chrome |
+| `docs/cancellation-reason-picker.md` | Design-system documentation |
+| `src/components/dashboard/cancellation-reason-picker.test.tsx` | Unit tests (95%+ coverage target) |
+
+**Usage**
+```tsx
+import { CancellationReasonPicker } from "@/components/dashboard";
+
+<CancellationReasonPicker
+  onSubmit={({ reasonId, reasonLabel, details }) => {
+    // send feedback, then continue cancel / rebook
+  }}
+/>
+```
+
+Includes a **Prefer not to say** chip, keyboard radiogroup navigation, and `aria-live="polite"` submission announcements. See [docs/cancellation-reason-picker.md](docs/cancellation-reason-picker.md).
+
 ### Above-the-fold spacing (laptop viewports)
 
 The dashboard is tuned so the title, intro copy, wallet card, and at least the heading of the time-slots section land above the fold on common laptop screens without feeling cramped.

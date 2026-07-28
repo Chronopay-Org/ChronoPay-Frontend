@@ -87,6 +87,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
             <ThemeSwitcher />
+            <OfflineQueueIndicator />
             <a
               href="https://stellar.org"
               target="_blank"
