@@ -5,3 +5,4 @@ export * from "./NotesEditor";
 export * from "./QrBadge";
 export * from "./masking";
 export * from "./types";
+export * from "./RefundConversionNote";
