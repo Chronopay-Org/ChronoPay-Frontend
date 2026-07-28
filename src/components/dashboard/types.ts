@@ -154,58 +154,17 @@ export type RefundDestinationSubmission = {
   option: RefundDestinationOption;
 };
 
-// ─── Booking Completion Checklist ─────────────────────────────────────────────
-
-/**
- * Status of an individual booking-checklist step.
- *
- * - `done`    — Step is completed.
- * - `active`  — Step is the current in-progress step.
- * - `blocked` — Step cannot proceed until a dependency resolves.
- * - `skipped` — Optional step the user or system has bypassed.
- * - `pending` — Not yet reached; will become active in the future.
- */
-export type ChecklistStepStatus =
-  | "done"
-  | "active"
-  | "blocked"
-  | "skipped"
-  | "pending";
-
-/** A single step inside a BookingChecklist. */
-export type ChecklistStep = {
-  /** Stable identifier used as React key and ARIA id anchor. */
+/** Supplier trust metric with sparkline history */
+export type TrustMetric = {
   id: string;
-  /** Human-readable step label. */
   label: string;
-  /** Current status of this step. */
-  status: ChecklistStepStatus;
-  /**
-   * Optional helper copy shown beneath the label — for example, a blocking
-   * reason ("Waiting for seller confirmation") or a done timestamp.
-   */
-  description?: string;
-  /**
-   * When true, this step may be safely skipped without blocking later steps.
-   * Skipped optional steps render with a `skipped` pill rather than a blocked
-   * indicator.
-   */
-  optional?: boolean;
+  value: string;
+  unit: string;
+  trend: "up" | "down" | "stable";
+  history: { values: number[] };
+  tooltip: string;
+  tone: Tone;
 };
-
-/** Aggregated summary derived from a list of ChecklistStep items. */
-export type ChecklistSummary = {
-  total: number;
-  done: number;
-  active: number;
-  blocked: number;
-  skipped: number;
-  pending: number;
-  /** Progress as a value between 0 and 1. Skipped optional steps count as done. */
-  progress: number;
-};
-
-// ─── Rating Breakdown ─────────────────────────────────────────────────────────
 
 /** A single criterion in a rating breakdown (e.g. Communication, Expertise). */
 export type RatingCriterion = {

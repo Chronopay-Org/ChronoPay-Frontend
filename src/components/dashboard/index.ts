@@ -23,6 +23,7 @@ export * from "./social-proof-badge";
 export * from "./social-proof-badges";
 export * from "./DurationChips";
 export * from "./state-card";
+export * from "./supplier-trust-stats";
 export * from "./status-chip";
 export * from "./wallet-card";
 export * from "./meet-checklist-card";

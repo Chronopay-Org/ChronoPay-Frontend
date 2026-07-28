@@ -20,6 +20,11 @@ import {
   ratingBreakdown,
   slots,
   wallet,
+  SupplierTrustStats,
+  sampleResponseTime,
+  sampleAcceptanceRate,
+  emptyResponseTime,
+  emptyAcceptanceRate,
 } from "@/components/dashboard";
 import { KycStatusTimeline } from "@/components/dashboard/kyc-status-timeline";
 import { kycTimelineEntries, kycPromptPanel } from "@/components/dashboard/kyc-status-timeline";
@@ -153,8 +158,32 @@ export default function Dashboard() {
           promptPanel={kycPromptPanel}
         />
 
-        {/* Wallet, Booking Progress, and Booking Checklist */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        {/* Supplier Trust Stats */}
+        {showSamples && (
+          <PanelShell
+            title="Trust Metrics"
+            description="Response time and booking acceptance rate based on the last 30 days."
+          >
+            <SupplierTrustStats
+              responseTime={sampleResponseTime}
+              acceptanceRate={sampleAcceptanceRate}
+            />
+          </PanelShell>
+        )}
+        {!showSamples && (
+          <PanelShell
+            title="Trust Metrics"
+            description="Response time and booking acceptance rate based on the last 30 days."
+          >
+            <SupplierTrustStats
+              responseTime={emptyResponseTime}
+              acceptanceRate={emptyAcceptanceRate}
+            />
+          </PanelShell>
+        )}
+
+        {/* Wallet and Booking Progress */}
+        <div className="grid gap-6 lg:grid-cols-2">
           <PanelShell title="Wallet">
             <WalletCard
               wallet={
