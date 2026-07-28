@@ -90,6 +90,16 @@ export const slots: Slot[] = [
     status: "Busy",
     isSample: true,
   },
+  {
+    id: "slot-4",
+    title: "Architecture sync",
+    dateLabel: "Fri, Apr 4",
+    timeRange: "13:00-14:00",
+    demand: "Sold out",
+    rate: "150 XLM / hr",
+    status: "Sold Out",
+    nextAvailableHint: "Mon 10am",
+  },
 ];
 
 export const wallet: WalletSnapshot = {

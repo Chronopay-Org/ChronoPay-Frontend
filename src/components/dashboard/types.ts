@@ -1,6 +1,6 @@
-export type Tone = "neutral" | "positive" | "warning" | "critical";
+export type Tone = "neutral" | "positive" | "warning" | "critical" | "muted";
 
-export type AvailabilityLevel = "Healthy" | "Tight" | "Busy";
+export type AvailabilityLevel = "Healthy" | "Tight" | "Busy" | "Sold Out";
 
 export type Slot = {
   id: string;
