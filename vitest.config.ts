@@ -14,7 +14,7 @@ export default defineConfig({
       include: [
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
-        "src/components/dashboard/services-step/**/*.{ts,tsx}",
+        "src/components/dashboard/review-reply-thread.tsx",
       ],
       thresholds: {
         lines: 95,

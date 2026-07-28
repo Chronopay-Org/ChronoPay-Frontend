@@ -4,18 +4,24 @@ import { DashboardShell } from "../components/dashboard-shell";
 import {
   BookingProgress,
   MetricCard,
+  OnboardingWidget,
   OnboardingWalkthrough,
   PanelShell,
+  PricingCalculator,
   QuickActions,
+  RatingBreakdownBars,
   SlotList,
   WalletCard,
   bookingStages,
   metrics,
   quickActions,
+  ratingBreakdown,
   slots,
   wallet,
 } from "@/components/dashboard";
-import { ReviewsPanel } from "@/components/dashboard/reviews-panel";
+import { KycStatusTimeline } from "@/components/dashboard/kyc-status-timeline";
+import { kycTimelineEntries, kycPromptPanel } from "@/components/dashboard/kyc-status-timeline";
+import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
@@ -162,6 +168,28 @@ export default function Dashboard() {
             />
           </PanelShell>
         </div>
+
+        {/* Rating Breakdown */}
+        {showSamples && (
+          <PanelShell
+            title="Rating Breakdown"
+            description="Per-criterion average ratings across your recent reviews."
+          >
+            <RatingBreakdownBars
+              criteria={ratingBreakdown}
+              overallRating={4.6}
+              overallCount={42}
+            />
+          </PanelShell>
+        )}
+
+        {/* Pricing Fee Calculator */}
+        <PanelShell
+          title="Fee Calculator"
+          description="Estimate your take-home earnings after platform and network fees."
+        >
+          <PricingCalculator />
+        </PanelShell>
 
         <PanelShell id="quick-actions" title="Quick Actions">
           <QuickActions actions={quickActions} />

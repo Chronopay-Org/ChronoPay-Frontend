@@ -4,9 +4,9 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
   CalendarSyncProvider,
   CalendarDefinition,
+  RatingCriterion,
 } from "./types";
 import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
@@ -338,8 +338,42 @@ export const suppliers: Supplier[] = [
   },
 ];
 
-export const bookingStages = [
-  { label: "Created", value: 12 },
-  { label: "In Escrow", value: 8 },
-  { label: "Completed", value: 24 },
+/** Sample per-criterion rating breakdown for supplier profiles. */
+export const ratingBreakdown: RatingCriterion[] = [
+  {
+    id: "communication",
+    label: "Communication",
+    average: 4.8,
+    count: 42,
+    colorClass: "bg-teal-400",
+  },
+  {
+    id: "expertise",
+    label: "Expertise",
+    average: 4.6,
+    count: 41,
+    colorClass: "bg-cyan-400",
+  },
+  {
+    id: "timeliness",
+    label: "Timeliness",
+    average: 4.3,
+    count: 40,
+    colorClass: "bg-sky-400",
+  },
+  {
+    id: "value",
+    label: "Value",
+    average: 4.5,
+    count: 38,
+    colorClass: "bg-blue-400",
+  },
+  {
+    id: "clarity",
+    label: "Clarity",
+    average: 4.7,
+    count: 39,
+    colorClass: "bg-indigo-400",
+  },
 ];
+

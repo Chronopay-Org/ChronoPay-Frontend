@@ -1,7 +1,27 @@
+'use client';
+
+import { useState, useCallback } from 'react';
 import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
 import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sync-connect';
+import { DeveloperSettings } from '@/components/dashboard/settings/developer-settings';
+import { DensitySwitcher } from '@/app/components/ui/density-switcher';
+import { PasswordStrengthMeter } from '@/app/components/password-strength-meter';
 
 export default function SettingsPage() {
+  const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
+
+  const handleSyncWithConflicts = useCallback(() => {
+    setConflicts(sampleConflicts);
+  }, []);
+
+  const handleResolveConflicts = useCallback((resolutions: ConflictResolution[]) => {
+    setConflicts([]);
+  }, []);
+
+  const handleCloseConflicts = useCallback(() => {
+    setConflicts([]);
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-950 p-6 md:p-10">
       <div className="max-w-3xl mx-auto space-y-8">
@@ -19,6 +39,12 @@ export default function SettingsPage() {
           </div>
           <CalendarSyncConnect />
         </section>
+
+        <CalendarSyncConflictModal
+          conflicts={conflicts}
+          onResolve={handleResolveConflicts}
+          onClose={handleCloseConflicts}
+        />
 
         <div className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6">
           <h2 className="text-xl font-semibold text-white pb-4 sm:pb-6">Security</h2>
@@ -40,6 +66,16 @@ export default function SettingsPage() {
           </p>
           <DensitySwitcher />
         </div>
+
+        <section aria-label="Developer and advanced options" className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6">
+          <div className="space-y-1 pb-4 sm:pb-6">
+            <h2 className="text-xl font-semibold text-white">Developer / Advanced</h2>
+            <p className="text-sm leading-6 text-slate-300">
+              Enable experimental features, view debug information, and export logs for troubleshooting.
+            </p>
+          </div>
+          <DeveloperSettings />
+        </section>
       </div>
     </div>
   );
