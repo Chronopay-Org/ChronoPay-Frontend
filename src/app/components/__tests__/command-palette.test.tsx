@@ -3,6 +3,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CommandPalette } from "../command-palette";
 import { rankCommands, matchRoute, COMMANDS } from "@/lib/commands";
 
+
+
 // ─── Next.js navigation mock ──────────────────────────────────────────────────
 
 const mockPathname = vi.fn();
@@ -29,6 +31,25 @@ describe("CommandPalette", () => {
   beforeEach(() => {
     mockPathname.mockReturnValue("/dashboard");
   });
+
+  describe('Command Palette Pinning', () => {
+  it('should move an action to Pinned section when pin is clicked', async () => {
+    render(<CommandPalette />);
+    const pinButton = screen.getByLabel_text(/Pin Send Payment/i);
+    fireEvent.click(pinButton);
+    
+    const pinnedSection = screen.getByText(/Pinned/i);
+    expect(pinnedSection).toBeInTheDocument();
+  });
+
+  it('should track usage in Recent section', () => {
+    render(<CommandPalette />);
+    const item = screen.getByText(/Settings/i);
+    fireEvent.click(item);
+    
+    expect(screen.getByText(/Recent/i)).toBeInTheDocument();
+  });
+});
 
   // ── Basic rendering ──────────────────────────────────────────────────────
 

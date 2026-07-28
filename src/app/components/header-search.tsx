@@ -82,6 +82,9 @@ export function HeaderSearch() {
     [setQuery],
   );
 
+  // Capture now once via lazy state to avoid impure Date.now() in render
+  const [now] = useState(() => Date.now());
+
   // Derived list for keyboard navigation -- memoized to stabilise useCallback deps
   const listItems = useMemo<ListItem[]>(() => {
     if (query.trim() !== "") {
@@ -89,7 +92,6 @@ export function HeaderSearch() {
     }
 
     const items: ListItem[] = [];
-    const now = Date.now();
     const msInDay = 86400000;
 
     const today = recentSearches.filter((r) => now - r.timestamp < msInDay);
@@ -259,12 +261,11 @@ export function HeaderSearch() {
     [isOpen, listItems, activeIndex, query, open, close, submitSearch, updateQuery, removeRecentSearch],
   );
 
-  // Adjust activeIndex if items change and it falls out of bounds or lands on a header
-  useEffect(() => {
-    if (activeIndex >= listItems.length) {
-      setActiveIndex(listItems.length - 1);
-    }
-  }, [listItems.length, activeIndex]);
+  // Derive clamped activeIndex to avoid setState-in-effect
+  const clampedActiveIndex =
+    activeIndex >= listItems.length && listItems.length > 0
+      ? listItems.length - 1
+      : activeIndex;
 
   // Scroll active item into view
   useEffect(() => {
@@ -276,7 +277,7 @@ export function HeaderSearch() {
   }, [activeIndex]);
 
   const activeItemId =
-    activeIndex >= 0 ? `${listboxId}-item-${activeIndex}` : undefined;
+    clampedActiveIndex >= 0 ? `${listboxId}-item-${clampedActiveIndex}` : undefined;
 
   return (
     <div ref={containerRef} className="relative flex items-center">
@@ -415,13 +416,13 @@ export function HeaderSearch() {
                           key={`${item.kind}-${item.label}`}
                           id={`${listboxId}-item-${idx}`}
                           role="option"
-                          aria-selected={idx === activeIndex}
-                          className={[
-                            "group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
-                            idx === activeIndex
-                              ? "bg-cyan-500/10 text-white"
-                              : "text-slate-300 hover:bg-white/6 hover:text-white",
-                          ].join(" ")}
+              aria-selected={idx === clampedActiveIndex}
+              className={[
+                "group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                idx === clampedActiveIndex
+                  ? "bg-cyan-500/10 text-white"
+                  : "text-slate-300 hover:bg-white/6 hover:text-white",
+              ].join(" ")}
                           onPointerDown={(e) => {
                             // Prevent input blur before click fires
                             e.preventDefault();
