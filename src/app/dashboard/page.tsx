@@ -23,7 +23,29 @@ import {
 } from "@/components/dashboard";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
-import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
+
+// ─── Simulated async time-token actions ───────────────────────────────────────
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+async function simulateMint() {
+  await delay(2000);
+}
+
+async function simulateBuy() {
+  await delay(1800);
+}
+
+async function simulateEscrowRelease() {
+  await delay(2200);
+  // Simulate a failure ~30% of the time for demo
+  if (Math.random() < 0.3)
+    throw new Error("Escrow release rejected by contract");
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const loading = false;
@@ -155,9 +177,10 @@ export default function Dashboard() {
         </PanelShell>
 
         <PanelShell id="available-time-slots" title="Available Time Slots">
-          <div data-tour-target="slots">
-            <SlotList slots={visibleSlots} />
-          </div>
+          <SlotList
+            slots={slots}
+            suggestedAlternatives={suggestedAlternatives}
+          />
         </PanelShell>
 
         {/* Holiday Hints Strip */}
