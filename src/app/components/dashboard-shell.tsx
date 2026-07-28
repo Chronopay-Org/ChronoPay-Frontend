@@ -88,6 +88,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     { href: "/marketplace", label: "Marketplace" },
     { href: "/calendar", label: "Calendar" },
     { href: "/history", label: "History" },
+    { href: "/dashboard/settings", label: "Settings" },
   ];
 
   // Animation variants for active tab indicator
@@ -318,6 +319,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               {r.label === "Marketplace" && "🛒"}
               {r.label === "Calendar" && "📅"}
               {r.label === "History" && "🕘"}
+              {r.label === "Settings" && "⚙️"}
             </span>
             <span>{r.label}</span>
           </Link>
