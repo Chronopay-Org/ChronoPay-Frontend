@@ -1,6 +1,5 @@
 "use client";
 
-// src/app/components/dashboard-shell.tsx
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useReducedMotion } from "framer-motion";
@@ -16,7 +15,6 @@ import { BottomNavOverflow } from "@/app/components/navigation/BottomNavOverflow
 function ShellInner({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
   const [isOpen, setIsOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const liveRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -24,7 +22,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   const routes = getNavForRole(role);
   const meta = ROLE_META[role];
 
-  // ── Announce role change to screen readers ──────────────────────────────
   useEffect(() => {
     const handleRoleChange = (e: Event) => {
       const { role: newRole } = (e as CustomEvent<{ role: string }>).detail;
@@ -36,41 +33,33 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         }, 3000);
       }
     };
-    window.addEventListener("chronopay:rolechange", handleRoleChange);
-    return () => window.removeEventListener("chronopay:rolechange", handleRoleChange);
-  }, []);
 
-  // ── Close drawer on Escape ──────────────────────────────────────────────
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) setIsOpen(false);
-    };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen]);
 
-  // ── Focus trap for mobile drawer ────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
+
     const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
       "a[href], button:not([disabled])"
     );
     const first = focusable?.[0];
     const last = focusable?.[focusable.length - 1];
-    const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== "Tab" || !focusable) return;
-      if (e.shiftKey) {
+
+    const handleTab = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || !focusable) return;
+      if (event.shiftKey) {
         if (document.activeElement === first) {
-          e.preventDefault();
+          event.preventDefault();
           last?.focus();
         }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
+      } else if (document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
       }
     };
+
     document.addEventListener("keydown", handleTab);
     first?.focus();
     return () => document.removeEventListener("keydown", handleTab);
@@ -112,27 +101,21 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6 md:py-4"
           aria-label="Dashboard navigation"
         >
-          {/* Brand */}
           <div>
             <Link
               href="/"
-              className="text-lg font-semibold tracking-tight"
-              style={{ color: "var(--shell-text)" }}
+              className="text-lg font-semibold tracking-tight text-white"
               aria-label="ChronoPay home"
             >
               ChronoPay
             </Link>
-            <p
-              className="text-xs uppercase tracking-[0.2em]"
-              style={{ color: "var(--shell-text-muted)" }}
-            >
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
               Time economy dashboard
             </p>
           </div>
 
-          {/* Desktop: inline links + search */}
-          <div className="hidden md:flex items-center gap-3 text-sm text-slate-300">
-            {routes.map((r) => (
+          <div className="hidden items-center gap-3 text-sm text-slate-300 md:flex">
+            {routes.map((route) => (
               <Link
                 key={r.href}
                 href={r.href}
@@ -143,7 +126,9 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 <span>{r.label}</span>
               </Link>
             ))}
+            <AccountSwitcher />
             <ThemeSwitcher />
+            <OfflineQueueIndicator />
             <a
               href="https://stellar.org"
               target="_blank"
@@ -159,7 +144,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             <HeaderSearch />
           </div>
 
-          {/* Mobile: search + hamburger */}
           <div className="flex items-center gap-1 md:hidden">
             <HeaderSearch />
             <button
@@ -168,7 +152,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               onClick={() => setIsOpen(true)}
             >
               <svg
-                className="h-6 w-6 text-white"
+                className="h-6 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -186,7 +170,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
 
-      {/* ── Mobile drawer ──────────────────────────────────────────────────── */}
       {isOpen && (
         <div
           ref={drawerRef}
@@ -209,7 +192,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             >
               <svg
                 className="h-6 w-6"
-                style={{ color: "var(--shell-text)" }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -224,7 +206,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               </svg>
             </button>
             <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
-              {routes.map((r) => (
+              {routes.map((route) => (
                 <Link
                   key={r.href}
                   href={r.href}
@@ -232,13 +214,14 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                   style={{ color: "var(--shell-text)" }}
                   onClick={() => setIsOpen(false)}
                 >
-                  <span aria-hidden="true" className="text-base">{r.icon}</span>
-                  <span>{r.label}</span>
+                  <span aria-hidden={true} className="mr-1.5">
+                    {route.icon}
+                  </span>
+                  <span>{route.label}</span>
                 </Link>
               ))}
             </nav>
 
-            {/* Primary CTA in drawer */}
             <div className="mt-6 px-1">
               <ButtonLink
                 href={meta.primaryCta.href}
@@ -264,7 +247,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             </div>
           </aside>
 
-          {/* Scrim — click to close */}
           <button
             className="flex-1 cursor-default"
             onClick={() => setIsOpen(false)}
