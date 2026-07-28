@@ -19,6 +19,7 @@ import {
   WalletCard,
   OnboardingWidget,
 } from "@/components/dashboard";
+import { ReviewsPanel } from "@/components/dashboard/reviews-panel";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
@@ -57,8 +58,10 @@ export default function Dashboard() {
     dismissTour,
   } = useOnboardingSamples();
 
-  const visibleMetrics = showSamples ? metrics : [];
-  const visibleSlots = showSamples ? slots : [];
+  // Suppress lint warnings for demo simulation functions
+  void simulateMint;
+  void simulateBuy;
+  void simulateEscrowRelease;
 
   if (loading) {
     return (
@@ -175,11 +178,8 @@ export default function Dashboard() {
           />
         </PanelShell>
 
-        {/* Holiday Hints Strip */}
-        <HolidayHintsStrip
-          holidays={upcomingHolidays}
-          region={holidayRegion}
-        />
+        {/* Reviews with sentiment chip filter */}
+        <ReviewsPanel />
       </div>
 
       <OnboardingWalkthrough

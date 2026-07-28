@@ -1,6 +1,13 @@
 import DesignChecklist from "@/components/design/DesignChecklist";
 import { StatusMatrix, statusMatrixData } from "@/components/design/status-matrix";
 import Link from "next/link";
+import { Suspense } from "react";
+import { SentimentChipFilter } from "@/components/dashboard/sentiment-chip-filter";
+import { SentimentSparkline } from "@/components/dashboard/sentiment-sparkline";
+import {
+  reviewSentimentCounts,
+  reviewSentimentTrend,
+} from "@/components/dashboard/dashboard-data";
 
 export default function DesignReviewPage() {
   return (
@@ -42,6 +49,95 @@ export default function DesignReviewPage() {
                 Live Checklist
               </h2>
               <DesignChecklist />
+            </div>
+
+            {/* ── Sentiment Chip Filter showcase ── */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                Sentiment Chip Filter
+              </h2>
+              <p className="text-sm text-slate-400 max-w-2xl">
+                Chip row with counts + sparkline trend. Active bucket syncs to
+                the <code className="text-cyan-300 font-mono text-xs">?sentiment=</code> search
+                param. WCAG 2.1 AA: <code className="text-cyan-300 font-mono text-xs">role=&quot;group&quot;</code>,
+                {" "}<code className="text-cyan-300 font-mono text-xs">aria-pressed</code>, polite live
+                region on change, arrow-key navigation, focus-ring-cyan.
+              </p>
+
+              {/* Dark surface swatch */}
+              <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 space-y-4">
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                  Dark surface
+                </p>
+                <Suspense fallback={null}>
+                  <SentimentChipFilter
+                    counts={reviewSentimentCounts}
+                    trendData={reviewSentimentTrend}
+                    paramKey="dr-sentiment"
+                  />
+                </Suspense>
+              </div>
+
+              {/* Light surface swatch */}
+              <div
+                data-theme="light"
+                className="rounded-2xl border border-black/10 bg-white/90 p-5 space-y-4"
+              >
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                  Light surface
+                </p>
+                <Suspense fallback={null}>
+                  <SentimentChipFilter
+                    counts={reviewSentimentCounts}
+                    trendData={reviewSentimentTrend}
+                    paramKey="dr-sentiment-light"
+                  />
+                </Suspense>
+              </div>
+
+              {/* Empty / low-signal state */}
+              <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 space-y-4">
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                  Low-signal state (all zeros, no trend)
+                </p>
+                <Suspense fallback={null}>
+                  <SentimentChipFilter
+                    counts={{ positive: 0, mixed: 0, critical: 0 }}
+                    trendData={[]}
+                    paramKey="dr-sentiment-empty"
+                  />
+                </Suspense>
+              </div>
+
+              {/* Standalone sparkline showcase */}
+              <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                  Sparkline — standalone
+                </p>
+                <div className="flex flex-wrap gap-8 items-end">
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-400">8-week trend</p>
+                    <SentimentSparkline
+                      data={reviewSentimentTrend}
+                      width={120}
+                      height={36}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-400">Single data point</p>
+                    <SentimentSparkline
+                      data={[{ period: "2026-07-20", positive: 48, mixed: 17, critical: 9 }]}
+                      width={88}
+                      height={28}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-400">No data (empty state)</p>
+                    <SentimentSparkline data={[]} width={88} height={28} />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-6">
