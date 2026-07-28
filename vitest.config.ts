@@ -14,10 +14,9 @@ export default defineConfig({
       include: [
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
-        "src/components/dashboard/social-proof-badge.tsx",
-        "src/components/dashboard/social-proof-badges.tsx",
-        "src/components/dashboard/card.tsx",
+        "src/components/dashboard/slot-list.tsx"
       ],
+
       thresholds: {
         lines: 95,
         functions: 95,

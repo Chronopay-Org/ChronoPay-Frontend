@@ -1,20 +1,25 @@
 import "@testing-library/jest-dom";
 
-if (typeof IntersectionObserver === "undefined") {
+if (typeof window !== "undefined") {
   class MockIntersectionObserver {
     readonly root: Element | null = null;
     readonly rootMargin: string = "";
     readonly thresholds: ReadonlyArray<number> = [];
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-    takeRecords(): IntersectionObserverEntry[] {
-      return [];
-    }
+    observe = () => {};
+    unobserve = () => {};
+    disconnect = () => {};
+    takeRecords = () => [];
   }
-  Object.defineProperty(globalThis, "IntersectionObserver", {
-    value: MockIntersectionObserver,
+
+  Object.defineProperty(window, "IntersectionObserver", {
     writable: true,
     configurable: true,
+    value: MockIntersectionObserver,
+  });
+
+  Object.defineProperty(global, "IntersectionObserver", {
+    writable: true,
+    configurable: true,
+    value: MockIntersectionObserver,
   });
 }

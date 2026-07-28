@@ -177,3 +177,16 @@ export type SentimentCounts = {
   mixed: number;
   critical: number;
 };
+
+export type SlotPickerDensity = "full" | "compact" | "auto";
+
+export type HourlySlotBand = {
+  hourLabel: string;
+  hourKey: string;
+  slots: Slot[];
+  totalSlots: number;
+  rateRange: string;
+  statusCounts: Record<AvailabilityLevel, number>;
+  hasNextAvailable: boolean;
+};
+

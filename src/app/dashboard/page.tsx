@@ -172,14 +172,9 @@ export default function Dashboard() {
         </PanelShell>
 
         <PanelShell id="available-time-slots" title="Available Time Slots">
-          <SlotList
-            slots={slots}
-            suggestedAlternatives={suggestedAlternatives}
-          />
+          <SlotList slots={slots} supplierId="supplier-1" />
         </PanelShell>
 
-        {/* Reviews with sentiment chip filter */}
-        <ReviewsPanel />
       </div>
 
       <OnboardingWalkthrough

@@ -2,7 +2,14 @@
 
 import React, { useState } from 'react';
 
-const Button = ({ children, onClick, disabled = false, className = '' }: any) => (
+interface EnrollButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  className?: string;
+}
+
+const Button = ({ children, onClick, disabled = false, className = '' }: EnrollButtonProps) => (
   <button
     onClick={onClick}
     disabled={disabled}
@@ -36,6 +43,7 @@ export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => voi
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
 
   return (
     <div className="max-w-md mx-auto bg-slate-900 border border-slate-700 rounded-3xl p-8">

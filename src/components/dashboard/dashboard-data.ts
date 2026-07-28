@@ -272,26 +272,28 @@ export const suppliers: Supplier[] = [
   },
 ];
 
-// ─── Review sentiment ─────────────────────────────────────────────────────────
+export const generateHighDensitySlots = (count: number = 54): Slot[] => {
+  const statuses: ("Healthy" | "Tight" | "Busy")[] = ["Healthy", "Tight", "Busy"];
+  const startHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
-/** Current review counts broken down by sentiment bucket. */
-export const reviewSentimentCounts: SentimentCounts = {
-  positive: 48,
-  mixed: 17,
-  critical: 9,
+  return Array.from({ length: count }, (_, i) => {
+    const hour = startHours[i % startHours.length];
+    const minuteStart = (i % 4) * 15;
+    const endMinute = minuteStart + 15;
+    const startStr = `${hour.toString().padStart(2, "0")}:${minuteStart.toString().padStart(2, "0")}`;
+    const endStr = `${hour.toString().padStart(2, "0")}:${endMinute.toString().padStart(2, "0")}`;
+    const rate = 80 + (i % 7) * 10;
+
+    return {
+      id: `slot-hd-${i + 1}`,
+      title: `Consulting Session #${i + 1}`,
+      dateLabel: "Tue, Apr 1",
+      timeRange: `${startStr}-${endStr}`,
+      demand: `${(i % 5) + 1} interested buyers`,
+      rate: `${rate} XLM / hr`,
+      status: statuses[i % statuses.length],
+      isNextAvailable: i === 0,
+    };
+  });
 };
 
-/**
- * 8-week sentiment trend series (oldest → newest).
- * Used by the SentimentSparkline in the Reviews panel.
- */
-export const reviewSentimentTrend: SentimentDataPoint[] = [
-  { period: "2026-06-01", positive: 22, mixed: 11, critical: 7 },
-  { period: "2026-06-08", positive: 28, mixed: 13, critical: 8 },
-  { period: "2026-06-15", positive: 31, mixed: 15, critical: 9 },
-  { period: "2026-06-22", positive: 35, mixed: 14, critical: 10 },
-  { period: "2026-06-29", positive: 38, mixed: 16, critical: 9 },
-  { period: "2026-07-06", positive: 41, mixed: 15, critical: 8 },
-  { period: "2026-07-13", positive: 45, mixed: 17, critical: 9 },
-  { period: "2026-07-20", positive: 48, mixed: 17, critical: 9 },
-];
