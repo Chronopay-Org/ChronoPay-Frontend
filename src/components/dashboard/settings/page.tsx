@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
 import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sync-connect';
 import { DeveloperSettings } from '@/components/dashboard/settings/developer-settings';
+import { DangerZone } from '@/components/dashboard/settings/danger-zone';
 import { DensitySwitcher } from '@/app/components/ui/density-switcher';
 import { PasswordStrengthMeter } from '@/app/components/password-strength-meter';
 
@@ -76,6 +77,9 @@ export default function SettingsPage() {
           </div>
           <DeveloperSettings />
         </section>
+
+        {/* Danger Zone */}
+        <DangerZone />
       </div>
     </div>
   );
