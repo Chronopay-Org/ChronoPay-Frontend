@@ -9,7 +9,6 @@ import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
 import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
 import { useToast } from "@/hooks/use-toast";
-import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
 
@@ -133,61 +132,6 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
           </button>
         </CardFooter>
       </Card>
-
-      <CardBody className="mt-6">
-        <dl className="space-y-4">
-          {wallet.address && (
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <dt className="text-slate-300 flex items-center gap-2">
-                Wallet address
-                <Tooltip content="Public wallet address for receiving payments." />
-              </dt>
-              <dd className="flex items-center gap-2 font-mono text-white text-xs">
-                <span className="truncate">{wallet.address.slice(0, 8)}…{wallet.address.slice(-6)}</span>
-                <CopyButton
-                  text={wallet.address}
-                  variant="icon"
-                  label="Copy address"
-                />
-              </dd>
-            </div>
-          )}
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <dt id={securityId} className="text-slate-300 flex items-center gap-2">
-              Pending escrow
-              <Tooltip content="Escrow details" />
-            </dt>
-            <dd className="font-medium text-white">{wallet.pending}</dd>
-          </div>
-
-          {/* Next payout — jargon annotated with HelpPopover */}
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <dt className="text-slate-300 flex items-center gap-2">
-              Next payout
-              <Tooltip content="Payout details" />
-            </dt>
-            <dd className="font-medium text-white">{wallet.nextPayout}</dd>
-          </div>
-        </dl>
-
-        <p
-          id={statusId}
-          className="mt-6 text-sm text-cyan-100/75"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {wallet.status}
-        </p>
-      </CardBody>
-
-      <CardFooter className="mt-6">
-        <button
-          type="button"
-          className="inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 px-4 py-2.5 text-sm border border-white/12 bg-white/6 text-slate-100 hover:border-cyan-200/30 hover:bg-white/10"
-        >
-          {actionLabel[wallet.connection]}
-        </button>
-      </CardFooter>
-    </Card>
+    </>
   );
 }
