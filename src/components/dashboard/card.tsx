@@ -1,31 +1,32 @@
-import { ReactNode, ElementType, ComponentPropsWithoutRef } from "react";
+import { type ElementType, type HTMLAttributes, type ReactNode } from "react";
 import clsx from "clsx";
 import { SocialProofBadges } from "./social-proof-badges";
 import type { SocialProofBadgeEntry } from "./types";
 
-export interface CardProps {
+export interface CardProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   as?: ElementType;
   children: ReactNode;
   className?: string;
-  variant?: "default" | "panel" | "glass" | "accent";
+  variant?: "default" | "panel" | "glass" | "accent" | "compact-list";
   interactive?: boolean;
-  [key: string]: unknown;
 }
 
-export function Card({
-  as: Component = "article",
+export function Card<T extends ElementType = "article">({
+  as,
   children,
   className,
   variant = "default",
   interactive = false,
   ...props
-}: CardProps & ComponentPropsWithoutRef<typeof Component>) {
+}: CardProps & ComponentPropsWithoutRef<T>) {
+  const Component = as || "article";
   const cardClassName = clsx(
     "card",
     {
       "card--panel": variant === "panel",
       "card--glass": variant === "glass",
       "card--accent": variant === "accent",
+      "card--compact-list": variant === "compact-list",
       "card--interactive": interactive,
     },
     className

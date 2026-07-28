@@ -52,7 +52,12 @@ export function Tooltip({
   interactive,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [placement, setPlacement] = useState<Placement>("top");
+  const [position, setPosition] = useState<Position>({
+    top: 0,
+    left: 0,
+    resolvedSide: preferredSide,
+  });
+
   const triggerRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -63,8 +68,12 @@ export function Tooltip({
 
   const updatePlacement = () => {
     if (!triggerRef.current || !tooltipRef.current) return;
-    setPlacement(computePlacement(triggerRef.current, tooltipRef.current));
-  };
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    setPosition(
+      computePosition(triggerRect, tooltipRect, preferredSide, align, offset, viewportPadding),
+    );
+  }, [preferredSide, align, offset, viewportPadding]);
 
   const clearHideTimeout = () => {
     if (hideTimeoutRef.current) {
@@ -94,13 +103,10 @@ export function Tooltip({
     }
   };
 
-  const toggleTooltip = () => {
-    if (isVisible) {
-      hideTooltip();
-    } else {
-      showTooltip();
-    }
-  };
+  const toggleTooltip = useCallback(() => {
+    if (isVisible) hideTooltip();
+    else showTooltip();
+  }, [isVisible, showTooltip, hideTooltip]);
 
   // Mouse hover handlers for trigger and tooltip surface
   const handleTriggerMouseEnter = () => showTooltip();
@@ -190,13 +196,20 @@ export function Tooltip({
     toggleTooltip();
   };
 
-  // Re-measure placement on window resize while visible
+  // Click outside: close
   useEffect(() => {
     if (!isVisible) return;
-    const handleResize = () => updatePlacement();
-    window.addEventListener("resize", handleResize, { passive: true });
-    return () => window.removeEventListener("resize", handleResize);
-  }, [isVisible]);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        !triggerRef.current?.contains(event.target as Node) &&
+        !tooltipRef.current?.contains(event.target as Node)
+      ) {
+        hideTooltip();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isVisible, hideTooltip]);
 
   // Clean up hide timeout on unmount
   useEffect(() => {
@@ -236,7 +249,9 @@ export function Tooltip({
       >
         {trigger ?? <Info className="w-4 h-4 text-zinc-300" />}
       </button>
+
       {children}
+
       {isVisible && (
         <div
           ref={tooltipRef}
@@ -250,7 +265,7 @@ export function Tooltip({
           onKeyDown={handleTooltipKeyDown}
         >
           {content}
-          {/* Arrow */}
+          {/* Smart arrow */}
           <div
             className={`absolute w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${
               placement === "top"
