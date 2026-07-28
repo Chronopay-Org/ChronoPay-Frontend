@@ -46,8 +46,6 @@ async function simulateEscrowRelease() {
     throw new Error("Escrow release rejected by contract");
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function Dashboard() {
   const loading = false;
   const error = false;
@@ -102,7 +100,7 @@ export default function Dashboard() {
   const suggestedAlternatives = slots.slice(0, 3);
 
   return (
-    <DashboardShell>
+<DashboardShell>
       <div className="space-y-6 sm:space-y-8 md:space-y-10">
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
@@ -126,7 +124,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Onboarding */}
+{/* Onboarding */}
         <OnboardingWidget />
 
         {/* Metrics */}
