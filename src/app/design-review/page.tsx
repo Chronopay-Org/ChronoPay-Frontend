@@ -1,5 +1,6 @@
 import DesignChecklist from "@/components/design/DesignChecklist";
 import { StatusMatrix, statusMatrixData } from "@/components/design/status-matrix";
+import { A11yTrendChart, a11yTrendSampleData } from "@/components/design/a11y-trend-chart";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SentimentChipFilter } from "@/components/dashboard/sentiment-chip-filter";
@@ -191,6 +192,38 @@ export default function DesignReviewPage() {
                 System Status Matrix
               </h2>
               <StatusMatrix config={statusMatrixData} />
+            </div>
+
+            {/* ── A11y Audit Historical Trend Chart ── */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                A11y Audit Trend
+              </h2>
+              <p className="text-sm text-slate-400 max-w-2xl">
+                Stacked-area chart showing the historical trend of open
+                accessibility issues by severity. Use this to track progress
+                and catch regressions early.
+              </p>
+
+              {/* Dark surface swatch */}
+              <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 space-y-4">
+                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                  Dark surface
+                </p>
+                <A11yTrendChart data={a11yTrendSampleData} />
+              </div>
+
+              {/* Reduced-motion notice */}
+              <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  <strong className="text-slate-300">Reduced motion:</strong> If your system
+                  prefers reduced motion, chart hover transitions are disabled
+                  automatically via the{" "}
+                  <code className="text-cyan-300 font-mono">prefers-reduced-motion</code>{" "}
+                  media query. The chart remains fully interactive.
+                </p>
+              </div>
             </div>
           </div>
         </section>

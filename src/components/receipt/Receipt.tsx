@@ -26,7 +26,9 @@ import { StatusChip } from "@/components/dashboard/status-chip";
 import type { Tone } from "@/components/dashboard/types";
 import { truncateHash } from "./masking";
 import { NotesEditor } from "./NotesEditor";
+import { QrBadge } from "./QrBadge";
 import type { ReceiptData, ReceiptStatus } from "./types";
+import { RefundConversionNote } from "./RefundConversionNote";
 
 const statusTone: Record<ReceiptStatus, Tone> = {
   settled: "positive",
@@ -149,6 +151,11 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
             <dt className="text-cyan-300">Total settled</dt>
             <dd className="shrink-0 font-extrabold text-cyan-300">{receipt.total}</dd>
           </div>
+          {receipt.refundConversion && (
+            <div className="col-span-full">
+              <RefundConversionNote conversion={receipt.refundConversion} />
+            </div>
+          )}
         </dl>
       </section>
 
@@ -227,6 +234,16 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
             </dd>
           </div>
         </dl>
+
+        {/* QR verification badge — tap to verify on-chain */}
+        <div className="mt-5 flex justify-center receipt-no-print">
+          <QrBadge explorerUrl={explorerUrl} label={receipt.title} />
+        </div>
+
+        {/* Print-friendly verification text */}
+        <p className="receipt-print-only mt-4 text-[10px] text-center text-slate-500 leading-relaxed">
+          Verify this receipt: {explorerUrl}
+        </p>
       </section>
 
       <NotesEditor receiptId={receipt.id} />

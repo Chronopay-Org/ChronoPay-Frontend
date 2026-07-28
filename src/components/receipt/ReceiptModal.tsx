@@ -80,6 +80,9 @@ export function ReceiptModal({
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, onClose]);
 
+  // Reset tip state when dialog opens. This is a state initialisation
+  // pattern triggered by props, not cascading renders.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isOpen) return;
     setSelectedTipAmount(null);
