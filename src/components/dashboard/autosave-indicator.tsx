@@ -165,15 +165,13 @@ export function AutosaveIndicator({
   const tooltipId = "autosave-indicator-tooltip";
   const liveId = "autosave-indicator-live";
 
-  const [relativeLabel, setRelativeLabel] = useState<string>(() => {
-    if (status !== "saved" || !lastSavedAt) return "";
-    return formatRelativeTime(lastSavedAt);
-  });
+  const [relativeLabel, setRelativeLabel] = useState<string>(() =>
+    status === "saved" && lastSavedAt ? formatRelativeTime(lastSavedAt) : "",
+  );
   const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  });
+  const [reducedMotion, setReducedMotion] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
   const [liveText, setLiveText] = useState("");
 
   const prevStatusRef = useRef<AutosaveStatus | null>(null);

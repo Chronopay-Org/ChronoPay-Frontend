@@ -88,7 +88,15 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
-
+  const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod>(
+    () => {
+      try {
+        return (window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod) ?? 'wallet';
+      } catch {
+        return 'wallet';
+      }
+    },
+  );
 
   useEffect(() => {
     if (isOpen && modalRef.current) {
@@ -97,18 +105,17 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     }
   }, [isOpen, selectedMethod]);
 
-  const emailValid = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), [email]);
-
-  const selectMethod = (method: ConnectionMethod) => {
-    window.localStorage.setItem(LOCAL_STORAGE_KEY, method);
-    setSelectedMethod(method);
-  };
-
-  const handleEmailSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!emailValid) return;
-    onEmailSubmit?.(email);
-  };
+  const handleSelectMethod = useCallback(
+    (method: ConnectionMethod) => {
+      try {
+        window.localStorage.setItem(LOCAL_STORAGE_KEY, method);
+      } catch {
+        // localStorage may be unavailable
+      }
+      setSelectedMethod(method);
+    },
+    [],
+  );
 
   if (!isOpen) return null;
 

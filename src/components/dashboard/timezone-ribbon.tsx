@@ -35,6 +35,9 @@ export function TimezoneRibbon({
   const [mode, setMode] = useState<TimezoneMode>("viewer");
   const [announcement, setAnnouncement] = useState<string>("");
 
+  // Init viewer timezone + stored mode. Syncing from browser APIs is a
+  // legitimate initialisation pattern.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const detectedViewerTz = getViewerTimezone();
     setViewerTimeZone(detectedViewerTz);

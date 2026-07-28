@@ -1,12 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Filter, MessageSquareText } from "lucide-react";
+import { useState, useRef, useId } from "react";
+import { Filter } from "lucide-react";
+import { TimelineItem, statusToneMap } from "./timeline-types";
+import { StatusChip } from "./status-chip";
 import { KycDocUpload } from "./kyc-doc-upload";
 import { KycLivenessCapture } from "./kyc-liveness-capture";
-import type { TimelineItem } from "./timeline-types";
-import { statusToneMap } from "./timeline-types";
-import { StatusChip } from "./status-chip";
 
 interface StatusTimelineProps {
   items: TimelineItem[];
