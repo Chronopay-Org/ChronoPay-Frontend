@@ -219,7 +219,7 @@ export function HeaderSearch() {
           aria-label="Open search"
           className="rounded-full p-2 text-slate-400 hover:bg-white/6 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 transition-colors"
         >
-          <Search className="h-4 w-4" aria-hidden="true" />
+          <Search className="h-4 w-4" aria-hidden={true} />
         </button>
       )}
 
@@ -233,7 +233,7 @@ export function HeaderSearch() {
             <div className="relative flex items-center">
               <Search
                 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
-                aria-hidden="true"
+                aria-hidden={true}
               />
               {/* Input carries all combobox ARIA */}
               <input
@@ -274,7 +274,7 @@ export function HeaderSearch() {
                   }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-colors"
                 >
-                  <X className="h-3 w-3" aria-hidden="true" />
+                  <X className="h-3 w-3" aria-hidden={true} />
                 </button>
               )}
             </div>
@@ -289,7 +289,7 @@ export function HeaderSearch() {
                 {query.trim() === "" && recentSearches.length > 0 && (
                   <div className="flex items-center justify-between px-3 pt-3 pb-1">
                     <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
-                      <Clock className="h-3 w-3" aria-hidden="true" />
+                      <Clock className="h-3 w-3" aria-hidden={true} />
                       Recent
                     </span>
                     <button
@@ -305,7 +305,7 @@ export function HeaderSearch() {
                 {/* Suggestions header -- shown when query has text */}
                 {query.trim() !== "" && suggestions.length > 0 && (
                   <div className="flex items-center gap-1.5 px-3 pt-3 pb-1">
-                    <TrendingUp className="h-3 w-3 text-slate-500" aria-hidden="true" />
+                    <TrendingUp className="h-3 w-3 text-slate-500" aria-hidden={true} />
                     <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
                       Suggestions
                     </span>
@@ -350,12 +350,12 @@ export function HeaderSearch() {
                         {item.kind === "recent" ? (
                           <Clock
                             className="h-3.5 w-3.5 shrink-0 text-slate-500"
-                            aria-hidden="true"
+                            aria-hidden={true}
                           />
                         ) : (
                           <Search
                             className="h-3.5 w-3.5 shrink-0 text-slate-500"
-                            aria-hidden="true"
+                            aria-hidden={true}
                           />
                         )}
 
@@ -382,7 +382,7 @@ export function HeaderSearch() {
                             }}
                             className="ml-auto shrink-0 rounded-full p-0.5 text-slate-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-[opacity,color]"
                           >
-                            <X className="h-3 w-3" aria-hidden="true" />
+                            <X className="h-3 w-3" aria-hidden={true} />
                           </button>
                         )}
                       </li>
@@ -452,7 +452,7 @@ export function HeaderSearch() {
             aria-label="Close search"
             className="rounded-full p-2 text-slate-400 hover:bg-white/6 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 transition-colors"
           >
-            <X className="h-4 w-4" aria-hidden="true" />
+            <X className="h-4 w-4" aria-hidden={true} />
           </button>
         </div>
       )}

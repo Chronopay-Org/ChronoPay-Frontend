@@ -122,4 +122,14 @@ export const glossary = {
     learnMoreHref: "https://stellar.org",
     learnMoreLabel: "Learn about Stellar →",
   },
+
+  /**
+   * Verified payouts: supplier's payout destination authenticated on Stellar.
+   */
+  verifiedPayouts: {
+    title: "Verified Payout Account",
+    body: "This supplier's payout account and Stellar trustlines have been authenticated and verified on-chain for automated, secure settlement on ChronoPay.",
+    learnMoreHref: "/docs/glossary#verified-payouts",
+    learnMoreLabel: "Learn more about verified payouts →",
+  },
 } satisfies Record<string, GlossaryTerm>;
