@@ -122,4 +122,24 @@ export const glossary = {
     learnMoreHref: "https://stellar.org",
     learnMoreLabel: "Learn about Stellar →",
   },
+
+  /**
+   * KYC (Know Your Customer): identity verification required to use the platform.
+   */
+  kyc: {
+    title: "KYC verification",
+    body: "Know Your Customer (KYC) is an identity verification process required before you can list time slots. You'll submit an ID document and a short selfie video for review.",
+    learnMoreHref: "/docs/glossary#kyc",
+    learnMoreLabel: "Learn more about KYC →",
+  },
+
+  /**
+   * KYC re-submission: when compliance requests additional documents.
+   */
+  kycResubmission: {
+    title: "KYC re-submission",
+    body: "If the compliance team needs more information, you'll be asked to re-submit specific documents. Your account stays active during this period, but new listings are paused until verification completes.",
+    learnMoreHref: "/docs/glossary#kyc-resubmission",
+    learnMoreLabel: "Learn more about re-submission →",
+  },
 } satisfies Record<string, GlossaryTerm>;

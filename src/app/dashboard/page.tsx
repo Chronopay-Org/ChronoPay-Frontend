@@ -13,6 +13,9 @@ import {
   SlotList,
   wallet,
   WalletCard,
+  kycTimelineEntries,
+  kycPromptPanel,
+  KycStatusTimeline,
 } from "@/components/dashboard";
 import { useToast } from "@/hooks/use-toast";
 import { HelpPopover } from "@/app/components/ui/help-popover";
@@ -119,6 +122,12 @@ export default function Dashboard() {
             <MetricCard key={metric.label} metric={metric} />
           ))}
         </div>
+
+        {/* KYC Status Timeline */}
+        <KycStatusTimeline
+          entries={kycTimelineEntries}
+          promptPanel={kycPromptPanel}
+        />
 
         {/* Wallet and Booking Progress */}
         <div className="grid gap-6 lg:grid-cols-2">
