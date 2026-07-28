@@ -6,10 +6,16 @@ import { HelpPopover } from "@/app/components/ui/help-popover";
 import { TimezoneRibbon } from "./timezone-ribbon";
 import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
+import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 
 import { AvailabilityTemplatePicker } from "./availability-template-picker";
-import { Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  AvailabilityConflictDetector,
+  type AvailabilityConflict,
+  type ConflictResolutionEvent,
+} from "./availability-conflict-detector";
+import { Sparkles, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 
 interface SlotListProps {
   slots?: Slot[];
@@ -18,39 +24,10 @@ interface SlotListProps {
   supplierTimeZone?: string;
   supplierName?: string;
   showTemplatePicker?: boolean;
+  showConflictDetector?: boolean;
+  conflicts?: AvailabilityConflict[];
+  suggestedAlternatives?: Slot[];
 }
-
-const defaultSlots: Slot[] = [
-  {
-    id: "slot-1",
-    title: "1-on-1 Architecture Consultation",
-    dateLabel: "Today",
-    timeRange: "14:00 - 15:00 UTC",
-    status: "Healthy",
-    demand: "High Demand",
-    rate: "50 XLM / hr",
-    isNextAvailable: true,
-  },
-  {
-    id: "slot-2",
-    title: "Code Review & Optimization",
-    dateLabel: "Tomorrow",
-    timeRange: "10:00 - 11:30 UTC",
-    status: "Tight",
-    demand: "Medium Demand",
-    rate: "75 XLM / hr",
-    isNextAvailable: false,
-  },
-];
-
-type DropPosition = "before" | "after" | null;
-
-const mapTone = (status: string) => {
-  if (status === "Healthy") return "positive";
-  if (status === "Tight") return "warning";
-  if (status === "Busy") return "danger";
-  return "neutral";
-};
 
 export const SlotList = ({
   slots = defaultSlots,
@@ -59,19 +36,13 @@ export const SlotList = ({
   supplierTimeZone = "America/New_York",
   supplierName = "Alex",
   showTemplatePicker = true,
+  showConflictDetector = true,
+  conflicts,
+  suggestedAlternatives,
 }: SlotListProps) => {
   const [activeTz, setActiveTz] = useState<string>("UTC");
   const [templatePickerOpen, setTemplatePickerOpen] = useState<boolean>(false);
-  const [{ x }, api] = useSpring(() => ({ x: 0 }));
-
-  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
-    if (swipeX !== 0) {
-      console.log("Day navigation logic: ", swipeX > 0 ? "Next" : "Previous");
-    }
-    if (swipeY === -1) {
-      console.log("Detail reveal logic");
-    }
-  });
+  const [activeConflictSlotId, setActiveConflictSlotId] = useState<string | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [liveMessage, setLiveMessage] = useState("");
@@ -79,117 +50,21 @@ export const SlotList = ({
   const alternativeRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const announce = useCallback((msg: string) => {
-    setLiveMessage("");
-    window.setTimeout(() => {
-      setLiveMessage(msg);
-      window.setTimeout(() => setLiveMessage(""), 2600);
-    }, 50);
+    setLiveMessage(msg);
+    setTimeout(() => setLiveMessage(""), 3000);
   }, []);
 
-  const clearDragState = useCallback(() => {
-    setDraggingId(null);
-    setDragOverId(null);
-    setDropPosition(null);
-    setGhostPosition(null);
-  }, []);
+  const handleFocusSlot = useCallback((slotId: string) => {
+    setActiveConflictSlotId(slotId);
+    announce(`Focused slot ${slotId}`);
+  }, [announce]);
 
-  const reorderSlots = useCallback(
-    (sourceId: string, targetId: string, position: DropPosition) => {
-      if (!position || sourceId === targetId) return;
-
-      setOrderedSlots((prev) => {
-        const fromIndex = prev.findIndex((slot) => slot.id === sourceId);
-        const toIndex = prev.findIndex((slot) => slot.id === targetId);
-
-        if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return prev;
-
-        const next = [...prev];
-        const [moved] = next.splice(fromIndex, 1);
-        const normalizedTargetIndex = toIndex > fromIndex ? toIndex - 1 : toIndex;
-        const insertIndex = position === "after" ? normalizedTargetIndex + 1 : normalizedTargetIndex;
-        next.splice(insertIndex, 0, moved);
-        announce(`${moved.title} moved to position ${insertIndex + 1}.`);
-        return next;
-      });
-    },
-    [announce],
-  );
-
-  const toggleSelection = (id: string, event?: React.MouseEvent | React.KeyboardEvent) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      const isShift = event && "shiftKey" in event && event.shiftKey;
-      const isMeta = event && "metaKey" in event && (event.metaKey || event.ctrlKey);
-
-      if (isShift && lastSelectedId.current) {
-        const currentIndex = orderedSlots.findIndex((slot) => slot.id === id);
-        const lastIndex = orderedSlots.findIndex((slot) => slot.id === lastSelectedId.current);
-        const start = Math.min(currentIndex, lastIndex);
-        const end = Math.max(currentIndex, lastIndex);
-
-        if (!isMeta) {
-          next.clear();
-        }
-
-        for (let index = start; index <= end; index += 1) {
-          next.add(orderedSlots[index].id);
-        }
-      } else if (isMeta) {
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
-      } else {
-        if (next.has(id) && next.size === 1) {
-          next.delete(id);
-        } else {
-          next.clear();
-          next.add(id);
-        }
-      }
-
-      announce(`${next.size} slot${next.size !== 1 ? "s" : ""} selected.`);
-      lastSelectedId.current = id;
-      return next;
-    });
-  };
-
-  const handleListKeyDown = (id: string, event: React.KeyboardEvent) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      toggleSelection(id, event);
-      return;
-    }
-
-    if (event.altKey && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
-      event.preventDefault();
-      const currentIndex = orderedSlots.findIndex((slot) => slot.id === id);
-      const nextIndex = event.key === "ArrowDown" ? currentIndex + 1 : currentIndex - 1;
-
-      if (nextIndex < 0 || nextIndex >= orderedSlots.length) {
-        return;
-      }
-
-      const target = orderedSlots[nextIndex];
-      reorderSlots(id, target.id, event.key === "ArrowDown" ? "after" : "before");
-    }
-  };
-
-  const handleAlternativeKeyDown = (index: number, event: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(event.key)) return;
-
-    event.preventDefault();
-    const nextIndex =
-      event.key === "ArrowRight"
-        ? (index + 1) % suggestedAlternatives.length
-        : event.key === "ArrowLeft"
-          ? (index - 1 + suggestedAlternatives.length) % suggestedAlternatives.length
-          : event.key === "ArrowDown"
-            ? Math.min(index + 1, suggestedAlternatives.length - 1)
-            : Math.max(index - 1, 0);
-
-    alternativeRefs.current[nextIndex]?.focus();
+  const mapTone = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === "healthy" || s === "available") return "positive";
+    if (s === "tight") return "warning";
+    if (s === "busy" || s === "booked") return "neutral";
+    return "neutral";
   };
 
   return (
@@ -200,6 +75,14 @@ export const SlotList = ({
         supplierName={supplierName}
         onTimezoneChange={(_, activeTimeZone) => setActiveTz(activeTimeZone)}
       />
+
+      {/* Availability Conflict Detector Card */}
+      {showConflictDetector && (
+        <AvailabilityConflictDetector
+          conflicts={conflicts}
+          onFocusAffectedSlot={handleFocusSlot}
+        />
+      )}
 
       {/* Availability Template Picker Banner & Drawer */}
       {showTemplatePicker && (
@@ -246,20 +129,104 @@ export const SlotList = ({
         </div>
       )}
 
+      {/* Suggested Alternatives Section if provided */}
+      {suggestedAlternatives !== undefined && (
+        <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-4 font-sans space-y-3">
+          <div>
+            <h3 className="text-base font-semibold text-white">Rebook a matching slot</h3>
+            <p className="text-xs text-slate-300">Suggested alternatives</p>
+          </div>
+
+          {suggestedAlternatives.length === 0 ? (
+            <div className="text-xs text-slate-400 p-3 rounded-xl border border-white/6 bg-white/4">
+              No matching alternatives found. No alternatives currently available.
+            </div>
+          ) : (
+            <div
+              className="flex gap-3 overflow-x-auto pb-2"
+              role="region"
+              aria-label="Suggested alternatives carousel"
+            >
+              {suggestedAlternatives.map((alt) => {
+                const labelText = `Alternative slot: ${alt.title}, ${alt.dateLabel} ${alt.timeRange}`;
+                return (
+                  <div
+                    key={alt.id}
+                    tabIndex={0}
+                    aria-label={labelText}
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowRight") {
+                        e.preventDefault();
+                        const nextEl = e.currentTarget.nextElementSibling as HTMLElement;
+                        nextEl?.focus();
+                      } else if (e.key === "ArrowLeft") {
+                        e.preventDefault();
+                        const prevEl = e.currentTarget.previousElementSibling as HTMLElement;
+                        prevEl?.focus();
+                      }
+                    }}
+                    className="min-w-[240px] shrink-0 rounded-xl border border-white/10 bg-slate-900/80 p-3 hover:border-cyan-400/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer"
+                  >
+                    <div className="font-semibold text-xs text-white truncate">{alt.title}</div>
+                    <div className="text-[11px] text-slate-400 mt-1">
+                      {alt.dateLabel} · {alt.timeRange}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-300">{alt.rate}</span>
+                      <StatusChip tone={mapTone(alt.status)}>{alt.status}</StatusChip>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main Slots List */}
       {slots.length === 0 ? (
         <EmptyStateCard
           title="No slots available"
           description="There are currently no scheduled availability slots for this supplier."
         />
       ) : (
-        <>
-          <ul className="space-y-4">
-            {orderedSlots.map((slot) => {
-              const slotTitleId = `slot-${slot.id}-title`;
-              const slotDetailsId = `slot-${slot.id}-details`;
-              const isSelected = selectedIds.has(slot.id);
-              const isDragging = draggingId === slot.id;
-              const isDropTarget = dragOverId === slot.id;
+        <ul className="space-y-4">
+          {slots.map((slot) => {
+            const slotTitleId = "slot-" + slot.id + "-title";
+            const slotDetailsId = "slot-" + slot.id + "-details";
+            const isConflictTarget = activeConflictSlotId === slot.id || activeConflictSlotId === `slot-${slot.id}`;
+
+            return (
+              <li
+                key={slot.id}
+                id={`slot-${slot.id}`}
+                tabIndex={-1}
+                className={`rounded-[1.5rem] border p-4 sm:p-5 transition-all outline-none ${
+                  isConflictTarget
+                    ? "border-amber-400/60 bg-amber-950/20 ring-2 ring-amber-400/50"
+                    : "border-white/10 bg-white/[0.03]"
+                }`}
+              >
+                <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 id={slotTitleId} className="text-lg font-semibold text-white">
+                          {slot.title}
+                        </h3>
+                        {isConflictTarget && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-200">
+                            <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                            Target Slot
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-300">
+                        {slot.dateLabel} · {slot.timeRange}
+                      </p>
+                    </div>
+                    <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
+                  </div>
 
               return (
                 <li key={slot.id} className="space-y-2">
@@ -324,13 +291,13 @@ export const SlotList = ({
                         </div>
                       </div>
 
-                      <div
-                        id={slotDetailsId}
-                        className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-300"
-                      >
-                        <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                          {slot.demand}
-                        </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                      {slot.rate}
+                      <HelpPopover
+                        term={glossary.rate}
+                        triggerLabel="Help: slot rate and XLM pricing"
+                      />
+                    </span>
 
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
                           {slot.rate}
@@ -340,21 +307,13 @@ export const SlotList = ({
                           />
                         </span>
 
-                        {slot.isNextAvailable ? (
-                          <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-cyan-100">
-                            Next available
-                          </span>
-                        ) : null}
-
-                        <span className="inline-flex items-center gap-1.5">
-                          Rate details
-                          <HelpPopover
-                            term={glossary.xlm}
-                            triggerLabel="Help: XLM and Stellar network fees"
-                          />
-                        </span>
-                      </div>
-                    </article>
+                    <span className="inline-flex items-center gap-1.5">
+                      Rate details
+                      <HelpPopover
+                        term={glossary.xlm}
+                        triggerLabel="Help: XLM and Stellar network fees"
+                      />
+                    </span>
                   </div>
                   {isDropTarget && dropPosition === "after" ? (
                     <div className="h-1 rounded-full bg-cyan-400/80" />

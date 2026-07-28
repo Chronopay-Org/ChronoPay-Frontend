@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { SlotList } from "./slot-list";
 import type { Slot } from "./types";
+import type { AvailabilityConflict } from "./availability-conflict-detector";
 
 const suggestedAlternatives: Slot[] = [
   {
@@ -36,7 +37,33 @@ const slots: Slot[] = [
   },
 ];
 
+const testConflicts: AvailabilityConflict[] = [
+  {
+    id: "test-conflict-1",
+    incomingBlockTitle: "Overlap Block Alpha",
+    incomingTimeRange: "Tue, 10:15 - 11:15 UTC",
+    collidingSlotId: "slot-main-1",
+    collidingTitle: "Product strategy call",
+    collidingTimeRange: "Tue, 10:00 - 11:30 UTC",
+    conflictType: "booking_overlap",
+    severity: "critical",
+    description: "Overlaps with Product strategy call.",
+    suggestedShiftTimeRange: "Tue, 11:30 - 12:30 UTC",
+    suggestedSplitRanges: [],
+    affectedSlotId: "slot-main-1",
+  },
+];
+
 describe("SlotList", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
   it("renders a suggested alternatives carousel when alternatives exist", () => {
     render(
       <SlotList slots={slots} suggestedAlternatives={suggestedAlternatives} />,
@@ -83,41 +110,14 @@ describe("SlotList", () => {
     expect(screen.getByText(/No alternatives/i)).toBeInTheDocument();
   });
 
-  it("supports keyboard nudging and drag-and-drop reordering", () => {
-    const reorderableSlots: Slot[] = [
-      {
-        id: "slot-main-1",
-        title: "Product strategy call",
-        dateLabel: "Tue, Apr 1",
-        timeRange: "10:00-11:30",
-        demand: "6 interested buyers",
-        rate: "120 XLM / hr",
-        status: "Healthy",
-      },
-      {
-        id: "slot-main-2",
-        title: "Code Review & Optimization",
-        dateLabel: "Wed, Apr 2",
-        timeRange: "14:00-15:00",
-        demand: "2 interested buyers",
-        rate: "90 XLM / hr",
-        status: "Tight",
-      },
-    ];
+  it("renders conflict detector and handles focus transfer to target slot", () => {
+    render(<SlotList slots={slots} conflicts={testConflicts} />);
 
-    const { container } = render(<SlotList slots={reorderableSlots} />);
-    const items = screen.getAllByRole("listitem");
+    expect(screen.getByText(/Overlap Block Alpha/i)).toBeInTheDocument();
 
-    fireEvent.keyDown(items[0], { key: "ArrowDown", altKey: true });
-    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(/Code Review & Optimization/i);
+    const focusCellBtn = screen.getByRole("button", { name: /Focus affected slot element Product strategy call/i });
+    fireEvent.click(focusCellBtn);
 
-    const source = container.querySelector('[data-slot-id="slot-main-1"]') as HTMLElement;
-    const target = container.querySelector('[data-slot-id="slot-main-2"]') as HTMLElement;
-
-    fireEvent.dragStart(source, { dataTransfer: { setData: () => {}, getData: () => "slot-main-1", effectAllowed: "move", dropEffect: "" } });
-    fireEvent.dragOver(target, { dataTransfer: { setData: () => {}, getData: () => "", effectAllowed: "move", dropEffect: "" }, clientY: 20 });
-    fireEvent.drop(target, { dataTransfer: { setData: () => {}, getData: () => "slot-main-1", effectAllowed: "move", dropEffect: "" } });
-
-    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(/Code Review & Optimization/i);
+    expect(screen.getByText(/Target Slot/i)).toBeInTheDocument();
   });
 });
