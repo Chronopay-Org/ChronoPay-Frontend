@@ -12,8 +12,8 @@ export type TimelineItem = {
 
 export const statusToneMap = {
   pending: "neutral",
-  completed: "success",
-  failed: "danger",
+  completed: "positive",
+  failed: "critical",
   warning: "warning",
 } as const satisfies Record<TimelineItemStatus, "info" | "warning" | "success" | "danger" | "neutral">;
 

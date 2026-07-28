@@ -227,7 +227,7 @@ export function HelpPopover({
       >
         <HelpCircle
           className="w-3.5 h-3.5 text-zinc-300 hover:text-cyan-300"
-          aria-hidden="true"
+          aria-hidden={true}
         />
       </button>
 
@@ -259,7 +259,7 @@ export function HelpPopover({
         >
           {/* Arrow indicator */}
           <span
-            aria-hidden="true"
+            aria-hidden={true}
             className={[
               "absolute left-1/2 -translate-x-1/2 w-0 h-0",
               "border-l-[6px] border-r-[6px] border-transparent",
@@ -284,7 +284,7 @@ export function HelpPopover({
               onClick={close}
               className="mt-0.5 flex-shrink-0 rounded-full p-0.5 text-zinc-400 hover:text-white hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 transition-colors"
             >
-              <X className="w-3.5 h-3.5" aria-hidden="true" />
+              <X className="w-3.5 h-3.5" aria-hidden={true} />
             </button>
           </div>
 
@@ -313,7 +313,7 @@ export function HelpPopover({
               >
                 {term.learnMoreLabel ?? "Learn more →"}
                 {term.learnMoreHref.startsWith("http") && (
-                  <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                  <ExternalLink className="w-3 h-3" aria-hidden={true} />
                 )}
               </a>
             </div>
