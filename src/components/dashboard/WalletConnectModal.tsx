@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { FocusTrap } from '@/components/common/FocusTrap';
 import { LiveRegion } from '@/components/common/LiveRegion';
 import { StatusChip } from '@/components/dashboard/status-chip';
-import { Spinner } from '@/app/components/ui/spinner';
+import { SigningSkeleton } from '@/components/checkout/SigningSkeleton';
 
 export type WalletProvider = {
   id: string;
@@ -41,6 +41,9 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [selectedCaps, setSelectedCaps] = useState<string[]>([]);
+  const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod | null>(null);
+  const [email, setEmail] = useState('');
+  const [selectedProviderName, setSelectedProviderName] = useState<string | undefined>(undefined);
 
   const allCaps = useMemo(() => {
     const caps = new Set<string>();
@@ -80,20 +83,38 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     }
   }, [isOpen, selectedMethod]);
 
-  const emailValid = useMemo(() => /
-    ^[^\s@]+@[^\s@]+\.[^\s@]+$
-  /.test(email), [email]);
+  const emailValid = useMemo(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }, [email]);
 
-  const selectMethod = (method: ConnectionMethod) => {
+  const emailValid = useMemo(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }, [email]);
+
+  const selectMethod = useCallback((method: ConnectionMethod) => {
     window.localStorage.setItem(LOCAL_STORAGE_KEY, method);
     setSelectedMethod(method);
-  };
+  }, []);
 
-  const handleEmailSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleConnect = useCallback((providerId: string) => {
+    const provider = providers.find(p => p.id === providerId);
+    setSelectedProviderName(provider?.name);
+    onConnect(providerId);
+  }, [providers, onConnect]);
+
+  const handleEmailSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!emailValid) return;
     onEmailSubmit?.(email);
-  };
+  }, [emailValid, email, onEmailSubmit]);
+
+  const handleCancelSigning = useCallback(() => {
+    setSelectedMethod(null);
+    setSelectedProviderName(undefined);
+    onClose();
+  }, [onClose]);
 
   if (!isOpen) return null;
 
@@ -117,7 +138,11 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           </p>
 
           <LiveRegion>
-            {status === 'pending' && 'Connecting to wallet…'}
+            {status === 'pending' && selectedProviderName
+              ? `Waiting for signature in ${selectedProviderName}…`
+              : status === 'pending'
+                ? 'Connecting to wallet…'
+                : null}
             {status === 'success' && 'Wallet connected successfully.'}
             {status === 'error' && `Connection failed: ${errorMessage || 'Unknown error'}`}
           </LiveRegion>
@@ -186,7 +211,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
                       <div className="mt-2 sm:mt-0 sm:text-right">
                         <button
                           type="button"
-                          onClick={() => onConnect(p.id)}
+                          onClick={() => handleConnect(p.id)}
                           className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-cyan-600 rounded-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-colors"
                           aria-label={`Connect to ${p.name}`}
                         >
@@ -205,10 +230,10 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           )}
 
           {status === 'pending' && (
-            <div className="mt-6 flex flex-col items-center justify-center gap-4 py-10">
-              <Spinner className="h-12 w-12 text-cyan-500" />
-              <p className="text-sm text-slate-700 dark:text-slate-200">Connecting to your wallet…</p>
-            </div>
+            <SigningSkeleton
+              walletName={selectedProviderName}
+              onCancel={handleCancelSigning}
+            />
           )}
 
           {status === 'success' && (
