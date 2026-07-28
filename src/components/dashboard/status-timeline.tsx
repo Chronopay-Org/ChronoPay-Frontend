@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef, useId } from "react";
-import { TimelineItem, statusToneMap } from "./timeline-types";
+import { useState, useRef, useId, useCallback } from "react";
+import { TimelineItem, TimelineNode, TimelineBranchGroup, statusToneMap } from "./timeline-types";
 import { StatusChip } from "./status-chip";
 import { KycDocUpload } from "./kyc-doc-upload";
+import { Filter, GitFork, GitMerge } from "lucide-react";
 
 interface StatusTimelineProps {
-  items: TimelineItem[];
+  items: TimelineNode[];
   /**
    * When provided, a GraceBanner is rendered above the timeline entries
    * showing a live countdown until the grace window expires.
@@ -18,6 +19,50 @@ interface StatusTimelineProps {
   onGraceExpired?: () => void;
 }
 
+// ─── Helper: flatten all TimelineItems from a TimelineNode[] ─────────────
+
+function flattenItems(nodes: TimelineNode[]): TimelineItem[] {
+  const result: TimelineItem[] = [];
+  for (const node of nodes) {
+    if ("type" in node && node.type === "branch-group") {
+      for (const branch of node.branches) {
+        result.push(...branch);
+      }
+    } else {
+      result.push(node as TimelineItem);
+    }
+  }
+  return result;
+}
+
+// ─── Helper: check if a node is a TimelineBranchGroup ───────────────────
+
+function isBranchGroup(node: TimelineNode): node is TimelineBranchGroup {
+  return "type" in node && node.type === "branch-group";
+}
+
+// ─── Helper: filter milestones from a list of nodes ────────────────────
+
+function filterMilestoneNodes(nodes: TimelineNode[]): TimelineNode[] {
+  return nodes
+    .map((node) => {
+      if (isBranchGroup(node)) {
+        const filteredBranches = node.branches
+          .map((branch) => branch.filter((item) => item.isMilestone))
+          .filter((branch) => branch.length > 0);
+        if (filteredBranches.length === 0) return null;
+        return { ...node, branches: filteredBranches } as TimelineBranchGroup;
+      }
+      if ((node as TimelineItem).isMilestone) return node;
+      return null;
+    })
+    .filter(Boolean) as TimelineNode[];
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  Main component
+// ═══════════════════════════════════════════════════════════════════════
+
 export function StatusTimeline({ items }: StatusTimelineProps) {
   const [milestonesOnly, setMilestonesOnly] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -27,15 +72,16 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
   const statusId = useId();
 
   // Determine which items to display
-  const displayedItems = milestonesOnly
-    ? items.filter((item) => item.isMilestone)
+  const displayedNodes = milestonesOnly
+    ? filterMilestoneNodes(items)
     : items;
 
-  const hasMilestones = items.some((item) => item.isMilestone);
+  // Check whether any items have milestones (across all branches)
+  const flatItems = flattenItems(items);
+  const hasMilestones = flatItems.some((item) => item.isMilestone);
 
   // ── Toggle handler with scroll preservation ────────────────────────────
   function handleToggle() {
-    // Save scroll position before re-render
     if (listRef.current) {
       scrollTopRef.current = listRef.current.scrollTop;
     }
@@ -43,14 +89,12 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
     const next = !milestonesOnly;
     setMilestonesOnly(next);
 
-    // Announce mode change to screen readers
     setAnnouncement(
       next
         ? "Showing milestones only"
         : "Showing all timeline events",
     );
 
-    // Restore scroll position after React commits the update
     requestAnimationFrame(() => {
       if (listRef.current) {
         listRef.current.scrollTop = scrollTopRef.current;
@@ -104,29 +148,39 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
       </div>
 
       {/* ── Milestones-mode label for quick visual scan ──────────────────── */}
-      {milestonesOnly && displayedItems.length > 0 && (
-        <p
-          className="text-xs text-cyan-400"
-          aria-live="polite"
-        >
-          {displayedItems.length} milestone{displayedItems.length !== 1 ? "s" : ""} shown
-        </p>
-      )}
+      {milestonesOnly && (() => {
+        const milestoneCount = flattenItems(displayedNodes).length;
+        return milestoneCount > 0 ? (
+          <p className="text-xs text-cyan-400" aria-live="polite">
+            {milestoneCount} milestone{milestoneCount !== 1 ? "s" : ""} shown
+          </p>
+        ) : null;
+      })()}
 
-      {/* ── Timeline list ────────────────────────────────────────────────── */}        <ol
+      {/* ── Timeline list ────────────────────────────────────────────────── */}
+      <ol
         ref={listRef}
         className="relative border-l border-white/10 ml-3 max-h-[600px] overflow-y-auto"
       >
-        {displayedItems.map((item, index) => (
-          <TimelineEntry
-            key={item.id}
-            item={item}
-            isLast={index === displayedItems.length - 1}
-          />
-        ))}
+        {displayedNodes.map((node, index) => {
+          if (isBranchGroup(node)) {
+            return (
+              <BranchGroupEntry
+                key={node.id}
+                group={node}
+                isLast={index === displayedNodes.length - 1}
+              />
+            );
+          }
+          return (
+            <TimelineEntry
+              key={(node as TimelineItem).id}
+              item={node as TimelineItem}
+              isLast={index === displayedNodes.length - 1}
+            />
+          );
+        })}
       </ol>
-
-
 
       {/* ── Polite screen-reader announcement ───────────────────────────── */}
       <div
@@ -142,7 +196,166 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
   );
 }
 
-// ─── Timeline entry sub-component ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+//  Branch group sub-component
+// ═══════════════════════════════════════════════════════════════════════
+
+function BranchGroupEntry({
+  group,
+  isLast,
+}: {
+  group: TimelineBranchGroup;
+  isLast: boolean;
+}) {
+  const containerRef = useRef<HTMLLIElement>(null);
+  const branchLabelsId = useId();
+  const [focusedBranchIndex, setFocusedBranchIndex] = useState(0);
+
+  const branchCount = group.branches.length;
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setFocusedBranchIndex((prev) => (prev + 1) % branchCount);
+        focusBranch((focusedBranchIndex + 1) % branchCount);
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setFocusedBranchIndex((prev) => (prev - 1 + branchCount) % branchCount);
+        focusBranch((focusedBranchIndex - 1 + branchCount) % branchCount);
+      }
+    },
+    [branchCount, focusedBranchIndex],
+  );
+
+  function focusBranch(index: number) {
+    const branchEls = containerRef.current?.querySelectorAll("[data-branch-index]");
+    if (branchEls && branchEls[index]) {
+      (branchEls[index] as HTMLElement).focus();
+    }
+  }
+
+  return (
+    <li
+      ref={containerRef}
+      role="group"
+      aria-label={`Branch group: ${group.label}`}
+      aria-labelledby={branchLabelsId}
+      className={`relative mb-10 ml-6 ${isLast ? "mb-0" : ""}`}
+    >
+      {/* ── Fork indicator (dot) ───────────────────────────────── */}
+      <span
+        className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 ring-8 ring-slate-900"
+        aria-hidden="true"
+      >
+        <GitFork className="h-3.5 w-3.5 text-white" />
+      </span>
+
+      {/* ── Branch group content ───────────────────────────────── */}
+      <div className="flex flex-col gap-3">
+        {/* Fork label */}
+        <div className="flex items-center gap-2">
+          <span
+            id={branchLabelsId}
+            className="text-xs font-bold uppercase tracking-wider text-amber-400"
+          >
+            {group.label}
+          </span>
+          <span className="text-xs text-slate-500">
+            {branchCount} branch{branchCount !== 1 ? "es" : ""}
+          </span>
+        </div>
+
+        {/* ── Parallel branches ──────────────────────────────────── */}
+
+        {/* Visual: branch connector lines that split from main timeline */}
+        <div className="relative" onKeyDown={handleKeyDown}>
+          {group.branches.map((branch, branchIndex) => {
+            const isLastBranch = branchIndex === branchCount - 1;
+            const hasRejoin = !!group.rejoinLabel;
+
+            return (
+              <div
+                key={`${group.id}-branch-${branchIndex}`}
+                data-branch-index={branchIndex}
+                tabIndex={0}
+                role="group"
+                aria-label={`Branch ${branchIndex + 1}: ${branch.map((i) => i.title).join(", ")}`}
+                className={[
+                  "relative pl-6 mb-4",
+                  isLastBranch && !hasRejoin ? "mb-0" : "",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded",
+                ].join(" ")}
+              >
+                {/* Branch vertical line (lighter than main timeline) */}
+                <span
+                  className="absolute left-0 top-0 bottom-0 w-px bg-white/5"
+                  aria-hidden="true"
+                />
+
+                {/* Branch connector (horizontal line from main timeline to branch) */}
+                <span
+                  className="absolute -left-[18px] top-3 h-px w-[18px] bg-white/10"
+                  aria-hidden="true"
+                />
+
+                {/* Branch heading label */}
+                <div className="mb-2 flex items-center gap-1.5">
+                  <span
+                    className="h-2 w-2 rounded-full bg-white/20"
+                    aria-hidden="true"
+                  />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                    Branch {branchIndex + 1}
+                  </span>
+                </div>
+
+                {/* Branch items */}
+                <div className="relative border-l border-white/10 ml-1">
+                  {branch.map((item, itemIndex) => (
+                    <TimelineEntry
+                      key={item.id}
+                      item={item}
+                      isLast={itemIndex === branch.length - 1}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* ── Rejoin marker ────────────────────────────────────────── */}
+          {group.rejoinLabel && (
+            <div className="relative pl-6 mt-2" role="region" aria-label={`Rejoin: ${group.rejoinLabel}`}>
+              {/* Horizontal connector from branches back to main line */}
+              <span
+                className="absolute -left-[18px] top-3 h-px w-[18px] bg-white/10"
+                aria-hidden="true"
+              />
+              {/* Rejoin dot */}
+              <span
+                className="absolute -left-[7px] top-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/80 ring-4 ring-slate-900"
+                aria-hidden="true"
+              >
+                <GitMerge className="h-2.5 w-2.5 text-white" />
+              </span>
+              <div className="flex items-center gap-2 ml-1">
+                <GitMerge className="h-3 w-3 text-emerald-400" aria-hidden="true" />
+                <span className="text-xs font-semibold tracking-wider text-emerald-400">
+                  {group.rejoinLabel}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  Timeline entry sub-component
+// ═══════════════════════════════════════════════════════════════════════
 
 function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
