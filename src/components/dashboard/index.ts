@@ -1,5 +1,6 @@
 export * from "./availability-strip";
 export * from "./booking-progress";
+export * from "./order-summary-drawer";
 export * from "./status-timeline";
 export * from "./timeline-types";
 export * from "./dashboard-data";
@@ -13,6 +14,7 @@ export * from "./state-card";
 export * from "./status-chip";
 export * from "./wallet-card";
 export * from "./card";
+export * from "./notifications";
 
 export { availabilityDays, bookingStages } from "./dashboard-data";
 

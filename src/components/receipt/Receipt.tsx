@@ -160,7 +160,7 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
           {receipt.trace.map((step) => (
             <li key={step.label} className="flex items-start gap-3">
               <span
-                aria-hidden="true"
+                aria-hidden={true}
                 className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold ${traceTone[step.status]}`}
               >
                 {step.status === "complete" ? "✓" : step.status === "failed" ? "✕" : "•"}
@@ -202,9 +202,9 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
                 className="receipt-no-print inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-xs font-medium text-slate-200 transition-colors hover:border-cyan-300/30 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
               >
                 {copied ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-300" aria-hidden="true" />
+                  <Check className="h-3.5 w-3.5 text-emerald-300" aria-hidden={true} />
                 ) : (
-                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Copy className="h-3.5 w-3.5" aria-hidden={true} />
                 )}
                 {copied ? "Copied" : "Copy"}
               </button>
@@ -215,7 +215,7 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
                 className="receipt-no-print inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-xs font-medium text-slate-200 transition-colors hover:border-cyan-300/30 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
               >
                 Explorer
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden={true} />
               </a>
             </dd>
           </div>
@@ -229,7 +229,7 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
       </section>
 
       <footer className="flex items-start gap-2 border-t border-white/10 pt-5 text-xs text-slate-400">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" aria-hidden="true" />
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" aria-hidden={true} />
         <p className="leading-relaxed">
           Funds were released from the Stellar Smart Escrow lockbox after slot completion.
           Verify this receipt against the ledger using the explorer link above.
@@ -284,9 +284,9 @@ function ReceiptStateMessage({
       className="glass-panel flex flex-col items-center gap-3 rounded-[2rem] border border-white/10 bg-slate-950/40 p-8 text-center"
     >
       {icon === "loading" ? (
-        <Loader2 className="h-7 w-7 animate-spin text-cyan-400" aria-hidden="true" />
+        <Loader2 className="h-7 w-7 animate-spin text-cyan-400" aria-hidden={true} />
       ) : (
-        <AlertCircle className="h-7 w-7 text-amber-400" aria-hidden="true" />
+        <AlertCircle className="h-7 w-7 text-amber-400" aria-hidden={true} />
       )}
       <p className="text-sm font-semibold text-white">{title}</p>
       <p className="helper-text helper-text--muted max-w-xs">{body}</p>

@@ -9,6 +9,12 @@ import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
 import type { DayAvailability } from "./availability-strip";
 
+export const bookingStages = [
+  { label: "Pending review", value: 4 },
+  { label: "Escrow secured", value: 7 },
+  { label: "Completed", value: 12 },
+];
+
 export const metrics: Metric[] = [
   {
     label: "Available hours this week",
