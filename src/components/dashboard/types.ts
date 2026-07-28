@@ -11,6 +11,8 @@ export type Slot = {
   rate: string;
   status: AvailabilityLevel;
   isNextAvailable?: boolean;
+  /** When true, row is demo/onboarding content and must show a Sample badge. */
+  isSample?: boolean;
   badges?: SocialProofBadgeEntry[];
 };
 
@@ -27,6 +29,8 @@ export type Metric = {
   value: string;
   detail: string;
   tone: Tone;
+  /** When true, metric is demo/onboarding content and must show a Sample badge. */
+  isSample?: boolean;
 };
 
 export type BookingStage = {
