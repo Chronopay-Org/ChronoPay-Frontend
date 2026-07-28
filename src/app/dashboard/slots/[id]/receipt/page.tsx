@@ -95,7 +95,7 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
           )}
 
           <footer className="mt-5 flex items-start gap-2 border-t border-white/10 pt-5 text-xs text-slate-400">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" aria-hidden="true" />
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" aria-hidden={true} />
             <p className="leading-relaxed">
               Sensitive fields are masked. The full transaction hash and escrow contract are
               visible only to the parties in their ChronoPay dashboard.
