@@ -1,15 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { PasswordStrengthMeter } from "@/app/components/password-strength-meter";
-import { DensitySwitcher } from "@/app/components/ui/density-switcher";
-import TwoFactorEnroll from "@/components/dashboard/two-factor-enroll";
-import { CalendarSyncConnect } from "@/components/dashboard/settings/calendar-sync-connect";
-import { CalendarSyncConflictModal } from "@/components/dashboard/settings/calendar-sync-conflict-modal";
-import { sampleConflicts } from "@/components/dashboard/settings/conflict-mock-data";
-import { DeveloperSettings } from "@/components/dashboard/settings/developer-settings";
-import { NotificationPreferencesPanel } from "@/components/dashboard/settings/notification-preferences-panel";
-import type { SyncConflict } from "@/components/dashboard/types";
+import { useState, useCallback } from 'react';
+import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
+import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sync-connect';
+import { DeveloperSettings } from '@/components/dashboard/settings/developer-settings';
+import { DangerZone } from '@/components/dashboard/settings/danger-zone';
+import { DensitySwitcher } from '@/app/components/ui/density-switcher';
+import { PasswordStrengthMeter } from '@/app/components/password-strength-meter';
 
 export default function SettingsPage() {
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
@@ -98,6 +95,9 @@ export default function SettingsPage() {
           </div>
           <DeveloperSettings />
         </section>
+
+        {/* Danger Zone */}
+        <DangerZone />
       </div>
     </div>
   );
