@@ -10,6 +10,8 @@ import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { ReceiptModal } from "@/components/receipt";
 import type { ReceiptData } from "@/components/receipt";
 import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
+import { GiftPurchaseToggle } from "@/components/dashboard/gift-purchase-toggle";
+import type { GiftDetails } from "@/components/dashboard/gift-purchase-toggle";
 import {
   ArrowLeft,
   Wallet,
@@ -149,6 +151,7 @@ export default function SlotDetailPage({
   const [announcement, setAnnouncement] = useState(""); // Screen reader announcer
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountedTotal, setDiscountedTotal] = useState(totalCost);
+  const [giftDetails, setGiftDetails] = useState<GiftDetails | null>(null);
 
   // RECEIPT STATE (only meaningful once the transaction has settled)
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -622,6 +625,8 @@ export default function SlotDetailPage({
                 </dl>
               </div>
 
+              <GiftPurchaseToggle onChange={setGiftDetails} />
+
               <PromoCodeEntry
                 baseTotal={totalCost}
                 onDiscountApplied={({ percent, discountedTotal: nextTotal }) => {
@@ -751,6 +756,15 @@ export default function SlotDetailPage({
                       <span className="text-slate-400">Seller</span>
                       <span className="font-semibold text-white">{details.seller.name}</span>
                     </div>
+
+                    {giftDetails?.isGift && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Gift for</span>
+                        <span className="font-semibold text-white max-w-[180px] truncate text-right">
+                          {giftDetails.recipientName || giftDetails.recipientEmail || "Recipient"}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between border-t border-white/5 pt-3.5">
                       <span className="text-slate-400">Network + Escrow Fee</span>
