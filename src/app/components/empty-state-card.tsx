@@ -18,6 +18,7 @@ type EmptyStateCardProps = {
   };
   guidance: string[];
   actions?: ReactNode;
+  alt?: string;
 };
 
 export function EmptyStateCard({
