@@ -1,3 +1,4 @@
+export * from './slot-picker-minimap';
 export * from "./availability-strip";
 export * from "./booking-checklist";
 export * from "./booking-progress";
