@@ -3,9 +3,16 @@
 import { useState } from "react";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
+import { ResumedBadge } from "@/app/components/ui/resumed-badge";
+import { EmptyStateCard } from "@/app/components/empty-state-card";
 import { glossary } from "@/lib/glossary";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
+import { StatusChip } from "./status-chip";
+import { SocialProofBadges } from "./social-proof-badges";
+import { SampleBadge } from "./sample-badge";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
+import { useToast } from "@/hooks/use-toast";
 
 type TimeOfDay = "anytime" | "morning" | "afternoon" | "evening";
 

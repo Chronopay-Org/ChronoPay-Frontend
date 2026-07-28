@@ -11,7 +11,13 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],
-      include: ["src/app/components/ui/help-popover.tsx", "src/lib/glossary.ts"],
+      include: [
+        "src/app/components/ui/help-popover.tsx",
+        "src/lib/glossary.ts",
+        "src/lib/markdown.ts",
+        "src/hooks/use-receipt-notes.ts",
+        "src/components/receipt/NotesEditor.tsx",
+      ],
       thresholds: {
         lines: 95,
         functions: 95,
