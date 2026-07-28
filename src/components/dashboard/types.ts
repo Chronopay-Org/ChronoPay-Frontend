@@ -137,6 +137,18 @@ export type RefundDestinationSubmission = {
   option: RefundDestinationOption;
 };
 
+/** Supplier trust metric with sparkline history */
+export type TrustMetric = {
+  id: string;
+  label: string;
+  value: string;
+  unit: string;
+  trend: "up" | "down" | "stable";
+  history: { values: number[] };
+  tooltip: string;
+  tone: Tone;
+};
+
 /** A single criterion in a rating breakdown (e.g. Communication, Expertise). */
 export type RatingCriterion = {
   id: string;
