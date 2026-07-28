@@ -8,8 +8,10 @@ import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { TimezoneRibbon } from "./timezone-ribbon";
 import { glossary } from "@/lib/glossary";
-import type { Slot } from "./types";
+import type { Slot, AvailabilityLevel, SlotPickerDensity, HourlySlotBand } from "./types";
+import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
+import { slots } from "./dashboard-data";
 
 interface SlotListProps {
   slots?: Slot[];
@@ -68,7 +70,83 @@ export const SlotList = ({
     if (swipeY === -1) {
       console.log("Detail reveal logic");
     }
-  });
+
+    if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      setFocusedAlternativeIndex(index - 1);
+    }
+  };
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const lastSelectedId = useRef<string | null>(null);
+  const [liveMessage, setLiveMessage] = useState("");
+
+  const announce = useCallback((msg: string) => {
+    setLiveMessage(msg);
+    // clear after a moment to allow re-announcement
+    setTimeout(() => setLiveMessage(""), 3000);
+  }, []);
+
+  const toggleSelection = (id: string, e?: React.MouseEvent | React.KeyboardEvent) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const isShift = e && 'shiftKey' in e && e.shiftKey;
+      const isMeta = e && ('metaKey' in e && (e.metaKey || e.ctrlKey));
+
+      if (isShift && lastSelectedId.current) {
+        const currentIndex = slots.findIndex(s => s.id === id);
+        const lastIndex = slots.findIndex(s => s.id === lastSelectedId.current);
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        
+        if (!isMeta) {
+          next.clear();
+        }
+
+        for (let i = start; i <= end; i++) {
+          next.add(slots[i].id);
+        }
+      } else if (isMeta) {
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+      } else {
+        if (next.has(id) && next.size === 1) {
+          next.delete(id);
+        } else {
+          next.clear();
+          next.add(id);
+        }
+      }
+      
+      announce(`${next.size} slot${next.size !== 1 ? 's' : ''} selected.`);
+      
+      lastSelectedId.current = id;
+      return next;
+    });
+  };
+
+  const handleKeyDown = (id: string, e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleSelection(id, e);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    announce("Selection cleared.");
+    lastSelectedId.current = null;
+  };
+
+  const mapTone = (status: string) => {
+    if (status === "Healthy") return "positive";
+    if (status === "Tight") return "warning";
+    if (status === "Busy") return "danger";
+    return "neutral";
+  };
 
   return (
     <div className="space-y-4">
