@@ -13,6 +13,8 @@ export type Slot = {
   /** Duration in minutes for this slot (used by duration filter chips) */
   durationMinutes?: number;
   isNextAvailable?: boolean;
+  /** ISO 8601 string of when the slot was created */
+  mintedAt?: string;
   /** When true, row is demo/onboarding content and must show a Sample badge. */
   isSample?: boolean;
   badges?: SocialProofBadgeEntry[];
@@ -24,6 +26,14 @@ export type QuickAction = {
   href: string;
   tone: Tone;
   icon: string;
+};
+
+export type EarningsSegment = {
+  id: string;
+  label: string;
+  value: number;
+  formattedValue: string;
+  colorClass: string;
 };
 
 export type Metric = {
@@ -67,6 +77,13 @@ export type SocialProofBadgeEntry = {
   icon: string;
   criterion: string;
   explainerKey?: string;
+};
+
+export type RegionInfo = {
+  country: string;
+  countryCode?: string;
+  timezone?: string;
+  currency?: string;
 };
 
 export type Supplier = {
@@ -160,4 +177,19 @@ export type RatingCriterion = {
   count: number;
   /** Sequential-palette bar colour class, e.g. "bg-cyan-500" */
   colorClass: string;
+};
+
+export type SentimentBucket = "all" | "positive" | "mixed" | "critical";
+
+export type SentimentCounts = {
+  positive: number;
+  mixed: number;
+  critical: number;
+};
+
+export type SentimentDataPoint = {
+  timestamp: string;
+  positive: number;
+  mixed: number;
+  critical: number;
 };

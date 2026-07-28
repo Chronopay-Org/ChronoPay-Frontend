@@ -174,35 +174,36 @@ function ExperimentToggle({ feature, onChange }: ExperimentToggleProps) {
 }
 
 export function DeveloperSettings() {
-  const [features, setFeatures] = useState<ExperimentalFeature[]>([]);
+  const [features, setFeatures] = useState<ExperimentalFeature[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const savedStates = JSON.parse(stored) as Record<string, boolean>;
+        return EXPERIMENTAL_FEATURES.map((f) => ({
+          ...f,
+          enabled: savedStates[f.id] ?? false,
+        }));
+      }
+    } catch {
+      // Fallback if localStorage fails
+    }
+    return EXPERIMENTAL_FEATURES.map((f) => ({ ...f, enabled: false }));
+  });
   const [mounted, setMounted] = useState(false);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(
+    () => {
+      try {
+        return localStorage.getItem(BANNER_DISMISS_KEY) === "true";
+      } catch {
+        return false;
+      }
+    },
+  );
   const [isExporting, setIsExporting] = useState(false);
   const debugInfo = getDebugInfo();
 
-  // Load experimental features from localStorage
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      const storedBanner = localStorage.getItem(BANNER_DISMISS_KEY);
-
-      if (stored) {
-        const savedStates = JSON.parse(stored) as Record<string, boolean>;
-        setFeatures(
-          EXPERIMENTAL_FEATURES.map((f) => ({
-            ...f,
-            enabled: savedStates[f.id] ?? false,
-          }))
-        );
-      } else {
-        setFeatures(EXPERIMENTAL_FEATURES.map((f) => ({ ...f, enabled: false })));
-      }
-
-      setBannerDismissed(storedBanner === "true");
-    } catch {
-      // Fallback if localStorage fails
-      setFeatures(EXPERIMENTAL_FEATURES.map((f) => ({ ...f, enabled: false })));
-    }
     setMounted(true);
   }, []);
 
