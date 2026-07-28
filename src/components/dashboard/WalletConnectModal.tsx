@@ -107,7 +107,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
       <FocusTrap>
         <div
           ref={modalRef}
-          className="relative w-full max-w-2xl rounded-xl bg-white dark:bg-slate-900 p-6 shadow-lg"
+          className="elevation-4 relative w-full max-w-md rounded-xl bg-white p-6 dark:bg-slate-900"
         >
           <h2 id="wallet-connect-title" className="text-xl font-semibold text-slate-900 dark:text-slate-50">
             Choose how to connect

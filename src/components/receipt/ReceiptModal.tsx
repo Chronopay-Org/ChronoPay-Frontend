@@ -174,7 +174,7 @@ export function ReceiptModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
-          className="receipt-dialog relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/12 bg-slate-900 p-4 shadow-2xl sm:p-6"
+          className="receipt-dialog elevation-4 relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/12 bg-slate-900 p-4 sm:p-6"
         >
           <div className="receipt-no-print mb-4 flex items-center justify-between gap-3">
             <h2

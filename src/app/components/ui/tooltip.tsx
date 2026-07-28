@@ -211,21 +211,9 @@ export function Tooltip({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isVisible, hideTooltip]);
 
-  // Clean up hide timeout on unmount
-  useEffect(() => {
-    return () => clearHideTimeout();
-  }, []);
-
   // Styling helpers
-  const standardClasses =
-    "max-w-xs px-3 py-2 text-sm text-white bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg";
-  const longformClasses =
-    "max-w-sm px-4 py-3 text-sm leading-relaxed text-zinc-100 bg-zinc-900 border border-zinc-700/80 rounded-xl shadow-2xl ring-1 ring-white/10";
-
-  const tooltipBaseClasses = `absolute z-50 transition-opacity duration-150 ${
-    isLongform ? longformClasses : standardClasses
-  }`;
-
+  const tooltipBaseClasses =
+    "elevation-2 absolute z-50 max-w-xs px-3 py-2 text-sm text-white bg-zinc-800 border border-zinc-600 rounded-lg transition-opacity duration-150";
   const placementClasses =
     placement === "top"
       ? "bottom-full mb-2 left-1/2 -translate-x-1/2"
