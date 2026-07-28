@@ -106,6 +106,21 @@ The palette uses the same design tokens as other overlays:
 - Accent: `cyan-400` / `cyan-500/10` for selected and boosted items
 - Text: `white` primary, `slate-500` secondary, `slate-600` hints
 
+  # Command Palette Recent Actions & Pinning
+
+## Overview
+To improve navigation efficiency, the command palette maintains a list of recently used actions and allows users to pin frequently used tools to the top.
+
+## Behavior
+- **Recent Group**: Tracks the last 5 unique actions performed.
+- **Pinned Group**: Static list of actions chosen by the user. Pinned items are excluded from the Recent group to avoid duplication.
+- **Persistence**: State is persisted in `localStorage` per browser session.
+
+## Accessibility (WCAG 2.1 AA)
+- Toggling a pin is performable via keyboard (Enter/Space on the button).
+- Aria-labels dynamically update based on pinned state.
+- Focus is managed to prevent closing the palette when toggling pins.
+
 ## Edge Cases
 
 | Scenario | Behaviour |
