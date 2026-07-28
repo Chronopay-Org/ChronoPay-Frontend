@@ -4,8 +4,10 @@ import { DashboardShell } from "../components/dashboard-shell";
 import {
   BookingProgress,
   MetricCard,
+  OnboardingWidget,
   OnboardingWalkthrough,
   PanelShell,
+  PricingCalculator,
   QuickActions,
   SlotList,
   WalletCard,
@@ -15,7 +17,9 @@ import {
   slots,
   wallet,
 } from "@/components/dashboard";
-import { ReviewsPanel } from "@/components/dashboard/reviews-panel";
+import { KycStatusTimeline } from "@/components/dashboard/kyc-status-timeline";
+import { kycTimelineEntries, kycPromptPanel } from "@/components/dashboard/kyc-status-timeline";
+import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
@@ -162,6 +166,14 @@ export default function Dashboard() {
             />
           </PanelShell>
         </div>
+
+        {/* Pricing Fee Calculator */}
+        <PanelShell
+          title="Fee Calculator"
+          description="Estimate your take-home earnings after platform and network fees."
+        >
+          <PricingCalculator />
+        </PanelShell>
 
         <PanelShell id="quick-actions" title="Quick Actions">
           <QuickActions actions={quickActions} />
