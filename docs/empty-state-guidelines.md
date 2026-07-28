@@ -25,3 +25,33 @@
 - Empty state card: `src/app/components/empty-state-card.tsx`
 - Status chip: `src/app/components/ui/status-chip.tsx`
 - Route-level states: `src/app/dashboard/loading.tsx`, `src/app/dashboard/error.tsx`
+
+## Slot list example
+
+Use the shared card whenever `src/components/dashboard/slot-list.tsx` has no items to render.
+
+```tsx
+import { ButtonLink } from "@/app/components/ui/button-link";
+import { EmptyStateCard } from "@/app/components/empty-state-card";
+
+<EmptyStateCard
+  eyebrow="Slots"
+  title="No time slots listed yet"
+  description="Add an availability block when you are ready to sell or reserve time."
+  accentLabel="Slots"
+  status={{ label: "Empty", tone: "neutral" }}
+  guidance={[
+    "Create your first availability block to begin selling time.",
+    "Set clear availability windows so customers can book reliably.",
+  ]}
+  actions={
+    <ButtonLink href="/dashboard#quick-actions" variant="primary" size="md">
+      Add availability
+    </ButtonLink>
+  }
+/>
+```
+
+- Keep the illustration decorative only; it should stay `aria-hidden`.
+- Make the primary action a real focusable control, not static text.
+- If the state appears inside a dashboard panel, add a matching target id on the next relevant section.

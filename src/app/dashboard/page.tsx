@@ -1,66 +1,214 @@
-import Link from "next/link";
-import DesignChecklist from "@/components/design/DesignChecklist";
+"use client";
 
+import { DashboardShell } from "../components/dashboard-shell";
+import {
+  BookingProgress,
+  MetricCard,
+  OnboardingWidget,
+  OnboardingWalkthrough,
+  PanelShell,
+  PricingCalculator,
+  QuickActions,
+  RatingBreakdownBars,
+  SlotList,
+  WalletCard,
+  bookingStages,
+  metrics,
+  quickActions,
+  ratingBreakdown,
+  slots,
+  wallet,
+} from "@/components/dashboard";
+import { KycStatusTimeline } from "@/components/dashboard/kyc-status-timeline";
+import { kycTimelineEntries, kycPromptPanel } from "@/components/dashboard/kyc-status-timeline";
+import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
+import { HelpPopover } from "@/app/components/ui/help-popover";
+import { glossary } from "@/lib/glossary";
+
+// ─── Simulated async time-token actions ───────────────────────────────────────
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+async function simulateMint() {
+  await delay(2000);
+}
+
+async function simulateBuy() {
+  await delay(1800);
+}
+
+async function simulateEscrowRelease() {
+  await delay(2200);
+  // Simulate a failure ~30% of the time for demo
+  if (Math.random() < 0.3)
+    throw new Error("Escrow release rejected by contract");
+}
 
 export default function Dashboard() {
-  // Simulated states (for QA requirement)
   const loading = false;
   const error = false;
   const hasData = true;
+  const {
+    showSamples,
+    showTour,
+    showClearBanner,
+    clearSamples,
+    dismissTour,
+  } = useOnboardingSamples();
+
+  // Suppress lint warnings for demo simulation functions
+  void simulateMint;
+  void simulateBuy;
+  void simulateEscrowRelease;
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-400">
-        Loading dashboard...
+      <div
+        className="flex min-h-screen items-center justify-center text-zinc-400"
+        role="status"
+        aria-live="polite"
+      >
+        Loading dashboard…
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
-        Something went wrong.
+      <div
+        className="flex min-h-screen items-center justify-center text-zinc-400"
+        role="alert"
+      >
+        An error occurred. Please refresh the page.
       </div>
     );
   }
 
   if (!hasData) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-400">
+      <div
+        className="flex min-h-screen items-center justify-center text-zinc-400"
+        role="status"
+      >
         No data available.
       </div>
     );
   }
 
+  const suggestedAlternatives = slots.slice(0, 3);
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-      <main className="max-w-5xl mx-auto px-6 py-16 space-y-10">
-        {/* Title */}
+<DashboardShell>
+      <div className="space-y-6 sm:space-y-8 md:space-y-10">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="mt-2 text-zinc-400">
-            Connect your Stellar wallet to mint and trade time tokens.
+          <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
+          <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-400 sm:text-base">
+            Connect your Stellar wallet to{" "}
+            <span className="inline-flex items-center gap-1">
+              mint
+              <HelpPopover
+                term={glossary.mint}
+                triggerLabel="Help: what does minting mean?"
+              />
+            </span>{" "}
+            and trade{" "}
+            <span className="inline-flex items-center gap-1">
+              time tokens.
+              <HelpPopover
+                term={glossary.timeToken}
+                triggerLabel="Help: what is a time token?"
+              />
+            </span>
           </p>
         </div>
 
-        {/* Wallet Card */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <h2 className="text-lg font-semibold mb-2">Wallet Status</h2>
-          <p className="text-sm text-zinc-400">Not connected</p>
-          <button className="mt-4 px-4 py-2 text-sm rounded-lg bg-white text-black hover:bg-zinc-200 transition">
-            Connect Wallet
-          </button>
+{/* Onboarding */}
+        <OnboardingWidget />
+
+        {/* Metrics */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((metric) => (
+            <MetricCard key={metric.label} metric={metric} />
+          ))}
+          {!showSamples ? (
+            <p className="text-sm text-slate-400 md:col-span-2 lg:col-span-4">
+              Sample metrics cleared. Metrics will appear here once you have live
+              activity.
+            </p>
+          ) : null}
         </div>
 
-        {/* Time Slots Section */}
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <h2 className="text-lg font-semibold mb-4">Available Time Slots</h2>
-          <p className="text-sm text-zinc-500">No time slots listed yet.</p>
+        {/* KYC Status Timeline */}
+        <KycStatusTimeline
+          entries={kycTimelineEntries}
+          promptPanel={kycPromptPanel}
+        />
+
+        {/* Wallet and Booking Progress */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <PanelShell title="Wallet">
+            <WalletCard
+              wallet={
+                showSamples
+                  ? wallet
+                  : {
+                      connection: "disconnected",
+                      status: "Connect a wallet to sync balances.",
+                    }
+              }
+            />
+          </PanelShell>
+          <PanelShell title="Booking Progress">
+            <BookingProgress
+              stages={showSamples ? bookingStages : []}
+            />
+          </PanelShell>
         </div>
 
-        {/* Design QA Checklist (IMPORTANT FOR ISSUE) */}
-        <DesignChecklist />
-      </main>
-    </div>
+        {/* Rating Breakdown */}
+        {showSamples && (
+          <PanelShell
+            title="Rating Breakdown"
+            description="Per-criterion average ratings across your recent reviews."
+          >
+            <RatingBreakdownBars
+              criteria={ratingBreakdown}
+              overallRating={4.6}
+              overallCount={42}
+            />
+          </PanelShell>
+        )}
+
+        {/* Pricing Fee Calculator */}
+        <PanelShell
+          title="Fee Calculator"
+          description="Estimate your take-home earnings after platform and network fees."
+        >
+          <PricingCalculator />
+        </PanelShell>
+
+        <PanelShell id="quick-actions" title="Quick Actions">
+          <QuickActions actions={quickActions} />
+        </PanelShell>
+
+        <PanelShell id="available-time-slots" title="Available Time Slots">
+          <SlotList
+            slots={slots}
+            suggestedAlternatives={suggestedAlternatives}
+          />
+        </PanelShell>
+
+      </div>
+
+      <OnboardingWalkthrough
+        key={showTour ? "tour-open" : "tour-closed"}
+        open={showTour}
+        onSkip={dismissTour}
+        onComplete={dismissTour}
+        onClearSamples={clearSamples}
+      />
+    </DashboardShell>
   );
 }

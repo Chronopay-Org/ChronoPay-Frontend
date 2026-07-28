@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { DashboardShell } from "../components/dashboard-shell";
+import { EmptyStateIllustration } from "../components/empty-state-illustration";
 
-export default function DashboardError({
+export function DashboardError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
+  error?: Error & { digest?: string };
   reset: () => void;
 }) {
   useEffect(() => {
@@ -20,19 +21,22 @@ export default function DashboardError({
       <section
         role="alert"
         className="glass-panel mx-auto max-w-2xl rounded-[2rem] p-6 sm:p-8"
+        aria-labelledby="dashboard-error-title"
+        aria-describedby="dashboard-error-description"
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-300">
-          Error state
-        </p>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white">
-          We could not load your booking workspace
+        <EmptyStateIllustration accentLabel="Error" variant="error" alt="Error state illustration showing a disconnected UI layout" />
+        <h1
+          id="dashboard-error-title"
+          className="mt-4 text-3xl font-semibold tracking-tight text-white"
+        >
+          Oops! Something went wrong.
         </h1>
-        <p className="mt-4 text-sm leading-7 text-slate-300">
-          Nothing has been published or charged. Try again to reload the dashboard, or return home if you want to restart from a safe point.
+        <p
+          id="dashboard-error-description"
+          className="mt-4 text-sm leading-7 text-slate-300"
+        >
+          We couldn&apos;t load your dashboard. This might be a temporary network glitch.
         </p>
-        <div className="mt-6 rounded-[1.5rem] border border-rose-300/15 bg-rose-300/10 px-4 py-3 text-sm text-rose-100">
-          {error.message || "Unexpected dashboard error."}
-        </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             type="button"
@@ -42,13 +46,21 @@ export default function DashboardError({
             Try again
           </button>
           <Link
-            href="/"
+            href="/status"
             className="inline-flex items-center justify-center rounded-full border border-white/12 bg-white/6 px-4 py-2.5 text-sm font-medium text-slate-100 hover:border-cyan-200/30 hover:bg-white/10"
           >
-            Go home
+            View status page
+          </Link>
+          <Link
+            href="mailto:support@chronopay.com"
+            className="inline-flex items-center justify-center rounded-full border border-white/12 bg-white/6 px-4 py-2.5 text-sm font-medium text-slate-100 hover:border-rose-200/30 hover:bg-white/10"
+          >
+            Contact support
           </Link>
         </div>
       </section>
     </DashboardShell>
   );
 }
+
+export default DashboardError;
