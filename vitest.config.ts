@@ -16,6 +16,8 @@ export default defineConfig({
         "src/lib/glossary.ts",
         "src/components/dashboard/pricing-calculator.tsx",
         "src/components/dashboard/services-step/**/*.{ts,tsx}",
+        "src/app/components/keyboard-shortcuts-overlay.tsx",
+        "src/lib/keyboard-shortcuts.ts",
       ],
       thresholds: {
         lines: 95,
