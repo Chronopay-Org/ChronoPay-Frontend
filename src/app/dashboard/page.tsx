@@ -26,6 +26,10 @@ import { kycTimelineEntries, kycPromptPanel } from "@/components/dashboard/kyc-s
 import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
+import {
+  NetworkProvider,
+  NetworkSelector,
+} from "@/components/checkout/NetworkSelector";
 
 // ─── Simulated async time-token actions ───────────────────────────────────────
 
@@ -47,8 +51,6 @@ async function simulateEscrowRelease() {
   if (Math.random() < 0.3)
     throw new Error("Escrow release rejected by contract");
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const loading = false;
@@ -105,6 +107,7 @@ export default function Dashboard() {
 
   return (
     <DashboardShell>
+      <NetworkProvider>
       <div className="space-y-6 sm:space-y-8 md:space-y-10">
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
@@ -128,7 +131,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Onboarding */}
+{/* Onboarding */}
         <OnboardingWidget />
 
         {/* Metrics */}
@@ -211,6 +214,7 @@ export default function Dashboard() {
         </PanelShell>
 
       </div>
+      </NetworkProvider>
 
       <OnboardingWalkthrough
         key={showTour ? "tour-open" : "tour-closed"}
