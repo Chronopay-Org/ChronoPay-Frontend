@@ -145,4 +145,34 @@ export const glossary = {
     learnMoreHref: "/docs/onboarding#session-duration",
     learnMoreLabel: "Learn more about durations →",
   },
+
+  /**
+   * Platform fee — the marketplace commission taken per booking.
+   */
+  platformFee: {
+    title: "Platform fee",
+    body: "ChronoPay takes a flat percentage on completed bookings to maintain the marketplace, scheduling infrastructure, and smart contract orchestration.",
+    learnMoreHref: "/docs/pricing#platform-fee",
+    learnMoreLabel: "Learn more about platform fees →",
+  },
+
+  /**
+   * Network fee — Stellar ledger transaction cost.
+   */
+  networkFee: {
+    title: "Network fee",
+    body: "A small fixed XLM fee paid to the Stellar network for each transaction. This covers ledger operations like token transfers and escrow settlement.",
+    learnMoreHref: "/docs/pricing#network-fee",
+    learnMoreLabel: "Learn more about network fees →",
+  },
+
+  /**
+   * Take-home — the amount settled to your wallet after all deductions.
+   */
+  takeHome: {
+    title: "Take-home earnings",
+    body: "The final amount settled directly to your wallet after all network and platform fees are deducted from the base session price.",
+    learnMoreHref: "/docs/pricing#take-home",
+    learnMoreLabel: "Learn more about take-home →",
+  },
 } satisfies Record<string, GlossaryTerm>;
