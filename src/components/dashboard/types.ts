@@ -13,6 +13,8 @@ export type Slot = {
   /** Duration in minutes for this slot (used by duration filter chips) */
   durationMinutes?: number;
   isNextAvailable?: boolean;
+  /** ISO 8601 string of when the slot was created */
+  mintedAt?: string;
   /** When true, row is demo/onboarding content and must show a Sample badge. */
   isSample?: boolean;
   badges?: SocialProofBadgeEntry[];
@@ -24,6 +26,14 @@ export type QuickAction = {
   href: string;
   tone: Tone;
   icon: string;
+};
+
+export type EarningsSegment = {
+  id: string;
+  label: string;
+  value: number;
+  formattedValue: string;
+  colorClass: string;
 };
 
 export type Metric = {
@@ -67,6 +77,13 @@ export type SocialProofBadgeEntry = {
   icon: string;
   criterion: string;
   explainerKey?: string;
+};
+
+export type RegionInfo = {
+  country: string;
+  countryCode?: string;
+  timezone?: string;
+  currency?: string;
 };
 
 export type Supplier = {
@@ -137,6 +154,59 @@ export type RefundDestinationSubmission = {
   option: RefundDestinationOption;
 };
 
+// ─── Booking Completion Checklist ─────────────────────────────────────────────
+
+/**
+ * Status of an individual booking-checklist step.
+ *
+ * - `done`    — Step is completed.
+ * - `active`  — Step is the current in-progress step.
+ * - `blocked` — Step cannot proceed until a dependency resolves.
+ * - `skipped` — Optional step the user or system has bypassed.
+ * - `pending` — Not yet reached; will become active in the future.
+ */
+export type ChecklistStepStatus =
+  | "done"
+  | "active"
+  | "blocked"
+  | "skipped"
+  | "pending";
+
+/** A single step inside a BookingChecklist. */
+export type ChecklistStep = {
+  /** Stable identifier used as React key and ARIA id anchor. */
+  id: string;
+  /** Human-readable step label. */
+  label: string;
+  /** Current status of this step. */
+  status: ChecklistStepStatus;
+  /**
+   * Optional helper copy shown beneath the label — for example, a blocking
+   * reason ("Waiting for seller confirmation") or a done timestamp.
+   */
+  description?: string;
+  /**
+   * When true, this step may be safely skipped without blocking later steps.
+   * Skipped optional steps render with a `skipped` pill rather than a blocked
+   * indicator.
+   */
+  optional?: boolean;
+};
+
+/** Aggregated summary derived from a list of ChecklistStep items. */
+export type ChecklistSummary = {
+  total: number;
+  done: number;
+  active: number;
+  blocked: number;
+  skipped: number;
+  pending: number;
+  /** Progress as a value between 0 and 1. Skipped optional steps count as done. */
+  progress: number;
+};
+
+// ─── Rating Breakdown ─────────────────────────────────────────────────────────
+
 /** A single criterion in a rating breakdown (e.g. Communication, Expertise). */
 export type RatingCriterion = {
   id: string;
@@ -148,4 +218,19 @@ export type RatingCriterion = {
   count: number;
   /** Sequential-palette bar colour class, e.g. "bg-cyan-500" */
   colorClass: string;
+};
+
+export type SentimentBucket = "all" | "positive" | "mixed" | "critical";
+
+export type SentimentCounts = {
+  positive: number;
+  mixed: number;
+  critical: number;
+};
+
+export type SentimentDataPoint = {
+  timestamp: string;
+  positive: number;
+  mixed: number;
+  critical: number;
 };

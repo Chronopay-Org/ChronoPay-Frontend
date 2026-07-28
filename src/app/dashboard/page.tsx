@@ -2,6 +2,7 @@
 
 import { DashboardShell } from "../components/dashboard-shell";
 import {
+  BookingChecklist,
   BookingProgress,
   MetricCard,
   OnboardingWidget,
@@ -12,6 +13,7 @@ import {
   RatingBreakdownBars,
   SlotList,
   WalletCard,
+  bookingChecklistSteps,
   bookingStages,
   metrics,
   quickActions,
@@ -24,6 +26,10 @@ import { kycTimelineEntries, kycPromptPanel } from "@/components/dashboard/kyc-s
 import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
+import {
+  NetworkProvider,
+  NetworkSelector,
+} from "@/components/checkout/NetworkSelector";
 
 // ─── Simulated async time-token actions ───────────────────────────────────────
 
@@ -45,8 +51,6 @@ async function simulateEscrowRelease() {
   if (Math.random() < 0.3)
     throw new Error("Escrow release rejected by contract");
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const loading = false;
@@ -103,6 +107,7 @@ export default function Dashboard() {
 
   return (
     <DashboardShell>
+      <NetworkProvider>
       <div className="space-y-6 sm:space-y-8 md:space-y-10">
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
@@ -126,7 +131,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Onboarding */}
+{/* Onboarding */}
         <OnboardingWidget />
 
         {/* Metrics */}
@@ -148,8 +153,8 @@ export default function Dashboard() {
           promptPanel={kycPromptPanel}
         />
 
-        {/* Wallet and Booking Progress */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* Wallet, Booking Progress, and Booking Checklist */}
+        <div className="grid gap-6 lg:grid-cols-3">
           <PanelShell title="Wallet">
             <WalletCard
               wallet={
@@ -167,6 +172,12 @@ export default function Dashboard() {
               stages={showSamples ? bookingStages : []}
             />
           </PanelShell>
+          <BookingChecklist
+            eyebrow="Booking flow"
+            title="Completion checklist"
+            steps={showSamples ? bookingChecklistSteps : []}
+            defaultCollapsed={false}
+          />
         </div>
 
         {/* Rating Breakdown */}
@@ -203,6 +214,7 @@ export default function Dashboard() {
         </PanelShell>
 
       </div>
+      </NetworkProvider>
 
       <OnboardingWalkthrough
         key={showTour ? "tour-open" : "tour-closed"}
