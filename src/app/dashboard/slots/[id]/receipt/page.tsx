@@ -11,6 +11,7 @@ import { use } from "react";
 import Link from "next/link";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { DashboardShell } from "@/app/components/dashboard-shell";
+import { BreadcrumbOverflow } from "@/app/components/ui/breadcrumb-overflow";
 import { StatusChip } from "@/components/dashboard/status-chip";
 
 type SharedReceiptPageProps = {
@@ -44,7 +45,7 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
   return (
     <DashboardShell>
       <div className="space-y-6">
-        <nav aria-label="Breadcrumb">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/dashboard"
             className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/40 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-cyan-300/30 hover:bg-slate-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
@@ -52,7 +53,16 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             Back to Dashboard
           </Link>
-        </nav>
+
+          <BreadcrumbOverflow
+            className="relative"
+            items={[
+              { label: "Dashboard", href: "/dashboard" },
+              { label: "Slots", href: "/dashboard/slots" },
+              { label: "Receipt" },
+            ]}
+          />
+        </div>
 
         <article
           className="glass-panel mx-auto max-w-xl rounded-[2rem] border border-white/10 bg-slate-950/40 p-6 text-slate-100 sm:p-8"
