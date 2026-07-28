@@ -2,25 +2,20 @@
 
 import { DashboardShell } from "../components/dashboard-shell";
 import {
-  availabilityDays,
-  AvailabilityStrip,
-  bookingStages,
   BookingProgress,
-  ClearSamplesBanner,
-  metrics,
   MetricCard,
   OnboardingWalkthrough,
   PanelShell,
-  quickActions,
   QuickActions,
-  slots,
   SlotList,
-  wallet,
   WalletCard,
-  upcomingHolidays,
-  holidayRegion,
-  HolidayHintsStrip,
+  bookingStages,
+  metrics,
+  quickActions,
+  slots,
+  wallet,
 } from "@/components/dashboard";
+import { ReviewsPanel } from "@/components/dashboard/reviews-panel";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
@@ -59,8 +54,10 @@ export default function Dashboard() {
     dismissTour,
   } = useOnboardingSamples();
 
-  const visibleMetrics = showSamples ? metrics : [];
-  const visibleSlots = showSamples ? slots : [];
+  // Suppress lint warnings for demo simulation functions
+  void simulateMint;
+  void simulateBuy;
+  void simulateEscrowRelease;
 
   if (loading) {
     return (
@@ -123,18 +120,12 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {showSamples ? (
-          <ClearSamplesBanner
-            visible={showClearBanner || showTour}
-            onClear={clearSamples}
-          />
-        ) : null}
+        {/* Onboarding */}
+        <OnboardingWidget />
 
-        <div
-          data-tour-target="metrics"
-          className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
-        >
-          {visibleMetrics.map((metric) => (
+        {/* Metrics */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((metric) => (
             <MetricCard key={metric.label} metric={metric} />
           ))}
           {!showSamples ? (
@@ -183,11 +174,6 @@ export default function Dashboard() {
           />
         </PanelShell>
 
-        {/* Holiday Hints Strip */}
-        <HolidayHintsStrip
-          holidays={upcomingHolidays}
-          region={holidayRegion}
-        />
       </div>
 
       <OnboardingWalkthrough

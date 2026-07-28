@@ -1,234 +1,55 @@
 // src/app/components/ui/tooltip.tsx
 "use client";
 
-/**
- * Tooltip — accessible tooltip with a smart-placement engine.
- *
- * Placement engine (no external dependency)
- * ─────────────────────────────────────────
- * 1. Attempt to place on the preferred `side` (default "top").
- * 2. If clipped on that side, flip to the opposite side.
- * 3. If the opposite side is also clipped, pick whichever has more room.
- * 4. After the axis is resolved, shift along the cross-axis so the tooltip
- *    stays within the viewport (clamped to `viewportPadding`).
- * 5. The result is applied as fixed `top`/`left` pixel coordinates so the
- *    tooltip is never constrained by an ancestor's overflow or transform.
- *
- * Props
- * ─────
- * content          – tooltip text (required)
- * side             – preferred placement axis: "top"|"bottom"|"left"|"right"
- *                    default "top"
- * align            – cross-axis alignment: "start"|"center"|"end"
- *                    default "center"
- * offset           – gap between trigger and tooltip in px (default 8)
- * viewportPadding  – minimum distance from viewport edges in px (default 6)
- * children         – rendered inside the trigger wrapper (optional)
- * className        – extra class on the outer wrapper
- *
- * Accessibility (WCAG 2.1 AA)
- * ───────────────────────────
- * • Trigger: <button> with aria-describedby pointing to the tooltip id
- * • Tooltip: role="tooltip", never receives focus itself
- * • Keyboard: Enter/Space toggles; Escape closes and returns focus
- * • Touch: tap toggles; outside-click closes
- * • Resize / scroll: position recalculated while visible
- * • Reduced motion: transition-opacity only (no transform animation)
- */
-
 import {
   useState,
   useRef,
   useEffect,
   useId,
-  useCallback,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type CSSProperties,
+  KeyboardEvent as ReactKeyboardEvent,
+  FocusEvent as ReactFocusEvent,
+  ReactNode,
 } from "react";
 import { Info } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export type TooltipSide = "top" | "bottom" | "left" | "right";
-export type TooltipAlign = "start" | "center" | "end";
-
 export interface TooltipProps {
-  content: string;
-  children?: React.ReactNode;
+  /** Text or rich content (multi-line ReactNode, inline links) */
+  content: ReactNode;
+  /** Optional custom trigger node; if omitted, defaults to standard Info icon button */
+  trigger?: ReactNode;
+  /** Optional aria-label override for trigger button */
+  ariaLabel?: string;
+  /** Additional children rendered inside the tooltip wrapper */
+  children?: ReactNode;
+  /** Additional class names applied to the container */
   className?: string;
-  /** Preferred placement side. Will flip if space is insufficient. */
-  side?: TooltipSide;
-  /** Cross-axis alignment relative to the trigger. */
-  align?: TooltipAlign;
-  /** Gap between trigger edge and tooltip in px. */
-  offset?: number;
-  /** Minimum distance the tooltip must maintain from viewport edges in px. */
-  viewportPadding?: number;
+  /** Tooltip visual and structural variant: "standard" or "longform" */
+  variant?: "standard" | "longform";
+  /** Optional explicit interactive override for mouse hover-intent */
+  interactive?: boolean;
 }
 
-interface Position {
-  top: number;
-  left: number;
-  resolvedSide: TooltipSide;
+type Placement = "top" | "bottom";
+
+/** Measure collision and return the preferred placement. */
+function computePlacement(
+  triggerEl: HTMLElement,
+  tooltipEl: HTMLDivElement,
+  margin = 8,
+): Placement {
+  const triggerRect = triggerEl.getBoundingClientRect();
+  const tooltipRect = tooltipEl.getBoundingClientRect();
+  return triggerRect.top - tooltipRect.height - margin > 0 ? "top" : "bottom";
 }
-
-// ─── Placement engine ─────────────────────────────────────────────────────────
-
-/**
- * Returns available space (px) on each side of the trigger rect relative to
- * the viewport dimensions.
- */
-function getAvailableSpace(trigger: DOMRect, vw: number, vh: number) {
-  return {
-    top: trigger.top,
-    bottom: vh - trigger.bottom,
-    left: trigger.left,
-    right: vw - trigger.right,
-  };
-}
-
-/** The axis-opposite of a side. */
-const OPPOSITE: Record<TooltipSide, TooltipSide> = {
-  top: "bottom",
-  bottom: "top",
-  left: "right",
-  right: "left",
-};
-
-/**
- * Core placement computation.
- *
- * Returns pixel-perfect `top` / `left` in fixed coordinates and the resolved
- * side so the arrow can be oriented correctly.
- */
-function computePosition(
-  trigger: DOMRect,
-  tooltip: DOMRect,
-  preferredSide: TooltipSide,
-  align: TooltipAlign,
-  offset: number,
-  viewportPadding: number,
-): Position {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const space = getAvailableSpace(trigger, vw, vh);
-
-  // ── 1. Resolve side (flip if needed) ─────────────────────────────────────
-  const requiredOnPreferred =
-    preferredSide === "top" || preferredSide === "bottom"
-      ? tooltip.height + offset
-      : tooltip.width + offset;
-
-  const availableOnPreferred = space[preferredSide];
-  const availableOnOpposite = space[OPPOSITE[preferredSide]];
-
-  let resolvedSide = preferredSide;
-  if (availableOnPreferred < requiredOnPreferred) {
-    // Flip if opposite has more room
-    if (availableOnOpposite > availableOnPreferred) {
-      resolvedSide = OPPOSITE[preferredSide];
-    }
-    // else: keep preferred — it's the least-bad option
-  }
-
-  // ── 2. Compute raw position on the resolved side ──────────────────────────
-  let top = 0;
-  let left = 0;
-
-  if (resolvedSide === "top") {
-    top = trigger.top - tooltip.height - offset;
-  } else if (resolvedSide === "bottom") {
-    top = trigger.bottom + offset;
-  } else if (resolvedSide === "left") {
-    left = trigger.left - tooltip.width - offset;
-  } else {
-    // right
-    left = trigger.right + offset;
-  }
-
-  // ── 3. Cross-axis alignment ───────────────────────────────────────────────
-  if (resolvedSide === "top" || resolvedSide === "bottom") {
-    // Horizontal alignment
-    if (align === "center") {
-      left = trigger.left + trigger.width / 2 - tooltip.width / 2;
-    } else if (align === "start") {
-      left = trigger.left;
-    } else {
-      // end
-      left = trigger.right - tooltip.width;
-    }
-  } else {
-    // Vertical alignment for left/right sides
-    if (align === "center") {
-      top = trigger.top + trigger.height / 2 - tooltip.height / 2;
-    } else if (align === "start") {
-      top = trigger.top;
-    } else {
-      top = trigger.bottom - tooltip.height;
-    }
-  }
-
-  // ── 4. Shift (clamp to viewport) ─────────────────────────────────────────
-  const minLeft = viewportPadding;
-  const maxLeft = vw - tooltip.width - viewportPadding;
-  const minTop = viewportPadding;
-  const maxTop = vh - tooltip.height - viewportPadding;
-
-  left = Math.max(minLeft, Math.min(left, maxLeft));
-  top = Math.max(minTop, Math.min(top, maxTop));
-
-  return { top, left, resolvedSide };
-}
-
-// ─── Arrow offset helper ──────────────────────────────────────────────────────
-
-/**
- * Returns inline styles that position the arrow relative to the tooltip box
- * so it always points at the trigger centre, even after a shift.
- */
-function arrowStyles(
-  side: TooltipSide,
-  triggerRect: DOMRect,
-  tooltipPos: { top: number; left: number },
-  tooltipRect: DOMRect,
-): CSSProperties {
-  const ARROW = 6; // half arrow size in px
-  if (side === "top" || side === "bottom") {
-    // Horizontal position: trigger centre relative to tooltip left edge
-    const raw = triggerRect.left + triggerRect.width / 2 - tooltipPos.left;
-    const clamped = Math.max(ARROW * 2, Math.min(raw, tooltipRect.width - ARROW * 2));
-    return side === "top"
-      ? { bottom: -ARROW, left: clamped, transform: "translateX(-50%)" }
-      : { top: -ARROW, left: clamped, transform: "translateX(-50%)" };
-  } else {
-    // Vertical position: trigger centre relative to tooltip top edge
-    const raw = triggerRect.top + triggerRect.height / 2 - tooltipPos.top;
-    const clamped = Math.max(ARROW * 2, Math.min(raw, tooltipRect.height - ARROW * 2));
-    return side === "left"
-      ? { right: -ARROW, top: clamped, transform: "translateY(-50%)" }
-      : { left: -ARROW, top: clamped, transform: "translateY(-50%)" };
-  }
-}
-
-// ─── Arrow border classes per resolved side ───────────────────────────────────
-
-const ARROW_BORDER: Record<TooltipSide, string> = {
-  top: "border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-zinc-700",
-  bottom: "border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-zinc-700",
-  left: "border-t-4 border-b-4 border-l-4 border-t-transparent border-b-transparent border-l-zinc-700",
-  right: "border-t-4 border-b-4 border-r-4 border-t-transparent border-b-transparent border-r-zinc-700",
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export function Tooltip({
   content,
+  trigger,
+  ariaLabel = "Help information",
   children,
   className = "",
-  side: preferredSide = "top",
-  align = "center",
-  offset = 8,
-  viewportPadding = 6,
+  variant = "standard",
+  interactive,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState<Position>({
@@ -239,10 +60,13 @@ export function Tooltip({
 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tooltipId = `tooltip-${useId()}`;
 
-  // ── Position recalculation ────────────────────────────────────────────────
-  const recalculate = useCallback(() => {
+  const isLongform = variant === "longform";
+  const isInteractive = interactive ?? isLongform;
+
+  const updatePlacement = () => {
     if (!triggerRef.current || !tooltipRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
@@ -251,31 +75,122 @@ export function Tooltip({
     );
   }, [preferredSide, align, offset, viewportPadding]);
 
-  const showTooltip = useCallback(() => {
-    setIsVisible(true);
-    // Recalculate after the tooltip is painted so we have real dimensions
-    requestAnimationFrame(recalculate);
-  }, [recalculate]);
+  const clearHideTimeout = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+  };
 
-  const hideTooltip = useCallback(() => setIsVisible(false), []);
+  const showTooltip = () => {
+    clearHideTimeout();
+    setIsVisible(true);
+    requestAnimationFrame(() => {
+      if (triggerRef.current && tooltipRef.current) {
+        setPlacement(computePlacement(triggerRef.current, tooltipRef.current));
+      }
+    });
+  };
+
+  const hideTooltip = (delay = 0) => {
+    clearHideTimeout();
+    if (delay > 0 && isInteractive) {
+      hideTimeoutRef.current = setTimeout(() => {
+        setIsVisible(false);
+      }, delay);
+    } else {
+      setIsVisible(false);
+    }
+  };
 
   const toggleTooltip = useCallback(() => {
     if (isVisible) hideTooltip();
     else showTooltip();
   }, [isVisible, showTooltip, hideTooltip]);
 
-  // Keyboard: Enter/Space toggles, Escape closes
-  const handleKeyDown = (e: ReactKeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggleTooltip();
-    } else if (e.key === "Escape" && isVisible) {
-      hideTooltip();
-      triggerRef.current?.focus();
+  // Mouse hover handlers for trigger and tooltip surface
+  const handleTriggerMouseEnter = () => showTooltip();
+  const handleTriggerMouseLeave = () => hideTooltip(isInteractive ? 150 : 0);
+
+  const handleTriggerBlur = (e: ReactFocusEvent) => {
+    if (
+      tooltipRef.current &&
+      e.relatedTarget &&
+      tooltipRef.current.contains(e.relatedTarget as Node)
+    ) {
+      return;
+    }
+    hideTooltip(isInteractive ? 150 : 0);
+  };
+
+  const handleTooltipMouseEnter = () => {
+    if (isInteractive) {
+      clearHideTimeout();
     }
   };
 
-  // Touch: tap toggles
+  const handleTooltipMouseLeave = () => {
+    if (isInteractive) {
+      hideTooltip(100);
+    }
+  };
+
+  // Keyboard activation on trigger (Enter / Space / Escape)
+  const handleTriggerKeyDown = (e: ReactKeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleTooltip();
+    } else if ((e.key === "Escape" || e.key === "Esc") && isVisible) {
+      e.preventDefault();
+      hideTooltip();
+    }
+  };
+
+  // Keyboard Escape handler inside tooltip surface
+  const handleTooltipKeyDown = (e: ReactKeyboardEvent) => {
+    if ((e.key === "Escape" || e.key === "Esc") && isVisible) {
+      e.preventDefault();
+      e.stopPropagation();
+      hideTooltip();
+    }
+  };
+
+  // Global Escape key listener when tooltip is visible
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" || e.key === "Esc") {
+        e.preventDefault();
+        setIsVisible(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [isVisible]);
+
+  // Click outside cleanup
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(event.target as Node) &&
+        tooltipRef.current &&
+        !tooltipRef.current.contains(event.target as Node)
+      ) {
+        hideTooltip();
+      }
+    };
+    if (isVisible) {
+      document.addEventListener("click", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [isVisible]);
+
+  // Touch support – tap toggles tooltip
   const handleTouch = (e: React.TouchEvent) => {
     e.preventDefault();
     toggleTooltip();
@@ -310,17 +225,17 @@ export function Tooltip({
         ref={triggerRef}
         type="button"
         className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-zinc-700 hover:bg-zinc-600 focus:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"
-        onMouseEnter={showTooltip}
-        onMouseLeave={hideTooltip}
+        onMouseEnter={handleTriggerMouseEnter}
+        onMouseLeave={handleTriggerMouseLeave}
         onFocus={showTooltip}
-        onBlur={hideTooltip}
+        onBlur={handleTriggerBlur}
         onClick={toggleTooltip}
-        onKeyDown={handleKeyDown}
+        onKeyDown={handleTriggerKeyDown}
         onTouchStart={handleTouch}
         aria-describedby={isVisible ? tooltipId : undefined}
-        aria-label="Help information"
+        aria-label={ariaLabel}
       >
-        <Info className="w-4 h-4 text-zinc-300" aria-hidden="true" />
+        {trigger ?? <Info className="w-4 h-4 text-zinc-300" />}
       </button>
 
       {children}
@@ -330,21 +245,25 @@ export function Tooltip({
           ref={tooltipRef}
           id={tooltipId}
           role="tooltip"
-          style={{
-            position: "fixed",
-            top: position.top,
-            left: position.left,
-            // Ensure it's invisible during the first RAF before position is set
-            visibility: position.top === 0 && position.left === 0 ? "hidden" : "visible",
-          }}
-          className="z-[9999] max-w-xs px-3 py-2 text-sm text-white bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg"
+          tabIndex={-1}
+          className={`${tooltipBaseClasses} ${placementClasses}`}
+          style={{ whiteSpace: "normal" }}
+          onMouseEnter={handleTooltipMouseEnter}
+          onMouseLeave={handleTooltipMouseLeave}
+          onKeyDown={handleTooltipKeyDown}
         >
           {content}
           {/* Smart arrow */}
           <div
-            aria-hidden="true"
-            className={`absolute w-0 h-0 ${ARROW_BORDER[position.resolvedSide]}`}
-            style={aStyles}
+            className={`absolute w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${
+              placement === "top"
+                ? `-bottom-1 left-1/2 -translate-x-1/2 ${
+                    isLongform ? "border-t-zinc-900" : "border-t-zinc-800"
+                  }`
+                : `-top-1 left-1/2 -translate-x-1/2 ${
+                    isLongform ? "border-b-zinc-900" : "border-b-zinc-800"
+                  }`
+            }`}
           />
         </div>
       )}

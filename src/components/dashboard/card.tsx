@@ -7,24 +7,26 @@ export interface CardProps extends Omit<HTMLAttributes<HTMLElement>, "children">
   as?: ElementType;
   children: ReactNode;
   className?: string;
-  variant?: "default" | "panel" | "glass" | "accent";
+  variant?: "default" | "panel" | "glass" | "accent" | "compact-list";
   interactive?: boolean;
 }
 
-export function Card({
-  as: Component = "article",
+export function Card<T extends ElementType = "article">({
+  as,
   children,
   className,
   variant = "default",
   interactive = false,
   ...props
-}: CardProps) {
+}: CardProps & ComponentPropsWithoutRef<T>) {
+  const Component = as || "article";
   const cardClassName = clsx(
     "card",
     {
       "card--panel": variant === "panel",
       "card--glass": variant === "glass",
       "card--accent": variant === "accent",
+      "card--compact-list": variant === "compact-list",
       "card--interactive": interactive,
     },
     className
