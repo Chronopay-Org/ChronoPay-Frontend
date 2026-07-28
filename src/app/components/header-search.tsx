@@ -9,9 +9,13 @@
  *       - Recent searches (persisted in localStorage) grouped by Today, Yesterday, Earlier
  *       - "Clear all" recents action with confirmation
  *       - Live suggestion list filtered by current query
+ *       - "Did you mean X?" typo suggestion when the query is close to a known term
+ *       - Revert chip that keeps the original query after accepting a correction
  *   - Full keyboard navigation (Arrow keys, Enter to submit, Escape to close, Tab to close, Delete to remove recent)
  *   - ARIA combobox pattern (role="combobox" on the input / role="listbox" on dropdown)
  *   - Click-outside to dismiss
+ *   - LiveRegion announcements for screen readers on correction/revert
+ *   - Analytics stub for did-you-mean click-through tracking
  */
 
 import {
@@ -23,9 +27,10 @@ import {
   useState,
   KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { Search, X, Clock, TrendingUp } from "lucide-react";
+import { Search, X, Clock, TrendingUp, ArrowLeft } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import { EmptyStateCard } from "./empty-state-card";
+import { LiveRegion } from "@/components/common/LiveRegion";
 
 // Types
 
@@ -35,7 +40,23 @@ interface ListItem {
   timestamp?: number;
 }
 
-// Component
+// ─── Analytics stub ───────────────────────────────────────────────────────────
+
+/**
+ * Placeholder analytics tracker for the did-you-mean suggestion click-through.
+ * Replace with real analytics instrumentation when available.
+ */
+function trackDidYouMeanClick(original: string, suggested: string): void {
+  if (process.env.NODE_ENV === "production") {
+    // Stub: dispatch to real analytics pipeline
+    // e.g. analytics.track("did_you_mean_click", { original, suggested });
+  } else {
+    // eslint-disable-next-line no-console
+    console.log("[analytics] did_you_mean_click", { original, suggested });
+  }
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function HeaderSearch() {
   const {
@@ -43,6 +64,7 @@ export function HeaderSearch() {
     setQuery,
     recentSearches,
     suggestions,
+    didYouMeanSuggestion,
     addRecentSearch,
     clearRecentSearches,
     removeRecentSearch,
@@ -50,6 +72,17 @@ export function HeaderSearch() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+
+  /**
+   * When a did-you-mean suggestion is accepted, `correctedQuery` holds the
+   * corrected search term (the suggestion), and `revertQuery` holds the original
+   * user-typed query so it can be shown as a removable chip.
+   */
+  const [correctedQuery, setCorrectedQuery] = useState<string | null>(null);
+  const [revertQuery, setRevertQuery] = useState<string | null>(null);
+
+  /** Message announced to screen readers via LiveRegion when a correction is applied. */
+  const [liveRegionMessage, setLiveRegionMessage] = useState("");
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +115,9 @@ export function HeaderSearch() {
     [setQuery],
   );
 
+  // Capture now once via lazy state to avoid impure Date.now() in render
+  const [now] = useState(() => Date.now());
+
   // Derived list for keyboard navigation -- memoized to stabilise useCallback deps
   const listItems = useMemo<ListItem[]>(() => {
     if (query.trim() !== "") {
@@ -89,7 +125,6 @@ export function HeaderSearch() {
     }
 
     const items: ListItem[] = [];
-    const now = Date.now();
     const msInDay = 86400000;
 
     const today = recentSearches.filter((r) => now - r.timestamp < msInDay);
@@ -115,10 +150,10 @@ export function HeaderSearch() {
   }, [query, recentSearches, suggestions]);
 
   const isPanelVisible =
-    isOpen && (recentSearches.length > 0 || suggestions.length > 0);
+    isOpen && (recentSearches.length > 0 || suggestions.length > 0 || didYouMeanSuggestion !== null);
 
   const showEmptyHint =
-    isOpen && query.trim() === "" && recentSearches.length === 0;
+    isOpen && query.trim() === "" && recentSearches.length === 0 && !didYouMeanSuggestion;
 
   // Open / close helpers
   const open = useCallback(() => {
@@ -147,11 +182,45 @@ export function HeaderSearch() {
       if (!trimmed) return;
       addRecentSearch(trimmed);
       updateQuery(trimmed);
+      // Clear correction state when submitting a typed query
+      setCorrectedQuery(null);
+      setRevertQuery(null);
+      setLiveRegionMessage("");
       close();
       // In a real app, trigger navigation / search results here.
     },
     [addRecentSearch, close, updateQuery],
   );
+
+  /**
+   * Accept a did-you-mean suggestion: update the query to the corrected term
+   * and store the original query as a revert chip. Also announces via LiveRegion.
+   */
+  const acceptDidYouMean = useCallback(
+    (suggestion: string) => {
+      const original = query.trim();
+      if (!original || !suggestion) return;
+      trackDidYouMeanClick(original, suggestion);
+      setCorrectedQuery(suggestion);
+      setRevertQuery(original);
+      updateQuery(suggestion);
+      setLiveRegionMessage(
+        `Showing results for "${suggestion}". Click to revert to original search "${original}".`,
+      );
+      // Keep panel open so the user sees results; close is handled by interaction
+    },
+    [query, updateQuery],
+  );
+
+  /** Revert the did-you-mean correction and restore the original query. */
+  const revertCorrection = useCallback(() => {
+    if (!revertQuery) return;
+    updateQuery(revertQuery);
+    setCorrectedQuery(null);
+    setRevertQuery(null);
+    setLiveRegionMessage(`Reverted to original search "${revertQuery}".`);
+    inputRef.current?.focus();
+  }, [revertQuery, updateQuery]);
 
   const handleClearAll = () => {
     if (window.confirm("Are you sure you want to clear all recent searches?")) {
@@ -259,12 +328,11 @@ export function HeaderSearch() {
     [isOpen, listItems, activeIndex, query, open, close, submitSearch, updateQuery, removeRecentSearch],
   );
 
-  // Adjust activeIndex if items change and it falls out of bounds or lands on a header
-  useEffect(() => {
-    if (activeIndex >= listItems.length) {
-      setActiveIndex(listItems.length - 1);
-    }
-  }, [listItems.length, activeIndex]);
+  // Derive clamped activeIndex to avoid setState-in-effect
+  const clampedActiveIndex =
+    activeIndex >= listItems.length && listItems.length > 0
+      ? listItems.length - 1
+      : activeIndex;
 
   // Scroll active item into view
   useEffect(() => {
@@ -276,7 +344,7 @@ export function HeaderSearch() {
   }, [activeIndex]);
 
   const activeItemId =
-    activeIndex >= 0 ? `${listboxId}-item-${activeIndex}` : undefined;
+    clampedActiveIndex >= 0 ? `${listboxId}-item-${clampedActiveIndex}` : undefined;
 
   return (
     <div ref={containerRef} className="relative flex items-center">
@@ -415,13 +483,13 @@ export function HeaderSearch() {
                           key={`${item.kind}-${item.label}`}
                           id={`${listboxId}-item-${idx}`}
                           role="option"
-                          aria-selected={idx === activeIndex}
-                          className={[
-                            "group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
-                            idx === activeIndex
-                              ? "bg-cyan-500/10 text-white"
-                              : "text-slate-300 hover:bg-white/6 hover:text-white",
-                          ].join(" ")}
+              aria-selected={idx === clampedActiveIndex}
+              className={[
+                "group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                idx === clampedActiveIndex
+                  ? "bg-cyan-500/10 text-white"
+                  : "text-slate-300 hover:bg-white/6 hover:text-white",
+              ].join(" ")}
                           onPointerDown={(e) => {
                             // Prevent input blur before click fires
                             e.preventDefault();
@@ -474,6 +542,47 @@ export function HeaderSearch() {
                 )}
 
                 {/* No suggestions found */}
+
+                {/* Did-you-mean suggestion (zero-state but with a close match) */}
+                {isZeroState && didYouMeanSuggestion && (
+                  <div className="px-3 pt-3 pb-1">
+                    <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
+                      <span className="text-sm text-amber-300">
+                        Did you mean{" "}
+                        <button
+                          type="button"
+                          onClick={() => acceptDidYouMean(didYouMeanSuggestion)}
+                          className="font-semibold underline underline-offset-2 text-amber-200 hover:text-amber-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-300 rounded transition-colors"
+                        >
+                          {didYouMeanSuggestion}
+                        </button>
+                        ?
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Revert chip — shown when a did-you-mean correction is active */}
+                {revertQuery && (
+                  <div className="px-3 pt-3 pb-1">
+                    <div className="flex items-center gap-1.5">
+                      <ArrowLeft className="h-3 w-3 text-slate-500" aria-hidden="true" />
+                      <span className="text-xs text-slate-500">
+                        Original search:{" "}
+                        <button
+                          type="button"
+                          onClick={revertCorrection}
+                          className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-colors"
+                          aria-label={`Revert to original search: ${revertQuery}`}
+                        >
+                          {revertQuery}
+                          <X className="h-2.5 w-2.5" aria-hidden="true" />
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {isZeroState && (
                   <div className="p-2">
                     <EmptyStateCard
@@ -525,11 +634,17 @@ export function HeaderSearch() {
             )}
           </div>
 
+          {/* Screen-reader announcement for corrections */}
+          <LiveRegion>{liveRegionMessage}</LiveRegion>
+
           {/* Collapse / close button */}
           <button
             type="button"
             onClick={() => {
               updateQuery("");
+              setCorrectedQuery(null);
+              setRevertQuery(null);
+              setLiveRegionMessage("");
               close();
             }}
             aria-label="Close search"

@@ -39,24 +39,28 @@ function isValidDensity(value: string | null): value is DensityOption {
 
 export function DensitySwitcher() {
   const [selectedDensity, setSelectedDensity] =
-    useState<DensityOption>("balanced");
+    useState<DensityOption>(() => {
+      try {
+        const stored = window.localStorage.getItem(STORAGE_KEY);
+        if (isValidDensity(stored)) {
+          applyDensity(stored);
+          return stored;
+        }
+      } catch {
+        // localStorage may be unavailable
+      }
+      applyDensity("balanced");
+      return "balanced";
+    });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (isValidDensity(stored)) {
-        setSelectedDensity(stored);
-        applyDensity(stored);
-      } else {
-        applyDensity("balanced");
-      }
-    } catch {
-      applyDensity("balanced");
-    }
     setMounted(true);
   }, []);
 
+  // Sync density to localStorage on changes — synchronizing React state with
+  // an external storage system is a valid effect pattern.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!mounted) return;
 

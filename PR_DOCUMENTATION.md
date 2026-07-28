@@ -1,74 +1,148 @@
-# PR Documentation: Slot Picker Compact Bands Mode (#220)
+# Pull Request: Wallet Export History Modal
 
-## Overview
-This PR implements a **Compact Bands Mode** for the ChronoPay `SlotList` component (`src/components/dashboard/slot-list.tsx`). When a day contains a high density of time slots (e.g. 50+ slots), the standard full slot list view becomes long and difficult to scan. 
+Closes #460
 
-With Compact Bands mode enabled (automatically on 50+ slot days or explicitly selected via the toolbar), slots are grouped into hourly aggregate band chips (e.g. `09:00 - 10:00`) displaying slot counts, status summaries, price ranges, and next available highlights. Tapping, clicking, or pressing `Enter`/`Space` expands the hourly band to reveal individual slot details without losing context or screen-reader focus.
+## Summary
 
----
-
-## Key Features & Changes
-
-### 1. Density Toolbar & Controls
-- **Segmented Control Buttons**: Allows users to switch between `Auto (50+)`, `Full View`, and `Compact Bands` modes.
-- **High-Density Indicator Badge**: Automatically displays a `High-density day (54 slots)` badge when total slot count exceeds the threshold (default: 50).
-- **Expand / Collapse All**: Quick batch controls to expand or collapse all hourly bands simultaneously when in compact mode.
-
-### 2. Hourly Band Chip Aggregation
-- **Grouped Time Buckets**: Slots are parsed and grouped chronologically by their starting hour (e.g. `09:00 - 10:00`).
-- **Rate Range Summary**: Displays minimum to maximum hourly rate within the band (e.g. `95 - 140 XLM / hr`).
-- **Availability Status Summary**: Shows breakdown counts of `Healthy`, `Tight`, and `Busy` slots.
-- **Next Available Highlight**: Highlights bands containing the next available slot booking.
-
-### 3. Supplier Preference Persistence
-- Remembers the user's selected density mode per supplier using `localStorage` key `chronopay_slot_picker_density_${supplierId}`.
-
-### 4. WCAG 2.1 AA Accessibility & Polish
-- **Keyboard Navigation**: Native `<button>` elements for all interactive triggers. Supports `Tab`, `Space`, and `Enter`.
-- **Focus Ring Management**: High contrast Cyan focus rings (`focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2`) prevent focus loss or trapping.
-- **ARIA Attributes**: `aria-expanded`, `aria-controls`, `aria-pressed`, `aria-labelledby`, and `aria-describedby`.
-- **Live Region Announcements**: `aria-live="polite"` region notifies screen readers when bands expand or collapse.
-- **Responsive & Dark Mode**: Built with ChronoPay design system tokens (`bg-slate-900/60`, `border-white/10`, `text-cyan-300`, glassmorphism). Supports mobile touch tap and RTL flex layouts.
+This PR adds a fully accessible, three-step export modal (`ExportHistoryModal`) that allows users to download their transaction history as CSV or PDF. The modal provides configurable date ranges, column selection, and privacy masking toggles — reusing existing `maskName()` and `truncateHash()` helpers from the receipt module.
 
 ---
 
-## Code Reference & Files Modified
+## What was done
 
-1. **`src/components/dashboard/slot-list.tsx`** [MODIFY]
-   - Enhanced `SlotList` component with density mode toggle, hourly band grouping, interactive band chips, local storage persistence, and accessible ARIA attributes.
-2. **`src/components/dashboard/types.ts`** [MODIFY]
-   - Added `SlotPickerDensity` (`"full" | "compact" | "auto"`) and `HourlySlotBand` type definitions.
-3. **`src/components/dashboard/dashboard-data.ts`** [MODIFY]
-   - Added `generateHighDensitySlots` helper function for generating 50+ slot mock days.
-4. **`src/components/dashboard/slot-list.test.tsx`** [NEW]
-   - Added Vitest unit test suite covering empty state, auto-compaction threshold, density toggle, local storage persistence, keyboard navigation (`Space`/`Enter`), batch expand/collapse, and screen reader announcements.
-5. **`src/app/dashboard/page.tsx`** [MODIFY]
-   - Updated dashboard page to supply `supplierId="supplier-1"` to `SlotList`.
+### New files
+
+| File | Purpose |
+|---|---|
+| `src/components/dashboard/export-history-modal.tsx` | Main component — 3-step flow: Configure → Generating → Complete |
+| `src/components/dashboard/export-history-modal.test.tsx` | 28 unit tests covering all states, interactions, and accessibility |
+| `docs/export-history-modal-design-system.md` | Full design system documentation |
+
+### Modified files
+
+| File | Change |
+|---|---|
+| `src/components/dashboard/index.ts` | Added `export * from "./export-history-modal"` |
 
 ---
 
-## Test & Coverage Results
+## Features
 
-### Automated Unit Tests
-```bash
-npm run test:unit
+### 1. Export format — CSV or PDF
+- Radio-style toggle buttons with icons (`FileSpreadsheet` / `FileText`)
+- Default: CSV
+- PDF opens a formatted print view via `window.print()`
+
+### 2. Date range picker
+- Preset buttons: Last 7 days, Last 30 days, Last 90 days, This year, All time
+- Custom range: inline `<input type="date">` with min/max constraints
+- Radio-group semantics (`role="radio"`, `aria-checked`)
+
+### 3. Columns picker
+- 6 checkboxes: Date, Description, Amount, Status, Transaction ID, Counterparty
+- All selected by default; export button disabled when none selected
+- Native checkboxes with `accentColor` styling
+
+### 4. Privacy toggles
+- **Mask counterparty names** — uses `maskName()` from receipt/masking
+- **Mask transaction IDs** — uses `truncateHash()` from receipt/masking
+- Switch controls with `role="switch"` and `aria-checked`
+- Privacy summary shown in the complete step with masked examples
+
+### 5. Three-step flow
+1. **Configure** — all settings in a scrollable form with `fieldset`/`legend` grouping
+2. **Generating** — `Spinner` + progress bar (`role="progressbar"`) with animated fill
+3. **Complete** — success check, download buttons, back button, privacy summary
+
+---
+
+## Accessibility (WCAG 2.1 AA)
+
+| Requirement | Implementation |
+|---|---|
+| `role="dialog"` with `aria-modal="true"` | Dialog container |
+| Focus trap | `FocusTrap` component wraps dialog |
+| Escape to dismiss | `keydown` listener on document (blocked during generation) |
+| Screen reader announcements | `LiveRegion` with conditional `aria-live="assertive"` on completion |
+| Radio semantics | `role="radio"` + `aria-checked` on format and date range buttons |
+| Switch semantics | `role="switch"` + `aria-checked` on privacy toggles |
+| Progress bar | `role="progressbar"` with `aria-valuenow/min/max` |
+| Focus indicators | `focus-visible:ring-2 focus-visible:ring-cyan-300` on all interactive elements |
+| Reduced motion | `motion-reduce:transition-none` on progress bar animation |
+
+---
+
+## Test results
+
 ```
-- **Test Files**: 5 passed (5 total)
-- **Tests**: 77 passed (77 total)
+ ✓ src/components/dashboard/export-history-modal.test.tsx (28 tests) 1383ms
 
-### Coverage Metrics (`npm run test:coverage`)
-- **Stmts**: 98.93%
-- **Branch**: 90.66%
-- **Funcs**: 100.00%
-- **Lines**: 98.92%
+ Test Files  1 passed (1)
+      Tests  28 passed (28)
+```
+
+Test coverage includes:
+- Visibility (open/closed)
+- ARIA attributes (dialog, radio, switch, checkbox, progressbar)
+- Format switching (CSV ↔ PDF)
+- Date range presets and custom range reveal
+- Column selection (check all, uncheck, disable button on none)
+- Privacy toggle interaction
+- Close button and Escape key
+- Generating step transition
+- Escape blocked during generation
+- Custom `onExport` handler (called with config, rejection recovery)
+- Complete step (success state, download button, back button, privacy summary)
+- State reset on modal re-open
 
 ---
 
-## Screenshots & Before/After Visual Guide
+## Responsive design
 
-### Before (Standard Full List Mode)
-- Days with 50+ slots rendered a single vertical list requiring extensive scrolling.
+- Mobile (<640px): single-column layout, full-width modal
+- Tablet (640px+): `max-w-lg`, two-column grids for format/columns
+- All interactive elements have minimum 44px touch targets
 
-### After (Compact Bands Mode)
-- High-density days default to hourly aggregate band chips (e.g. `09:00 - 10:00`, `12 slots`, `95 - 140 XLM / hr`, `8 Healthy, 3 Tight`).
-- Tapping/focusing an hourly band smoothly expands to show child slots with instant keyboard accessibility.
+---
+
+## Design system compliance
+
+- Uses `elevation-4`, `border-white/12`, `rounded-3xl` pattern (consistent with `ReceiptModal`, `RefundConfirmationModal`)
+- Reuses `FocusTrap`, `LiveRegion`, `Spinner` from common/ui components
+- Reuses `maskName()`, `truncateHash()` from receipt module
+- Dark/light theme support via CSS custom properties
+- RTL-compatible with `icon-directional` class on chevron
+
+---
+
+## Design Review Checklist
+
+### ♿ Accessibility
+- [x] Contrast ratios meet WCAG 2.1 AA (4.5:1)
+- [x] Keyboard navigation is logical and focus rings are visible
+- [x] Semantic HTML and ARIA labels are used correctly
+- [x] Screen reader announcements via LiveRegion
+
+### 📱 Responsive
+- [x] Layout is mobile-first and works on all breakpoints
+- [x] Touch targets ≥ 44px
+
+### ⚙️ States & Tokens
+- [x] Loading / generating / complete / error states handled
+- [x] Design tokens (elevation, border, spacing) followed
+- [x] Reduced motion supported
+
+---
+
+## How to test
+
+1. Navigate to any page and render `<ExportHistoryModal isOpen={true} onClose={() => {}} />`
+2. Try switching between CSV and PDF formats
+3. Select different date range presets, try custom range
+4. Toggle columns on/off — verify export button disables when none selected
+5. Toggle privacy switches on/off
+6. Click export — observe the generating step with progress bar
+7. Verify the complete step shows download buttons and privacy summary
+8. Test keyboard navigation: Tab through all controls, Escape to close
+9. Test with screen reader active
+10. Resize to mobile viewport — verify responsive layout
