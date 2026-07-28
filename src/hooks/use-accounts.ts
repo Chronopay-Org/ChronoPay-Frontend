@@ -5,16 +5,22 @@
  *
  * This hook provides:
  *   - A list of connected accounts with address, label, and avatar seed
- *   - The currently active account
- *   - Switching between accounts
+ *   - The currently active account, pinned at top of the switcher
+ *   - Switching between accounts with recent-accounts tracking
  *   - Removing an account
  *   - Triggering the "add account" flow (opens the WalletConnectModal)
+ *   - A sorted recent-accounts list (up to MAX_RECENTS, persisted in localStorage)
  *
  * The data layer is intentionally shallow (in-memory state) so the real
  * Stellar SDK or wallet-extension integration can be dropped in later.
  */
 
 import { useCallback, useReducer } from "react";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "chronopay:recent-accounts";
+export const MAX_RECENTS = 5;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,6 +37,8 @@ export type AccountsStatus = "idle" | "loading" | "error";
 
 export interface AccountsState {
   accounts: Account[];
+  /** Ordered list of recently used account addresses (most recent first), up to MAX_RECENTS */
+  recentAddresses: string[];
   activeAddress: string | null;
   status: AccountsStatus;
   error: string | null;
@@ -87,6 +95,57 @@ export function avatarInitials(account: Account): string {
   return account.address.slice(0, 2).toUpperCase();
 }
 
+// ─── localStorage helpers for recent accounts ────────────────────────────────
+
+function loadRecentAddresses(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      Array.isArray(parsed) &&
+      parsed.every((item) => typeof item === "string")
+    ) {
+      return (parsed as string[]).slice(0, MAX_RECENTS);
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentAddresses(addresses: string[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(addresses));
+  } catch {
+    // localStorage may be unavailable
+  }
+}
+
+/**
+ * Update the recent list when an account is activated:
+ * - Move the address to the front
+ * - Cap at MAX_RECENTS
+ * - Persist to localStorage
+ */
+function bumpRecent(
+  prev: string[],
+  address: string,
+): string[] {
+  const filtered = prev.filter((a) => a !== address);
+  const next = [address, ...filtered].slice(0, MAX_RECENTS);
+  saveRecentAddresses(next);
+  return next;
+}
+
+function removeFromRecent(prev: string[], address: string): string[] {
+  const next = prev.filter((a) => a !== address);
+  saveRecentAddresses(next);
+  return next;
+}
+
 // ─── Reducer ──────────────────────────────────────────────────────────────────
 
 type Action =
@@ -101,20 +160,35 @@ function accountsReducer(state: AccountsState, action: Action): AccountsState {
     case "SET_ACTIVE": {
       const exists = state.accounts.some((a) => a.address === action.address);
       if (!exists) return state;
-      return { ...state, activeAddress: action.address };
+      return {
+        ...state,
+        activeAddress: action.address,
+        recentAddresses: bumpRecent(state.recentAddresses, action.address),
+      };
     }
     case "ADD_ACCOUNT": {
       const alreadyExists = state.accounts.some(
         (a) => a.address === action.account.address,
       );
       if (alreadyExists) {
-        // Just switch to it
-        return { ...state, activeAddress: action.account.address };
+        // Switch to it and bump recents
+        return {
+          ...state,
+          activeAddress: action.account.address,
+          recentAddresses: bumpRecent(
+            state.recentAddresses,
+            action.account.address,
+          ),
+        };
       }
       return {
         ...state,
         accounts: [...state.accounts, action.account],
         activeAddress: action.account.address,
+        recentAddresses: bumpRecent(
+          state.recentAddresses,
+          action.account.address,
+        ),
       };
     }
     case "REMOVE_ACCOUNT": {
@@ -125,7 +199,15 @@ function accountsReducer(state: AccountsState, action: Action): AccountsState {
         state.activeAddress === action.address
           ? (remaining[0]?.address ?? null)
           : state.activeAddress;
-      return { ...state, accounts: remaining, activeAddress: newActive };
+      return {
+        ...state,
+        accounts: remaining,
+        activeAddress: newActive,
+        recentAddresses: removeFromRecent(
+          state.recentAddresses,
+          action.address,
+        ),
+      };
     }
     case "SET_STATUS":
       return {
@@ -141,7 +223,7 @@ function accountsReducer(state: AccountsState, action: Action): AccountsState {
 }
 
 // ─── Demo seed data ───────────────────────────────────────────────────────────
-// Two accounts are pre-seeded so the UI is non-empty on first render.
+// Three accounts are pre-seeded so recent-accounts list is non-empty on first render.
 // Replace this with real wallet-extension reads in production.
 
 const DEMO_ACCOUNTS: Account[] = [
@@ -155,11 +237,22 @@ const DEMO_ACCOUNTS: Account[] = [
     label: "Savings",
     provider: "albedo",
   },
+  {
+    address: "GCLRFH5J3ZY7E5QFU65S2QOAJF7Q4XJSE4Z6NVKZX3F6P3VK4LQMG5JR",
+    label: "Business",
+    provider: "freighter",
+  },
 ];
+
+const recentFromStorage = loadRecentAddresses();
 
 const initialState: AccountsState = {
   accounts: DEMO_ACCOUNTS,
   activeAddress: DEMO_ACCOUNTS[0].address,
+  recentAddresses:
+    recentFromStorage.length > 0
+      ? recentFromStorage
+      : DEMO_ACCOUNTS.map((a) => a.address),
   status: "idle",
   error: null,
 };

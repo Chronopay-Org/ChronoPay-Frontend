@@ -2,6 +2,7 @@ import { StatusChip } from "./status-chip";
 import { Card, CardHeader, CardBody } from "./card";
 import { SampleBadge } from "./sample-badge";
 import type { Metric, Tone } from "./types";
+import { EarningsChart } from "./earnings-chart";
 
 const toneLabels: Record<Tone, string> = {
   neutral: "Stable",
@@ -55,10 +56,15 @@ export function MetricCard({ metric }: { metric: Metric }) {
           {statusLabel}
         </StatusChip>
       </CardHeader>
-      <CardBody className="mt-4">
+      <CardBody className="mt-4 flex flex-col gap-4">
         <p id={detailId} className="text-sm leading-6 text-slate-400">
           {metric.detail}
         </p>
+        {metric.breakdown && metric.breakdown.length > 0 && (
+          <div className="pt-2 border-t border-slate-800/50">
+            <EarningsChart segments={metric.breakdown} />
+          </div>
+        )}
       </CardBody>
     </Card>
   );

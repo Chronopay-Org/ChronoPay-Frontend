@@ -4,11 +4,8 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
-  HolidayHint,
-  RegionInfo,
 } from "./types";
-import type { TimelineItem, KycTimelineEntry, KycPromptPanel } from "./timeline-types";
+import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
 import type { DayAvailability } from "./availability-strip";
 
@@ -126,6 +123,7 @@ export const bookingTimeline: TimelineItem[] = [
     timestamp: "2026-06-30 09:00 AM",
     actor: "Buyer",
     details: "Slot reserved for 30 minutes.",
+    isMilestone: true,
   },
   {
     id: "2",
@@ -134,15 +132,42 @@ export const bookingTimeline: TimelineItem[] = [
     timestamp: "2026-06-30 09:30 AM",
     actor: "System",
     details: "Booking confirmed by seller.",
+    isMilestone: true,
   },
   {
     id: "3",
-    title: "Completed",
+    title: "Payment Escrowed",
+    status: "completed",
+    timestamp: "2026-06-30 09:45 AM",
+    actor: "Escrow",
+    details: "Funds secured in escrow contract.",
+  },
+  {
+    id: "4",
+    title: "Service Delivered",
+    status: "completed",
+    timestamp: "2026-06-30 10:15 AM",
+    actor: "Seller",
+    details: "Service rendered and acknowledged.",
+    isMilestone: true,
+  },
+  {
+    id: "5",
+    title: "Rating Submitted",
     status: "pending",
     timestamp: "2026-06-30 10:30 AM",
-    actor: "Seller",
-    details: "Awaiting final review.",
+    actor: "Buyer",
+    details: "Awaiting rating from buyer.",
     isCurrent: true,
+  },
+  {
+    id: "6",
+    title: "Escrow Released",
+    status: "pending",
+    timestamp: "—",
+    actor: "System",
+    details: "Funds will be released after both parties confirm.",
+    isMilestone: true,
   },
 ];
 
@@ -244,64 +269,8 @@ export const suppliers: Supplier[] = [
   },
 ];
 
-// Generate 7-day availability data starting from today
-export const generateAvailabilityData = (): DayAvailability[] => {
-  const days: DayAvailability[] = [];
-  const today = new Date();
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-  for (let i = 0; i < 14; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    
-    const dayName = dayNames[date.getDay()];
-    const dateLabel = `${dayNames[date.getDay()]}, ${monthNames[date.getMonth()]} ${date.getDate()}`;
-    
-    // Simulate availability based on day of week
-    const dayOfWeek = date.getDay();
-    let slotCount = 0;
-    let status: DayAvailability["status"] = "none";
-    
-    // Weekend: fewer slots
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      slotCount = Math.floor(Math.random() * 3);
-      status = slotCount > 0 ? (slotCount > 1 ? "limited" : "available") : "none";
-    } 
-    // Weekdays: more slots
-    else {
-      slotCount = Math.floor(Math.random() * 6) + 2;
-      if (slotCount >= 4) {
-        status = "available";
-      } else if (slotCount >= 2) {
-        status = "limited";
-      } else {
-        status = slotCount === 1 ? "limited" : "none";
-      }
-    }
-    
-    // Randomly make some days full
-    if (Math.random() < 0.15 && slotCount > 0) {
-      status = "full";
-    }
-
-    days.push({
-      date,
-      dayName,
-      dateLabel,
-      slotCount,
-      status,
-    });
-  }
-
-  return days;
-};
-
-export const availabilityDays = generateAvailabilityData();
-
 export const bookingStages = [
-  { label: "Reserved", value: 25 },
-  { label: "Confirmed", value: 50 },
-  { label: "In Progress", value: 75 },
-  { label: "Completed", value: 100 },
+  { label: "Created", value: 12 },
+  { label: "In Escrow", value: 8 },
+  { label: "Completed", value: 24 },
 ];
