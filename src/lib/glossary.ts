@@ -124,22 +124,22 @@ export const glossary = {
   },
 
   /**
-   * KYC (Know Your Customer): identity verification required to use the platform.
+   * Holiday hints: upcoming public holidays surfaced to help suppliers plan availability.
    */
-  kyc: {
-    title: "KYC verification",
-    body: "Know Your Customer (KYC) is an identity verification process required before you can list time slots. You'll submit an ID document and a short selfie video for review.",
-    learnMoreHref: "/docs/glossary#kyc",
-    learnMoreLabel: "Learn more about KYC →",
+  holidayHints: {
+    title: "Holiday hints",
+    body: "ChronoPay surfaces upcoming public holidays for your region so you can plan ahead. Use the quick actions to block these days and avoid accidental bookings when you're unavailable.",
+    learnMoreHref: "/docs/glossary#holiday-hints",
+    learnMoreLabel: "Learn more about holiday hints →",
   },
 
   /**
-   * KYC re-submission: when compliance requests additional documents.
+   * Region-based holidays: holidays vary by country and region.
    */
-  kycResubmission: {
-    title: "KYC re-submission",
-    body: "If the compliance team needs more information, you'll be asked to re-submit specific documents. Your account stays active during this period, but new listings are paused until verification completes.",
-    learnMoreHref: "/docs/glossary#kyc-resubmission",
-    learnMoreLabel: "Learn more about re-submission →",
+  regionHolidays: {
+    title: "Regional holidays",
+    body: "Public holidays shown are based on your supplier profile's region setting. Update your region in Settings to see holidays relevant to your location.",
+    learnMoreHref: "/docs/glossary#region-holidays",
+    learnMoreLabel: "Learn more about region settings →",
   },
 } satisfies Record<string, GlossaryTerm>;

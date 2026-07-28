@@ -17,9 +17,9 @@ import {
   SlotList,
   wallet,
   WalletCard,
-  kycTimelineEntries,
-  kycPromptPanel,
-  KycStatusTimeline,
+  upcomingHolidays,
+  holidayRegion,
+  HolidayHintsStrip,
 } from "@/components/dashboard";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
@@ -159,6 +159,12 @@ export default function Dashboard() {
             <SlotList slots={visibleSlots} />
           </div>
         </PanelShell>
+
+        {/* Holiday Hints Strip */}
+        <HolidayHintsStrip
+          holidays={upcomingHolidays}
+          region={holidayRegion}
+        />
       </div>
 
       <OnboardingWalkthrough

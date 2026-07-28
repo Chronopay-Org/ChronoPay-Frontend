@@ -4,6 +4,9 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
+  TimelineItem,
+  HolidayHint,
+  RegionInfo,
 } from "./types";
 import type { TimelineItem, KycTimelineEntry, KycPromptPanel } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
@@ -167,53 +170,45 @@ export const quickActions: QuickAction[] = [
   },
 ];
 
-// ─── KYC timeline data ──────────────────────────────────────────────────────
-
-export const kycTimelineEntries: KycTimelineEntry[] = [
+export const upcomingHolidays: HolidayHint[] = [
   {
-    id: "kyc-1",
-    title: "Documents submitted",
-    stage: "submitted",
-    timestamp: "2026-07-10 2:15 PM",
-    actor: "You",
-    details: "Passport scan and proof of address uploaded for review.",
+    id: "holiday-1",
+    name: "New Year's Day",
+    date: "2027-01-01",
+    dateLabel: "Jan 1, 2027",
   },
   {
-    id: "kyc-2",
-    title: "Under review",
-    stage: "reviewing",
-    timestamp: "2026-07-11 9:30 AM",
-    actor: "Compliance Team",
-    details: "Your documents are being reviewed. This typically takes 1–3 business days.",
+    id: "holiday-2",
+    name: "Martin Luther King Jr. Day",
+    date: "2027-01-19",
+    dateLabel: "Jan 19, 2027",
+    isMoving: true,
   },
   {
-    id: "kyc-3",
-    title: "Additional information needed",
-    stage: "needs_info",
-    timestamp: "2026-07-14 11:00 AM",
-    actor: "Compliance Team",
-    details: "The proof of address document was unclear. Please upload a recent utility bill or bank statement showing your full name and current address.",
-    isCurrent: true,
+    id: "holiday-3",
+    name: "Presidents' Day",
+    date: "2027-02-16",
+    dateLabel: "Feb 16, 2027",
+    isMoving: true,
   },
   {
-    id: "kyc-4",
-    title: "Verification complete",
-    stage: "verified",
-    timestamp: "—",
+    id: "holiday-4",
+    name: "Memorial Day",
+    date: "2027-05-31",
+    dateLabel: "May 31, 2027",
+    isMoving: true,
+  },
+  {
+    id: "holiday-5",
+    name: "Independence Day",
+    date: "2027-07-04",
+    dateLabel: "Jul 4, 2027",
   },
 ];
 
-export const kycPromptPanel: KycPromptPanel = {
-  title: "Additional information required",
-  description:
-    "The compliance team needs a clearer proof of address before your identity can be verified. Please upload a recent document (within the last 3 months) that shows your full name and current address.",
-  uploadHref: "/dashboard/settings",
-  guidance: [
-    "Accepted documents: utility bill, bank statement, or government-issued letter.",
-    "The document must be dated within the last 90 days.",
-    "Ensure the image is clear and all four corners of the document are visible.",
-    "Re-submission typically takes 1–2 business days to review.",
-  ],
+export const holidayRegion: RegionInfo = {
+  code: "US",
+  name: "United States",
 };
 
 export const suppliers: Supplier[] = [

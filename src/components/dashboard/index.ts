@@ -12,6 +12,7 @@ export * from "./panel-shell";
 export * from "./quick-actions";
 export * from "./sample-badge";
 export * from "./slot-list";
+export * from "./holiday-hints-strip";
 export * from "./social-proof-badge";
 export * from "./social-proof-badges";
 export * from "./state-card";
