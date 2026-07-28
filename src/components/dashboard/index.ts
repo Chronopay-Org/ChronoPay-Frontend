@@ -9,6 +9,7 @@ export * from "./dashboard-data";
 export * from "./metric-card";
 export * from "./onboarding-walkthrough";
 export * from "./panel-shell";
+export * from "./pricing-calculator";
 export * from "./quick-actions";
 export * from "./sample-badge";
 export * from "./slot-list";
