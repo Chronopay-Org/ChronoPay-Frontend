@@ -1,5 +1,8 @@
 import { useId, type ReactNode } from "react";
-import { EmptyStateIllustration } from "./empty-state-illustration";
+import {
+  EmptyStateIllustration,
+  type EmptyStateVariant,
+} from "./empty-state-illustration";
 import { StatusChip } from "./ui/status-chip";
 import { Card, CardHeader, CardBody, CardFooter } from "@/components/dashboard";
 
@@ -8,6 +11,12 @@ type EmptyStateCardProps = {
   title: string;
   description: string;
   accentLabel: string;
+  /**
+   * Optional illustration variant. Pass a search-specific variant when the
+   * card is used in a search context (e.g., "no-results", "tight-filters",
+   * "offline") to render a contextual illustration.
+   */
+  variant?: EmptyStateVariant;
   status: {
     label: string;
     tone?: "info" | "warning" | "success" | "danger" | "neutral";
@@ -23,6 +32,7 @@ export function EmptyStateCard({
   title,
   description,
   accentLabel,
+  variant = "default",
   status,
   guidance,
   actions,
