@@ -1,59 +1,18 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
-import { EmptyStateCard } from "../../app/components/empty-state-card";
 
-type SlotListProps = {
-  slots: Slot[];
-  suggestedAlternatives?: Slot[];
-};
+function mapTone(status: Slot["status"]) {
+  if (status === "Healthy") return "positive" as const;
+  if (status === "Tight") return "warning" as const;
+  return "critical" as const;
+}
 
-export const SlotList = ({ slots, suggestedAlternatives }: SlotListProps) => {
-  const [focusedAlternativeIndex, setFocusedAlternativeIndex] = useState(0);
-  const alternativeCardRefs = useRef<Array<HTMLLIElement | null>>([]);
-
-  useEffect(() => {
-    if (!suggestedAlternatives || suggestedAlternatives.length === 0) return;
-    setFocusedAlternativeIndex(0);
-  }, [suggestedAlternatives]);
-
-  useEffect(() => {
-    if (!suggestedAlternatives || suggestedAlternatives.length === 0) return;
-    const element = alternativeCardRefs.current[focusedAlternativeIndex];
-    if (element) {
-      element.focus({ preventScroll: true });
-      element.scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: "nearest",
-      });
-    }
-  }, [focusedAlternativeIndex, suggestedAlternatives]);
-
-  const handleAlternativeKeyDown = (
-    event: React.KeyboardEvent<HTMLLIElement>,
-    index: number,
-  ) => {
-    if (!suggestedAlternatives) return;
-
-    if (
-      event.key === "ArrowRight" &&
-      index < suggestedAlternatives.length - 1
-    ) {
-      event.preventDefault();
-      setFocusedAlternativeIndex(index + 1);
-    }
-
-    if (event.key === "ArrowLeft" && index > 0) {
-      event.preventDefault();
-      setFocusedAlternativeIndex(index - 1);
-    }
-  };
+export function SlotList({ slots }: { slots: Slot[] }) {
+  if (slots.length === 0) {
+    return <p className="helper-text helper-text--muted">No time slots available right now.</p>;
+  }
 
   return (
     <div className="space-y-6">
@@ -81,49 +40,13 @@ export const SlotList = ({ slots, suggestedAlternatives }: SlotListProps) => {
             </div>
           </div>
 
-          <div className="mt-5">
-            {suggestedAlternatives.length === 0 ? (
-              <EmptyStateCard
-                eyebrow="Suggestions"
-                title="No matching alternatives found"
-                description="We could not find another slot that matches price and time-of-day closely enough. Try widening your search criteria or check back later."
-                accentLabel="No alternatives"
-                status={{ label: "Unavailable", tone: "warning" }}
-                guidance={[
-                  "Expand the search window to include adjacent time blocks.",
-                  "Check for other sellers offering the same hourly rate.",
-                ]}
-              />
-            ) : (
-              <ul
-                className="flex gap-4 snap-x snap-mandatory touch-pan-x overflow-x-auto pb-2"
-                aria-roledescription="carousel"
-              >
-                {suggestedAlternatives.map((slot, index) => (
-                <li
-                  key={slot.id}
-                  ref={(element) => {
-                    alternativeCardRefs.current[index] = element;
-                  }}
-                  tabIndex={index === focusedAlternativeIndex ? 0 : -1}
-                  onKeyDown={(event) => handleAlternativeKeyDown(event, index)}
-                  aria-label={`Alternative slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
-                  className={`min-w-[260px] max-w-[260px] snap-start rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
-                    index === focusedAlternativeIndex
-                      ? "ring-1 ring-cyan-300/50"
-                      : ""
-                  }`}
-                >
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                        {slot.dateLabel}
-                      </p>
-                      <h3 className="text-base font-semibold text-white">
-                        {slot.title}
-                      </h3>
-                      <p className="text-sm text-slate-300">{slot.timeRange}</p>
-                    </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                  {slot.rate}
+                  <HelpPopover
+                    term={glossary.rate}
+                    triggerLabel="Help: slot rate and XLM pricing"
+                  />
+                </span>
 
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-slate-200">
                       <div className="flex items-center justify-between gap-3">
@@ -210,33 +133,18 @@ export const SlotList = ({ slots, suggestedAlternatives }: SlotListProps) => {
                     {slot.demand}
                   </span>
 
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                    {slot.rate}
-                    <HelpPopover
-                      term={glossary.rate}
-                      triggerLabel="Help: slot rate and XLM pricing"
-                    />
-                  </span>
-
-                  {slot.isNextAvailable ? (
-                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-cyan-100">
-                      Next available
-                    </span>
-                  ) : null}
-
-                  <span className="inline-flex items-center gap-1.5">
-                    Rate details
-                    <HelpPopover
-                      term={glossary.xlm}
-                      triggerLabel="Help: XLM and Stellar network fees"
-                    />
-                  </span>
-                </div>
-              </article>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+                <span className="inline-flex items-center gap-1.5">
+                  Rate details
+                  <HelpPopover
+                    term={glossary.xlm}
+                    triggerLabel="Help: XLM and Stellar network fees"
+                  />
+                </span>
+              </div>
+            </article>
+          </li>
+        );
+      })}
+    </ul>
   );
 };

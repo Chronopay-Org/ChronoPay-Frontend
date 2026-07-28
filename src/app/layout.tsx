@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/hooks/use-toast";
 import { ToastContainer } from "@/app/components/ui/toast-container";
-import LocalePicker from "@/app/components/ui/locale-picker";
+import { RoleProvider } from "@/app/components/navigation/RoleContext";
 
 export const metadata: Metadata = {
   title: "ChronoPay - Time Economy",
@@ -31,21 +31,10 @@ export default function RootLayout({
         </a>
 
         <ToastProvider>
-          <main id="main-content" className="flex-1">
+          <RoleProvider initialRole="buyer">
             {children}
-          </main>
-
-          <footer className="border-t border-white/10 px-6 py-4">
-            <div className="mx-auto flex max-w-6xl items-center justify-between">
-              <p className="text-sm text-slate-400">
-                © ChronoPay
-              </p>
-
-              <LocalePicker />
-            </div>
-          </footer>
-
-          <ToastContainer />
+            <ToastContainer />
+          </RoleProvider>
         </ToastProvider>
       </body>
     </html>

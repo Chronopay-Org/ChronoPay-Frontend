@@ -178,13 +178,11 @@ export function Toast({ toast, onDismiss }: ToastProps) {
           config.containerClass,
         )}
       >
-        {/* ── Main row ─────────────────────────────────────────────────── */}
-        <div className="flex items-start gap-3 px-4 py-3.5">
-          {/* Tone icon */}
-          <Icon
-            className={clsx("mt-0.5 h-5 w-5 shrink-0", config.iconClass)}
-            aria-hidden="true"
-          />
+        {/* Tone icon */}
+        <Icon
+          className={clsx("mt-0.5 h-5 w-5 shrink-0", config.iconClass)}
+          aria-hidden={true}
+        />
 
           {/* Text */}
           <div className="min-w-0 flex-1">
@@ -239,51 +237,15 @@ export function Toast({ toast, onDismiss }: ToastProps) {
           </button>
         </div>
 
-        {/* ── Expandable panel ──────────────────────────────────────────── */}
-        <AnimatePresence initial={false}>
-          {expanded && (
-            <motion.div
-              id={panelId}
-              key="panel"
-              variants={panelVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="overflow-hidden"
-            >
-              <ul
-                role="list"
-                aria-label="All notifications in group"
-                className="flex flex-col gap-1 border-t border-white/10 px-4 pb-3 pt-2"
-              >
-                {messages.map((msg) => (
-                  <li
-                    key={msg.id}
-                    className="flex flex-col gap-0.5 rounded-lg bg-white/5 px-3 py-2 text-sm"
-                  >
-                    <span className="font-medium text-slate-200">{msg.title}</span>
-                    {msg.description && (
-                      <span className="text-slate-400">{msg.description}</span>
-                    )}
-                    <span className="text-xs text-slate-500">{relativeTime(msg.timestamp)}</span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* Dismiss-all shortcut inside expanded panel */}
-              <div className="flex justify-end border-t border-white/10 px-4 pb-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => onDismiss(id)}
-                  className="text-xs text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
-                >
-                  Dismiss all
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Dismiss button */}
+        <button
+          type="button"
+          onClick={() => onDismiss(id)}
+          aria-label={`Dismiss: ${title}`}
+          className="ml-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden={true} />
+        </button>
       </div>
     </motion.div>
   );
