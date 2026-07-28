@@ -45,7 +45,7 @@ export function ThemeSwitcher() {
   if (!mounted) {
     return (
       <div
-        aria-hidden="true"
+        aria-hidden={true}
         className="h-8 w-[116px] rounded-full border border-white/10 bg-white/5"
       />
     );
@@ -74,7 +74,7 @@ export function ThemeSwitcher() {
                 : 'text-slate-400 hover:text-slate-200',
             ].join(' ')}
           >
-            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            <Icon className="h-3.5 w-3.5" aria-hidden={true} />
             <span className="hidden sm:inline">{label}</span>
           </button>
         );
