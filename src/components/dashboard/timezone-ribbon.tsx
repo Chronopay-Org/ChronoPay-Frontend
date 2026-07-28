@@ -11,6 +11,7 @@ import {
   getStoredTimezoneMode,
   setStoredTimezoneMode,
 } from "@/utils/timezone";
+import { BidiIsolate } from "@/utils/bidi";
 
 export interface TimezoneRibbonProps {
   supplierId: string;
@@ -18,6 +19,8 @@ export interface TimezoneRibbonProps {
   supplierName?: string;
   onTimezoneChange?: (mode: TimezoneMode, activeTimeZone: string) => void;
   className?: string;
+  /** UI locale for bidi-aware rendering of time strings. */
+  locale?: string;
 }
 
 export function TimezoneRibbon({
@@ -26,6 +29,7 @@ export function TimezoneRibbon({
   supplierName = "Supplier",
   onTimezoneChange,
   className = "",
+  locale = "en",
 }: TimezoneRibbonProps) {
   const [viewerTimeZone, setViewerTimeZone] = useState<string>("UTC");
   const [mode, setMode] = useState<TimezoneMode>("viewer");
@@ -84,7 +88,10 @@ export function TimezoneRibbon({
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-medium text-slate-200">Active Viewport:</span>
           <span className="inline-flex items-center gap-1 font-mono text-cyan-300 bg-slate-800/80 px-2 py-0.5 rounded text-xs">
-            {activeTimeZone} ({activeOffset})
+            <BidiIsolate locale={locale}>{activeTimeZone}</BidiIsolate>
+            {' ('}
+            <BidiIsolate locale={locale}>{activeOffset}</BidiIsolate>
+            {')'}
           </span>
           <span className="text-slate-500 hidden sm:inline" aria-hidden="true">•</span>
           <span className="helper-text helper-text--muted text-xs inline-flex items-center gap-1">
@@ -111,7 +118,7 @@ export function TimezoneRibbon({
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           )}
         >
-          My time <span className="text-[10px] opacity-70">({viewerOffset})</span>
+          My time <span className="text-[10px] opacity-70">(<BidiIsolate locale={locale}>{viewerOffset}</BidiIsolate>)</span>
         </button>
 
         <button
@@ -125,7 +132,7 @@ export function TimezoneRibbon({
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           )}
         >
-          {supplierName} time <span className="text-[10px] opacity-70">({supplierOffset})</span>
+          {supplierName} time <span className="text-[10px] opacity-70">(<BidiIsolate locale={locale}>{supplierOffset}</BidiIsolate>)</span>
         </button>
       </div>
     </div>

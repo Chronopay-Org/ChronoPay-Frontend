@@ -35,7 +35,27 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [selectedCaps, setSelectedCaps] = useState<string[]>([]);
-  const [showAlternativeWallets, setShowAlternativeWallets] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod | undefined>(undefined);
+  const [email, setEmail] = useState('');
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null;
+    setSelectedMethod(stored ?? undefined);
+    setEmail('');
+  }, [isOpen]);
 
   const allCaps = useMemo(() => {
     const caps = new Set<string>();
@@ -75,7 +95,20 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
       const firstButton = modalRef.current.querySelector('button, input') as HTMLElement;
       firstButton?.focus();
     }
-  }, [isOpen]);
+  }, [isOpen, selectedMethod]);
+
+  const emailValid = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), [email]);
+
+  const selectMethod = (method: ConnectionMethod) => {
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, method);
+    setSelectedMethod(method);
+  };
+
+  const handleEmailSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!emailValid) return;
+    onEmailSubmit?.(email);
+  };
 
   if (!isOpen) return null;
 

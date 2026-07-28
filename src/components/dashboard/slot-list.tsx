@@ -9,15 +9,8 @@ import type { Slot } from "./types";
 import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 import { slots } from "./dashboard-data";
-import { Tooltip } from "@/app/components/ui/tooltip";
-
-const isJustAdded = (mintedAt?: string): boolean => {
-  if (!mintedAt) return false;
-  const minted = new Date(mintedAt);
-  const now = new Date();
-  const diffHours = (now.getTime() - minted.getTime()) / (1000 * 60 * 60);
-  return diffHours >= 0 && diffHours <= 24;
-};
+import { BidiIsolate } from "@/utils/bidi";
+import { getDir } from "@/lib/formatters";
 
 interface SlotListProps {
   slots?: Slot[];
@@ -25,10 +18,8 @@ interface SlotListProps {
   supplierId?: string;
   supplierTimeZone?: string;
   supplierName?: string;
-  showTemplatePicker?: boolean;
-  showConflictDetector?: boolean;
-  conflicts?: AvailabilityConflict[];
-  suggestedAlternatives?: Slot[];
+  /** UI locale — controls date/time formatting and text direction. */
+  locale?: string;
 }
 
 export const SlotList = ({
@@ -37,10 +28,7 @@ export const SlotList = ({
   supplierId = "supplier-001",
   supplierTimeZone = "America/New_York",
   supplierName = "Alex",
-  showTemplatePicker = true,
-  showConflictDetector = true,
-  conflicts,
-  suggestedAlternatives,
+  locale = "en",
 }: SlotListProps) => {
   const [activeTz, setActiveTz] = useState<string>("UTC");
   const [templatePickerOpen, setTemplatePickerOpen] = useState<boolean>(false);
@@ -69,8 +57,11 @@ export const SlotList = ({
     return "neutral";
   };
 
+  const dir = getDir(locale);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir={dir}>
+      {/* Timezone Ribbon Header */}
       <TimezoneRibbon
         supplierId={supplierId}
         supplierTimeZone={supplierTimeZone}
@@ -231,7 +222,9 @@ export const SlotList = ({
                         )}
                       </div>
                       <p className="text-sm text-slate-300">
-                        {slot.dateLabel} · {slot.timeRange}
+                        <BidiIsolate locale={locale}>{slot.dateLabel}</BidiIsolate>
+                        <span aria-hidden="true"> · </span>
+                        <BidiIsolate locale={locale}>{slot.timeRange}</BidiIsolate>
                       </p>
                     </div>
                     <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
