@@ -2,6 +2,8 @@
 
 import { DashboardShell } from "../components/dashboard-shell";
 import {
+  availabilityDays,
+  AvailabilityStrip,
   bookingStages,
   BookingProgress,
   ClearSamplesBanner,
@@ -15,6 +17,8 @@ import {
   SlotList,
   wallet,
   WalletCard,
+  NotificationList,
+  notifications,
 } from "@/components/dashboard";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
@@ -68,6 +72,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const suggestedAlternatives = slots.slice(0, 3);
 
   return (
     <DashboardShell>

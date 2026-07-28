@@ -1,3 +1,4 @@
+export * from "./availability-strip";
 export * from "./booking-progress";
 export * from "./cancellation-reason-picker";
 export * from "./clear-samples-banner";
@@ -16,4 +17,9 @@ export * from "./state-card";
 export * from "./status-chip";
 export * from "./wallet-card";
 export * from "./card";
+export * from "./notifications";
+
+export { availabilityDays, bookingStages } from "./dashboard-data";
+
+export { availabilityDays, bookingStages } from "./dashboard-data";
 

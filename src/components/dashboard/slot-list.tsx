@@ -136,4 +136,4 @@ export function SlotList({ slots }: { slots: Slot[] }) {
       })}
     </ul>
   );
-}
+};
