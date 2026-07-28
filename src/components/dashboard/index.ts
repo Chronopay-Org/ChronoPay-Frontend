@@ -5,6 +5,8 @@ export * from "./dashboard-data";
 export * from "./metric-card";
 export * from "./panel-shell";
 export * from "./quick-actions";
+export * from "./review-reply-thread";
+export * from "./review-thread-types";
 export * from "./slot-list";
 export * from "./social-proof-badge";
 export * from "./social-proof-badges";
