@@ -2,21 +2,35 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
+import { useReducedMotion } from "framer-motion";
 import { HeaderSearch } from "@/app/components/header-search";
-import { AccountSwitcher } from "@/app/components/account-switcher";
+import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
+import { ButtonLink } from "@/app/components/ui/button-link";
+import { useRole, RoleProvider } from "@/app/components/navigation/RoleContext";
+import { getNavForRole, ROLE_META } from "@/app/components/navigation/role-nav";
+import { BottomNavOverflow } from "@/app/components/navigation/BottomNavOverflow";
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+// ─── Inner shell (consumes RoleContext) ───────────────────────────────────────
+
+function ShellInner({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const liveRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
+
   const routes = getNavForRole(role);
   const meta = ROLE_META[role];
 
   useEffect(() => {
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isOpen) {
-        setIsOpen(false);
+    const handleRoleChange = (e: Event) => {
+      const { role: newRole } = (e as CustomEvent<{ role: string }>).detail;
+      const newMeta = ROLE_META[newRole as keyof typeof ROLE_META];
+      if (liveRef.current && newMeta) {
+        liveRef.current.textContent = `Role switched to ${newMeta.label}. Navigation updated.`;
+        setTimeout(() => {
+          if (liveRef.current) liveRef.current.textContent = "";
+        }, 3000);
       }
     };
 
@@ -51,9 +65,38 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("keydown", handleTab);
   }, [isOpen]);
 
+  // ── Scroll detection for inset shadow ────────────────────────────────────
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Suppress unused-var warning; variants are here for future Framer Motion use
+  void shouldReduceMotion;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
+    <div
+      className="app-shell min-h-screen"
+      style={{ color: "var(--shell-text)" }}
+    >
+      {/* Screen-reader live region for role changes */}
+      <div
+        ref={liveRef}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      />
+
+      <header
+        className="border-b backdrop-blur-xl"
+        style={{
+          background: "var(--shell-header-bg)",
+          borderColor: "var(--shell-header-border)",
+          boxShadow: isScrolled ? "0 4px 20px rgba(0,0,0,0.3)" : undefined,
+        }}
+      >
         <nav
           className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6 md:py-4"
           aria-label="Dashboard navigation"
@@ -74,14 +117,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="hidden items-center gap-3 text-sm text-slate-300 md:flex">
             {routes.map((route) => (
               <Link
-                key={route.href}
-                href={route.href}
-                className="rounded-full px-3 py-2 transition-colors hover:bg-white/10 hover:text-white"
+                key={r.href}
+                href={r.href}
+                className="rounded-full px-3 py-2 hover:bg-white/6 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none transition-colors"
+                style={{ color: "var(--shell-text-muted)" }}
               >
-                <span aria-hidden={true} className="mr-1.5">
-                  {route.icon}
-                </span>
-                <span>{route.label}</span>
+                <span aria-hidden="true">{r.icon}</span>{" "}
+                <span>{r.label}</span>
               </Link>
             ))}
             <AccountSwitcher />
@@ -91,7 +133,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               href="https://stellar.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-white/10 px-3 py-2 transition-colors hover:bg-white/10"
+              className="rounded-full border px-3 py-2 hover:bg-white/6 transition-colors"
+              style={{
+                borderColor: "var(--border-subtle)",
+                color: "var(--shell-text-muted)",
+              }}
             >
               Stellar
             </a>
@@ -101,7 +147,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-1 md:hidden">
             <HeaderSearch />
             <button
-              className="rounded-md p-2 text-white transition-colors hover:bg-white/10"
+              className="rounded-md p-2 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
               aria-label="Open navigation menu"
               onClick={() => setIsOpen(true)}
             >
@@ -110,7 +156,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -129,11 +175,18 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           ref={drawerRef}
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-40 flex justify-end bg-black/50 backdrop-blur-sm"
+          aria-label="Navigation menu"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-40"
         >
-          <aside className="h-full w-64 bg-slate-950 p-4 text-slate-100">
+          <aside
+            className="w-64 h-full p-4 flex flex-col"
+            style={{
+              background: "var(--shell-drawer-bg)",
+              color: "var(--shell-text)",
+            }}
+          >
             <button
-              className="mb-4 rounded-md p-2 transition-colors hover:bg-white/10"
+              className="mb-4 rounded-md p-2 self-start focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
               aria-label="Close navigation menu"
               onClick={() => setIsOpen(false)}
             >
@@ -142,7 +195,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -155,9 +208,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
               {routes.map((route) => (
                 <Link
-                  key={route.href}
-                  href={route.href}
-                  className="block rounded-md px-3 py-2 transition-colors hover:bg-white/10"
+                  key={r.href}
+                  href={r.href}
+                  className="flex items-center gap-2 rounded-md px-3 py-2 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none transition-colors"
+                  style={{ color: "var(--shell-text)" }}
                   onClick={() => setIsOpen(false)}
                 >
                   <span aria-hidden={true} className="mr-1.5">
@@ -178,6 +232,19 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 {meta.primaryCta.label}
               </ButtonLink>
             </div>
+
+            {/* Stellar link in drawer */}
+            <div className="mt-auto pt-6 border-t border-white/8">
+              <a
+                href="https://stellar.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
+              >
+                <span aria-hidden="true">🌐</span>
+                <span>Stellar network</span>
+              </a>
+            </div>
           </aside>
 
           <button
@@ -189,23 +256,23 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around bg-slate-900 py-2 text-slate-100 md:hidden">
-        {routes.map((route) => (
-          <Link
-            key={route.href}
-            href={route.href}
-            className="flex flex-col items-center text-xs hover:text-white"
-            onClick={() => setIsOpen(false)}
-          >
-            <span aria-hidden={true} className="text-lg">
-              {route.icon}
-            </span>
-            <span>{route.label}</span>
-          </Link>
-        ))}
-      </nav>
+      {/* ── Mobile bottom bar with overflow ────────────────────────────────── */}
+      <BottomNavOverflow items={routes} role={role} />
 
-      {children}
+      {/* Page content — padded so it clears the bottom bar on mobile */}
+      <main id="main-content" className="pb-16 md:pb-0">
+        {children}
+      </main>
     </div>
+  );
+}
+
+// ─── Public shell export (wraps with RoleProvider) ────────────────────────────
+
+export function DashboardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <RoleProvider>
+      <ShellInner>{children}</ShellInner>
+    </RoleProvider>
   );
 }
