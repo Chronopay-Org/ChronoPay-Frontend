@@ -23,7 +23,6 @@ type EmptyStateCardProps = {
   };
   guidance: string[];
   actions?: ReactNode;
-  variant?: "default" | "error" | "offline" | "blocked";
   alt?: string;
 };
 
@@ -36,7 +35,6 @@ export function EmptyStateCard({
   status,
   guidance,
   actions,
-  variant,
   alt,
 }: EmptyStateCardProps) {
   const cardId = useId();
