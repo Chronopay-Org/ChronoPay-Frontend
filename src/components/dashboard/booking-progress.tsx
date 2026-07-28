@@ -1,8 +1,19 @@
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
-import type { BookingStage } from "./types";
+import type { AutosaveStatus, BookingStage } from "./types";
+import { AutosaveIndicator } from "./autosave-indicator";
 
-export function BookingProgress({ stages }: { stages: BookingStage[] }) {
+export function BookingProgress({
+  stages,
+  autosaveStatus,
+  autosaveLastSavedAt,
+  onAutosaveRetry,
+}: {
+  stages: BookingStage[];
+  autosaveStatus?: AutosaveStatus;
+  autosaveLastSavedAt?: Date;
+  onAutosaveRetry?: () => void;
+}) {
   const maxValue = Math.max(...stages.map((stage) => stage.value), 1);
 
   return (
@@ -16,6 +27,13 @@ export function BookingProgress({ stages }: { stages: BookingStage[] }) {
           term={glossary.bookingStages}
           triggerLabel="Help: booking lifecycle stages"
         />
+        {autosaveStatus ? (
+          <AutosaveIndicator
+            status={autosaveStatus}
+            lastSavedAt={autosaveLastSavedAt}
+            onRetry={onAutosaveRetry}
+          />
+        ) : null}
       </div>
 
       {stages.map((stage, index) => {

@@ -32,6 +32,9 @@ export type Metric = {
   breakdown?: EarningsSegment[];
 };
 
+export type DraftStatus = "saved" | "saving" | "offline";
+export type AutosaveStatus = "saving" | "saved" | "offline" | "error";
+
 export type BookingStage = {
   label: string;
   value: number;
