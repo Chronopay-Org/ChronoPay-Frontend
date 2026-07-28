@@ -117,19 +117,19 @@ export function AsyncButton({
       {state === "pending" && (
         <Loader2
           className="h-4 w-4 animate-spin"
-          aria-hidden="true"
+          aria-hidden={true}
         />
       )}
       {state === "confirmed" && (
         <CheckCircle2
           className="h-4 w-4 text-emerald-400"
-          aria-hidden="true"
+          aria-hidden={true}
         />
       )}
       {state === "error" && (
         <AlertCircle
           className="h-4 w-4 text-rose-400"
-          aria-hidden="true"
+          aria-hidden={true}
         />
       )}
 

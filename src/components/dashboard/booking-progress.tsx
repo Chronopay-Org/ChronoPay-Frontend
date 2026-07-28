@@ -36,7 +36,7 @@ export function BookingProgress({ stages }: { stages: BookingStage[] }) {
                 {stage.value} bookings
               </p>
             </div>
-            <div className="h-2.5 rounded-full bg-white/10" aria-hidden="true">
+            <div className="h-2.5 rounded-full bg-white/10" aria-hidden={true}>
               <div
                 className="h-2.5 rounded-full bg-[linear-gradient(90deg,#67e8f9,#22c55e)]"
                 style={{ width: `${(stage.value / maxValue) * 100}%` }}
