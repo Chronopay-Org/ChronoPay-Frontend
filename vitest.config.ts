@@ -11,7 +11,14 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],
-      include: ["src/app/components/ui/help-popover.tsx", "src/lib/glossary.ts"],
+      include: [
+        "src/app/components/ui/help-popover.tsx",
+        "src/lib/glossary.ts",
+        "src/components/dashboard/pricing-calculator.tsx",
+        "src/components/dashboard/services-step/**/*.{ts,tsx}",
+        "src/app/components/keyboard-shortcuts-overlay.tsx",
+        "src/lib/keyboard-shortcuts.ts",
+      ],
       thresholds: {
         lines: 95,
         functions: 95,

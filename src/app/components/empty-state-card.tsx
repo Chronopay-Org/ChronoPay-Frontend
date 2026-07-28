@@ -1,5 +1,7 @@
 import { useId, type ReactNode } from "react";
-import { EmptyStateIllustration } from "./empty-state-illustration";
+import {
+  EmptyStateIllustration,
+} from "./empty-state-illustration";
 import { StatusChip } from "./ui/status-chip";
 import { Card, CardHeader, CardBody, CardFooter } from "@/components/dashboard";
 
@@ -8,12 +10,15 @@ type EmptyStateCardProps = {
   title: string;
   description: string;
   accentLabel: string;
+  variant?: "default" | "error" | "offline" | "blocked";
+  alt?: string;
   status: {
     label: string;
     tone?: "info" | "warning" | "success" | "danger" | "neutral";
   };
   guidance: string[];
   actions?: ReactNode;
+  alt?: string;
 };
 
 export function EmptyStateCard({
@@ -21,9 +26,11 @@ export function EmptyStateCard({
   title,
   description,
   accentLabel,
+  variant = "default",
   status,
   guidance,
   actions,
+  alt,
 }: EmptyStateCardProps) {
   const cardId = useId();
   const titleId = `${cardId}-title`;
@@ -50,7 +57,7 @@ export function EmptyStateCard({
         </StatusChip>
       </CardHeader>
       <CardBody className="mt-4">
-        <EmptyStateIllustration accentLabel={accentLabel} />
+        <EmptyStateIllustration accentLabel={accentLabel} variant={variant} alt={alt} />
         <div className="mt-5 space-y-3">
           <h2 id={titleId} className="text-xl font-semibold text-white">
             {title}
