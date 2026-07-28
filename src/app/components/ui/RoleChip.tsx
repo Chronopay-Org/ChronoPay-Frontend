@@ -114,8 +114,8 @@ export function RoleChip() {
         aria-hidden={true}
         className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/8 px-2.5 py-1 text-xs text-slate-500"
       >
-        <span className="h-3 w-3 rounded-full bg-slate-600 animate-pulse" />
-        <span className="hidden sm:inline h-2.5 w-12 rounded bg-slate-700 animate-pulse" />
+        <span className="skeleton h-3 w-3 rounded-full" />
+        <span className="skeleton hidden h-2.5 w-12 rounded sm:inline" />
       </span>
     );
   }

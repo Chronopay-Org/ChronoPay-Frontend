@@ -72,10 +72,10 @@ export function StateCard({ state }: { state: StateType }) {
             <p id={messageId} className="sr-only">
               {stateMessage[state]}
             </p>
-            <div className="space-y-3" aria-hidden={true}>
-              <div className="h-3 w-3/4 animate-pulse rounded-full bg-white/10" />
-              <div className="h-3 w-1/2 animate-pulse rounded-full bg-white/10" />
-              <div className="h-10 w-full animate-pulse rounded-2xl bg-white/10" />
+            <div className="space-y-3" aria-hidden="true">
+              <div className="skeleton h-3 w-3/4 rounded-full" />
+              <div className="skeleton h-3 w-1/2 rounded-full" />
+              <div className="skeleton h-10 w-full rounded-2xl" />
             </div>
           </>
         ) : (
