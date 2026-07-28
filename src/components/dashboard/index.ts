@@ -14,6 +14,7 @@ export * from "./quick-actions";
 export * from "./review-reply-thread";
 export * from "./review-thread-types";
 export * from "./slot-list";
+export * from "./slot-picker-compare";
 export * from "./holiday-hints-strip";
 export * from "./social-proof-badge";
 export * from "./social-proof-badges";
