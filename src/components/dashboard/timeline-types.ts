@@ -14,7 +14,7 @@ export type TimelineItem = {
 
 export const statusToneMap: Record<TimelineItemStatus, Tone> = {
   pending: "neutral",
-  completed: "success",
-  failed: "danger",
+  completed: "positive",
+  failed: "critical",
   warning: "warning",
 };

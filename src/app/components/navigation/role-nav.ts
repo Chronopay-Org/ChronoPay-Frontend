@@ -28,7 +28,7 @@ export interface NavItem {
   /** Display label */
   label: string;
   /**
-   * Unicode/emoji icon rendered with aria-hidden="true".
+   * Unicode/emoji icon rendered with aria-hidden={true}.
    * A text label is ALWAYS shown alongside the icon so colour / shape is never
    * the only differentiator (WCAG 1.4.1).
    */
