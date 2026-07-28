@@ -27,3 +27,4 @@ export * from "./refund-destination-selector";
 export * from "./rating-breakdown-bars";
 export * from "./refund-confirmation-modal";
 
+export * from "./receive-token-panel";
