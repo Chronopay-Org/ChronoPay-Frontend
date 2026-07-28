@@ -32,6 +32,14 @@ export type EarningsSegment = {
   colorClass: string;
 };
 
+export type EarningsSegment = {
+  id: string;
+  label: string;
+  value: number;
+  formattedValue: string;
+  colorClass: string;
+};
+
 export type Metric = {
   label: string;
   value: string;

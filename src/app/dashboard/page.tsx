@@ -17,9 +17,7 @@ import {
   SlotList,
   wallet,
   WalletCard,
-  upcomingHolidays,
-  holidayRegion,
-  HolidayHintsStrip,
+  OnboardingWidget,
 } from "@/components/dashboard";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
@@ -123,18 +121,12 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {showSamples ? (
-          <ClearSamplesBanner
-            visible={showClearBanner || showTour}
-            onClear={clearSamples}
-          />
-        ) : null}
+        {/* Onboarding */}
+        <OnboardingWidget />
 
-        <div
-          data-tour-target="metrics"
-          className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
-        >
-          {visibleMetrics.map((metric) => (
+        {/* Metrics */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((metric) => (
             <MetricCard key={metric.label} metric={metric} />
           ))}
           {!showSamples ? (
