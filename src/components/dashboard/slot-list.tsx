@@ -1,9 +1,6 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { useSpring } from "@react-spring/web";
-import { useDrag } from "@use-gesture/react";
-import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { TimezoneRibbon } from "./timezone-ribbon";
@@ -22,6 +19,7 @@ import { Sparkles, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 
 interface SlotListProps {
   slots?: Slot[];
+  suggestedAlternatives?: Slot[];
   supplierId?: string;
   supplierTimeZone?: string;
   supplierName?: string;
@@ -33,6 +31,7 @@ interface SlotListProps {
 
 export const SlotList = ({
   slots = defaultSlots,
+  suggestedAlternatives = [],
   supplierId = "supplier-001",
   supplierTimeZone = "America/New_York",
   supplierName = "Alex",
@@ -46,8 +45,9 @@ export const SlotList = ({
   const [activeConflictSlotId, setActiveConflictSlotId] = useState<string | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const lastSelectedId = useRef<string | null>(null);
   const [liveMessage, setLiveMessage] = useState("");
+  const lastSelectedId = useRef<string | null>(null);
+  const alternativeRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const announce = useCallback((msg: string) => {
     setLiveMessage(msg);
@@ -69,7 +69,6 @@ export const SlotList = ({
 
   return (
     <div className="space-y-4">
-      {/* Timezone Ribbon Header */}
       <TimezoneRibbon
         supplierId={supplierId}
         supplierTimeZone={supplierTimeZone}
@@ -229,13 +228,68 @@ export const SlotList = ({
                     <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
                   </div>
 
+              return (
+                <li key={slot.id} className="space-y-2">
+                  {isDropTarget && dropPosition === "before" ? (
+                    <div className="h-1 rounded-full bg-cyan-400/80" />
+                  ) : null}
                   <div
-                    id={slotDetailsId}
-                    className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-300"
+                    data-slot-id={slot.id}
+                    draggable
+                    tabIndex={0}
+                    aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
+                    aria-pressed={isSelected}
+                    onDragStart={(event) => {
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", slot.id);
+                      setDraggingId(slot.id);
+                      setDragOverId(slot.id);
+                      setGhostPosition({ x: event.clientX, y: event.clientY });
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      const rect = event.currentTarget.getBoundingClientRect();
+                      const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after";
+                      setDragOverId(slot.id);
+                      setDropPosition(position);
+                      event.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const sourceId = event.dataTransfer.getData("text/plain") || draggingId;
+                      if (sourceId) {
+                        reorderSlots(sourceId, slot.id, dropPosition);
+                      }
+                      clearDragState();
+                    }}
+                    onDragEnd={() => clearDragState()}
+                    onKeyDown={(event) => handleListKeyDown(slot.id, event)}
+                    className={`rounded-[1.5rem] border p-4 transition-all duration-200 sm:p-5 ${isDragging ? "border-cyan-400/80 bg-cyan-400/10 opacity-70 shadow-[0_0_0_1px_rgba(34,211,238,0.3)]" : isSelected ? "border-cyan-400/40 bg-cyan-400/10" : "border-white/10 bg-white/[0.03] hover:border-cyan-400/30 hover:bg-cyan-400/[0.06]"}`}
                   >
-                    <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                      {slot.demand}
-                    </span>
+                    <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 id={slotTitleId} className="text-lg font-semibold text-white">
+                              {slot.title}
+                            </h3>
+                            {isDragging ? (
+                              <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100">
+                                Moving
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="text-sm text-slate-300">
+                            {slot.dateLabel} · {slot.timeRange}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
+                            Drag to move
+                          </span>
+                          <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
+                        </div>
+                      </div>
 
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
                       {slot.rate}
@@ -245,11 +299,13 @@ export const SlotList = ({
                       />
                     </span>
 
-                    {slot.isNextAvailable ? (
-                      <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-cyan-100">
-                        Next available
-                      </span>
-                    ) : null}
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                          {slot.rate}
+                          <HelpPopover
+                            term={glossary.rate}
+                            triggerLabel="Help: slot rate and XLM pricing"
+                          />
+                        </span>
 
                     <span className="inline-flex items-center gap-1.5">
                       Rate details
@@ -259,12 +315,65 @@ export const SlotList = ({
                       />
                     </span>
                   </div>
-                </article>
-              </li>
-            );
-          })}
-        </ul>
+                  {isDropTarget && dropPosition === "after" ? (
+                    <div className="h-1 rounded-full bg-cyan-400/80" />
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+
+          {suggestedAlternatives.length > 0 ? (
+            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
+                  <p className="mt-1 text-sm text-slate-300">Suggested alternatives</p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {suggestedAlternatives.map((alternative, index) => (
+                  <button
+                    key={alternative.id}
+                    ref={(element) => {
+                      alternativeRefs.current[index] = element;
+                    }}
+                    type="button"
+                    tabIndex={0}
+                    aria-label={`Alternative slot: ${alternative.title}, ${alternative.dateLabel} ${alternative.timeRange}`}
+                    onKeyDown={(event) => handleAlternativeKeyDown(index, event)}
+                    className="rounded-[1.25rem] border border-white/10 bg-slate-900/70 p-4 text-left transition hover:border-cyan-400/40 hover:bg-slate-800/90"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-white">{alternative.title}</p>
+                      <StatusChip tone={mapTone(alternative.status)}>{alternative.status}</StatusChip>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-300">{alternative.dateLabel} · {alternative.timeRange}</p>
+                    <p className="mt-3 text-sm text-slate-400">{alternative.demand}</p>
+                    <p className="mt-2 text-sm text-cyan-200">{alternative.rate}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+              <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
+              <p className="mt-2 text-sm text-slate-300">No matching alternatives found</p>
+              <p className="mt-1 text-sm text-slate-400">No alternatives</p>
+            </section>
+          )}
+        </>
       )}
+
+      {draggingId && ghostPosition ? (
+        <div
+          className="pointer-events-none fixed z-50 rounded-[1.25rem] border border-cyan-400/60 bg-slate-950/90 px-4 py-3 text-sm text-white shadow-2xl"
+          style={{ left: ghostPosition.x + 16, top: ghostPosition.y + 16 }}
+        >
+          <p className="font-medium">Moving availability</p>
+          <p className="mt-1 text-slate-300">Drop to place the slot</p>
+        </div>
+      ) : null}
     </div>
   );
 };
