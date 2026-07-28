@@ -70,6 +70,15 @@
   --shell-bottom-bar-bg: #0f172a;
   --shell-text: #f4f7fb;
   --shell-text-muted: #9fb0c7;
+
+  /* Shell left rail */
+  --shell-rail-bg: rgba(7, 17, 31, 0.55);
+  --shell-rail-border: rgba(148, 163, 184, 0.08);
+  --shell-rail-hover: rgba(148, 163, 184, 0.08);
+  --shell-rail-active: rgba(103, 232, 249, 0.1);
+  --shell-rail-text: #9fb0c7;
+  --shell-rail-text-active: #f4f7fb;
+  --shell-rail-width: 240px;
 }
 
 :root[data-density="comfortable"] {
@@ -115,6 +124,12 @@
   --shell-bottom-bar-bg: #f8fafc;
   --shell-text: #0a1628;
   --shell-text-muted: #4a6080;
+  --shell-rail-bg: rgba(240, 245, 251, 0.85);
+  --shell-rail-border: rgba(15, 23, 42, 0.08);
+  --shell-rail-hover: rgba(15, 23, 42, 0.06);
+  --shell-rail-active: rgba(8, 145, 178, 0.1);
+  --shell-rail-text: #4a6080;
+  --shell-rail-text-active: #0a1628;
 }
 
 /* Auto mode — follow system preference when no explicit theme is set */
@@ -143,6 +158,12 @@
     --shell-bottom-bar-bg: #f8fafc;
     --shell-text: #0a1628;
     --shell-text-muted: #4a6080;
+    --shell-rail-bg: rgba(240, 245, 251, 0.85);
+    --shell-rail-border: rgba(15, 23, 42, 0.08);
+    --shell-rail-hover: rgba(15, 23, 42, 0.06);
+    --shell-rail-active: rgba(8, 145, 178, 0.1);
+    --shell-rail-text: #4a6080;
+    --shell-rail-text-active: #0a1628;
   }
 }
 

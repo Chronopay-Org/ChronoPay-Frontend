@@ -10,6 +10,8 @@ export type Slot = {
   demand: string;
   rate: string;
   status: AvailabilityLevel;
+  /** Duration in minutes for this slot (used by duration filter chips) */
+  durationMinutes?: number;
   isNextAvailable?: boolean;
   /** When true, row is demo/onboarding content and must show a Sample badge. */
   isSample?: boolean;
@@ -112,4 +114,25 @@ export type OfflineQueueConnectionState = "online" | "offline" | "reconnecting";
 export type OfflineQueueState = {
   connection: OfflineQueueConnectionState;
   queue: QueuedAction[];
+};
+
+export type ConflictField = {
+  field: string;
+  localValue: string;
+  remoteValue: string;
+};
+
+export type SyncConflict = {
+  id: string;
+  eventTitle: string;
+  dateTime: string;
+  localChanges: ConflictField[];
+  remoteChanges: ConflictField[];
+};
+
+export type ResolutionStrategy = "useLocal" | "useRemote" | "merge";
+
+export type ConflictResolution = {
+  conflictId: string;
+  strategy: ResolutionStrategy;
 };
