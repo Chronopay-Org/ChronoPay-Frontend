@@ -25,6 +25,7 @@ import {
 } from "react";
 import { Search, X, Clock, TrendingUp } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
+import { EmptyStateCard } from "./empty-state-card";
 
 // Types
 
@@ -56,6 +57,18 @@ export function HeaderSearch() {
 
   const inputId = useId();
   const listboxId = `${inputId}-listbox`;
+
+  const firstSuggestionRef = useRef<HTMLButtonElement>(null);
+  const isZeroState = query.trim() !== "" && suggestions.length === 0;
+
+  useEffect(() => {
+    if (isOpen && isZeroState) {
+      // Small delay to ensure the card is rendered
+      requestAnimationFrame(() => {
+        firstSuggestionRef.current?.focus();
+      });
+    }
+  }, [isOpen, isZeroState]);
 
   /**
    * Wrap setQuery so that changing the query always resets the active list
@@ -275,7 +288,7 @@ export function HeaderSearch() {
           aria-label="Open search"
           className="rounded-full p-2 text-slate-400 hover:bg-white/6 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 transition-colors"
         >
-          <Search className="h-4 w-4" aria-hidden="true" />
+          <Search className="h-4 w-4" aria-hidden={true} />
         </button>
       )}
 
@@ -289,7 +302,7 @@ export function HeaderSearch() {
             <div className="relative flex items-center">
               <Search
                 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
-                aria-hidden="true"
+                aria-hidden={true}
               />
               {/* Input carries all combobox ARIA */}
               <input
@@ -330,7 +343,7 @@ export function HeaderSearch() {
                   }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-colors"
                 >
-                  <X className="h-3 w-3" aria-hidden="true" />
+                  <X className="h-3 w-3" aria-hidden={true} />
                 </button>
               )}
             </div>
@@ -361,7 +374,7 @@ export function HeaderSearch() {
                 {/* Suggestions header -- shown when query has text */}
                 {query.trim() !== "" && suggestions.length > 0 && (
                   <div className="flex items-center gap-1.5 px-3 pt-3 pb-1">
-                    <TrendingUp className="h-3 w-3 text-slate-500" aria-hidden="true" />
+                    <TrendingUp className="h-3 w-3 text-slate-500" aria-hidden={true} />
                     <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
                       Suggestions
                     </span>
@@ -461,10 +474,41 @@ export function HeaderSearch() {
                 )}
 
                 {/* No suggestions found */}
-                {query.trim() !== "" && suggestions.length === 0 && (
-                  <p className="px-3 py-4 text-sm text-slate-500 text-center">
-                    No results for &ldquo;{query}&rdquo;
-                  </p>
+                {isZeroState && (
+                  <div className="p-2">
+                    <EmptyStateCard
+                      eyebrow="Zero Results"
+                      title={`No matches for "${query}"`}
+                      description="We couldn't find any items matching your search."
+                      accentLabel="Search"
+                      status={{ label: "Not found", tone: "neutral" }}
+                      guidance={[
+                        "Try broadening your filters",
+                        "Search for nearby dates",
+                        "Check for typos"
+                      ]}
+                      actions={
+                        <div className="flex w-full flex-col gap-2">
+                          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                            Popular Searches
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {["Consultation", "Design Review", "Code Audit"].map((s, idx) => (
+                              <button
+                                key={s}
+                                type="button"
+                                ref={idx === 0 ? firstSuggestionRef : undefined}
+                                onClick={() => submitSearch(s)}
+                                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    />
+                  </div>
                 )}
 
                 {/* Keyboard hint footer */}
@@ -491,7 +535,7 @@ export function HeaderSearch() {
             aria-label="Close search"
             className="rounded-full p-2 text-slate-400 hover:bg-white/6 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 transition-colors"
           >
-            <X className="h-4 w-4" aria-hidden="true" />
+            <X className="h-4 w-4" aria-hidden={true} />
           </button>
         </div>
       )}
