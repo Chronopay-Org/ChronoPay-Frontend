@@ -23,7 +23,6 @@ import {
   useState,
   KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
 import { Search, X, Clock, TrendingUp } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import { EmptyStateCard } from "./empty-state-card";
