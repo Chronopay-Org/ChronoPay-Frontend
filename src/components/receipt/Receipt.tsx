@@ -25,6 +25,7 @@ import {
 import { StatusChip } from "@/components/dashboard/status-chip";
 import type { Tone } from "@/components/dashboard/types";
 import { truncateHash } from "./masking";
+import { NotesEditor } from "./NotesEditor";
 import type { ReceiptData, ReceiptStatus } from "./types";
 
 const statusTone: Record<ReceiptStatus, Tone> = {
@@ -227,6 +228,8 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
           </div>
         </dl>
       </section>
+
+      <NotesEditor receiptId={receipt.id} />
 
       <footer className="flex items-start gap-2 border-t border-white/10 pt-5 text-xs text-slate-400">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" aria-hidden={true} />
