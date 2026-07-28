@@ -3,6 +3,7 @@
 import { useState, useRef, useId } from "react";
 import { TimelineItem, statusToneMap } from "./timeline-types";
 import { StatusChip } from "./status-chip";
+import { KycDocUpload } from "./kyc-doc-upload";
 
 interface StatusTimelineProps {
   items: TimelineItem[];
@@ -204,6 +205,11 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
           {item.id === 'kyc-liveness' && item.status === 'pending' && (
             <div className="mt-4">
               <KycLivenessCapture onCaptureComplete={() => {}} />
+            </div>
+          )}
+          {item.id === 'kyc-doc-upload' && item.status === 'pending' && (
+            <div className="mt-4">
+              <KycDocUpload onCaptureComplete={() => {}} />
             </div>
           )}
         </div>
