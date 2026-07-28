@@ -1,89 +1,173 @@
-import { useEffect, useMemo, useState } from "react";
+"use client";
+
+import React, { useState } from "react";
+import { useSpring } from "@react-spring/web";
+import { useDrag } from "@use-gesture/react";
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
+import { TimezoneRibbon } from "./timezone-ribbon";
 import { glossary } from "@/lib/glossary";
-import type { Slot } from "./types";
+import type { Slot, AvailabilityLevel, SlotPickerDensity, HourlySlotBand } from "./types";
+import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
-import DurationChips from "./DurationChips";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { slots as allSlots } from "./dashboard-data";
+import { slots } from "./dashboard-data";
 
-export const SlotList = () => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+interface SlotListProps {
+  slots?: Slot[];
+  supplierId?: string;
+  supplierTimeZone?: string;
+  supplierName?: string;
+}
 
-  const paramDuration = parseInt(searchParams?.get("duration") ?? "", 10);
+const defaultSlots: Slot[] = [
+  {
+    id: "slot-1",
+    title: "1-on-1 Architecture Consultation",
+    dateLabel: "Today",
+    timeRange: "14:00 - 15:00 UTC",
+    status: "Available",
+    demand: "High Demand",
+    rate: "50 XLM / hr",
+    isNextAvailable: true,
+  },
+  {
+    id: "slot-2",
+    title: "Code Review & Optimization",
+    dateLabel: "Tomorrow",
+    timeRange: "10:00 - 11:30 UTC",
+    status: "Booked",
+    demand: "Medium Demand",
+    rate: "75 XLM / hr",
+    isNextAvailable: false,
+  },
+];
 
-  const [durationFilter, setDurationFilter] = useState<number | null>(
-    Number.isFinite(paramDuration) && paramDuration > 0 ? paramDuration : null
-  );
+const mapTone = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "available":
+      return "positive";
+    case "booked":
+      return "neutral";
+    default:
+      return "neutral";
+  }
+};
 
-  // Sync URL when filter changes
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (durationFilter) {
-      params.set("duration", String(durationFilter));
-    } else {
-      params.delete("duration");
+export const SlotList = ({
+  slots = defaultSlots,
+  supplierId = "supplier-001",
+  supplierTimeZone = "America/New_York",
+  supplierName = "Alex",
+}: SlotListProps) => {
+  const [activeTz, setActiveTz] = useState<string>("UTC");
+  const [{ x }, api] = useSpring(() => ({ x: 0 }));
+
+  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
+    if (swipeX !== 0) {
+      console.log("Day navigation logic: ", swipeX > 0 ? "Next" : "Previous");
     }
-    const url = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
-    router.replace(url);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [durationFilter]);
-
-  const counts = useMemo(() => {
-    const m: Record<number, number> = {};
-    for (const s of allSlots) {
-      const d = s.durationMinutes ?? 0;
-      m[d] = (m[d] ?? 0) + 1;
+    if (swipeY === -1) {
+      console.log("Detail reveal logic");
     }
-    return m;
+
+    if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      setFocusedAlternativeIndex(index - 1);
+    }
+  };
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const lastSelectedId = useRef<string | null>(null);
+  const [liveMessage, setLiveMessage] = useState("");
+
+  const announce = useCallback((msg: string) => {
+    setLiveMessage(msg);
+    // clear after a moment to allow re-announcement
+    setTimeout(() => setLiveMessage(""), 3000);
   }, []);
 
-  const filtered = useMemo<Slot[]>(() => {
-    if (!durationFilter) return allSlots;
-    return allSlots.filter((s) => (s.durationMinutes ?? 0) === durationFilter);
-  }, [durationFilter]);
+  const toggleSelection = (id: string, e?: React.MouseEvent | React.KeyboardEvent) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const isShift = e && 'shiftKey' in e && e.shiftKey;
+      const isMeta = e && ('metaKey' in e && (e.metaKey || e.ctrlKey));
 
-  function mapTone(status: string) {
-    switch (status) {
-      case "Healthy":
-        return "positive" as const;
-      case "Tight":
-        return "warning" as const;
-      case "Busy":
-        return "critical" as const;
-      default:
-        return "neutral" as const;
+      if (isShift && lastSelectedId.current) {
+        const currentIndex = slots.findIndex(s => s.id === id);
+        const lastIndex = slots.findIndex(s => s.id === lastSelectedId.current);
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        
+        if (!isMeta) {
+          next.clear();
+        }
+
+        for (let i = start; i <= end; i++) {
+          next.add(slots[i].id);
+        }
+      } else if (isMeta) {
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+      } else {
+        if (next.has(id) && next.size === 1) {
+          next.delete(id);
+        } else {
+          next.clear();
+          next.add(id);
+        }
+      }
+      
+      announce(`${next.size} slot${next.size !== 1 ? 's' : ''} selected.`);
+      
+      lastSelectedId.current = id;
+      return next;
+    });
+  };
+
+  const handleKeyDown = (id: string, e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleSelection(id, e);
     }
-  }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    announce("Selection cleared.");
+    lastSelectedId.current = null;
+  };
+
+  const mapTone = (status: string) => {
+    if (status === "Healthy") return "positive";
+    if (status === "Tight") return "warning";
+    if (status === "Busy") return "danger";
+    return "neutral";
+  };
 
   return (
-    <div>
-      <div className="mb-4">
-        <DurationChips
-          counts={{ 15: counts[15] ?? 0, 30: counts[30] ?? 0, 60: counts[60] ?? 0 }}
-          initial={durationFilter ?? undefined}
-          onChange={(m) => setDurationFilter(m)}
-        />
-      </div>
+    <div className="space-y-4">
+      {/* Timezone Ribbon Header */}
+      <TimezoneRibbon
+        supplierId={supplierId}
+        supplierTimeZone={supplierTimeZone}
+        supplierName={supplierName}
+        onTimezoneChange={(_, activeTimeZone) => setActiveTz(activeTimeZone)}
+      />
 
-      {filtered.length === 0 ? (
+      {slots.length === 0 ? (
         <EmptyStateCard
-          eyebrow="No slots"
-          title="No slots match your filters"
-          description="Try removing the duration filter or broaden your search to see available times."
-          accentLabel="No results"
-          status={{ label: "No results", tone: "neutral" }}
-          guidance={["Clear filters", "Try other dates"]}
+          title="No slots available"
+          description="There are currently no scheduled availability slots for this supplier."
         />
       ) : (
         <ul className="space-y-4">
-          {filtered.map((slot) => {
-            const slotTitleId = `slot-${slot.id}-title`;
-            const slotDetailsId = `slot-${slot.id}-details`;
+          {slots.map((slot) => {
+            const slotTitleId = "slot-" + slot.id + "-title";
+            const slotDetailsId = "slot-" + slot.id + "-details";
 
             return (
               <li
