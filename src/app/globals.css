@@ -4,12 +4,16 @@
   .focus-ring-cyan:focus-visible {
     outline: none;
     /* 2px offset (slate-950 bg) + 2px ring (cyan-300) */
-    box-shadow: 0 0 0 2px #07111f, 0 0 0 4px #67e8f9;
+    box-shadow:
+      0 0 0 2px #07111f,
+      0 0 0 4px #67e8f9;
   }
   .focus-ring-white:focus-visible {
     outline: none;
     /* 2px offset (slate-950 bg) + 2px ring (white) */
-    box-shadow: 0 0 0 2px #07111f, 0 0 0 4px #ffffff;
+    box-shadow:
+      0 0 0 2px #07111f,
+      0 0 0 4px #ffffff;
   }
 
   /* Shared elevation scale: use the smallest level that communicates stacking. */
@@ -19,7 +23,6 @@
   .elevation-4 { box-shadow: var(--elevation-4); }
   .elevation-5 { box-shadow: var(--elevation-5); }
 }
-
 
 :root {
   --background: #07111f;
@@ -47,6 +50,9 @@
   --radius-lg: 28px;
   --radius-xl: 32px;
   --border: 1px solid var(--border-subtle);
+  --density-card-padding: 1.25rem;
+  --density-card-header-gap: 1rem;
+  --density-card-footer-gap: 1.25rem;
 
   /* Dark-mode elevation uses cool ambient light instead of opaque black. */
   --elevation-1: 0 1px 2px rgba(34, 211, 238, 0.12), 0 6px 18px -12px rgba(56, 189, 248, 0.38);
@@ -64,13 +70,31 @@
   --shell-text-muted: #9fb0c7;
 }
 
+:root[data-density="comfortable"] {
+  --density-card-padding: 1.75rem;
+  --density-card-header-gap: 1.25rem;
+  --density-card-footer-gap: 1.75rem;
+}
+
+:root[data-density="balanced"] {
+  --density-card-padding: 1.25rem;
+  --density-card-header-gap: 1rem;
+  --density-card-footer-gap: 1.25rem;
+}
+
+:root[data-density="compact"] {
+  --density-card-padding: 0.85rem;
+  --density-card-header-gap: 0.75rem;
+  --density-card-footer-gap: 0.85rem;
+}
+
 /* Light theme — explicit user selection */
 [data-theme="light"] {
   --background: #f0f5fb;
   --foreground: #0a1628;
   --surface: rgba(255, 255, 255, 0.88);
   --surface-strong: rgba(255, 255, 255, 0.98);
-  --border-subtle: rgba(15, 23, 42, 0.10);
+  --border-subtle: rgba(15, 23, 42, 0.1);
   --border-strong: rgba(8, 145, 178, 0.28);
   --accent: #0891b2;
   --accent-strong: #06b6d4;
@@ -87,7 +111,7 @@
   --elevation-4: 0 8px 18px rgba(15, 23, 42, 0.16), 0 24px 52px -18px rgba(8, 145, 178, 0.28);
   --elevation-5: 0 12px 26px rgba(15, 23, 42, 0.18), 0 36px 72px -22px rgba(8, 145, 178, 0.32);
   --shell-header-bg: rgba(240, 245, 251, 0.75);
-  --shell-header-border: rgba(15, 23, 42, 0.10);
+  --shell-header-border: rgba(15, 23, 42, 0.1);
   --shell-drawer-bg: #ffffff;
   --shell-bottom-bar-bg: #f8fafc;
   --shell-text: #0a1628;
@@ -101,7 +125,7 @@
     --foreground: #0a1628;
     --surface: rgba(255, 255, 255, 0.88);
     --surface-strong: rgba(255, 255, 255, 0.98);
-    --border-subtle: rgba(15, 23, 42, 0.10);
+    --border-subtle: rgba(15, 23, 42, 0.1);
     --border-strong: rgba(8, 145, 178, 0.28);
     --accent: #0891b2;
     --accent-strong: #06b6d4;
@@ -118,7 +142,7 @@
     --elevation-4: 0 8px 18px rgba(15, 23, 42, 0.16), 0 24px 52px -18px rgba(8, 145, 178, 0.28);
     --elevation-5: 0 12px 26px rgba(15, 23, 42, 0.18), 0 36px 72px -22px rgba(8, 145, 178, 0.32);
     --shell-header-bg: rgba(240, 245, 251, 0.75);
-    --shell-header-border: rgba(15, 23, 42, 0.10);
+    --shell-header-border: rgba(15, 23, 42, 0.1);
     --shell-drawer-bg: #ffffff;
     --shell-bottom-bar-bg: #f8fafc;
     --shell-text: #0a1628;
@@ -147,14 +171,14 @@ html {
 
 html[data-theme="light"] {
   background:
-    radial-gradient(circle at top, rgba(8, 145, 178, 0.10), transparent 30%),
+    radial-gradient(circle at top, rgba(8, 145, 178, 0.1), transparent 30%),
     linear-gradient(180deg, #e8f4f8 0%, #f0f5fb 100%);
 }
 
 @media (prefers-color-scheme: light) {
   html:not([data-theme="dark"]) {
     background:
-      radial-gradient(circle at top, rgba(8, 145, 178, 0.10), transparent 30%),
+      radial-gradient(circle at top, rgba(8, 145, 178, 0.1), transparent 30%),
       linear-gradient(180deg, #e8f4f8 0%, #f0f5fb 100%);
   }
 }
@@ -199,7 +223,7 @@ body {
   border-radius: var(--radius-md);
   border: var(--border);
   background-color: var(--surface);
-  padding: 1.25rem; /* p-5 (20px) */
+  padding: var(--density-card-padding, 1.25rem); /* p-5 (20px) */
   display: flex;
   flex-direction: column;
   box-shadow: var(--elevation-1);
@@ -209,7 +233,7 @@ body {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--density-card-header-gap, 1rem);
 }
 
 .card-body {
@@ -217,7 +241,7 @@ body {
 }
 
 .card-footer {
-  margin-top: 1.25rem; /* mt-5 */
+  margin-top: var(--density-card-footer-gap, 1.25rem); /* mt-5 */
 }
 
 /* Panel Shell Variant */
@@ -229,19 +253,6 @@ body {
   box-shadow: var(--elevation-2);
 }
 
-@media (min-width: 640px) {
-  .card--panel {
-    padding: 1.25rem; /* sm:p-5 */
-  }
-}
-
-@media (min-width: 1280px) {
-  .card--panel {
-    padding: 1.5rem; /* xl:p-6 */
-  }
-}
-
-/* Glass Card Variant (used by empty states) */
 .card--glass {
   border-radius: var(--radius-xl); /* 2rem */
   background: rgba(11, 23, 40, 0.4);
@@ -252,15 +263,29 @@ body {
 }
 
 @media (min-width: 640px) {
-  .card--glass {
-    padding: 1.5rem; /* sm:p-6 */
+  .card--panel,
+  .card--glass,
+  .card--accent {
+    padding: var(--density-card-padding, 1.25rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .card--panel,
+  .card--glass,
+  .card--accent {
+    padding: var(--density-card-padding, 1.5rem);
   }
 }
 
 /* Accent Card Variant (used by Wallet Card) */
 .card--accent {
   border-color: rgba(34, 211, 238, 0.2); /* border-cyan-400/20 */
-  background: linear-gradient(160deg, rgba(14, 116, 144, 0.18), rgba(15, 23, 42, 0.92));
+  background: linear-gradient(
+    160deg,
+    rgba(14, 116, 144, 0.18),
+    rgba(15, 23, 42, 0.92)
+  );
 }
 
 .card--accent:hover {
@@ -269,7 +294,9 @@ body {
 
 /* Interactive Card Modifier (hover, active, transition effects) */
 .card--interactive {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform, filter, backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
