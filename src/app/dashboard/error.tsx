@@ -24,7 +24,7 @@ export function DashboardError({
         aria-labelledby="dashboard-error-title"
         aria-describedby="dashboard-error-description"
       >
-        <EmptyStateIllustration accentLabel="Error" />
+        <EmptyStateIllustration accentLabel="Error" variant="error" alt="Error state illustration showing a disconnected UI layout" />
         <h1
           id="dashboard-error-title"
           className="mt-4 text-3xl font-semibold tracking-tight text-white"

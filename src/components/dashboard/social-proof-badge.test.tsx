@@ -55,6 +55,7 @@ describe("SocialProofBadge", () => {
       "repeatBuyers",
       "fastResponse",
       "verified",
+      "verifiedPayouts",
       "earlyAdopter",
     ];
 
@@ -64,6 +65,18 @@ describe("SocialProofBadge", () => {
       expect(container.firstChild).toBeInTheDocument();
       expect(screen.getByText(BADGE_PRESETS[type].label)).toBeInTheDocument();
     }
+  });
+
+  it("renders verifiedPayouts badge with explainer popover trigger", () => {
+    const verifiedPayoutsBadge: SocialProofBadgeEntry = {
+      type: "verifiedPayouts",
+      ...BADGE_PRESETS.verifiedPayouts,
+    };
+    render(<SocialProofBadge badge={verifiedPayoutsBadge} />);
+    expect(screen.getByText("Verified Payouts")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Explainer for Verified Payouts")
+    ).toBeInTheDocument();
   });
 
   it("applies custom className", () => {
