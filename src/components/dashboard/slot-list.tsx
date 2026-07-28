@@ -12,12 +12,16 @@ import type { Slot, AvailabilityLevel, SlotPickerDensity, HourlySlotBand } from 
 import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 import { slots } from "./dashboard-data";
+import { BidiIsolate } from "@/utils/bidi";
+import { getDir } from "@/lib/formatters";
 
 interface SlotListProps {
   slots?: Slot[];
   supplierId?: string;
   supplierTimeZone?: string;
   supplierName?: string;
+  /** UI locale — controls date/time formatting and text direction. */
+  locale?: string;
 }
 
 const defaultSlots: Slot[] = [
@@ -59,6 +63,7 @@ export const SlotList = ({
   supplierId = "supplier-001",
   supplierTimeZone = "America/New_York",
   supplierName = "Alex",
+  locale = "en",
 }: SlotListProps) => {
   const [activeTz, setActiveTz] = useState<string>("UTC");
   const [{ x }, api] = useSpring(() => ({ x: 0 }));
@@ -143,8 +148,10 @@ export const SlotList = ({
     return "neutral";
   };
 
+  const dir = getDir(locale);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir={dir}>
       {/* Timezone Ribbon Header */}
       <TimezoneRibbon
         supplierId={supplierId}
@@ -176,7 +183,9 @@ export const SlotList = ({
                         {slot.title}
                       </h3>
                       <p className="text-sm text-slate-300">
-                        {slot.dateLabel} · {slot.timeRange}
+                        <BidiIsolate locale={locale}>{slot.dateLabel}</BidiIsolate>
+                        <span aria-hidden="true"> · </span>
+                        <BidiIsolate locale={locale}>{slot.timeRange}</BidiIsolate>
                       </p>
                     </div>
                     <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
