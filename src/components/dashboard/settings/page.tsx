@@ -1,5 +1,5 @@
 import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
-import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sync-connect';
+import { PasswordStrengthMeter } from '@/app/components/password-strength-meter';
 
 export default function SettingsPage() {
   return (
@@ -23,6 +23,13 @@ export default function SettingsPage() {
         <div className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6">
           <h2 className="text-xl font-semibold text-white pb-4 sm:pb-6">Security</h2>
           <TwoFactorEnroll onComplete={() => window.location.reload()} />
+
+          <div className='mt-10 border-t border-slate-700 pt-10'>
+            <h3 className='text-lg font-medium text-white mb-4'>Change Password</h3>
+            <div className='max-w-md'>
+              <PasswordStrengthMeter value='' onChange={() => {}} />
+            </div>
+          </div>
         </div>
 
         <div className="bg-slate-900 border border-slate-700 rounded-3xl p-10 mt-8">
