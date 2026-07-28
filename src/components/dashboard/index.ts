@@ -24,4 +24,5 @@ export * from "./card";
 export * from "./services-step";
 export * from "./refund-destination-selector";
 export * from "./refund-confirmation-modal";
+export * from "./export-history-modal";
 
