@@ -13,6 +13,8 @@ export default defineConfig({
       reporter: ["text", "lcov", "html"],
       include: [
         "src/app/components/ui/help-popover.tsx",
+        "src/app/components/ui/toast.tsx",
+        "src/hooks/use-toast.tsx",
         "src/lib/glossary.ts",
         "src/components/dashboard/services-step/**/*.{ts,tsx}",
       ],

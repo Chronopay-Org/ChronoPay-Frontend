@@ -1,6 +1,29 @@
 import "@testing-library/jest-dom";
 
 /**
+ * jsdom does not implement `window.matchMedia`. Components that use
+ * `useReducedMotion` (which calls `window.matchMedia(...)`) will throw without
+ * this polyfill. The default mock returns `matches: false` — i.e., the user
+ * has NOT requested reduced motion — which matches the most common real-world
+ * default. Individual tests can override this via `vi.spyOn` or by reassigning
+ * `window.matchMedia`.
+ */
+if (typeof window.matchMedia !== "function") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
+
+/**
  * jsdom does not implement `IntersectionObserver`. The empty-state illustration
  * (`src/app/components/empty-state-illustration.tsx`) instantiates one inside a
  * `useEffect` to pause animations when the element scrolls out of view. Without

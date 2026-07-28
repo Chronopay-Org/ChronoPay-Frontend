@@ -46,6 +46,12 @@ export interface ToastInput {
    * grouped.
    */
   category?: string;
+  /**
+   * When provided, the toast renders an "Undo" action button with a countdown
+   * ring. Calling this function undoes the preceding action and auto-dismisses
+   * the toast. The countdown ring visualises the remaining `duration` time.
+   */
+  onUndo?: () => void;
 }
 
 /** An individual message stored inside a group (or standalone entry). */
@@ -77,6 +83,11 @@ export interface ToastItem {
   count: number;
   /** All individual messages — useful for the expanded panel. */
   messages: ToastMessage[];
+  /**
+   * When set, the toast shows an "Undo" action with a countdown ring.
+   * Calling this undoes the preceding action and dismisses the toast.
+   */
+  onUndo?: () => void;
 }
 
 /** What callers pass to `toast()` — no `id` needed. */
@@ -189,6 +200,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         category: input.category,
         count: 1,
         messages: [message],
+        onUndo: input.onUndo,
       };
       dispatch({ type: "ADD", toast: item, message });
       return msgId;

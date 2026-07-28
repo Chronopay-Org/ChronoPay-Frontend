@@ -116,6 +116,57 @@ appears/disappears with opacity only — no translate or scale animation.
 
 ---
 
+## Undo Affordance
+
+For actions that may need reversal (deleting a draft, cancelling a booking request, discarding unsaved changes), toasts can render an undo button with a countdown ring that visualises the remaining time to act.
+
+**Trigger:**  
+Pass an `onUndo` callback to the `toast()` call. The toast will render an "Undo" button alongside a circular countdown ring that drains from full to empty as the `duration` elapses.
+
+```tsx
+toast({
+  variant: "info",
+  title: "Draft deleted",
+  description: "Changes are permanently removed after 5 seconds.",
+  duration: 5000,
+  onUndo: () => {
+    // Restore draft from local cache or backend
+    restoreDraft();
+  },
+});
+```
+
+**Visual design:**
+- **Countdown ring:** SVG circle that drains clockwise. Fill animates with a CSS `transition` on `stroke-dashoffset`; pauses when the user hovers or focuses anywhere inside the toast (including the undo button).
+- **Undo button:** Compact rounded button (`Undo2` icon + "Undo" label) positioned to the right of the toast content. Styled with the toast's tone colour (e.g., emerald for success, cyan for info).
+- **Duration = 0:** Ring is hidden; undo button remains visible until manually dismissed — useful when there is no time pressure.
+
+**Keyboard shortcut:**  
+**Ctrl+Z** (or **Cmd+Z** on Mac) triggers undo while the toast is visible. The shortcut:
+- Only fires if the toast has an `onUndo` handler
+- Does not fire if the active element is an `<input>`, `<textarea>`, or contenteditable (preserves native undo in text fields)
+- Is scoped to the toast's lifetime — cleans up on unmount
+- Announces the shortcut hint via `aria-label="Undo (Ctrl+Z)"` on the button
+
+**Accessibility:**
+- The countdown ring wrapper carries `role="img"` with `aria-label="{N} seconds remaining"`; the SVG itself has `aria-hidden="true"` to avoid double-announcement.
+- A screen reader–only live region announces "Undo available. Press Ctrl+Z or activate the Undo button." ~600 ms after mount (after the toast's own initial announcement).
+- After undo is triggered, the live region announces "Action undone." and the toast auto-dismisses 300 ms later (giving the announcement time to land).
+- The undo button disappears after the first activation to prevent double-firing.
+
+**Pause behaviour:**
+- Hover or focus **anywhere inside the toast** (title, description, dismiss button, or undo button itself) pauses both the auto-dismiss timer and the ring animation.
+- The pause is implemented with `onMouseEnter` / `onMouseLeave` and `onFocus` / `onBlur` on the toast wrapper — no per-element wiring needed.
+- Expanding a grouped toast also pauses its timer.
+
+**Reduced motion:**  
+When `prefers-reduced-motion: reduce` is set, the countdown ring renders statically at its current progress value rather than animating. The SVG structure and aria-label remain unchanged.
+
+**RTL support:**  
+The ring uses a `-rotate-90` transform so the start point is at 12 o'clock regardless of document direction. Flex layout reverses naturally in RTL; no hard-coded `left` / `right` values.
+
+---
+
 ## Keyboard Accessibility
 
 - The dismiss `×` button is always focusable (`tabIndex` not suppressed)
@@ -168,6 +219,7 @@ everywhere in the app.
 | `category` | `string?` | Grouping key |
 | `count` | `number` | Messages in group (1 = ungrouped) |
 | `messages` | `ToastMessage[]` | Individual entries shown in expanded panel |
+| `onUndo` | `() => void` | Optional undo callback — renders countdown ring + Undo button + Ctrl+Z shortcut |
 
 ---
 
@@ -259,11 +311,15 @@ meets AA against the same backgrounds.
 | User focuses dismiss button | Timer pauses; resumes on blur |
 | Expanded group | Auto-dismiss paused; resumes when collapsed |
 | `duration: 0` | No auto-dismiss; user must click × |
+| `onUndo` + `duration: 0` | Undo button shown; ring hidden (no time pressure) |
+| Ctrl+Z while focused in text field | Shortcut does NOT fire; native undo preserved |
+| Ctrl+Z after undo already triggered | No-op (idempotent guard via `undoDoneRef`) |
+| Rapid double-click of undo button | Second click is blocked (button hidden after first click) |
 | `onAction` throws synchronously | Caught by `handleClick`, sets `error` state |
 | Multiple rapid clicks | `if (state === "pending") return` guard prevents re-entry |
-| Reduced motion | Framer Motion skips translate/scale; opacity-only transition; panel height animation skipped |
+| Reduced motion | Framer Motion skips translate/scale; ring renders statically; panel height animation skipped |
 | Dark mode | Uses existing `slate`/`cyan` palette — no change needed |
-| RTL | Flex layout reverses naturally |
+| RTL | Flex layout reverses naturally; ring `−rotate-90` keeps 12-o'clock start |
 
 ---
 
