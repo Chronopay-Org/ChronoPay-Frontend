@@ -130,6 +130,7 @@ export const slots: Slot[] = [
     rate: "120 XLM / hr",
     status: "Healthy",
     isNextAvailable: true,
+    mintedAt: new Date().toISOString(),
     isSample: true,
     badges: [
       { type: "topRated", ...BADGE_PRESETS.topRated },

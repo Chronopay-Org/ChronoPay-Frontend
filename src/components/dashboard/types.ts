@@ -13,6 +13,8 @@ export type Slot = {
   /** Duration in minutes for this slot (used by duration filter chips) */
   durationMinutes?: number;
   isNextAvailable?: boolean;
+  /** ISO 8601 string of when the slot was created */
+  mintedAt?: string;
   /** When true, row is demo/onboarding content and must show a Sample badge. */
   isSample?: boolean;
   badges?: SocialProofBadgeEntry[];

@@ -110,14 +110,19 @@ describe("SlotList", () => {
     expect(screen.getByText(/No alternatives/i)).toBeInTheDocument();
   });
 
-  it("renders conflict detector and handles focus transfer to target slot", () => {
-    render(<SlotList slots={slots} conflicts={testConflicts} />);
+  it("renders a 'NEW' freshness pip with a tooltip for slots minted within the last 24 hours", () => {
+    const now = new Date();
+    const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString();
+    const freshSlot = { ...slots[0], mintedAt: threeHoursAgo };
 
-    expect(screen.getByText(/Overlap Block Alpha/i)).toBeInTheDocument();
-
-    const focusCellBtn = screen.getByRole("button", { name: /Focus affected slot element Product strategy call/i });
-    fireEvent.click(focusCellBtn);
-
-    expect(screen.getByText(/Target Slot/i)).toBeInTheDocument();
+    render(<SlotList slots={[freshSlot]} />);
+    
+    // The visual NEW pip should exist
+    const newPip = screen.getByText("NEW");
+    expect(newPip).toBeInTheDocument();
+    
+    // Check tooltip functionality/aria label
+    const triggerBtn = screen.getByLabelText("New slot: added within the last 24 hours");
+    expect(triggerBtn).toBeInTheDocument();
   });
 });

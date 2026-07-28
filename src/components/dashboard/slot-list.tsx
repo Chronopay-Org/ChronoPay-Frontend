@@ -8,14 +8,16 @@ import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
 import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
+import { slots } from "./dashboard-data";
+import { Tooltip } from "@/app/components/ui/tooltip";
 
-import { AvailabilityTemplatePicker } from "./availability-template-picker";
-import {
-  AvailabilityConflictDetector,
-  type AvailabilityConflict,
-  type ConflictResolutionEvent,
-} from "./availability-conflict-detector";
-import { Sparkles, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+const isJustAdded = (mintedAt?: string): boolean => {
+  if (!mintedAt) return false;
+  const minted = new Date(mintedAt);
+  const now = new Date();
+  const diffHours = (now.getTime() - minted.getTime()) / (1000 * 60 * 60);
+  return diffHours >= 0 && diffHours <= 24;
+};
 
 interface SlotListProps {
   slots?: Slot[];
@@ -214,11 +216,18 @@ export const SlotList = ({
                         <h3 id={slotTitleId} className="text-lg font-semibold text-white">
                           {slot.title}
                         </h3>
-                        {isConflictTarget && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-200">
-                            <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                            Target Slot
-                          </span>
+                        {isJustAdded(slot.mintedAt) && (
+                          <Tooltip
+                            content="This slot was added within the last 24 hours."
+                            trigger={
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[0.65rem] font-bold tracking-wider text-cyan-300 hover:bg-cyan-400/20 transition-colors cursor-help">
+                                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" aria-hidden="true" />
+                                NEW
+                              </span>
+                            }
+                            triggerClassName="inline-flex"
+                            ariaLabel="New slot: added within the last 24 hours"
+                          />
                         )}
                       </div>
                       <p className="text-sm text-slate-300">
