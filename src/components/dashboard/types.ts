@@ -149,3 +149,24 @@ export type RatingCriterion = {
   /** Sequential-palette bar colour class, e.g. "bg-cyan-500" */
   colorClass: string;
 };
+
+export type ConflictChange = {
+  field: string;
+  localValue: string;
+  remoteValue: string;
+};
+
+export type SyncConflict = {
+  id: string;
+  eventTitle: string;
+  dateTime: string;
+  localChanges: ConflictChange[];
+  remoteChanges: ConflictChange[];
+};
+
+export type ResolutionStrategy = "useLocal" | "useRemote" | "merge";
+
+export type ConflictResolution = {
+  conflictId: string;
+  strategy: ResolutionStrategy;
+};
