@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import { ButtonLink } from "@/app/components/ui/button-link";
@@ -70,12 +70,7 @@ export const SlotList = ({
     if (swipeY === -1) {
       console.log("Detail reveal logic");
     }
-
-    if (event.key === "ArrowLeft" && index > 0) {
-      event.preventDefault();
-      setFocusedAlternativeIndex(index - 1);
-    }
-  };
+  });
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const lastSelectedId = useRef<string | null>(null);
