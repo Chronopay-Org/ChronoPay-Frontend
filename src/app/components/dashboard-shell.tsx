@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { HeaderSearch } from "@/app/components/header-search";
+import { CommandPalette } from "@/app/components/command-palette";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 
 // ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
@@ -244,6 +245,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <main id="main-content" className="pb-16 md:pb-0">
         {children}
       </main>
+
+      {/* Command palette — triggered by Cmd+K / Ctrl+K */}
+      <CommandPalette />
     </div>
   );
 }
