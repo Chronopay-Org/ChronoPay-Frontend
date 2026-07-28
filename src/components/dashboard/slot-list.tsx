@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import { ButtonLink } from "@/app/components/ui/button-link";
@@ -63,12 +63,30 @@ export const SlotList = ({
   const [activeTz, setActiveTz] = useState<string>("UTC");
   const [{ x }, api] = useSpring(() => ({ x: 0 }));
 
-  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
-    if (swipeX !== 0) {
-      console.log("Day navigation logic: ", swipeX > 0 ? "Next" : "Previous");
-    }
-    if (swipeY === -1) {
-      console.log("Detail reveal logic");
+  const [isDragging, setIsDragging] = useState(false);
+  const [conflicts, setConflicts] = useState<Record<string, string>>({});
+
+  const bind = useDrag((state) => {
+    // state.first / state.last indicate drag lifecycle
+    if (state.first) setIsDragging(true);
+    if (state.last) setIsDragging(false);
+
+    // quick examples of conflict detection while dragging
+    // real app should compute based on drop target + business rules
+    if (state.active) {
+      const found: Record<string, string> = {};
+      slots.forEach((s) => {
+        // Existing booking
+        if (s.status && s.status.toLowerCase() === "booked") {
+          found[s.id] = "Existing booking";
+        }
+
+        // Blocked day flag (some slot data may include `blocked`)
+        if ((s as any).blocked) {
+          found[s.id] = "Blocked day";
+        }
+      });
+      setConflicts(found);
     }
   });
 
@@ -81,6 +99,19 @@ export const SlotList = ({
     // clear after a moment to allow re-announcement
     setTimeout(() => setLiveMessage(""), 3000);
   }, []);
+
+  // Announce conflicts to assistive tech when dragging starts
+  useEffect(() => {
+    if (isDragging) {
+      const keys = Object.keys(conflicts);
+      if (keys.length > 0) {
+        announce(`${keys.length} blocked target${keys.length !== 1 ? "s" : ""}.`);
+      } else {
+        announce("No conflicts for current drag target.");
+      }
+    }
+    // only when dragging or conflicts change
+  }, [isDragging, conflicts, announce]);
 
   const toggleSelection = (id: string, e?: React.MouseEvent | React.KeyboardEvent) => {
     setSelectedIds((prev) => {
@@ -159,7 +190,7 @@ export const SlotList = ({
           description="There are currently no scheduled availability slots for this supplier."
         />
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-4" {...bind()}>
           {slots.map((slot) => {
             const slotTitleId = "slot-" + slot.id + "-title";
             const slotDetailsId = "slot-" + slot.id + "-details";
@@ -167,8 +198,31 @@ export const SlotList = ({
             return (
               <li
                 key={slot.id}
-                className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5"
+                className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5"
+                aria-describedby={conflicts[slot.id] ? `conflict-${slot.id}` : undefined}
               >
+                {/* conflict overlay */}
+                {conflicts[slot.id] ? (
+                  <div
+                    className="pointer-events-none absolute inset-0 z-10 rounded-[1.5rem]"
+                    style={{
+                      backgroundColor: 'rgba(220,38,38,0.12)',
+                      backgroundImage:
+                        'repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 6px, transparent 6px 12px)',
+                    }}
+                    aria-hidden={false}
+                    role="img"
+                    aria-label={`Conflict: ${conflicts[slot.id]}`}
+                  >
+                    <span
+                      id={`conflict-${slot.id}`}
+                      className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
+                      style={{ backdropFilter: 'saturate(120%) blur(2px)' }}
+                    >
+                      {conflicts[slot.id]}
+                    </span>
+                  </div>
+                ) : null}
                 <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 space-y-1">
