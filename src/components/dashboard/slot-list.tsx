@@ -8,12 +8,16 @@ import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 
+import { AvailabilityTemplatePicker } from "./availability-template-picker";
+import { Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+
 interface SlotListProps {
   slots?: Slot[];
   suggestedAlternatives?: Slot[];
   supplierId?: string;
   supplierTimeZone?: string;
   supplierName?: string;
+  showTemplatePicker?: boolean;
 }
 
 const defaultSlots: Slot[] = [
@@ -54,13 +58,21 @@ export const SlotList = ({
   supplierId = "supplier-001",
   supplierTimeZone = "America/New_York",
   supplierName = "Alex",
+  showTemplatePicker = true,
 }: SlotListProps) => {
   const [activeTz, setActiveTz] = useState<string>("UTC");
-  const [orderedSlots, setOrderedSlots] = useState<Slot[]>(slots);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [dropPosition, setDropPosition] = useState<DropPosition>(null);
-  const [ghostPosition, setGhostPosition] = useState<{ x: number; y: number } | null>(null);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState<boolean>(false);
+  const [{ x }, api] = useSpring(() => ({ x: 0 }));
+
+  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
+    if (swipeX !== 0) {
+      console.log("Day navigation logic: ", swipeX > 0 ? "Next" : "Previous");
+    }
+    if (swipeY === -1) {
+      console.log("Detail reveal logic");
+    }
+  });
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [liveMessage, setLiveMessage] = useState("");
   const lastSelectedId = useRef<string | null>(null);
@@ -189,11 +201,52 @@ export const SlotList = ({
         onTimezoneChange={(_, activeTimeZone) => setActiveTz(activeTimeZone)}
       />
 
-      <div aria-live="polite" className="sr-only">
-        {liveMessage}
-      </div>
+      {/* Availability Template Picker Banner & Drawer */}
+      {showTemplatePicker && (
+        <div className="rounded-[1.5rem] border border-cyan-400/20 bg-cyan-950/20 p-4 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-cyan-400/10 p-2 text-cyan-400 border border-cyan-400/20">
+                <Sparkles className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white">Availability Templates</h3>
+                <p className="text-xs text-slate-300">
+                  Apply pre-configured weekly slot templates or save custom schedules.
+                </p>
+              </div>
+            </div>
 
-      {orderedSlots.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => setTemplatePickerOpen((prev) => !prev)}
+              aria-expanded={templatePickerOpen}
+              aria-controls="availability-template-picker-section"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3.5 py-2 text-xs font-semibold text-cyan-200 transition-colors hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            >
+              {templatePickerOpen ? (
+                <>
+                  Hide Picker
+                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                </>
+              ) : (
+                <>
+                  Manage Templates
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                </>
+              )}
+            </button>
+          </div>
+
+          {templatePickerOpen && (
+            <div id="availability-template-picker-section" className="mt-4 pt-4 border-t border-cyan-400/20 animate-in fade-in">
+              <AvailabilityTemplatePicker bare existingSlots={slots} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {slots.length === 0 ? (
         <EmptyStateCard
           title="No slots available"
           description="There are currently no scheduled availability slots for this supplier."
