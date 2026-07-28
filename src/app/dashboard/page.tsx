@@ -50,8 +50,6 @@ async function simulateEscrowRelease() {
     throw new Error("Escrow release rejected by contract");
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function Dashboard() {
   const loading = false;
   const error = false;
@@ -131,7 +129,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Onboarding */}
+{/* Onboarding */}
         <OnboardingWidget />
 
         {/* Metrics */}

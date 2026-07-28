@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Header } from "./components/Header";
 import { ToastProvider } from "@/hooks/use-toast";
 import { ToastContainer } from "@/app/components/ui/toast-container";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
@@ -15,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+<html lang="en" dir="ltr" suppressHydrationWarning>
       <body className="min-h-screen flex flex-col antialiased">
         <script
           dangerouslySetInnerHTML={{
