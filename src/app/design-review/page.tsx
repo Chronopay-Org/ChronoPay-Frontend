@@ -1,4 +1,5 @@
 import DesignChecklist from "@/components/design/DesignChecklist";
+import { StatusMatrix, statusMatrixData } from "@/components/design/status-matrix";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SentimentChipFilter } from "@/components/dashboard/sentiment-chip-filter";
@@ -160,6 +161,14 @@ export default function DesignReviewPage() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                System Status Matrix
+              </h2>
+              <StatusMatrix config={statusMatrixData} />
             </div>
           </div>
         </section>

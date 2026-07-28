@@ -37,6 +37,7 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **ARIA correct**: Popover uses `role="dialog"`, `aria-labelledby`, `aria-describedby`, and `aria-expanded` on the trigger.
 - [ ] **Focus management**: Opening moves focus to the close button; closing returns focus to the trigger.
 - [ ] **Keyboard operable**: Enter/Space opens; Escape closes; Tab/Shift+Tab cycles within the open popover.
+- [ ] **What's this mode**: The `?` shortcut activates a contextual help mode with a cursor change, hover/focus highlight, and descriptive popovers; it respects reduced-motion and remains keyboard accessible.
 - [ ] **Click-outside**: Clicking outside the popover closes it without disrupting other interactions.
 
 ---
