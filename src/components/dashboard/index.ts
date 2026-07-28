@@ -8,6 +8,7 @@ export * from "./timeline-types";
 export * from "./dashboard-data";
 export * from "./metric-card";
 export * from "./onboarding-walkthrough";
+export * from "./onboarding-widget";
 export * from "./panel-shell";
 export * from "./pricing-calculator";
 export * from "./quick-actions";

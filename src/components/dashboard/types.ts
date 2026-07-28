@@ -149,3 +149,18 @@ export type RatingCriterion = {
   /** Sequential-palette bar colour class, e.g. "bg-cyan-500" */
   colorClass: string;
 };
+
+export type SentimentBucket = "all" | "positive" | "mixed" | "critical";
+
+export type SentimentCounts = {
+  positive: number;
+  mixed: number;
+  critical: number;
+};
+
+export type SentimentDataPoint = {
+  timestamp: string;
+  positive: number;
+  mixed: number;
+  critical: number;
+};
