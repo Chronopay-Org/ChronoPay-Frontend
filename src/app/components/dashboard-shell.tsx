@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { clsx } from "clsx";
-import { Menu, X, Shield } from "lucide-react";
+import { Menu, X, Shield, Keyboard } from "lucide-react";
 import { useRole } from "@/app/components/navigation/RoleContext";
 import { getNavForRole, ROLE_META, type NavItem } from "@/app/components/navigation/role-nav";
 import { HeaderSearch } from "@/app/components/header-search";
@@ -12,6 +12,7 @@ import { AccountSwitcher } from "@/app/components/account-switcher";
 import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
+import { KeyboardShortcutsOverlay } from "@/app/components/keyboard-shortcuts-overlay";
 
 function getOnlineStatus() {
   if (typeof navigator === "undefined") return true;
@@ -92,6 +93,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { role } = useRole();
   const [isRailOpen, setIsRailOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const railToggleRef = useRef<HTMLButtonElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const liveId = useId();
@@ -139,6 +141,18 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const closeRail = useCallback(() => {
     setIsRailOpen(false);
     railToggleRef.current?.focus();
+  }, []);
+
+  // ── Global shortcut: Ctrl/Cmd+/ opens the keyboard shortcuts overlay ──────
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+        e.preventDefault();
+        setIsShortcutsOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
   }, []);
 
   return (
@@ -221,6 +235,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <HeaderSearch />
               <ThemeSwitcher />
               <OfflineQueueIndicator />
+              <button
+                type="button"
+                aria-label="Keyboard shortcuts"
+                title="Keyboard shortcuts (Ctrl+/)"
+                onClick={() => setIsShortcutsOpen(true)}
+                className={clsx(
+                  "rounded-full p-2 transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
+                  "focus-visible:ring-offset-slate-950",
+                  "hover:bg-white/6 text-slate-400 hover:text-white"
+                )}
+              >
+                <Keyboard className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
 
             {/* System Status — visible on medium+ screens */}
@@ -319,6 +347,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      {/* ── Keyboard shortcuts overlay ─────────────────────────────────────── */}
+      <KeyboardShortcutsOverlay
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
     </div>
   );
 }
