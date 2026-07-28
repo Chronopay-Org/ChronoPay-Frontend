@@ -4,6 +4,7 @@ export * from "./portfolio-gallery";
 export * from "./booking-progress";
 export * from "./cancellation-reason-picker";
 export * from "./clear-samples-banner";
+export * from "./keep-original-price-chip";
 export * from "./status-timeline";
 export * from "./kyc-status-timeline";
 export * from "./timeline-types";
