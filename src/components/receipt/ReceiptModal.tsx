@@ -54,6 +54,8 @@ export function ReceiptModal({
   error = null,
 }: ReceiptModalProps) {
   const titleId = useId();
+  const tipInputId = useId();
+  const tipCustomNoteId = useId();
   const [shareStatus, setShareStatus] = useState<"idle" | "copied">("idle");
   const [liveMessage, setLiveMessage] = useState("");
 
@@ -162,7 +164,10 @@ export function ReceiptModal({
           className="receipt-dialog relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/12 bg-slate-900 p-4 shadow-2xl sm:p-6"
         >
           <div className="receipt-no-print mb-4 flex items-center justify-between gap-3">
-            <h2 id={titleId} className="text-sm font-bold uppercase tracking-wider text-slate-300">
+            <h2
+              id={titleId}
+              className="text-sm font-bold uppercase tracking-wider text-slate-300"
+            >
               Transaction Receipt
             </h2>
             <div className="flex items-center gap-2">
@@ -172,7 +177,7 @@ export function ReceiptModal({
                 disabled={!canShare}
                 className="inline-flex items-center gap-1.5 rounded-full bg-cyan-300 px-3 py-1.5 text-xs font-bold text-slate-950 transition-colors hover:bg-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+                <Printer className="h-3.5 w-3.5" aria-hidden={true} />
                 Print / Save PDF
               </button>
               <button
@@ -181,12 +186,107 @@ export function ReceiptModal({
                 aria-label="Close receipt"
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-400 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <X className="h-4 w-4" aria-hidden={true} />
               </button>
             </div>
           </div>
 
-          <Receipt receipt={receipt} loading={loading} error={error} />
+          {!tipPromptCompleted && receipt && (
+            <section className="receipt-no-print mb-6 rounded-3xl border border-white/10 bg-slate-950/80 p-4 sm:p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">
+                    Optional tip for the supplier
+                  </p>
+                  <h3 className="text-base font-semibold text-white">
+                    Support faster availability and lower platform fees.
+                  </h3>
+                  <p className="text-sm leading-6 text-slate-400 max-w-2xl">
+                    Tips go directly to the seller for reliable booking service.
+                    You can skip this step without affecting your receipt.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSkipTip}
+                  className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-cyan-300/30 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                >
+                  No thanks, continue
+                </button>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))]">
+                {tipPresets.map((amount) => (
+                  <button
+                    key={amount}
+                    type="button"
+                    onClick={() => handlePresetTip(amount)}
+                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
+                      selectedTipAmount === amount
+                        ? "border-cyan-300 bg-cyan-300/15 text-white"
+                        : "border-white/10 bg-slate-900 text-slate-200 hover:border-cyan-300/30 hover:bg-white/5"
+                    }`}
+                    aria-pressed={selectedTipAmount === amount}
+                  >
+                    {amount.toFixed(2)} XLM
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <label htmlFor={tipInputId} className="sr-only">
+                  Custom tip amount in XLM
+                </label>
+                <div className="relative rounded-2xl border border-white/10 bg-slate-950/90 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        Custom tip
+                      </p>
+                      <p
+                        id={tipCustomNoteId}
+                        className="helper-text helper-text--muted mt-1"
+                      >
+                        Enter any amount to support the seller directly.
+                      </p>
+                    </div>
+                    <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                      XLM
+                    </span>
+                  </div>
+                  <input
+                    id={tipInputId}
+                    aria-describedby={tipCustomNoteId}
+                    value={customTipValue}
+                    onChange={(event) =>
+                      handleCustomTipChange(event.target.value)
+                    }
+                    inputMode="decimal"
+                    pattern="^\d*(\.\d{0,4})?$"
+                    placeholder="0.00"
+                    className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/90 px-4 py-3 text-lg font-semibold text-white outline-none focus:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmTip}
+                  disabled={selectedTipAmount === null}
+                  className="inline-flex h-14 w-full items-center justify-center rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 transition-colors hover:bg-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Confirm tip
+                </button>
+              </div>
+            </section>
+          )}
+
+          {tipPromptCompleted && tipMessage && (
+            <div className="receipt-no-print mb-6 rounded-3xl border border-cyan-300/20 bg-cyan-950/20 p-4 text-sm text-cyan-100">
+              {tipMessage}
+            </div>
+          )}
+
+          <Receipt receipt={enhancedReceipt} loading={loading} error={error} />
 
           {/* Share Section */}
           {canShare && (
