@@ -9,11 +9,13 @@ import {
   PanelShell,
   PricingCalculator,
   QuickActions,
+  RatingBreakdownBars,
   SlotList,
   WalletCard,
   bookingStages,
   metrics,
   quickActions,
+  ratingBreakdown,
   slots,
   wallet,
 } from "@/components/dashboard";
@@ -166,6 +168,20 @@ export default function Dashboard() {
             />
           </PanelShell>
         </div>
+
+        {/* Rating Breakdown */}
+        {showSamples && (
+          <PanelShell
+            title="Rating Breakdown"
+            description="Per-criterion average ratings across your recent reviews."
+          >
+            <RatingBreakdownBars
+              criteria={ratingBreakdown}
+              overallRating={4.6}
+              overallCount={42}
+            />
+          </PanelShell>
+        )}
 
         {/* Pricing Fee Calculator */}
         <PanelShell

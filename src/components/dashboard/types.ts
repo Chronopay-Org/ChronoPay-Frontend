@@ -136,3 +136,16 @@ export type RefundDestinationSubmission = {
   destination: RefundDestination;
   option: RefundDestinationOption;
 };
+
+/** A single criterion in a rating breakdown (e.g. Communication, Expertise). */
+export type RatingCriterion = {
+  id: string;
+  /** Short human-readable label such as "Communication" */
+  label: string;
+  /** Average score on a 1–5 scale */
+  average: number;
+  /** Number of reviews used to compute this average */
+  count: number;
+  /** Sequential-palette bar colour class, e.g. "bg-cyan-500" */
+  colorClass: string;
+};
