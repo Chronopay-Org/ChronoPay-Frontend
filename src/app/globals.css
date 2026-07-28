@@ -434,6 +434,12 @@ body {
  * paper, keeps full-text labels, and drops interactive-only controls.
  */
 @media print {
+  /* ── Paper size & margins ──────────────────────────────────────────── */
+  @page {
+    size: A4;
+    margin: 1.8cm 1.5cm;
+  }
+
   body * {
     visibility: hidden;
   }
@@ -448,13 +454,17 @@ body {
     inset: 0;
     width: 100%;
     margin: 0;
-    padding: 1.5rem;
+    padding: 0;
     border: none;
     border-radius: 0;
     box-shadow: none;
     background: #ffffff !important;
-    color: #0f172a !important; /* slate-900 on white for AA contrast */
+    color: #0f172a !important;
     backdrop-filter: none;
+    font-size: 10pt;
+    line-height: 1.5;
+    orphans: 3;
+    widows: 3;
   }
 
   /* Force readable ink for every receipt element. */
@@ -464,11 +474,108 @@ body {
 
   /* Keep dividers visible on paper. */
   .receipt-printable :where(header, section, footer, .border-t, .border-b) {
-    border-color: #cbd5e1 !important; /* slate-300 */
+    border-color: #cbd5e1 !important;
   }
 
-  /* Copy / explorer / share controls are not useful on paper. */
+  /* Copy / explorer / share / interactive controls — hidden on paper. */
   .receipt-no-print {
     display: none !important;
+  }
+
+  /* ── Print-specific watermark ──────────────────────────────────────── */
+  .receipt-printable::before {
+    content: "ChronoPay — On-chain Receipt";
+    position: fixed;
+    bottom: 0.6cm;
+    right: 1.5cm;
+    font-size: 7pt;
+    color: #94a3b8;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── Signature block ───────────────────────────────────────────────── */
+  .receipt-signature-block {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid #0f172a;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .receipt-signature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 1.5rem;
+  }
+
+  .receipt-signature-label {
+    display: block;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #64748b;
+  }
+
+  .receipt-signature-value {
+    display: block;
+    font-size: 10pt;
+    color: #0f172a;
+  }
+
+  .receipt-signature-line {
+    margin-top: 1rem;
+    border-top: 1px solid #cbd5e1;
+    width: 55%;
+  }
+
+  /* ── Tamper-evident footer ─────────────────────────────────────────── */
+  .receipt-tamper-footer {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px dashed #cbd5e1;
+    background: #f8fafc;
+    border-radius: 4px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .receipt-tamper-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #475569;
+    margin: 0 0 0.35rem;
+  }
+
+  .receipt-tamper-hash {
+    font-family: "SFMono-Regular", "Cascadia Code", "Fira Code", Consolas, monospace;
+    font-size: 7pt;
+    word-break: break-all;
+    color: #334155;
+    margin: 0 0 0.35rem;
+  }
+
+  .receipt-tamper-meta {
+    font-size: 7pt;
+    color: #64748b;
+    margin: 0 0 0.2rem;
+  }
+
+  .receipt-tamper-verify {
+    font-size: 7pt;
+    color: #64748b;
+    margin: 0;
+  }
+
+  .receipt-tamper-url {
+    color: #1d4ed8;
+    text-decoration: underline;
+    word-break: break-all;
   }
 }
