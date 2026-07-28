@@ -1,18 +1,42 @@
 import { useState } from "react";
 import { TimelineItem, statusToneMap } from "./timeline-types";
-import { StatusChip } from "../app/components/ui/status-chip";
+import { StatusChip } from "./status-chip";
 
 interface StatusTimelineProps {
   items: TimelineItem[];
+  /**
+   * When provided, a GraceBanner is rendered above the timeline entries
+   * showing a live countdown until the grace window expires.
+   */
+  graceExpiresAt?: number;
+  /** Called when user clicks "Notify supplier" inside the banner */
+  onNotifySupplier?: () => void;
+  /** Called when the grace window expires */
+  onGraceExpired?: () => void;
 }
 
-export function StatusTimeline({ items }: StatusTimelineProps) {
+export function StatusTimeline({
+  items,
+  graceExpiresAt,
+  onNotifySupplier,
+  onGraceExpired,
+}: StatusTimelineProps) {
   return (
-    <ol role="list" className="relative border-l border-white/10 ml-3">
-      {items.map((item, index) => (
-        <TimelineEntry key={item.id} item={item} isLast={index === items.length - 1} />
-      ))}
-    </ol>
+    <div>
+      {graceExpiresAt !== undefined && (
+        <GraceBanner
+          graceExpiresAt={graceExpiresAt}
+          onNotifySupplier={onNotifySupplier}
+          onExpired={onGraceExpired}
+          className="mb-6"
+        />
+      )}
+      <ol role="list" className="relative border-l border-white/10 ml-3">
+        {items.map((item, index) => (
+          <TimelineEntry key={item.id} item={item} isLast={index === items.length - 1} />
+        ))}
+      </ol>
+    </div>
   );
 }
 
@@ -22,7 +46,7 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
 
   return (
     <li className={`mb-10 ml-6 ${isLast ? "mb-0" : ""}`}>
-      <span className={`absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full ring-8 ring-slate-900 ${item.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-700'}`} aria-hidden="true">
+      <span className={`absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full ring-8 ring-slate-900 ${item.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-700'}`} aria-hidden={true}>
         {/* Placeholder for icon */}
       </span>
       <div className="flex flex-col gap-2">

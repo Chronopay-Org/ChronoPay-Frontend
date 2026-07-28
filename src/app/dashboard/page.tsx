@@ -14,7 +14,6 @@ import {
   wallet,
   WalletCard,
 } from "@/components/dashboard";
-import { useToast } from "@/hooks/use-toast";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
@@ -50,7 +49,6 @@ export default function Dashboard() {
   void simulateMint;
   void simulateBuy;
   void simulateEscrowRelease;
-  void toast;
 
   if (loading) {
     return (

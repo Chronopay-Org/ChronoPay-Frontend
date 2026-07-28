@@ -3,6 +3,7 @@
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
+import { HelpPopover } from "@/app/components/ui/help-popover";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
@@ -10,6 +11,7 @@ import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 import { useToast } from "@/hooks/use-toast";
+import { glossary } from "@/lib/glossary";
 
 const walletProviders: WalletProvider[] = [
   {

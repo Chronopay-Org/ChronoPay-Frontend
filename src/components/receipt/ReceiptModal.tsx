@@ -174,7 +174,7 @@ export function ReceiptModal({
                     aria-hidden="true"
                   />
                 ) : (
-                  <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Share2 className="h-3.5 w-3.5" aria-hidden={true} />
                 )}
                 {shareStatus === "copied" ? "Link copied" : "Copy share link"}
               </button>
@@ -184,7 +184,7 @@ export function ReceiptModal({
                 disabled={!canShare}
                 className="inline-flex items-center gap-1.5 rounded-full bg-cyan-300 px-3 py-1.5 text-xs font-bold text-slate-950 transition-colors hover:bg-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+                <Printer className="h-3.5 w-3.5" aria-hidden={true} />
                 Print / Save PDF
               </button>
               <button
@@ -193,7 +193,7 @@ export function ReceiptModal({
                 aria-label="Close receipt"
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-400 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <X className="h-4 w-4" aria-hidden={true} />
               </button>
             </div>
           </div>

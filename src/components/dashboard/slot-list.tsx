@@ -6,7 +6,6 @@ import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
-import { EmptyStateCard } from "../../app/components/empty-state-card";
 
 type SlotListProps = {
   slots: Slot[];
