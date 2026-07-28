@@ -88,105 +88,25 @@ export type Supplier = {
   region?: RegionInfo;
 };
 
-// ─── Holiday hints ──────────────────────────────────────────────────────────
-
-export type RegionCode = string;
-
-export type RegionInfo = {
-  /** ISO 3166-1 alpha-2 country code (e.g. "US", "NG", "GB"). */
-  code: RegionCode;
-  /** Human-readable region name (e.g. "United States"). */
-  name: string;
-};
-
-export type HolidayHint = {
-  /** Unique identifier for this holiday occurrence. */
+/**
+ * ServiceItem — a single row in the supplier "Services & Pricing" repeater.
+ *
+ * Each service represents a bookable offering with its own base price, duration,
+ * and description. The `id` is stable across renders so reorders, updates, and
+ * deletions correctly target a single row.
+ */
+export type ServiceItem = {
   id: string;
-  /** Holiday name (e.g. "New Year's Day"). */
-  name: string;
-  /** ISO 8601 date string (e.g. "2027-01-01"). */
-  date: string;
-  /** Human-readable date label (e.g. "Jan 1, 2027"). */
-  dateLabel: string;
-  /** True when the holiday date shifts from year to year (e.g. Easter). */
-  isMoving?: boolean;
-};
-
-export type CalendarSyncProvider = {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  scopes: string[];
-};
-
-export type CalendarDefinition = {
-  id: string;
-  providerId: string;
   title: string;
   description: string;
-  color: string;
+  /** Base rate in XLM (Lumens). Decimals are allowed up to 2 places. */
+  basePriceXLM: number;
+  /** Duration of one session in minutes. Must be a positive multiple of 15. */
+  durationMinutes: number;
 };
-
-export type SyncDirection = "off" | "read" | "write" | "bidirectional";
-
-export type AuthorizationState =
-  | { status: "idle" }
-  | { status: "connecting"; providerId: string }
-  | { status: "authorizing"; providerId: string }
-  | { status: "authorized"; providerId: string; calendars: CalendarDefinition[] }
-  | { status: "denied"; providerId: string; deniedScopes: string[]; error: string };
-
-export type QueuedActionStatus = "pending" | "retrying" | "completed" | "failed";
-
-export type QueuedAction = {
-  id: string;
-  label: string;
-  status: QueuedActionStatus;
-  queuedAt: string;
-  error?: string;
-};
-
-export type OfflineQueueConnectionState = "online" | "offline" | "reconnecting";
-
-export type OfflineQueueState = {
-  connection: OfflineQueueConnectionState;
-  queue: QueuedAction[];
-};
-
-// ─── Sentiment filter ─────────────────────────────────────────────────────────
 
 /**
- * The three sentiment buckets a review can belong to.
- * "all" is the virtual unfiltered state.
+ * Draft status surfaced in the supplier onboarding step header.
+ * Mirrors the three states listed in `docs/save-resume-drafts-ux.md`.
  */
-export type SentimentBucket = "all" | "positive" | "mixed" | "critical";
-
-/** One data point in the sentiment sparkline series (one period = one week). */
-export type SentimentDataPoint = {
-  /** ISO date string for the period start, e.g. "2026-06-01" */
-  period: string;
-  positive: number;
-  mixed: number;
-  critical: number;
-};
-
-/** Review counts broken down by sentiment bucket. */
-export type SentimentCounts = {
-  positive: number;
-  mixed: number;
-  critical: number;
-};
-
-export type SlotPickerDensity = "full" | "compact" | "auto";
-
-export type HourlySlotBand = {
-  hourLabel: string;
-  hourKey: string;
-  slots: Slot[];
-  totalSlots: number;
-  rateRange: string;
-  statusCounts: Record<AvailabilityLevel, number>;
-  hasNextAvailable: boolean;
-};
-
+export type DraftStatus = "saved" | "saving" | "offline";

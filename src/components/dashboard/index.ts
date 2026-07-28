@@ -19,4 +19,5 @@ export * from "./state-card";
 export * from "./status-chip";
 export * from "./wallet-card";
 export * from "./card";
-export * from "./dispute-evidence-uploader";
+export * from "./services-step";
+
