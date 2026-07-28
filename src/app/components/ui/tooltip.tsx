@@ -28,6 +28,8 @@ export interface TooltipProps {
   variant?: "standard" | "longform";
   /** Optional explicit interactive override for mouse hover-intent */
   interactive?: boolean;
+  /** Optional class name to override the default trigger button styles */
+  triggerClassName?: string;
 }
 
 /** Measure collision and return the preferred position. */
@@ -78,6 +80,7 @@ export function Tooltip({
   className = "",
   variant = "standard",
   interactive,
+  triggerClassName,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState<Position>({
@@ -253,7 +256,7 @@ export function Tooltip({
       <button
         ref={triggerRef}
         type="button"
-        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-zinc-700 hover:bg-zinc-600 focus:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"
+        className={triggerClassName ?? "inline-flex items-center justify-center w-8 h-8 rounded-full bg-zinc-700 hover:bg-zinc-600 focus:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"}
         onMouseEnter={handleTriggerMouseEnter}
         onMouseLeave={handleTriggerMouseLeave}
         onFocus={showTooltip}

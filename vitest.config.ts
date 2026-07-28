@@ -14,7 +14,11 @@ export default defineConfig({
       include: [
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
-        "src/components/dashboard/review-reply-thread.tsx",
+        // Admin user management
+        "src/components/dashboard/admin-user-data.ts",
+        "src/components/dashboard/admin-user-table.tsx",
+        "src/components/dashboard/admin-user-types.ts",
+        "src/components/dashboard/bulk-actions-toolbar.tsx",
       ],
       thresholds: {
         lines: 95,

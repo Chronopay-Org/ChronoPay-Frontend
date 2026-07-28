@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { FocusTrap } from '@/components/common/FocusTrap';
 import { LiveRegion } from '@/components/common/LiveRegion';
 import { StatusChip } from '@/components/dashboard/status-chip';
-import { Spinner } from '@/app/components/ui/spinner';
+import { SigningSkeleton } from '@/components/checkout/SigningSkeleton';
 
 export type WalletProvider = {
   id: string;
@@ -14,8 +14,6 @@ export type WalletProvider = {
 
 type ConnectionStatus = 'idle' | 'pending' | 'success' | 'error';
 
-type ConnectionMethod = 'wallet' | 'email';
-
 interface WalletConnectModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -24,10 +22,7 @@ interface WalletConnectModalProps {
   errorMessage?: string;
   onConnect: (providerId: string) => void;
   onRetry?: () => void;
-  onEmailSubmit?: (email: string) => void;
 }
-
-const LOCAL_STORAGE_KEY = 'chronopay-preferred-connection-method';
 
 export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   isOpen,
@@ -37,7 +32,6 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   errorMessage,
   onConnect,
   onRetry,
-  onEmailSubmit,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [selectedCaps, setSelectedCaps] = useState<string[]>([]);
@@ -94,6 +88,8 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
+
+
   useEffect(() => {
     if (isOpen && modalRef.current) {
       const firstButton = modalRef.current.querySelector('button, input') as HTMLElement;
@@ -136,7 +132,11 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           </p>
 
           <LiveRegion>
-            {status === 'pending' && 'Connecting to wallet…'}
+            {status === 'pending' && selectedProviderName
+              ? `Waiting for signature in ${selectedProviderName}…`
+              : status === 'pending'
+                ? 'Connecting to wallet…'
+                : null}
             {status === 'success' && 'Wallet connected successfully.'}
             {status === 'error' && `Connection failed: ${errorMessage || 'Unknown error'}`}
           </LiveRegion>
@@ -297,7 +297,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
                       <div className="mt-2 sm:mt-0 sm:text-right">
                         <button
                           type="button"
-                          onClick={() => onConnect(p.id)}
+                          onClick={() => handleConnect(p.id)}
                           className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-cyan-600 rounded-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-colors"
                           aria-label={`Connect to ${p.name}`}
                         >
@@ -316,10 +316,10 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           )}
 
           {status === 'pending' && (
-            <div className="mt-6 flex flex-col items-center justify-center gap-4 py-10">
-              <Spinner className="h-12 w-12 text-cyan-500" />
-              <p className="text-sm text-slate-700 dark:text-slate-200">Connecting to your wallet…</p>
-            </div>
+            <SigningSkeleton
+              walletName={selectedProviderName}
+              onCancel={handleCancelSigning}
+            />
           )}
 
           {status === 'success' && (
@@ -385,16 +385,62 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           )}
 
           {status === 'error' && (
-            <div className="mt-6 flex flex-col items-center gap-4 py-10">
+            <div className="mt-6 flex flex-col items-center gap-4 py-8">
               <StatusChip tone="critical">Connection issue</StatusChip>
-              <p className="text-sm text-slate-700 dark:text-slate-200">{errorMessage ?? 'Unable to connect.'}</p>
-              <button
-                type="button"
-                className="rounded-full bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
-                onClick={onRetry}
-              >
-                Retry connection
-              </button>
+              <p className="text-sm text-slate-700 dark:text-slate-200 text-center">{errorMessage ?? 'Unable to connect to your wallet. Please check your extension or try a different one.'}</p>
+              
+              {!showAlternativeWallets ? (
+                <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs mt-2">
+                  <button
+                    type="button"
+                    className="flex-1 rounded-full bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                    onClick={onRetry}
+                  >
+                    Retry
+                  </button>
+                  <button
+                    type="button"
+                    autoFocus
+                    className="flex-1 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                    onClick={() => setShowAlternativeWallets(true)}
+                  >
+                    Different wallet
+                  </button>
+                </div>
+              ) : (
+                <div className="w-full mt-2 space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">Select alternative</h3>
+                    <button 
+                      type="button" 
+                      className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline focus-visible:outline-none"
+                      onClick={() => setShowAlternativeWallets(false)}
+                    >
+                      Back to retry
+                    </button>
+                  </div>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1" role="list">
+                    {providers.map((p, i) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        autoFocus={i === 0}
+                        onClick={() => {
+                           setShowAlternativeWallets(false);
+                           onConnect(p.id);
+                        }}
+                        className="w-full flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="h-6 w-6 text-slate-700 dark:text-slate-300 flex-shrink-0" aria-hidden="true">{p.icon}</span>
+                          <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{p.name}</span>
+                        </div>
+                        <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400">Connect &rarr;</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
