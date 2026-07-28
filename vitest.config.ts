@@ -12,11 +12,13 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov", "html"],
       include: [
+        "src/app/components/ui/tooltip.tsx",
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
-        "src/components/dashboard/slot-list.tsx"
+        "src/components/dashboard/social-proof-badge.tsx",
+        "src/components/dashboard/social-proof-badges.tsx",
+        "src/components/dashboard/card.tsx",
       ],
-
       thresholds: {
         lines: 95,
         functions: 95,
