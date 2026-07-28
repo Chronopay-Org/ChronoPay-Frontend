@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { maskRecoveryCode } from '../receipt/masking';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -26,7 +27,13 @@ function Button({ children, onClick, disabled = false, className = '' }: ButtonP
 export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => void }) {
   const [step, setStep] = useState<'intro' | 'qr' | 'verify' | 'recovery' | 'success'>('intro');
   const [code, setCode] = useState('');
-  const [recoveryKey] = useState('CP-' + Array.from({ length: 32 }, () => Math.random().toString(36)[2]).join('').toUpperCase());
+  const [recoveryCodes] = useState(() => 
+    Array.from({ length: 10 }, () => 
+      Array.from({ length: 8 }, () => Math.random().toString(36)[2]).join('').toUpperCase()
+    )
+  );
+  const [showCodes, setShowCodes] = useState(false);
+  const [savedConfirmed, setSavedConfirmed] = useState(false);
 
   const handleVerify = () => {
     if (code.length === 6) {
@@ -35,15 +42,37 @@ export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => voi
   };
 
   const downloadRecovery = () => {
-    const blob = new Blob([`ChronoPay 2FA Recovery Key\n\n${recoveryKey}\n\nKeep this key safe and private.`], { type: 'text/plain' });
+    const blob = new Blob([`ChronoPay 2FA Recovery Codes\n\n${recoveryCodes.join('\n')}\n\nKeep these codes safe and private.`], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'chronopay-2fa-recovery-key.txt';
+    a.download = 'chronopay-2fa-recovery-codes.txt';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const printRecovery = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head><title>ChronoPay 2FA Recovery Codes</title></head>
+          <body style="font-family: monospace; padding: 2rem;">
+            <h2>ChronoPay 2FA Recovery Codes</h2>
+            <p>Keep these codes safe and private. Each code can only be used once.</p>
+            <div style="font-size: 1.2rem; line-height: 2;">
+              ${recoveryCodes.map(c => `<div>${c}</div>`).join('')}
+            </div>
+            <script>
+              window.onload = () => { window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
   };
 
   return (
@@ -89,12 +118,57 @@ export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => voi
 
       {step === 'recovery' && (
         <div>
-          <h3 className="text-lg font-semibold mb-4">Save Your Recovery Key</h3>
-          <div className="bg-slate-950 p-5 rounded-xl font-mono text-sm border border-slate-700 mb-6 break-all">
-            {recoveryKey}
+          <h3 className="text-lg font-semibold mb-4">Save Your Recovery Codes</h3>
+          <p className="text-sm text-slate-400 mb-6">
+            Store these codes safely. They are the only way to recover access if you lose your device. Each code can only be used once.
+          </p>
+          
+          <div className="bg-slate-950 p-6 rounded-xl border border-slate-700 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <span className="font-medium text-sm">Recovery Codes</span>
+              <button 
+                onClick={() => setShowCodes(!showCodes)}
+                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors focus:outline-none focus:underline"
+                aria-pressed={showCodes}
+              >
+                {showCodes ? 'Hide All' : 'Reveal All'}
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 font-mono text-sm">
+              {recoveryCodes.map((code, index) => (
+                <div key={index} className="bg-slate-900 py-2 px-4 rounded border border-slate-800 text-center tracking-widest" aria-label={showCodes ? `Recovery code ${index + 1}: ${code}` : `Recovery code ${index + 1} hidden`}>
+                  {maskRecoveryCode(code, showCodes)}
+                </div>
+              ))}
+            </div>
           </div>
-          <Button onClick={downloadRecovery} className="mb-4 bg-white text-black hover:bg-white/90">Download Recovery Key</Button>
-          <p className="text-xs text-slate-500 text-center">Store this key safely. It is the only way to recover access if you lose your device.</p>
+
+          <div className="flex gap-4 mb-6">
+            <Button onClick={downloadRecovery} className="bg-white text-black hover:bg-white/90">Download</Button>
+            <Button onClick={printRecovery} className="bg-slate-800 text-white hover:bg-slate-700 border border-slate-700">Print</Button>
+          </div>
+
+          <div className="flex items-start gap-3 mb-6">
+            <input 
+              type="checkbox" 
+              id="confirm-saved"
+              checked={savedConfirmed}
+              onChange={(e) => setSavedConfirmed(e.target.checked)}
+              className="mt-1 w-4 h-4 rounded border-slate-600 text-cyan-500 focus:ring-cyan-500 bg-slate-900"
+            />
+            <label htmlFor="confirm-saved" className="text-sm text-slate-300 cursor-pointer select-none">
+              I have saved these recovery codes in a safe place.
+            </label>
+          </div>
+
+          <Button 
+            onClick={() => setStep('success')} 
+            disabled={!savedConfirmed}
+            className="bg-cyan-500 hover:bg-cyan-400 text-black"
+          >
+            Complete Setup
+          </Button>
         </div>
       )}
 

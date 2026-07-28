@@ -6,7 +6,7 @@ This checklist defines the standardized implementation rules for all dialogs, mo
 - [ ] Every overlay must be wrapped in the `<FocusTrap>` component from `src/components/common/FocusTrap.tsx`.
 - [ ] Focus must immediately move to the first actionable element within the dialog when it opens.
 - [ ] Focus must not escape the overlay while it is active (pressing Tab on the last element must loop back to the first).
-- [ ] Focus must return to the trigger element that opened the overlay when the dialog is closed.
+- [ ] Focus must return to the trigger element that opened the overlay when the dialog is closed. If the trigger element was deleted from the DOM, focus must return to the nearest logical anchor (e.g. `[data-focus-fallback]`, `<main>`, or `<body>`).
 
 ## 🗣️ 2. Screen Reader Semantics
 - [ ] The overlay container must have `role="dialog"`.
