@@ -10,12 +10,13 @@
  */
 
 import { useEffect, useId, useState } from "react";
-import { Printer, Share2, X, Check } from "lucide-react";
+import { Printer, Share2, X, Check, Calendar, Twitter, Linkedin, MessageCircle } from "lucide-react";
 import { FocusTrap } from "@/components/common/FocusTrap";
 import { LiveRegion } from "@/components/common/LiveRegion";
 import { Receipt } from "./Receipt";
 import { buildShareLink } from "./masking";
 import type { ReceiptData } from "./types";
+import confetti from "canvas-confetti";
 
 type ReceiptModalProps = {
   isOpen: boolean;
@@ -23,6 +24,26 @@ type ReceiptModalProps = {
   receipt?: ReceiptData | null;
   loading?: boolean;
   error?: string | null;
+};
+
+const generateICS = (receipt: ReceiptData | null | undefined) => {
+  if (!receipt) return "";
+  // Create a naive start time (current date/time for demo purposes)
+  // since the receipt only has a pre-formatted settledAt string.
+  const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//ChronoPay//EN
+BEGIN:VEVENT
+UID:${receipt.id}@chronopay.app
+DTSTAMP:${now}
+DTSTART:${now}
+DTEND:${now}
+SUMMARY:${receipt.title}
+DESCRIPTION:Booking ID: ${receipt.id}\\nTx Hash: ${receipt.txHash}
+END:VEVENT
+END:VCALENDAR`;
+  return icsContent;
 };
 
 export function ReceiptModal({
@@ -80,6 +101,7 @@ export function ReceiptModal({
     try {
       await navigator.clipboard.writeText(link);
       setShareStatus("copied");
+      setLiveMessage("Masked share link copied to clipboard.");
       window.setTimeout(() => setShareStatus("idle"), 2000);
     } catch {
       setShareStatus("idle");
@@ -184,7 +206,7 @@ export function ReceiptModal({
                 disabled={!canShare}
                 className="inline-flex items-center gap-1.5 rounded-full bg-cyan-300 px-3 py-1.5 text-xs font-bold text-slate-950 transition-colors hover:bg-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+                <Printer className="h-3.5 w-3.5" aria-hidden={true} />
                 Print / Save PDF
               </button>
               <button
@@ -193,7 +215,7 @@ export function ReceiptModal({
                 aria-label="Close receipt"
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-400 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <X className="h-4 w-4" aria-hidden={true} />
               </button>
             </div>
           </div>

@@ -4,9 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
+import { ResumedBadge } from "@/app/components/ui/resumed-badge";
+import { EmptyStateCard } from "@/app/components/empty-state-card";
 import { glossary } from "@/lib/glossary";
-import type { Slot } from "./types";
+import type { Slot, AvailabilityLevel, SlotPickerDensity, HourlySlotBand } from "./types";
+import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
+import {
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  Grid,
+  ListFilter,
+  Sparkles,
+} from "lucide-react";
 
 type SlotListProps = {
   slots: Slot[];
