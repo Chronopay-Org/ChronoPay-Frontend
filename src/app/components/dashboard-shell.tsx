@@ -12,6 +12,7 @@ import { AccountSwitcher } from "@/app/components/account-switcher";
 import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
+import { ContextualKeysPanel } from "@/app/components/ui/contextual-keys-panel";
 
 function getOnlineStatus() {
   if (typeof navigator === "undefined") return true;
@@ -316,6 +317,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             marginInlineStart: 0,
           }}
         >
+          <ContextualKeysPanel />
           {children}
         </main>
       </div>
