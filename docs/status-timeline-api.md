@@ -12,7 +12,6 @@ The `StatusTimeline` component provides a vertical, accessible, and collapsible 
 
 ### TimelineItem (individual event)
 
-```typescript
 type TimelineItem = {
   id: string;
   title: string;
@@ -73,7 +72,7 @@ When at least one timeline item (including items inside branches) has `isMilesto
 - **Milestone badge**: Each milestone item shows a "Milestone" chip inline next to the title.
 - **Toggle hidden**: The toggle is not rendered when no items (including those inside branches) have `isMilestone` set.
 
-### Accessibility (WCAG 2.1 AA)
+The component announces mediator assignment changes through a polite live region so screen-reader users hear the update without moving focus.
 
 - The toggle uses `role="switch"` with `aria-checked` for correct ARIA semantics.
 - The toggle has a dynamic `aria-label` that changes with state.
@@ -88,38 +87,19 @@ When at least one timeline item (including items inside branches) has `isMilesto
 
 ### Basic (no branching)
 
-```tsx
-import { StatusTimeline } from "@/components/dashboard/status-timeline";
+- Off: all timeline events are shown.
+- On: only milestone entries are shown.
+- Scroll position is preserved across the filter change.
+- A polite live region announces the mode change.
 
-const items = [
-  {
-    id: "1",
-    title: "Order Placed",
-    status: "completed",
-    timestamp: "2026-06-30 10:00 AM",
-    actor: "Buyer",
-    details: "Order #12345 confirmed.",
-    isMilestone: true,
-  },
-  {
-    id: "2",
-    title: "Escrow Funded",
-    status: "pending",
-    timestamp: "2026-06-30 11:00 AM",
-    actor: "Escrow Agent",
-    isCurrent: true,
-  },
-  {
-    id: "3",
-    title: "Rating Submitted",
-    status: "completed",
-    timestamp: "2026-06-30 12:00 PM",
-    actor: "Buyer",
-  },
-];
+## Accessibility notes
 
-<StatusTimeline items={items} />
-```
+- Uses semantic `<ol>` markup for the event list.
+- Marks the active step with `aria-current="step"`.
+- Uses `role="switch"` and `aria-checked` for milestone filtering.
+- Announces mediator assignment and filter changes through `role="status"`.
+- Exposes the SLA bar as a `progressbar` with `aria-valuetext`.
+- Direct-message CTA and detail toggles use visible focus states.
 
 ### With branching and rejoin
 

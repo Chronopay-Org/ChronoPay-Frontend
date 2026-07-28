@@ -1,12 +1,25 @@
 export type TimelineItemStatus = "pending" | "completed" | "failed" | "warning";
 
+export type TimelineItemVariant = "default" | "mediator_assigned";
+
+export type MediatorAssignmentDetails = {
+  name: string;
+  responseSlaLabel?: string;
+  responseDueLabel?: string;
+  slaProgress?: number;
+  directMessageHref?: string;
+  directMessageLabel?: string;
+};
+
 export type TimelineItem = {
   id: string;
   title: string;
   status: TimelineItemStatus;
   timestamp: string;
+  variant?: TimelineItemVariant;
   actor?: string;
   details?: string;
+  mediator?: MediatorAssignmentDetails;
   isCurrent?: boolean;
   /**
    * Flags this event as a high-signal milestone.

@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { SlotList } from "./slot-list";
 import type { Slot } from "./types";
+import type { AvailabilityConflict } from "./availability-conflict-detector";
 
 const suggestedAlternatives: Slot[] = [
   {
@@ -36,7 +37,33 @@ const slots: Slot[] = [
   },
 ];
 
+const testConflicts: AvailabilityConflict[] = [
+  {
+    id: "test-conflict-1",
+    incomingBlockTitle: "Overlap Block Alpha",
+    incomingTimeRange: "Tue, 10:15 - 11:15 UTC",
+    collidingSlotId: "slot-main-1",
+    collidingTitle: "Product strategy call",
+    collidingTimeRange: "Tue, 10:00 - 11:30 UTC",
+    conflictType: "booking_overlap",
+    severity: "critical",
+    description: "Overlaps with Product strategy call.",
+    suggestedShiftTimeRange: "Tue, 11:30 - 12:30 UTC",
+    suggestedSplitRanges: [],
+    affectedSlotId: "slot-main-1",
+  },
+];
+
 describe("SlotList", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
   it("renders a suggested alternatives carousel when alternatives exist", () => {
     render(
       <SlotList slots={slots} suggestedAlternatives={suggestedAlternatives} />,
@@ -81,5 +108,21 @@ describe("SlotList", () => {
       screen.getByText(/No matching alternatives found/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/No alternatives/i)).toBeInTheDocument();
+  });
+
+  it("renders a 'NEW' freshness pip with a tooltip for slots minted within the last 24 hours", () => {
+    const now = new Date();
+    const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString();
+    const freshSlot = { ...slots[0], mintedAt: threeHoursAgo };
+
+    render(<SlotList slots={[freshSlot]} />);
+    
+    // The visual NEW pip should exist
+    const newPip = screen.getByText("NEW");
+    expect(newPip).toBeInTheDocument();
+    
+    // Check tooltip functionality/aria label
+    const triggerBtn = screen.getByLabelText("New slot: added within the last 24 hours");
+    expect(triggerBtn).toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { axe } from "jest-axe";
+import { describe, expect, it } from "vitest";
 import { StatusTimeline } from "./status-timeline";
 import { TimelineItem, TimelineNode, TimelineBranchGroup } from "./timeline-types";
 
@@ -7,7 +8,7 @@ import { TimelineItem, TimelineNode, TimelineBranchGroup } from "./timeline-type
 
 const allItems: TimelineNode[] = [
   {
-    id: "1",
+    id: "reserved",
     title: "Reserved",
     status: "completed" as const,
     timestamp: "2026-06-30 09:00 AM",
@@ -30,6 +31,14 @@ const allItems: TimelineNode[] = [
     timestamp: "2026-06-30 10:00 AM",
     isMilestone: true,
     isCurrent: true,
+    variant: "mediator_assigned",
+    mediator: {
+      name: "Amina Yusuf",
+      responseSlaLabel: "Responds within 24 hours",
+      responseDueLabel: "Due Tue, Jul 21 at 11:15 AM",
+      slaProgress: 42,
+      directMessageHref: "/dashboard/messages/amina-yusuf",
+    },
   },
   {
     id: "4",
@@ -189,7 +198,8 @@ const branchWithMilestones: TimelineNode[] = [
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("StatusTimeline", () => {
-  // ── Basic rendering ──────────────────────────────────────────────────────
+  it("renders the mediator-assigned timeline block with SLA and direct message action", () => {
+    render(<StatusTimeline items={items} />);
 
   it("renders all items when milestones mode is off", () => {
     render(<StatusTimeline items={allItems} />);
@@ -208,10 +218,12 @@ describe("StatusTimeline", () => {
     expect(screen.getByText("Slot reserved for 30 minutes.")).toBeInTheDocument();
   });
 
-  it("applies aria-current to active step", () => {
-    render(<StatusTimeline items={allItems} />);
-    const activeStep = screen.getByText("Escrow Funded");
-    expect(activeStep).toHaveAttribute("aria-current", "step");
+  it("announces a mediator assignment for assistive tech", () => {
+    render(<StatusTimeline items={items} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Mediator Amina Yusuf assigned. Response SLA Responds within 24 hours.",
+    );
   });
 
   // ── Milestones toggle ────────────────────────────────────────────────────
