@@ -347,3 +347,40 @@ export function KycStatusTimeline({
     </section>
   );
 }
+
+export const kycTimelineEntries: KycTimelineEntry[] = [
+  {
+    id: "kyc-1",
+    title: "Documents submitted",
+    stage: "submitted",
+    timestamp: "2026-07-10 2:15 PM",
+    actor: "You",
+    details: "Passport scan uploaded.",
+  },
+  {
+    id: "kyc-2",
+    title: "Under review",
+    stage: "reviewing",
+    timestamp: "2026-07-11 9:30 AM",
+    actor: "Compliance Team",
+    details: "Your documents are being reviewed.",
+    isCurrent: true,
+  },
+  {
+    id: "kyc-3",
+    title: "Verification complete",
+    stage: "verified",
+    timestamp: "—",
+  },
+];
+
+export const kycPromptPanel: KycPromptPanel = {
+  title: "Additional information required",
+  description: "Please upload a valid proof of address to complete your KYC verification.",
+  uploadHref: "/dashboard/kyc/upload",
+  guidance: [
+    "Document must be issued within the last 90 days",
+    "Utility bill, bank statement, or government tax document",
+    "Full name and address must match your profile",
+  ],
+};

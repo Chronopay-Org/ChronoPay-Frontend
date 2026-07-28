@@ -7,6 +7,7 @@ import type {
   CalendarSyncProvider,
   CalendarDefinition,
   RatingCriterion,
+  ChecklistStep,
 } from "./types";
 import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
@@ -130,6 +131,7 @@ export const slots: Slot[] = [
     rate: "120 XLM / hr",
     status: "Healthy",
     isNextAvailable: true,
+    mintedAt: new Date().toISOString(),
     isSample: true,
     badges: [
       { type: "topRated", ...BADGE_PRESETS.topRated },
@@ -339,6 +341,59 @@ export const suppliers: Supplier[] = [
 ];
 
 /** Sample per-criterion rating breakdown for supplier profiles. */
+// ─── Supplier Trust Metrics ──────────────────────────────────────────────────
+
+/** Sample response-time history (minutes, last 30 days) */
+export const sampleResponseTime: TrustMetric = {
+  id: "response-time",
+  label: "Response time",
+  value: "2.4",
+  unit: "min",
+  trend: "up",
+  tooltip: "Median time between receiving a booking request and responding. Lower is better.",
+  tone: "positive",
+  history: {
+    values: [4.1, 3.8, 3.2, 2.9, 2.7, 2.5, 2.4, 2.6, 2.3, 2.1, 2.0, 2.4],
+  },
+};
+
+/** Sample acceptance-rate history (%, last 30 days) */
+export const sampleAcceptanceRate: TrustMetric = {
+  id: "acceptance-rate",
+  label: "Acceptance rate",
+  value: "94",
+  unit: "%",
+  trend: "stable",
+  tooltip: "Percentage of booking requests you accepted over the last 30 days.",
+  tone: "positive",
+  history: {
+    values: [88, 91, 90, 93, 92, 94, 95, 94, 93, 94, 95, 94],
+  },
+};
+
+/** Empty trust metric for no-data state */
+export const emptyResponseTime: TrustMetric = {
+  id: "response-time",
+  label: "Response time",
+  value: "—",
+  unit: "min",
+  trend: "stable",
+  tooltip: "Median time between receiving a booking request and responding. Lower is better.",
+  tone: "neutral",
+  history: { values: [] },
+};
+
+export const emptyAcceptanceRate: TrustMetric = {
+  id: "acceptance-rate",
+  label: "Acceptance rate",
+  value: "—",
+  unit: "%",
+  trend: "stable",
+  tooltip: "Percentage of booking requests you accepted over the last 30 days.",
+  tone: "neutral",
+  history: { values: [] },
+};
+
 export const ratingBreakdown: RatingCriterion[] = [
   {
     id: "communication",
@@ -377,3 +432,49 @@ export const ratingBreakdown: RatingCriterion[] = [
   },
 ];
 
+
+// ─── Sample booking checklist steps ──────────────────────────────────────────
+
+/**
+ * Sample steps for the BookingChecklist component.
+ * Represents a booking mid-flow: reserved and confirmed are done, escrow is
+ * active, service delivery is blocked, and the final two steps are pending.
+ */
+export const bookingChecklistSteps: ChecklistStep[] = [
+  {
+    id: "reserve",
+    label: "Reserve slot",
+    status: "done",
+    description: "Completed Jun 30, 9:00 AM",
+  },
+  {
+    id: "confirm",
+    label: "Confirm booking",
+    status: "done",
+    description: "Both parties confirmed.",
+  },
+  {
+    id: "escrow",
+    label: "Escrow payment",
+    status: "active",
+    description: "Funds are being held in escrow.",
+  },
+  {
+    id: "deliver",
+    label: "Deliver service",
+    status: "blocked",
+    description: "Waiting for escrow confirmation.",
+  },
+  {
+    id: "rate",
+    label: "Rate experience",
+    status: "pending",
+    optional: true,
+  },
+  {
+    id: "release",
+    label: "Release escrow",
+    status: "pending",
+    description: "Funds released after both parties confirm.",
+  },
+];
