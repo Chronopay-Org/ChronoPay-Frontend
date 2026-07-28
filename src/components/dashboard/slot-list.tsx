@@ -1,6 +1,6 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
+import { useState, useRef, useCallback } from "react";
+import { useSpring } from "@react-spring/web";
+import { useDrag } from "@use-gesture/react";
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
@@ -10,15 +10,7 @@ import { glossary } from "@/lib/glossary";
 import type { Slot, AvailabilityLevel, SlotPickerDensity, HourlySlotBand } from "./types";
 import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
-import {
-  Clock,
-  ChevronDown,
-  ChevronUp,
-  Layers,
-  Grid,
-  ListFilter,
-  Sparkles,
-} from "lucide-react";
+import { slots } from "./dashboard-data";
 
 type SlotListProps = {
   slots: Slot[];
@@ -67,162 +59,141 @@ export const SlotList = ({ slots, suggestedAlternatives }: SlotListProps) => {
     }
   };
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const lastSelectedId = useRef<string | null>(null);
+  const [liveMessage, setLiveMessage] = useState("");
+
+  const announce = useCallback((msg: string) => {
+    setLiveMessage(msg);
+    // clear after a moment to allow re-announcement
+    setTimeout(() => setLiveMessage(""), 3000);
+  }, []);
+
+  const toggleSelection = (id: string, e?: React.MouseEvent | React.KeyboardEvent) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const isShift = e && 'shiftKey' in e && e.shiftKey;
+      const isMeta = e && ('metaKey' in e && (e.metaKey || e.ctrlKey));
+
+      if (isShift && lastSelectedId.current) {
+        const currentIndex = slots.findIndex(s => s.id === id);
+        const lastIndex = slots.findIndex(s => s.id === lastSelectedId.current);
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        
+        if (!isMeta) {
+          next.clear();
+        }
+
+        for (let i = start; i <= end; i++) {
+          next.add(slots[i].id);
+        }
+      } else if (isMeta) {
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+      } else {
+        if (next.has(id) && next.size === 1) {
+          next.delete(id);
+        } else {
+          next.clear();
+          next.add(id);
+        }
+      }
+      
+      announce(`${next.size} slot${next.size !== 1 ? 's' : ''} selected.`);
+      
+      lastSelectedId.current = id;
+      return next;
+    });
+  };
+
+  const handleKeyDown = (id: string, e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleSelection(id, e);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    announce("Selection cleared.");
+    lastSelectedId.current = null;
+  };
+
+  const mapTone = (status: string) => {
+    if (status === "Healthy") return "positive";
+    if (status === "Tight") return "warning";
+    if (status === "Busy") return "danger";
+    return "neutral";
+  };
+
   return (
-    <div className="space-y-6">
-      {suggestedAlternatives ? (
-        <section
-          aria-labelledby="alternative-slots-heading"
-          className="rounded-[1.75rem] border border-white/10 bg-slate-950/80 p-5"
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
-                Suggested alternatives
-              </p>
-              <h2
-                id="alternative-slots-heading"
-                className="mt-2 text-lg font-semibold text-white"
-              >
-                Rebook a matching slot with one tap.
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-                We found the top three slots that match your preferred price and
-                time of day. Swipe through options or use arrow keys to compare
-                before you rebook.
-              </p>
-            </div>
-          </div>
+    <div className="relative pb-24">
+      {/* Live region for announcements */}
+      <div 
+        aria-live="polite" 
+        className="sr-only" 
+        role="status"
+      >
+        {liveMessage}
+      </div>
 
-          <div className="mt-5">
-            {suggestedAlternatives.length === 0 ? (
-              <EmptyStateCard
-                eyebrow="Suggestions"
-                title="No matching alternatives found"
-                description="We could not find another slot that matches price and time-of-day closely enough. Try widening your search criteria or check back later."
-                accentLabel="No alternatives"
-                status={{ label: "Unavailable", tone: "warning" }}
-                guidance={[
-                  "Expand the search window to include adjacent time blocks.",
-                  "Check for other sellers offering the same hourly rate.",
-                ]}
-              />
-            ) : (
-              <ul
-                className="flex gap-4 snap-x snap-mandatory touch-pan-x overflow-x-auto pb-2"
-                aria-roledescription="carousel"
-              >
-                {suggestedAlternatives.map((slot, index) => (
-                <li
-                  key={slot.id}
-                  ref={(element) => {
-                    alternativeCardRefs.current[index] = element;
-                  }}
-                  tabIndex={index === focusedAlternativeIndex ? 0 : -1}
-                  onKeyDown={(event) => handleAlternativeKeyDown(event, index)}
-                  aria-label={`Alternative slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
-                  className={`min-w-[260px] max-w-[260px] snap-start rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
-                    index === focusedAlternativeIndex
-                      ? "ring-1 ring-cyan-300/50"
-                      : ""
-                  }`}
-                >
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                        {slot.dateLabel}
-                      </p>
-                      <h3 className="text-base font-semibold text-white">
-                        {slot.title}
-                      </h3>
-                      <p className="text-sm text-slate-300">{slot.timeRange}</p>
-                    </div>
-
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-slate-200">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-slate-400">Rate</span>
-                        <span className="font-semibold text-white">
-                          {slot.rate}
-                        </span>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <span className="text-slate-400">Demand</span>
-                        <span className="font-semibold text-white">
-                          {slot.demand}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                      <ButtonLink
-                        href={`/dashboard/slots/${slot.id}`}
-                        variant="primary"
-                        size="sm"
-                        className="w-full"
-                      >
-                        Book
-                      </ButtonLink>
-                      <ButtonLink
-                        href={`/dashboard/slots/${slot.id}#compare`}
-                        variant="secondary"
-                        size="sm"
-                        className="w-full"
-                      >
-                        Compare
-                      </ButtonLink>
-                    </div>
-
-                    <p className="text-xs text-slate-400">
-                      Matched price and time-of-day for a smooth rebooking
-                      experience.
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      ) : null}
-
-      <ul className="space-y-4">
+      <ul className="space-y-4" role="listbox" aria-multiselectable="true">
         {slots.map((slot) => {
           const slotTitleId = `slot-${slot.id}-title`;
           const slotDetailsId = `slot-${slot.id}-details`;
+          const isSelected = selectedIds.has(slot.id);
 
           return (
             <li
               key={slot.id}
-              className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5"
+              className={`rounded-[1.5rem] border p-4 sm:p-5 transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 outline-none
+                ${isSelected 
+                  ? "border-blue-500 bg-blue-500/10 dark:bg-blue-500/20" 
+                  : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/[0.05]"}`}
+              onClick={(e) => toggleSelection(slot.id, e)}
+              onKeyDown={(e) => handleKeyDown(slot.id, e)}
+              tabIndex={0}
+              aria-selected={isSelected}
+              role="option"
             >
-              <article
-                aria-labelledby={slotTitleId}
-                aria-describedby={slotDetailsId}
-              >
+              <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 space-y-1">
-                    <h3
-                      id={slotTitleId}
-                      className="text-lg font-semibold text-white"
-                    >
-                      {slot.title}
-                    </h3>
-                    <p className="text-sm text-slate-300">
-                      {slot.dateLabel} · {slot.timeRange}
-                    </p>
+                  <div className="min-w-0 flex gap-3 items-start">
+                    <div className="pt-1">
+                      <input 
+                        type="checkbox"
+                        className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        checked={isSelected}
+                        readOnly
+                        tabIndex={-1}
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 id={slotTitleId} className="text-lg font-semibold text-slate-900 dark:text-white">
+                        {slot.title}
+                      </h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-300">
+                        {slot.dateLabel} · {slot.timeRange}
+                      </p>
+                    </div>
                   </div>
-                  <StatusChip tone={mapTone(slot.status)}>
-                    {slot.status}
-                  </StatusChip>
+                  <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
                 </div>
 
                 <div
                   id={slotDetailsId}
-                  className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-300"
+                  className="mt-4 pl-8 flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-300"
                 >
-                  <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                  <span className="rounded-full border border-black/10 dark:border-white/8 bg-black/5 dark:bg-white/4 px-3 py-1.5">
                     {slot.demand}
                   </span>
 
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 dark:border-white/8 bg-black/5 dark:bg-white/4 px-3 py-1.5">
                     {slot.rate}
                     <HelpPopover
                       term={glossary.rate}
@@ -231,7 +202,7 @@ export const SlotList = ({ slots, suggestedAlternatives }: SlotListProps) => {
                   </span>
 
                   {slot.isNextAvailable ? (
-                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-cyan-100">
+                    <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-cyan-700 dark:text-cyan-100">
                       Next available
                     </span>
                   ) : null}
@@ -249,6 +220,70 @@ export const SlotList = ({ slots, suggestedAlternatives }: SlotListProps) => {
           );
         })}
       </ul>
+
+      {/* Floating Bulk Edit Toolbar */}
+      {selectedIds.size > 0 && (
+        <div 
+          className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6 pb-[env(safe-area-inset-bottom,1rem)] flex justify-center animate-in slide-in-from-bottom-4 fade-in duration-200"
+          role="toolbar"
+          aria-label="Bulk edit selected slots"
+        >
+          <div className="bg-slate-900 dark:bg-slate-800 text-white rounded-2xl shadow-xl shadow-black/20 border border-white/10 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-2 px-4 w-full max-w-3xl">
+            <div className="flex items-center gap-2 px-2 whitespace-nowrap">
+              <span className="flex items-center justify-center bg-blue-500 text-white text-sm font-bold w-6 h-6 rounded-full" aria-hidden="true">
+                {selectedIds.size}
+              </span>
+              <span className="text-sm font-medium sr-only">{selectedIds.size} slots selected</span>
+              <span className="text-sm font-medium" aria-hidden="true">selected</span>
+            </div>
+            
+            <div className="h-px w-full sm:w-px sm:h-8 bg-white/20 my-1 sm:my-0" aria-hidden="true" />
+            
+            <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 flex-1">
+              <button className="px-3 py-1.5 text-sm font-medium hover:bg-white/10 rounded-lg transition-colors focus:ring-2 focus:ring-white outline-none">
+                Price
+              </button>
+              <button className="px-3 py-1.5 text-sm font-medium hover:bg-white/10 rounded-lg transition-colors focus:ring-2 focus:ring-white outline-none">
+                Duration
+              </button>
+              <button className="px-3 py-1.5 text-sm font-medium hover:bg-white/10 rounded-lg transition-colors focus:ring-2 focus:ring-white outline-none">
+                Duplicate
+              </button>
+              <button className="px-3 py-1.5 text-sm font-medium text-red-400 hover:bg-red-400/10 rounded-lg transition-colors focus:ring-2 focus:ring-red-400 outline-none">
+                Cancel
+              </button>
+              
+              <div className="flex-1 sm:flex-none"></div>
+              
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  announce("Action undone");
+                }}
+                className="px-3 py-1.5 text-sm font-medium hover:bg-white/10 rounded-lg transition-colors focus:ring-2 focus:ring-white outline-none flex items-center gap-1 ml-auto"
+                aria-label="Undo last action"
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M5.33333 4.66667L2 8M2 8L5.33333 11.3333M2 8H10.6667C12.5076 8 14 9.49238 14 11.3333C14 13.1743 12.5076 14.6667 10.6667 14.6667H9.33333" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Undo
+              </button>
+            </div>
+            
+            <div className="h-px w-full sm:w-px sm:h-8 bg-white/20 my-1 sm:my-0" aria-hidden="true" />
+            
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                clearSelection();
+              }}
+              className="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors focus:ring-2 focus:ring-white outline-none whitespace-nowrap"
+            >
+              Clear selection
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
