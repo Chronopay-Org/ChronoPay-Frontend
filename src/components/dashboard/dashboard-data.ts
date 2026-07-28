@@ -4,7 +4,6 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
   CalendarSyncProvider,
   CalendarDefinition,
 } from "./types";
@@ -338,8 +337,4 @@ export const suppliers: Supplier[] = [
   },
 ];
 
-export const bookingStages = [
-  { label: "Created", value: 12 },
-  { label: "In Escrow", value: 8 },
-  { label: "Completed", value: 24 },
-];
+
