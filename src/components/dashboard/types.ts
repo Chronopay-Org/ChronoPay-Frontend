@@ -28,6 +28,14 @@ export type QuickAction = {
   icon: string;
 };
 
+export type EarningsSegment = {
+  id: string;
+  label: string;
+  value: number;
+  formattedValue: string;
+  colorClass: string;
+};
+
 export type Metric = {
   label: string;
   value: string;
@@ -69,6 +77,13 @@ export type SocialProofBadgeEntry = {
   icon: string;
   criterion: string;
   explainerKey?: string;
+};
+
+export type RegionInfo = {
+  country: string;
+  countryCode?: string;
+  timezone?: string;
+  currency?: string;
 };
 
 export type Supplier = {
