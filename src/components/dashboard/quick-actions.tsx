@@ -36,7 +36,7 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
                 <div className={`flex items-center justify-center w-12 h-12 rounded-xl border ${toneIconClasses[action.tone]}`}>
                   <IconComponent 
                     className="w-6 h-6" 
-                    aria-hidden="true"
+                    aria-hidden={true}
                   />
                 </div>
                 <StatusChip tone={action.tone}>{toneLabels[action.tone]}</StatusChip>
