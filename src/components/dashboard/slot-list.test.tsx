@@ -82,4 +82,42 @@ describe("SlotList", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/No alternatives/i)).toBeInTheDocument();
   });
+
+  it("supports keyboard nudging and drag-and-drop reordering", () => {
+    const reorderableSlots: Slot[] = [
+      {
+        id: "slot-main-1",
+        title: "Product strategy call",
+        dateLabel: "Tue, Apr 1",
+        timeRange: "10:00-11:30",
+        demand: "6 interested buyers",
+        rate: "120 XLM / hr",
+        status: "Healthy",
+      },
+      {
+        id: "slot-main-2",
+        title: "Code Review & Optimization",
+        dateLabel: "Wed, Apr 2",
+        timeRange: "14:00-15:00",
+        demand: "2 interested buyers",
+        rate: "90 XLM / hr",
+        status: "Tight",
+      },
+    ];
+
+    const { container } = render(<SlotList slots={reorderableSlots} />);
+    const items = screen.getAllByRole("listitem");
+
+    fireEvent.keyDown(items[0], { key: "ArrowDown", altKey: true });
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(/Code Review & Optimization/i);
+
+    const source = container.querySelector('[data-slot-id="slot-main-1"]') as HTMLElement;
+    const target = container.querySelector('[data-slot-id="slot-main-2"]') as HTMLElement;
+
+    fireEvent.dragStart(source, { dataTransfer: { setData: () => {}, getData: () => "slot-main-1", effectAllowed: "move", dropEffect: "" } });
+    fireEvent.dragOver(target, { dataTransfer: { setData: () => {}, getData: () => "", effectAllowed: "move", dropEffect: "" }, clientY: 20 });
+    fireEvent.drop(target, { dataTransfer: { setData: () => {}, getData: () => "slot-main-1", effectAllowed: "move", dropEffect: "" } });
+
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(/Code Review & Optimization/i);
+  });
 });
