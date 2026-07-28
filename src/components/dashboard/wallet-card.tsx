@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
 import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
@@ -10,6 +10,7 @@ import type { WalletSnapshot } from "./types";
 import { WalletConnectModal } from "./WalletConnectModal";
 import { useToast } from "@/hooks/use-toast";
 import { glossary } from "@/lib/glossary";
+import { useNetwork, TestnetRibbon } from "@/components/checkout/NetworkSelector";
 
 const statusTone = {
   connected: "positive",
@@ -212,10 +213,12 @@ export function WalletCard({
   const securityId = useId();
   const statusId = useId();
   const { toast } = useToast();
+  const { network } = useNetwork();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const showZeroBalanceNudge =
-    wallet.connection === "connected" && isZeroBalance(wallet.balance);
+  const handleClose = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
 
   return (
     <>
@@ -226,9 +229,12 @@ export function WalletCard({
       >
         <CardHeader>
           <div className="min-w-0">
-            <p id={titleId} className="text-sm text-cyan-100/80">
-              Primary wallet
-            </p>
+            <div className="flex items-center gap-2">
+              <p id={titleId} className="text-sm text-cyan-100/80">
+                Primary wallet
+              </p>
+              <TestnetRibbon network={network} />
+            </div>
             <p
               id={balanceId}
               className="mt-3 truncate text-2xl font-semibold tracking-tight text-white sm:text-3xl"
@@ -322,15 +328,14 @@ export function WalletCard({
         </CardFooter>
       </Card>
 
-      {isModalOpen && (
-        <WalletConnectModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          providers={[]}
-          status="idle"
-          onConnect={() => setIsModalOpen(false)}
-        />
-      )}
+      <WalletConnectModal
+        isOpen={isModalOpen}
+        onClose={handleClose}
+        providers={[]}
+        status="idle"
+        onConnect={() => {}}
+        onEmailSubmit={() => {}}
+      />
     </>
   );
 }
