@@ -7,6 +7,7 @@ import type {
   CalendarSyncProvider,
   CalendarDefinition,
   RatingCriterion,
+  ChecklistStep,
 } from "./types";
 import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
@@ -378,17 +379,49 @@ export const ratingBreakdown: RatingCriterion[] = [
   },
 ];
 
-export const reviewSentimentCounts = {
-  positive: 48,
-  mixed: 17,
-  critical: 9,
-};
 
-export const reviewSentimentTrend = [
-  { timestamp: "2026-07-01", positive: 5, mixed: 2, critical: 1 },
-  { timestamp: "2026-07-08", positive: 12, mixed: 4, critical: 2 },
-  { timestamp: "2026-07-15", positive: 20, mixed: 6, critical: 3 },
-  { timestamp: "2026-07-22", positive: 35, mixed: 11, critical: 6 },
-  { timestamp: "2026-07-28", positive: 48, mixed: 17, critical: 9 },
+// ─── Sample booking checklist steps ──────────────────────────────────────────
+
+/**
+ * Sample steps for the BookingChecklist component.
+ * Represents a booking mid-flow: reserved and confirmed are done, escrow is
+ * active, service delivery is blocked, and the final two steps are pending.
+ */
+export const bookingChecklistSteps: ChecklistStep[] = [
+  {
+    id: "reserve",
+    label: "Reserve slot",
+    status: "done",
+    description: "Completed Jun 30, 9:00 AM",
+  },
+  {
+    id: "confirm",
+    label: "Confirm booking",
+    status: "done",
+    description: "Both parties confirmed.",
+  },
+  {
+    id: "escrow",
+    label: "Escrow payment",
+    status: "active",
+    description: "Funds are being held in escrow.",
+  },
+  {
+    id: "deliver",
+    label: "Deliver service",
+    status: "blocked",
+    description: "Waiting for escrow confirmation.",
+  },
+  {
+    id: "rate",
+    label: "Rate experience",
+    status: "pending",
+    optional: true,
+  },
+  {
+    id: "release",
+    label: "Release escrow",
+    status: "pending",
+    description: "Funds released after both parties confirm.",
+  },
 ];
-
