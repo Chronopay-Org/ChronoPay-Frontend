@@ -13,6 +13,7 @@ import {
   Undo2,
   X,
   XCircle,
+  AlertOctagon,
 } from "lucide-react";
 import clsx from "clsx";
 import type { ToastItem, ToastVariant } from "@/hooks/use-toast";
@@ -24,14 +25,16 @@ const variantConfig: Record<ToastVariant, {
   titleClass: string;
   badgeClass: string;
   actionClass: string;
+  closeClass: string;
   ringColor: string;
   role: "status" | "alert";
   ariaLive: "polite" | "assertive";
 }> = {
-  success: { icon: CheckCircle2, iconClass: "text-emerald-400", containerClass: "border-emerald-400/25 bg-emerald-950/85 shadow-[0_8px_32px_rgba(52,211,153,0.12)]", titleClass: "text-emerald-100", badgeClass: "bg-emerald-400/20 text-emerald-300", actionClass: "text-emerald-200 hover:bg-emerald-400/15 focus-visible:ring-emerald-300", ringColor: "#34d399", role: "status", ariaLive: "polite" },
-  info: { icon: Info, iconClass: "text-cyan-400", containerClass: "border-cyan-400/25 bg-cyan-950/85 shadow-[0_8px_32px_rgba(34,211,238,0.12)]", titleClass: "text-cyan-100", badgeClass: "bg-cyan-400/20 text-cyan-300", actionClass: "text-cyan-200 hover:bg-cyan-400/15 focus-visible:ring-cyan-300", ringColor: "#22d3ee", role: "status", ariaLive: "polite" },
-  warning: { icon: AlertTriangle, iconClass: "text-amber-400", containerClass: "border-amber-400/25 bg-amber-950/85 shadow-[0_8px_32px_rgba(245,158,11,0.12)]", titleClass: "text-amber-100", badgeClass: "bg-amber-400/20 text-amber-300", actionClass: "text-amber-200 hover:bg-amber-400/15 focus-visible:ring-amber-300", ringColor: "#f59e0b", role: "alert", ariaLive: "assertive" },
-  error: { icon: XCircle, iconClass: "text-rose-400", containerClass: "border-rose-400/25 bg-rose-950/85 shadow-[0_8px_32px_rgba(248,113,113,0.12)]", titleClass: "text-rose-100", badgeClass: "bg-rose-400/20 text-rose-300", actionClass: "text-rose-200 hover:bg-rose-400/15 focus-visible:ring-rose-300", ringColor: "#fb7185", role: "alert", ariaLive: "assertive" },
+  success: { icon: CheckCircle2, iconClass: "text-emerald-400", containerClass: "border-emerald-400/25 bg-emerald-950/85 shadow-[0_8px_32px_rgba(52,211,153,0.12)]", titleClass: "text-emerald-100", badgeClass: "bg-emerald-400/20 text-emerald-300", actionClass: "text-emerald-200 hover:bg-emerald-400/15 focus-visible:ring-emerald-300", closeClass: "text-slate-400 hover:text-slate-300 focus-visible:ring-emerald-400", ringColor: "#34d399", role: "status", ariaLive: "polite" },
+  info: { icon: Info, iconClass: "text-cyan-400", containerClass: "border-cyan-400/25 bg-cyan-950/85 shadow-[0_8px_32px_rgba(34,211,238,0.12)]", titleClass: "text-cyan-100", badgeClass: "bg-cyan-400/20 text-cyan-300", actionClass: "text-cyan-200 hover:bg-cyan-400/15 focus-visible:ring-cyan-300", closeClass: "text-slate-400 hover:text-slate-300 focus-visible:ring-cyan-400", ringColor: "#22d3ee", role: "status", ariaLive: "polite" },
+  warning: { icon: AlertTriangle, iconClass: "text-amber-400", containerClass: "border-amber-400/25 bg-amber-950/85 shadow-[0_8px_32px_rgba(245,158,11,0.12)]", titleClass: "text-amber-100", badgeClass: "bg-amber-400/20 text-amber-300", actionClass: "text-amber-200 hover:bg-amber-400/15 focus-visible:ring-amber-300", closeClass: "text-slate-400 hover:text-slate-300 focus-visible:ring-amber-400", ringColor: "#f59e0b", role: "alert", ariaLive: "assertive" },
+  error: { icon: XCircle, iconClass: "text-rose-400", containerClass: "border-rose-400/25 bg-rose-950/85 shadow-[0_8px_32px_rgba(248,113,113,0.12)]", titleClass: "text-rose-100", badgeClass: "bg-rose-400/20 text-rose-300", actionClass: "text-rose-200 hover:bg-rose-400/15 focus-visible:ring-rose-300", closeClass: "text-slate-400 hover:text-slate-300 focus-visible:ring-rose-400", ringColor: "#fb7185", role: "alert", ariaLive: "assertive" },
+  critical: { icon: AlertOctagon, iconClass: "text-red-500 animate-pulse", containerClass: "border-red-500/50 bg-red-950 shadow-[0_8px_32px_rgba(239,68,68,0.25)]", titleClass: "text-red-50 font-bold", badgeClass: "bg-red-500/30 text-red-200", actionClass: "text-red-200 hover:bg-red-500/20 focus-visible:ring-red-400", closeClass: "text-red-300 hover:text-red-200 focus-visible:ring-red-400", ringColor: "#ef4444", role: "alert", ariaLive: "assertive" },
 };
 
 const motionVariants = {
@@ -64,7 +67,9 @@ function CountdownRing({ progress, color, reducedMotion }: { progress: number; c
 interface ToastProps { toast: ToastItem; onDismiss: (id: string) => void; }
 
 export function Toast({ toast, onDismiss }: ToastProps) {
-  const { id, variant, title, description, duration = 5000, count, messages, category, onUndo } = toast;
+  const { id, variant, title, description, count, messages, category, onUndo } = toast;
+  const isCritical = variant === "critical";
+  const duration = toast.duration ?? (isCritical ? 0 : 5000);
   const config = variantConfig[variant];
   const Icon = config.icon;
   const isGrouped = count > 1;
@@ -145,8 +150,8 @@ export function Toast({ toast, onDismiss }: ToastProps) {
             {duration > 0 && <span role="img" aria-label={`${Math.ceil(remaining / 1000)} seconds remaining`}><CountdownRing progress={Math.max(0, Math.min(1, remaining / duration))} color={config.ringColor} reducedMotion={reducedMotion} /></span>}
             <button type="button" onClick={handleUndo} aria-label="Undo (Ctrl+Z)" className={clsx("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent", config.actionClass)}><Undo2 className="h-3 w-3" aria-hidden="true" />Undo</button>
           </div>}
-          {isGrouped && <button type="button" aria-expanded={expanded} aria-controls={panelId} aria-label={expanded ? "Collapse notifications" : "Expand notifications"} onClick={() => setExpanded((value) => !value)} className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">{expanded ? <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />}</button>}
-          <button type="button" onClick={() => onDismiss(id)} aria-label={`Dismiss: ${title}`} className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"><X className="h-3.5 w-3.5" aria-hidden="true" /></button>
+          {isGrouped && <button type="button" aria-expanded={expanded} aria-controls={panelId} aria-label={expanded ? "Collapse notifications" : "Expand notifications"} onClick={() => setExpanded((value) => !value)} className={clsx("inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2", config.closeClass)}>{expanded ? <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />}</button>}
+          <button type="button" onClick={() => onDismiss(id)} aria-label={`Dismiss: ${title}`} className={clsx("inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2", config.closeClass)}><X className="h-3.5 w-3.5" aria-hidden="true" /></button>
         </div>
         <AnimatePresence initial={false}>{isGrouped && expanded && <motion.div id={panelId} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden"><ul role="list" aria-label={`${count} ${category ?? variant} notifications`} className="px-4 pb-3">{messages.map((message) => <li key={message.id} className="flex justify-between gap-2 border-t border-white/5 py-2"><span className="text-sm text-slate-200">{message.title}</span><time className="shrink-0 text-xs text-slate-500" dateTime={new Date(message.timestamp).toISOString()}>{relativeTime(message.timestamp)}</time></li>)}</ul></motion.div>}</AnimatePresence>
       </div>

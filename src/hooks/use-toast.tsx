@@ -31,7 +31,7 @@ import type { ReactNode } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ToastVariant = "success" | "info" | "warning" | "error";
+export type ToastVariant = "success" | "info" | "warning" | "error" | "critical";
 
 /** A single toast message as passed by the caller. */
 export interface ToastInput {
