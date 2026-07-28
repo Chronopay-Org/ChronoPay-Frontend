@@ -105,6 +105,46 @@ toast({
 The timer **pauses** while the user hovers over or focuses inside the toast,
 giving them time to read or copy error details.
 
+## Undo affordance
+
+For a reversible action, pass an `onUndo` callback. The toast adds a visible
+countdown ring and an **Undo** button. The ring drains over the toast duration,
+then freezes whenever the toast is hovered, focused, or an expanded group is
+being read. Persistent toasts (`duration: 0`) retain the Undo button without a
+countdown.
+
+```tsx
+toast({
+  variant: "success",
+  title: "Slot deleted",
+  duration: 5000,
+  onUndo: () => restoreSlot(slotId),
+});
+```
+
+While focus is inside that toast, <kbd>Ctrl</kbd>+<kbd>Z</kbd> (or
+<kbd>⌘</kbd>+<kbd>Z</kbd>) invokes Undo. Limiting the shortcut to the focused
+toast avoids intercepting native undo in forms and content-editable fields.
+The Undo button's accessible name includes the shortcut, the countdown has an
+updated remaining-time label, and a separate polite live region announces both
+availability and a successful undo. The SVG itself is hidden from assistive
+technology. The countdown is static when reduced motion is requested.
+
+### Accessibility and review notes
+
+- Keyboard: tab to **Undo**, then use Enter/Space or Ctrl/Cmd+Z; focus remains
+  visible on every action.
+- Screen readers: verify the availability announcement follows the toast
+  announcement and that successful undo is announced before dismissal.
+- Responsive/RTL: the action row uses flex sizing and logical content flow, so
+  the ring and controls stay usable at the mobile `max-w-sm` viewport and in
+  right-to-left documents.
+- Dark mode: ring colors reuse the existing variant tokens and maintain the
+  established dark-surface contrast.
+- Automated accessibility: run the component through axe in the application
+  harness; expected result is no WCAG 2.1 AA violations for the idle, focused,
+  paused, and grouped states.
+
 ---
 
 ## Reduced-Motion Behaviour
