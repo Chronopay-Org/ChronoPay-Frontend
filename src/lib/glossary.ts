@@ -122,4 +122,24 @@ export const glossary = {
     learnMoreHref: "https://stellar.org",
     learnMoreLabel: "Learn about Stellar →",
   },
+
+  /**
+   * Holiday hints: upcoming public holidays surfaced to help suppliers plan availability.
+   */
+  holidayHints: {
+    title: "Holiday hints",
+    body: "ChronoPay surfaces upcoming public holidays for your region so you can plan ahead. Use the quick actions to block these days and avoid accidental bookings when you're unavailable.",
+    learnMoreHref: "/docs/glossary#holiday-hints",
+    learnMoreLabel: "Learn more about holiday hints →",
+  },
+
+  /**
+   * Region-based holidays: holidays vary by country and region.
+   */
+  regionHolidays: {
+    title: "Regional holidays",
+    body: "Public holidays shown are based on your supplier profile's region setting. Update your region in Settings to see holidays relevant to your location.",
+    learnMoreHref: "/docs/glossary#region-holidays",
+    learnMoreLabel: "Learn more about region settings →",
+  },
 } satisfies Record<string, GlossaryTerm>;

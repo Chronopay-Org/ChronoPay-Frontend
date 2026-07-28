@@ -4,9 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
+import { ResumedBadge } from "@/app/components/ui/resumed-badge";
+import { EmptyStateCard } from "@/app/components/empty-state-card";
 import { glossary } from "@/lib/glossary";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
+import { StatusChip } from "./status-chip";
+import { SocialProofBadges } from "./social-proof-badges";
+import { SampleBadge } from "./sample-badge";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
+import { useToast } from "@/hooks/use-toast";
 
 type SlotListProps = {
   slots: Slot[];
@@ -53,6 +60,13 @@ export const SlotList = ({ slots, suggestedAlternatives }: SlotListProps) => {
       event.preventDefault();
       setFocusedAlternativeIndex(index - 1);
     }
+  };
+
+  const counts = {
+    anytime: slots.length,
+    morning: slots.filter(s => getTimeOfDay(s.timeRange) === "morning").length,
+    afternoon: slots.filter(s => getTimeOfDay(s.timeRange) === "afternoon").length,
+    evening: slots.filter(s => getTimeOfDay(s.timeRange) === "evening").length,
   };
 
   return (
