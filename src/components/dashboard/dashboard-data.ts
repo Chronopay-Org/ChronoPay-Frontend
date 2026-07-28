@@ -4,9 +4,9 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
   CalendarSyncProvider,
   CalendarDefinition,
+  RatingCriterion,
 } from "./types";
 import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
@@ -130,6 +130,7 @@ export const slots: Slot[] = [
     rate: "120 XLM / hr",
     status: "Healthy",
     isNextAvailable: true,
+    mintedAt: new Date().toISOString(),
     isSample: true,
     badges: [
       { type: "topRated", ...BADGE_PRESETS.topRated },
@@ -338,8 +339,56 @@ export const suppliers: Supplier[] = [
   },
 ];
 
-export const bookingStages = [
-  { label: "Created", value: 12 },
-  { label: "In Escrow", value: 8 },
-  { label: "Completed", value: 24 },
+/** Sample per-criterion rating breakdown for supplier profiles. */
+export const ratingBreakdown: RatingCriterion[] = [
+  {
+    id: "communication",
+    label: "Communication",
+    average: 4.8,
+    count: 42,
+    colorClass: "bg-teal-400",
+  },
+  {
+    id: "expertise",
+    label: "Expertise",
+    average: 4.6,
+    count: 41,
+    colorClass: "bg-cyan-400",
+  },
+  {
+    id: "timeliness",
+    label: "Timeliness",
+    average: 4.3,
+    count: 40,
+    colorClass: "bg-sky-400",
+  },
+  {
+    id: "value",
+    label: "Value",
+    average: 4.5,
+    count: 38,
+    colorClass: "bg-blue-400",
+  },
+  {
+    id: "clarity",
+    label: "Clarity",
+    average: 4.7,
+    count: 39,
+    colorClass: "bg-indigo-400",
+  },
 ];
+
+export const reviewSentimentCounts = {
+  positive: 48,
+  mixed: 17,
+  critical: 9,
+};
+
+export const reviewSentimentTrend = [
+  { timestamp: "2026-07-01", positive: 5, mixed: 2, critical: 1 },
+  { timestamp: "2026-07-08", positive: 12, mixed: 4, critical: 2 },
+  { timestamp: "2026-07-15", positive: 20, mixed: 6, critical: 3 },
+  { timestamp: "2026-07-22", positive: 35, mixed: 11, critical: 6 },
+  { timestamp: "2026-07-28", positive: 48, mixed: 17, critical: 9 },
+];
+

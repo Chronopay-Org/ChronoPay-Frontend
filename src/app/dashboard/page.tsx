@@ -4,20 +4,30 @@ import { DashboardShell } from "../components/dashboard-shell";
 import {
   BookingProgress,
   MetricCard,
+  OnboardingWidget,
   OnboardingWalkthrough,
   PanelShell,
+  PricingCalculator,
   QuickActions,
+  RatingBreakdownBars,
   SlotList,
   WalletCard,
   bookingStages,
   metrics,
   quickActions,
+  ratingBreakdown,
   slots,
   wallet,
 } from "@/components/dashboard";
-import { ReviewsPanel } from "@/components/dashboard/reviews-panel";
+import { KycStatusTimeline } from "@/components/dashboard/kyc-status-timeline";
+import { kycTimelineEntries, kycPromptPanel } from "@/components/dashboard/kyc-status-timeline";
+import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
+import {
+  NetworkProvider,
+  NetworkSelector,
+} from "@/components/checkout/NetworkSelector";
 
 // ─── Simulated async time-token actions ───────────────────────────────────────
 
@@ -39,8 +49,6 @@ async function simulateEscrowRelease() {
   if (Math.random() < 0.3)
     throw new Error("Escrow release rejected by contract");
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const loading = false;
@@ -97,6 +105,7 @@ export default function Dashboard() {
 
   return (
     <DashboardShell>
+      <NetworkProvider>
       <div className="space-y-6 sm:space-y-8 md:space-y-10">
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
@@ -120,7 +129,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Onboarding */}
+{/* Onboarding */}
         <OnboardingWidget />
 
         {/* Metrics */}
@@ -144,7 +153,10 @@ export default function Dashboard() {
 
         {/* Wallet and Booking Progress */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <PanelShell title="Wallet">
+          <PanelShell
+            title="Wallet"
+            action={<NetworkSelector compact />}
+          >
             <WalletCard
               wallet={
                 showSamples
@@ -163,6 +175,28 @@ export default function Dashboard() {
           </PanelShell>
         </div>
 
+        {/* Rating Breakdown */}
+        {showSamples && (
+          <PanelShell
+            title="Rating Breakdown"
+            description="Per-criterion average ratings across your recent reviews."
+          >
+            <RatingBreakdownBars
+              criteria={ratingBreakdown}
+              overallRating={4.6}
+              overallCount={42}
+            />
+          </PanelShell>
+        )}
+
+        {/* Pricing Fee Calculator */}
+        <PanelShell
+          title="Fee Calculator"
+          description="Estimate your take-home earnings after platform and network fees."
+        >
+          <PricingCalculator />
+        </PanelShell>
+
         <PanelShell id="quick-actions" title="Quick Actions">
           <QuickActions actions={quickActions} />
         </PanelShell>
@@ -175,6 +209,7 @@ export default function Dashboard() {
         </PanelShell>
 
       </div>
+      </NetworkProvider>
 
       <OnboardingWalkthrough
         key={showTour ? "tour-open" : "tour-closed"}

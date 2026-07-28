@@ -50,7 +50,19 @@ export function FocusTrap({ children }: { children: React.ReactNode }) {
     first()?.focus();
     return () => {
       container?.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused.current?.focus();
+      const toFocus = previouslyFocused.current;
+      if (toFocus && document.body.contains(toFocus)) {
+        toFocus.focus();
+      } else {
+        // Fallback to nearest logical anchor if triggering element was deleted
+        const fallback = document.querySelector<HTMLElement>("[data-focus-fallback]") || document.querySelector<HTMLElement>("main") || document.body;
+        if (fallback) {
+          if (fallback.tabIndex === -1 && !fallback.hasAttribute('tabindex')) {
+            fallback.setAttribute('tabindex', '-1');
+          }
+          fallback.focus({ preventScroll: true });
+        }
+      }
     };
   }, []);
 

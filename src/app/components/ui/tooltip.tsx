@@ -5,6 +5,7 @@ import {
   useState,
   useRef,
   useEffect,
+  useCallback,
   useId,
   KeyboardEvent as ReactKeyboardEvent,
   FocusEvent as ReactFocusEvent,
@@ -27,19 +28,48 @@ export interface TooltipProps {
   variant?: "standard" | "longform";
   /** Optional explicit interactive override for mouse hover-intent */
   interactive?: boolean;
+  /** Optional class name to override the default trigger button styles */
+  triggerClassName?: string;
 }
 
-type Placement = "top" | "bottom";
-
-/** Measure collision and return the preferred placement. */
+/** Measure collision and return the preferred position. */
 function computePlacement(
   triggerEl: HTMLElement,
   tooltipEl: HTMLDivElement,
   margin = 8,
-): Placement {
+): Position {
   const triggerRect = triggerEl.getBoundingClientRect();
   const tooltipRect = tooltipEl.getBoundingClientRect();
-  return triggerRect.top - tooltipRect.height - margin > 0 ? "top" : "bottom";
+  const resolvedSide = triggerRect.top - tooltipRect.height - margin > 0 ? "top" : "bottom";
+  const top = resolvedSide === "bottom"
+    ? triggerRect.bottom + margin
+    : triggerRect.top - tooltipRect.height - margin;
+  const left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
+  return { top, left, resolvedSide };
+}
+
+type Position = { top: number; left: number; resolvedSide: string };
+
+function computePosition(
+  triggerRect: DOMRect,
+  tooltipRect: DOMRect,
+  preferredSide: string,
+  _align: string,
+  offset: number,
+  _viewportPadding: number,
+): Position {
+  const spaceAbove = triggerRect.top - offset;
+  const spaceBelow = window.innerHeight - triggerRect.bottom - offset;
+  const fitsAbove = spaceAbove >= tooltipRect.height;
+  const fitsBelow = spaceBelow >= tooltipRect.height;
+  const resolvedSide = preferredSide === "bottom"
+    ? (fitsBelow ? "bottom" : "top")
+    : (fitsAbove ? "top" : "bottom");
+  const top = resolvedSide === "bottom"
+    ? triggerRect.bottom + offset
+    : triggerRect.top - tooltipRect.height - offset;
+  const left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
+  return { top, left, resolvedSide };
 }
 
 export function Tooltip({
@@ -50,12 +80,13 @@ export function Tooltip({
   className = "",
   variant = "standard",
   interactive,
+  triggerClassName,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState<Position>({
     top: 0,
     left: 0,
-    resolvedSide: preferredSide,
+    resolvedSide: "bottom",
   });
 
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -66,14 +97,14 @@ export function Tooltip({
   const isLongform = variant === "longform";
   const isInteractive = interactive ?? isLongform;
 
-  const updatePlacement = () => {
+  const updatePlacement = useCallback(() => {
     if (!triggerRef.current || !tooltipRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
     setPosition(
-      computePosition(triggerRect, tooltipRect, preferredSide, align, offset, viewportPadding),
+      computePosition(triggerRect, tooltipRect, "bottom", "center", 8, 8),
     );
-  }, [preferredSide, align, offset, viewportPadding]);
+  }, []);
 
   const clearHideTimeout = () => {
     if (hideTimeoutRef.current) {
@@ -87,7 +118,7 @@ export function Tooltip({
     setIsVisible(true);
     requestAnimationFrame(() => {
       if (triggerRef.current && tooltipRef.current) {
-        setPlacement(computePlacement(triggerRef.current, tooltipRef.current));
+        setPosition(computePlacement(triggerRef.current, tooltipRef.current));
       }
     });
   };
@@ -212,10 +243,11 @@ export function Tooltip({
   }, [isVisible, hideTooltip]);
 
   // Styling helpers
-  const tooltipBaseClasses =
-    "elevation-2 absolute z-50 max-w-xs px-3 py-2 text-sm text-white bg-zinc-800 border border-zinc-600 rounded-lg transition-opacity duration-150";
+  const tooltipBaseClasses = isLongform
+    ? "elevation-2 absolute z-50 max-w-sm px-4 py-3 text-sm text-white bg-zinc-800 border border-zinc-600 rounded-lg transition-opacity duration-150"
+    : "elevation-2 absolute z-50 max-w-xs px-3 py-2 text-sm text-white bg-zinc-800 border border-zinc-600 rounded-lg transition-opacity duration-150";
   const placementClasses =
-    placement === "top"
+    position.resolvedSide === "top"
       ? "bottom-full mb-2 left-1/2 -translate-x-1/2"
       : "top-full mt-2 left-1/2 -translate-x-1/2";
 
@@ -224,7 +256,7 @@ export function Tooltip({
       <button
         ref={triggerRef}
         type="button"
-        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-zinc-700 hover:bg-zinc-600 focus:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"
+        className={triggerClassName ?? "inline-flex items-center justify-center w-8 h-8 rounded-full bg-zinc-700 hover:bg-zinc-600 focus:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"}
         onMouseEnter={handleTriggerMouseEnter}
         onMouseLeave={handleTriggerMouseLeave}
         onFocus={showTooltip}
@@ -256,7 +288,7 @@ export function Tooltip({
           {/* Smart arrow */}
           <div
             className={`absolute w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${
-              placement === "top"
+              position.resolvedSide === "top"
                 ? `-bottom-1 left-1/2 -translate-x-1/2 ${
                     isLongform ? "border-t-zinc-900" : "border-t-zinc-800"
                   }`

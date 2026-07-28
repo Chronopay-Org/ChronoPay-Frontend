@@ -10,7 +10,11 @@ export type Slot = {
   demand: string;
   rate: string;
   status: AvailabilityLevel;
+  /** Duration in minutes for this slot (used by duration filter chips) */
+  durationMinutes?: number;
   isNextAvailable?: boolean;
+  /** ISO 8601 string of when the slot was created */
+  mintedAt?: string;
   /** When true, row is demo/onboarding content and must show a Sample badge. */
   isSample?: boolean;
   badges?: SocialProofBadgeEntry[];
@@ -31,6 +35,9 @@ export type Metric = {
   tone: Tone;
   breakdown?: EarningsSegment[];
 };
+
+export type DraftStatus = "saved" | "saving" | "offline";
+export type AutosaveStatus = "saving" | "saved" | "offline" | "error";
 
 export type BookingStage = {
   label: string;
@@ -112,4 +119,50 @@ export type OfflineQueueConnectionState = "online" | "offline" | "reconnecting";
 export type OfflineQueueState = {
   connection: OfflineQueueConnectionState;
   queue: QueuedAction[];
+};
+
+export type RefundDestination = "wallet" | "card";
+
+export type RefundDestinationOption = {
+  id: RefundDestination;
+  label: string;
+  description: string;
+  eta: string;
+  fee: string;
+  icon: string;
+  recommended?: boolean;
+  badge?: string;
+};
+
+export type RefundDestinationSubmission = {
+  destination: RefundDestination;
+  option: RefundDestinationOption;
+};
+
+/** A single criterion in a rating breakdown (e.g. Communication, Expertise). */
+export type RatingCriterion = {
+  id: string;
+  /** Short human-readable label such as "Communication" */
+  label: string;
+  /** Average score on a 1–5 scale */
+  average: number;
+  /** Number of reviews used to compute this average */
+  count: number;
+  /** Sequential-palette bar colour class, e.g. "bg-cyan-500" */
+  colorClass: string;
+};
+
+export type SentimentBucket = "all" | "positive" | "mixed" | "critical";
+
+export type SentimentCounts = {
+  positive: number;
+  mixed: number;
+  critical: number;
+};
+
+export type SentimentDataPoint = {
+  timestamp: string;
+  positive: number;
+  mixed: number;
+  critical: number;
 };
