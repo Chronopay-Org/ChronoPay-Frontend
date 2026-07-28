@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { SlotList } from "./slot-list";
 import type { Slot } from "./types";
+import type { AvailabilityConflict } from "./availability-conflict-detector";
 
 const suggestedAlternatives: Slot[] = [
   {
@@ -36,7 +37,33 @@ const slots: Slot[] = [
   },
 ];
 
+const testConflicts: AvailabilityConflict[] = [
+  {
+    id: "test-conflict-1",
+    incomingBlockTitle: "Overlap Block Alpha",
+    incomingTimeRange: "Tue, 10:15 - 11:15 UTC",
+    collidingSlotId: "slot-main-1",
+    collidingTitle: "Product strategy call",
+    collidingTimeRange: "Tue, 10:00 - 11:30 UTC",
+    conflictType: "booking_overlap",
+    severity: "critical",
+    description: "Overlaps with Product strategy call.",
+    suggestedShiftTimeRange: "Tue, 11:30 - 12:30 UTC",
+    suggestedSplitRanges: [],
+    affectedSlotId: "slot-main-1",
+  },
+];
+
 describe("SlotList", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
   it("renders a suggested alternatives carousel when alternatives exist", () => {
     render(
       <SlotList slots={slots} suggestedAlternatives={suggestedAlternatives} />,

@@ -8,27 +8,28 @@ const locales = [
   { code: "fr", label: "Français", dir: "ltr" },
   { code: "de", label: "Deutsch", dir: "ltr" },
   { code: "ar", label: "العربية", dir: "rtl" },
+  { code: "he", label: "עברית", dir: "rtl" },
   { code: "hi", label: "हिन्दी", dir: "ltr" },
 ];
 
 export default function LocalePicker() {
-  const [locale, setLocale] = useState("en");
-
-  useEffect(() => {
-    const saved = document.cookie
-      .split("; ")
-      .find((c) => c.startsWith("locale="));
-
-    if (saved) {
-      const value = saved.split("=")[1];
-      setLocale(value);
-
-      const current = locales.find((l) => l.code === value);
-
-      document.documentElement.lang = value;
-      document.documentElement.dir = current?.dir ?? "ltr";
+  const [locale, setLocale] = useState(() => {
+    try {
+      const saved = document.cookie
+        .split("; ")
+        .find((c) => c.startsWith("locale="));
+      if (saved) {
+        const value = saved.split("=")[1];
+        const current = locales.find((l) => l.code === value);
+        document.documentElement.lang = value;
+        document.documentElement.dir = current?.dir ?? "ltr";
+        return value;
+      }
+    } catch {
+      // cookie may be unavailable
     }
-  }, []);
+    return "en";
+  });
 
   function changeLocale(value: string) {
     setLocale(value);

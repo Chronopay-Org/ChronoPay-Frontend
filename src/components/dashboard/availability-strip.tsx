@@ -5,6 +5,7 @@ import { StatusChip } from "./status-chip";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import clsx from "clsx";
+import { BidiIsolate, isRTL } from "@/utils/bidi";
 
 export type DayAvailability = {
   date: Date;
@@ -18,6 +19,8 @@ interface AvailabilityStripProps {
   days: DayAvailability[];
   onBook?: (date: Date) => void;
   className?: string;
+  /** UI locale for bidi-aware date rendering. */
+  locale?: string;
 }
 
 const statusClasses: Record<DayAvailability["status"], string> = {
@@ -38,6 +41,7 @@ export function AvailabilityStrip({
   days,
   onBook,
   className = "",
+  locale = "en",
 }: AvailabilityStripProps) {
   const [startIndex, setStartIndex] = useState(0);
   const visibleDays = 7;
@@ -65,6 +69,7 @@ export function AvailabilityStrip({
   };
 
   const visibleDaysData = days.slice(startIndex, startIndex + visibleDays);
+  const rtl = isRTL(locale);
 
   if (days.length === 0) {
     return (
@@ -83,6 +88,7 @@ export function AvailabilityStrip({
     <section
       className={clsx("rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5", className)}
       aria-label="7-day availability preview"
+      dir={rtl ? "rtl" : "ltr"}
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">
@@ -103,7 +109,7 @@ export function AvailabilityStrip({
             aria-disabled={!canScrollLeft}
             tabIndex={canScrollLeft ? 0 : -1}
           >
-            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+            {rtl ? <ChevronRight className="h-5 w-5" aria-hidden="true" /> : <ChevronLeft className="h-5 w-5" aria-hidden="true" />}
           </button>
           <button
             onClick={handleScrollRight}
@@ -119,7 +125,7 @@ export function AvailabilityStrip({
             aria-disabled={!canScrollRight}
             tabIndex={canScrollRight ? 0 : -1}
           >
-            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+            {rtl ? <ChevronLeft className="h-5 w-5" aria-hidden="true" /> : <ChevronRight className="h-5 w-5" aria-hidden="true" />}
           </button>
         </div>
       </div>
@@ -146,10 +152,10 @@ export function AvailabilityStrip({
                   id={`${dayId}-label`}
                   className="text-xs font-semibold uppercase tracking-wider text-slate-400"
                 >
-                  {day.dayName}
+                  <BidiIsolate locale={locale}>{day.dayName}</BidiIsolate>
                 </p>
                 <p className="mt-1 text-sm font-medium text-white">
-                  {day.dateLabel}
+                  <BidiIsolate locale={locale}>{day.dateLabel}</BidiIsolate>
                 </p>
               </div>
 
