@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { useReducedMotion } from "framer-motion";
-import { HeaderSearch } from "@/app/components/header-search";
 import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
+import { HeaderSearch } from "@/app/components/header-search";
+import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 
 // ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
 // Icons come from the NavItem definition in role-nav.ts and are displayed with
