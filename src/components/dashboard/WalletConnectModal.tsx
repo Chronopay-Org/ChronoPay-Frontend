@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { FocusTrap } from '@/components/common/FocusTrap';
 import { LiveRegion } from '@/components/common/LiveRegion';
 import { StatusChip } from '@/components/dashboard/status-chip';
-import { Spinner } from '@/app/components/ui/spinner'; // Assume a simple spinner component exists
+import { Spinner } from '@/app/components/ui/spinner';
 
 export type WalletProvider = {
   id: string;
@@ -14,32 +14,21 @@ export type WalletProvider = {
 
 type ConnectionStatus = 'idle' | 'pending' | 'success' | 'error';
 
+type ConnectionMethod = 'wallet' | 'email';
+
 interface WalletConnectModalProps {
-  /** Whether the modal is visible */
   isOpen: boolean;
-  /** Called to close the modal */
   onClose: () => void;
-  /** List of available wallet providers */
   providers: WalletProvider[];
-  /** Currently selected provider (optional) */
-  selectedProviderId?: string;
-  /** Current connection status */
   status: ConnectionStatus;
-  /** Error message when status === 'error' */
   errorMessage?: string;
-  /** Called when the user selects a provider to start connecting */
   onConnect: (providerId: string) => void;
-  /** Called when user retries after an error */
   onRetry?: () => void;
+  onEmailSubmit?: (email: string) => void;
 }
 
-/**
- * WalletConnectModal
- *
- * - Accessible modal that traps focus and supports Escape to close.
- * - Announces state changes via a hidden live region.
- * - Shows list of providers, a spinner while pending, success chip, and error UI with retry.
- */
+const LOCAL_STORAGE_KEY = 'chronopay-preferred-connection-method';
+
 export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   isOpen,
   onClose,
@@ -48,6 +37,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   errorMessage,
   onConnect,
   onRetry,
+  onEmailSubmit,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [selectedCaps, setSelectedCaps] = useState<string[]>([]);
@@ -71,7 +61,6 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     );
   }, [providers, selectedCaps]);
 
-  // Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -84,19 +73,33 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
-  // Focus first actionable element when opened
   useEffect(() => {
     if (isOpen && modalRef.current) {
-      const firstButton = modalRef.current.querySelector('button, [tabindex]') as HTMLElement;
+      const firstButton = modalRef.current.querySelector('button, input') as HTMLElement;
       firstButton?.focus();
     }
-  }, [isOpen]);
+  }, [isOpen, selectedMethod]);
+
+  const emailValid = useMemo(() => /
+    ^[^\s@]+@[^\s@]+\.[^\s@]+$
+  /.test(email), [email]);
+
+  const selectMethod = (method: ConnectionMethod) => {
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, method);
+    setSelectedMethod(method);
+  };
+
+  const handleEmailSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!emailValid) return;
+    onEmailSubmit?.(email);
+  };
 
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 py-6 sm:px-6"
       aria-modal="true"
       role="dialog"
       aria-labelledby="wallet-connect-title"
@@ -106,11 +109,13 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           ref={modalRef}
           className="relative w-full max-w-2xl rounded-xl bg-white dark:bg-slate-900 p-6 shadow-lg"
         >
-          <h2 id="wallet-connect-title" className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">
-            Connect Your Stellar Wallet
+          <h2 id="wallet-connect-title" className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+            Choose how to connect
           </h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Pick a path that fits your workflow. You can add the other option later.
+          </p>
 
-          {/* Live region for announcements */}
           <LiveRegion>
             {status === 'pending' && 'Connecting to wallet…'}
             {status === 'success' && 'Wallet connected successfully.'}
@@ -200,36 +205,36 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           )}
 
           {status === 'pending' && (
-            <div className="flex flex-col items-center py-8">
+            <div className="mt-6 flex flex-col items-center justify-center gap-4 py-10">
               <Spinner className="h-12 w-12 text-cyan-500" />
-              <p className="mt-4 text-slate-800 dark:text-slate-200">Connecting…</p>
+              <p className="text-sm text-slate-700 dark:text-slate-200">Connecting to your wallet…</p>
             </div>
           )}
 
           {status === 'success' && (
-            <div className="flex flex-col items-center py-8">
+            <div className="mt-6 flex flex-col items-center gap-4 py-10">
               <StatusChip tone="positive">Connected</StatusChip>
+              <p className="text-sm text-slate-700 dark:text-slate-200">Your wallet is ready. You can manage connection preferences in settings.</p>
             </div>
           )}
 
           {status === 'error' && (
-            <div className="flex flex-col items-center py-8 space-y-4">
+            <div className="mt-6 flex flex-col items-center gap-4 py-10">
               <StatusChip tone="critical">Connection issue</StatusChip>
-              <p className="text-sm text-slate-600 dark:text-slate-400">{errorMessage ?? 'Unable to connect.'}</p>
+              <p className="text-sm text-slate-700 dark:text-slate-200">{errorMessage ?? 'Unable to connect.'}</p>
               <button
                 type="button"
                 className="rounded-full bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
                 onClick={onRetry}
               >
-                Retry
+                Retry connection
               </button>
             </div>
           )}
 
-          {/* Close button */}
           <button
             type="button"
-            className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             aria-label="Close modal"
             onClick={onClose}
           >
