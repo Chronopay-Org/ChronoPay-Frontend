@@ -24,22 +24,6 @@ export type QuickAction = {
   icon: string;
 };
 
-export type EarningsSegment = {
-  id: string;
-  label: string;
-  value: number;
-  formattedValue: string;
-  colorClass: string;
-};
-
-export type EarningsSegment = {
-  id: string;
-  label: string;
-  value: number;
-  formattedValue: string;
-  colorClass: string;
-};
-
 export type Metric = {
   label: string;
   value: string;
@@ -88,25 +72,44 @@ export type Supplier = {
   region?: RegionInfo;
 };
 
-/**
- * ServiceItem — a single row in the supplier "Services & Pricing" repeater.
- *
- * Each service represents a bookable offering with its own base price, duration,
- * and description. The `id` is stable across renders so reorders, updates, and
- * deletions correctly target a single row.
- */
-export type ServiceItem = {
+export type CalendarSyncProvider = {
   id: string;
-  title: string;
+  name: string;
+  icon: string;
   description: string;
-  /** Base rate in XLM (Lumens). Decimals are allowed up to 2 places. */
-  basePriceXLM: number;
-  /** Duration of one session in minutes. Must be a positive multiple of 15. */
-  durationMinutes: number;
+  scopes: string[];
 };
 
-/**
- * Draft status surfaced in the supplier onboarding step header.
- * Mirrors the three states listed in `docs/save-resume-drafts-ux.md`.
- */
-export type DraftStatus = "saved" | "saving" | "offline";
+export type CalendarDefinition = {
+  id: string;
+  providerId: string;
+  title: string;
+  description: string;
+  color: string;
+};
+
+export type SyncDirection = "off" | "read" | "write" | "bidirectional";
+
+export type AuthorizationState =
+  | { status: "idle" }
+  | { status: "connecting"; providerId: string }
+  | { status: "authorizing"; providerId: string }
+  | { status: "authorized"; providerId: string; calendars: CalendarDefinition[] }
+  | { status: "denied"; providerId: string; deniedScopes: string[]; error: string };
+
+export type QueuedActionStatus = "pending" | "retrying" | "completed" | "failed";
+
+export type QueuedAction = {
+  id: string;
+  label: string;
+  status: QueuedActionStatus;
+  queuedAt: string;
+  error?: string;
+};
+
+export type OfflineQueueConnectionState = "online" | "offline" | "reconnecting";
+
+export type OfflineQueueState = {
+  connection: OfflineQueueConnectionState;
+  queue: QueuedAction[];
+};
