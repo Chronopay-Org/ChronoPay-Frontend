@@ -7,6 +7,15 @@ import { Filter } from "lucide-react";
 
 interface StatusTimelineProps {
   items: TimelineItem[];
+  /**
+   * When provided, a GraceBanner is rendered above the timeline entries
+   * showing a live countdown until the grace window expires.
+   */
+  graceExpiresAt?: number;
+  /** Called when user clicks "Notify supplier" inside the banner */
+  onNotifySupplier?: () => void;
+  /** Called when the grace window expires */
+  onGraceExpired?: () => void;
 }
 
 export function StatusTimeline({ items }: StatusTimelineProps) {
@@ -193,6 +202,11 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
         >
           {item.actor && <p>Actor: {item.actor}</p>}
           {item.details && <p className="mt-1">{item.details}</p>}
+          {item.id === 'kyc-liveness' && item.status === 'pending' && (
+            <div className="mt-4">
+              <KycLivenessCapture onCaptureComplete={() => {}} />
+            </div>
+          )}
         </div>
       )}
     </li>
