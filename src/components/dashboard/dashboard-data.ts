@@ -4,9 +4,15 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
 } from "./types";
+import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
+
+export const bookingStages = [
+  { label: "Pending review", value: 4 },
+  { label: "Escrow secured", value: 7 },
+  { label: "Completed", value: 12 },
+];
 
 export const metrics: Metric[] = [
   {

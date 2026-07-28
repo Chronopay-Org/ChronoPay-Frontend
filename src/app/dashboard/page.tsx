@@ -14,7 +14,6 @@ import {
   wallet,
   WalletCard,
 } from "@/components/dashboard";
-import { useToast } from "@/hooks/use-toast";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
@@ -35,7 +34,8 @@ async function simulateBuy() {
 async function simulateEscrowRelease() {
   await delay(2200);
   // Simulate a failure ~30% of the time for demo
-  if (Math.random() < 0.3) throw new Error("Escrow release rejected by contract");
+  if (Math.random() < 0.3)
+    throw new Error("Escrow release rejected by contract");
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -49,7 +49,6 @@ export default function Dashboard() {
   void simulateMint;
   void simulateBuy;
   void simulateEscrowRelease;
-  void toast;
 
   if (loading) {
     return (
@@ -84,6 +83,8 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const suggestedAlternatives = slots.slice(0, 3);
 
   return (
     <DashboardShell>
@@ -137,7 +138,10 @@ export default function Dashboard() {
 
         {/* Time Slots */}
         <PanelShell id="available-time-slots" title="Available Time Slots">
-          <SlotList slots={slots} />
+          <SlotList
+            slots={slots}
+            suggestedAlternatives={suggestedAlternatives}
+          />
         </PanelShell>
       </div>
     </DashboardShell>
