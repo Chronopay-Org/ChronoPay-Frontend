@@ -130,6 +130,7 @@ export const slots: Slot[] = [
     rate: "120 XLM / hr",
     status: "Healthy",
     isNextAvailable: true,
+    mintedAt: new Date().toISOString(),
     isSample: true,
     badges: [
       { type: "topRated", ...BADGE_PRESETS.topRated },
@@ -375,5 +376,19 @@ export const ratingBreakdown: RatingCriterion[] = [
     count: 39,
     colorClass: "bg-indigo-400",
   },
+];
+
+export const reviewSentimentCounts = {
+  positive: 48,
+  mixed: 17,
+  critical: 9,
+};
+
+export const reviewSentimentTrend = [
+  { timestamp: "2026-07-01", positive: 5, mixed: 2, critical: 1 },
+  { timestamp: "2026-07-08", positive: 12, mixed: 4, critical: 2 },
+  { timestamp: "2026-07-15", positive: 20, mixed: 6, critical: 3 },
+  { timestamp: "2026-07-22", positive: 35, mixed: 11, critical: 6 },
+  { timestamp: "2026-07-28", positive: 48, mixed: 17, critical: 9 },
 ];
 
