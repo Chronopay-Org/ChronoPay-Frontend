@@ -11,14 +11,15 @@ export interface CardProps extends Omit<HTMLAttributes<HTMLElement>, "children">
   interactive?: boolean;
 }
 
-export function Card({
-  as: Component = "article",
+export function Card<T extends ElementType = "article">({
+  as,
   children,
   className,
   variant = "default",
   interactive = false,
   ...props
-}: CardProps) {
+}: CardProps & ComponentPropsWithoutRef<T>) {
+  const Component = as || "article";
   const cardClassName = clsx(
     "card",
     {

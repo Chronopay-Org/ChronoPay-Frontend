@@ -11,7 +11,7 @@ interface ScrollData {
 export function useScrollRestoration(listId: string) {
   const [restoredItemId, setRestoredItemId] = useState<string | null>(null);
   const containerRef = useRef<HTMLUListElement | HTMLDivElement | null>(null);
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
     try {

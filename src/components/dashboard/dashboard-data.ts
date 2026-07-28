@@ -4,11 +4,8 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
-  SentimentCounts,
-  SentimentDataPoint,
 } from "./types";
-import type { TimelineItem, KycTimelineEntry, KycPromptPanel } from "./timeline-types";
+import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
 import type { DayAvailability } from "./availability-strip";
 
@@ -272,28 +269,8 @@ export const suppliers: Supplier[] = [
   },
 ];
 
-export const generateHighDensitySlots = (count: number = 54): Slot[] => {
-  const statuses: ("Healthy" | "Tight" | "Busy")[] = ["Healthy", "Tight", "Busy"];
-  const startHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
-
-  return Array.from({ length: count }, (_, i) => {
-    const hour = startHours[i % startHours.length];
-    const minuteStart = (i % 4) * 15;
-    const endMinute = minuteStart + 15;
-    const startStr = `${hour.toString().padStart(2, "0")}:${minuteStart.toString().padStart(2, "0")}`;
-    const endStr = `${hour.toString().padStart(2, "0")}:${endMinute.toString().padStart(2, "0")}`;
-    const rate = 80 + (i % 7) * 10;
-
-    return {
-      id: `slot-hd-${i + 1}`,
-      title: `Consulting Session #${i + 1}`,
-      dateLabel: "Tue, Apr 1",
-      timeRange: `${startStr}-${endStr}`,
-      demand: `${(i % 5) + 1} interested buyers`,
-      rate: `${rate} XLM / hr`,
-      status: statuses[i % statuses.length],
-      isNextAvailable: i === 0,
-    };
-  });
-};
-
+export const bookingStages = [
+  { label: "Created", value: 12 },
+  { label: "In Escrow", value: 8 },
+  { label: "Completed", value: 24 },
+];

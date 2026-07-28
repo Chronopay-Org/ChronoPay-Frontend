@@ -2,22 +2,18 @@
 
 import { DashboardShell } from "../components/dashboard-shell";
 import {
-  availabilityDays,
-  AvailabilityStrip,
-  bookingStages,
   BookingProgress,
-  ClearSamplesBanner,
-  metrics,
   MetricCard,
   OnboardingWalkthrough,
   PanelShell,
-  quickActions,
   QuickActions,
-  slots,
   SlotList,
-  wallet,
   WalletCard,
-  OnboardingWidget,
+  bookingStages,
+  metrics,
+  quickActions,
+  slots,
+  wallet,
 } from "@/components/dashboard";
 import { ReviewsPanel } from "@/components/dashboard/reviews-panel";
 import { HelpPopover } from "@/app/components/ui/help-popover";

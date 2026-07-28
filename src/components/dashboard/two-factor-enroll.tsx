@@ -2,24 +2,26 @@
 
 import React, { useState } from 'react';
 
-interface EnrollButtonProps {
+interface ButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
 }
 
-const Button = ({ children, onClick, disabled = false, className = '' }: EnrollButtonProps) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={`w-full py-6 px-6 rounded-2xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${className} ${
-      disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-cyan-500/10 active:bg-cyan-500/20'
-    }`}
-  >
-    {children}
-  </button>
-);
+function Button({ children, onClick, disabled = false, className = '' }: ButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full py-6 px-6 rounded-2xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${className} ${
+        disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-cyan-500/10 active:bg-cyan-500/20'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => void }) {
   const [step, setStep] = useState<'intro' | 'qr' | 'verify' | 'recovery' | 'success'>('intro');
@@ -44,7 +46,6 @@ export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => voi
     URL.revokeObjectURL(url);
   };
 
-
   return (
     <div className="max-w-md mx-auto bg-slate-900 border border-slate-700 rounded-3xl p-8">
       <div className="text-center mb-8">
@@ -54,7 +55,7 @@ export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => voi
 
       {step === 'intro' && (
         <>
-          <p className="helper-text mb-8 text-center">We'll guide you through setting up 2FA using a time-based one-time password app.</p>
+          <p className="helper-text mb-8 text-center">We&apos;ll guide you through setting up 2FA using a time-based one-time password app.</p>
           <Button onClick={() => setStep('qr')} className="bg-cyan-500 hover:bg-cyan-400 text-black">Begin Setup</Button>
         </>
       )}
