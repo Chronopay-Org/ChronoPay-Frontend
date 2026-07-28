@@ -18,6 +18,11 @@ export function DurationChips({
   const [selected, setSelected] = useState<number | null>(initial ?? null);
   const [liveMessage, setLiveMessage] = useState<string>("");
 
+  // Keep internal selection in sync when `initial` changes (e.g. deep links)
+  useEffect(() => {
+    setSelected(initial ?? null);
+  }, [initial]);
+
   useEffect(() => {
     if (onChange) onChange(selected);
     if (selected) {
@@ -35,16 +40,18 @@ export function DurationChips({
       {buttons.map((m) => {
         const count = counts[m] ?? 0;
         const pressed = selected === m;
+        const label = `${m} minute filter — ${count} result${count === 1 ? "" : "s"}`;
         return (
           <button
             key={m}
             type="button"
             aria-pressed={pressed}
+            aria-label={label}
             onClick={() => setSelected(pressed ? null : m)}
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${pressed ? "bg-cyan-600/40 border-cyan-300 text-white" : "bg-white/4 border-white/8 text-slate-200"}`}
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${pressed ? "bg-cyan-600/40 border-cyan-300 text-white" : "bg-white/4 border-white/8 text-slate-200"}`}
           >
-            <span>{m}m</span>
-            <span className="inline-flex items-center justify-center rounded-full bg-white/8 px-2 py-0.5 text-xs font-medium">
+            <span aria-hidden>{m}m</span>
+            <span className="inline-flex items-center justify-center rounded-full bg-white/8 px-2 py-0.5 text-xs font-medium" aria-hidden>
               {count}
             </span>
           </button>
