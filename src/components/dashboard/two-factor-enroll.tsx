@@ -44,7 +44,6 @@ export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => voi
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setStep('success');
   };
 
   return (
