@@ -80,9 +80,10 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     }
   }, [isOpen, selectedMethod]);
 
-  const emailValid = useMemo(() => /
-    ^[^\s@]+@[^\s@]+\.[^\s@]+$
-  /.test(email), [email]);
+  const emailValid = useMemo(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }, [email]);
 
   const selectMethod = (method: ConnectionMethod) => {
     window.localStorage.setItem(LOCAL_STORAGE_KEY, method);
