@@ -2,6 +2,7 @@
 
 import { DashboardShell } from "../components/dashboard-shell";
 import {
+  BookingChecklist,
   BookingProgress,
   MetricCard,
   OnboardingWidget,
@@ -12,6 +13,7 @@ import {
   RatingBreakdownBars,
   SlotList,
   WalletCard,
+  bookingChecklistSteps,
   bookingStages,
   metrics,
   quickActions,
@@ -148,8 +150,8 @@ export default function Dashboard() {
           promptPanel={kycPromptPanel}
         />
 
-        {/* Wallet and Booking Progress */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* Wallet, Booking Progress, and Booking Checklist */}
+        <div className="grid gap-6 lg:grid-cols-3">
           <PanelShell title="Wallet">
             <WalletCard
               wallet={
@@ -167,6 +169,12 @@ export default function Dashboard() {
               stages={showSamples ? bookingStages : []}
             />
           </PanelShell>
+          <BookingChecklist
+            eyebrow="Booking flow"
+            title="Completion checklist"
+            steps={showSamples ? bookingChecklistSteps : []}
+            defaultCollapsed={false}
+          />
         </div>
 
         {/* Rating Breakdown */}

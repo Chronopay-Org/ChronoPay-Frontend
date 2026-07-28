@@ -1,4 +1,5 @@
 export * from "./availability-strip";
+export * from "./booking-checklist";
 export * from "./booking-progress";
 export * from "./cancellation-reason-picker";
 export * from "./clear-samples-banner";
