@@ -24,13 +24,20 @@ export type QuickAction = {
   icon: string;
 };
 
+export type EarningsSegment = {
+  id: string;
+  label: string;
+  value: number;
+  formattedValue: string;
+  colorClass: string;
+};
+
 export type Metric = {
   label: string;
   value: string;
   detail: string;
   tone: Tone;
-  /** When true, metric is demo/onboarding content and must show a Sample badge. */
-  isSample?: boolean;
+  breakdown?: EarningsSegment[];
 };
 
 export type BookingStage = {

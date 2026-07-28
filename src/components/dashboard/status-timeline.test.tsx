@@ -87,12 +87,12 @@ describe("StatusTimeline", () => {
   });
 
   it("expands details when clicked", () => {
-    render(<StatusTimeline items={allItems} />);
+    render(<StatusTimeline items={mockItems} />);
     const buttons = screen.getAllByText("Show Details");
     fireEvent.click(buttons[0]);
-    expect(screen.getByText("Hide Details")).toBeInTheDocument();
-    expect(screen.getByText("Actor: Buyer")).toBeInTheDocument();
-    expect(screen.getByText("Slot reserved for 30 minutes.")).toBeInTheDocument();
+    expect(screen.getAllByText("Hide Details")[0]).toBeInTheDocument();
+    expect(screen.getByText("Actor: Actor 1")).toBeInTheDocument();
+    expect(screen.getByText("Details 1")).toBeInTheDocument();
   });
 
   it("applies aria-current to active step", () => {

@@ -2,8 +2,7 @@
 
 import { useState, useRef, useId } from "react";
 import { TimelineItem, statusToneMap } from "./timeline-types";
-import { StatusChip } from "../../app/components/ui/status-chip";
-import { Filter } from "lucide-react";
+import { StatusChip } from "./status-chip";
 
 interface StatusTimelineProps {
   items: TimelineItem[];
