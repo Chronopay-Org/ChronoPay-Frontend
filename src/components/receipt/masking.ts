@@ -33,3 +33,8 @@ export function buildShareLink(receipt: ReceiptData, origin: string): string {
   });
   return `${origin}/dashboard/slots/${receipt.id}/receipt?${params.toString()}`;
 }
+
+/** Mask a recovery code, replacing characters with bullets if not revealed. */
+export function maskRecoveryCode(code: string, reveal: boolean): string {
+  return reveal ? code : '•'.repeat(code.length);
+}

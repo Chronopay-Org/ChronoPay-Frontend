@@ -111,9 +111,9 @@ export function CopyButton({
         title={isCopied ? "Copied!" : label}
       >
         {isCopied ? (
-          <Check size={iconSize} className="text-emerald-400" aria-hidden="true" />
+          <Check size={iconSize} className="text-emerald-400" aria-hidden={true} />
         ) : (
-          <Copy size={iconSize} aria-hidden="true" />
+          <Copy size={iconSize} aria-hidden={true} />
         )}
         {variant === "text" && (
           <span className={isCopied ? "text-emerald-400" : ""}>{isCopied ? "Copied!" : label}</span>
