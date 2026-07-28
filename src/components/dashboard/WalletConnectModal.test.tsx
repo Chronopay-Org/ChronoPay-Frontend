@@ -1,14 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { WalletConnectModal } from "./WalletConnectModal";
+import React from "react";
 
 const providers = [
-  { id: "freighter", name: "Freighter", icon: <span>F</span> },
-  { id: "albedo", name: "Albedo", icon: <span>A</span> },
+  { id: "freighter", name: "Freighter", icon: <span>F</span>, capabilities: ["sign"] },
+  { id: "albedo", name: "Albedo", icon: <span>A</span>, capabilities: ["sign", "auth"] },
 ];
 
 describe("WalletConnectModal", () => {
-  it("renders wallet and email options on initial state", () => {
+  it("renders idle state with wallet list", () => {
     render(
       <WalletConnectModal
         isOpen
@@ -16,86 +17,53 @@ describe("WalletConnectModal", () => {
         providers={providers}
         status="idle"
         onConnect={vi.fn()}
-        onEmailSubmit={vi.fn()}
-      />,
+      />
     );
-
-    expect(
-      screen.getByRole("heading", { name: /Choose how to connect/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Connect Stellar wallet/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Continue with email/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Choose how to connect/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Connect to Freighter/i })).toBeInTheDocument();
   });
 
-  it("shows wallet provider list after selecting wallet method", () => {
+  it("renders error state with retry and different wallet options", () => {
     render(
       <WalletConnectModal
         isOpen
         onClose={vi.fn()}
         providers={providers}
-        status="idle"
+        status="error"
+        errorMessage="Signature rejected"
         onConnect={vi.fn()}
-        onEmailSubmit={vi.fn()}
-      />,
+        onRetry={vi.fn()}
+      />
     );
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /Connect Stellar wallet/i }),
-    );
-
-    expect(
-      screen.getByRole("button", { name: /Freighter/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Albedo/i })).toBeInTheDocument();
+    expect(screen.getByText("Signature rejected")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Retry/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Different wallet/i })).toBeInTheDocument();
   });
 
-  it("shows email form after selecting email method", () => {
+  it("shows alternative wallet picker when 'Different wallet' is clicked", () => {
+    const onConnect = vi.fn();
     render(
       <WalletConnectModal
         isOpen
         onClose={vi.fn()}
         providers={providers}
-        status="idle"
-        onConnect={vi.fn()}
-        onEmailSubmit={vi.fn()}
-      />,
+        status="error"
+        onConnect={onConnect}
+      />
     );
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /Continue with email/i }),
-    );
-
-    expect(screen.getByLabelText(/Email address/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Send sign-in link/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("submits email when valid", () => {
-    const onEmailSubmit = vi.fn();
-    render(
-      <WalletConnectModal
-        isOpen
-        onClose={vi.fn()}
-        providers={providers}
-        status="idle"
-        onConnect={vi.fn()}
-        onEmailSubmit={onEmailSubmit}
-      />,
-    );
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /Continue with email/i }),
-    );
-    fireEvent.change(screen.getByLabelText(/Email address/i), {
-      target: { value: "user@example.com" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /Send sign-in link/i }));
-
-    expect(onEmailSubmit).toHaveBeenCalledWith("user@example.com");
+    
+    fireEvent.click(screen.getByRole("button", { name: /Different wallet/i }));
+    
+    // The alternative wallet picker should now be visible
+    expect(screen.getByText("Select alternative")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Back to retry/i })).toBeInTheDocument();
+    
+    // The provider list is visible as buttons containing the provider name
+    const freighterBtn = screen.getByText("Freighter").closest("button")!;
+    expect(freighterBtn).toBeInTheDocument();
+    
+    // Clicking alternative connects to that provider
+    fireEvent.click(freighterBtn);
+    expect(onConnect).toHaveBeenCalledWith("freighter");
   });
 });
