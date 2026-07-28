@@ -63,6 +63,16 @@ export default function DesignReviewPage() {
                     keyboard patterns, reference the README or ask for a review.
                   </p>
                 </div>
+                <Link
+                  href="/design-review/focus-trap-tester"
+                  className="p-5 rounded-xl border border-white/5 bg-white/5 space-y-2 block hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                >
+                  <h3 className="font-medium text-slate-200">Focus Trap Tester</h3>
+                  <p>
+                    Open the automated focus trap harness to tab-cycle test every
+                    modal and overlay in the app.
+                  </p>
+                </Link>
               </div>
             </div>
           </div>
