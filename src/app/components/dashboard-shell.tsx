@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { HeaderSearch } from "@/app/components/header-search";
-import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
+import { AccountSwitcher } from "@/app/components/account-switcher";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
@@ -84,6 +84,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 <span>{route.label}</span>
               </Link>
             ))}
+            <AccountSwitcher />
             <ThemeSwitcher />
             <OfflineQueueIndicator />
             <a
