@@ -24,6 +24,15 @@ export default function SettingsPage() {
           <h2 className="text-xl font-semibold text-white pb-4 sm:pb-6">Security</h2>
           <TwoFactorEnroll onComplete={() => window.location.reload()} />
         </div>
+
+        <div className="bg-slate-900 border border-slate-700 rounded-3xl p-10 mt-8">
+          <h2 className="text-2xl font-semibold mb-4">Display density</h2>
+          <p className="text-slate-400 mb-6">
+            Choose how much spacing you want in your dashboard. Your preference
+            is stored locally in your browser and reapplied on every visit.
+          </p>
+          <DensitySwitcher />
+        </div>
       </div>
     </div>
   );

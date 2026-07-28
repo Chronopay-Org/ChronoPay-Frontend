@@ -18,7 +18,7 @@ type EmptyStateIllustrationProps = {
  *     the CSS classes in globals.css, so they are a no-op for reduced-motion users.
  *   - An IntersectionObserver adds `.es-paused` when the element leaves the
  *     viewport, freezing animations and saving GPU resources.
- *   - The element keeps `aria-hidden="true"` — it is purely decorative.
+ *   - The element keeps `aria-hidden={true}` — it is purely decorative.
  */
 export function EmptyStateIllustration({
   accentLabel,
@@ -44,7 +44,7 @@ export function EmptyStateIllustration({
   return (
     <div
       ref={rootRef}
-      aria-hidden="true"
+      aria-hidden={true}
       className={[
         "relative h-36 w-full overflow-hidden rounded-[1.75rem] border border-white/10",
         "bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(6,12,23,0.98))]",

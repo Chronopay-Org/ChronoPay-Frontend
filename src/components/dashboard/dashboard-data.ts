@@ -8,6 +8,7 @@ import type {
   CalendarSyncProvider,
   CalendarDefinition,
 } from "./types";
+import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
 
 export const calendarSyncProviders: CalendarSyncProvider[] = [
