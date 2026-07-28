@@ -27,19 +27,22 @@ export function RecentlyViewedRail() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Load items from localStorage on mount
-  useEffect(() => {
+  // Load items from localStorage via lazy initializer
+  const [items, setItems] = useState<RecentlyViewedItem[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored) as RecentlyViewedItem[];
-        setItems(parsed);
+        return JSON.parse(stored) as RecentlyViewedItem[];
       }
     } catch (error) {
       console.error("Failed to load recently viewed items:", error);
     }
+    return [];
+  });
 
-    // Listen for updates from other components
+  // Subscribe to external custom events — legitimate side effect pattern.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
     const handleUpdate = (e: Event) => {
       const updated = (e as CustomEvent<RecentlyViewedItem[]>).detail;
       setItems(updated);
@@ -49,7 +52,8 @@ export function RecentlyViewedRail() {
     return () => window.removeEventListener("chronopay:recently-viewed-updated", handleUpdate);
   }, []);
 
-  // Save items to localStorage whenever they change
+  // Synchronize React state to localStorage — valid side effect.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));

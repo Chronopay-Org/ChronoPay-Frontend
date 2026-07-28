@@ -58,18 +58,15 @@ interface BottomNavOverflowProps {
 export function BottomNavOverflow({ items, role, className = "" }: BottomNavOverflowProps) {
   const pathname = usePathname();
 
-  // Pin state — initialised from localStorage after mount (SSR safe)
-  const [pinnedHrefs, setPinnedHrefs] = useState<string[]>([]);
+  // Pin state — initialised from localStorage via lazy initializer
+  const [pinnedHrefs, setPinnedHrefs] = useState<string[]>(() =>
+    typeof window !== "undefined" ? readPinnedHrefs(role) : [],
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
 
   // Ref to the "More" trigger so we can restore focus when sheet closes
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
-
-  // ── Hydrate pins from localStorage ──────────────────────────────────────
-  useEffect(() => {
-    setPinnedHrefs(readPinnedHrefs(role));
-  }, [role]);
 
   // ── Sorted full list (pinned items first) ────────────────────────────────
   const sorted = sortNavByPins(items, pinnedHrefs);
