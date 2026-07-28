@@ -1,5 +1,5 @@
 import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
-import { PasswordStrengthMeter } from '@/app/components/password-strength-meter';
+import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sync-connect';
 
 export default function SettingsPage() {
   return (
