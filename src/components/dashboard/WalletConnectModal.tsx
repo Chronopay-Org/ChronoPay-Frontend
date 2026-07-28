@@ -41,9 +41,27 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [selectedCaps, setSelectedCaps] = useState<string[]>([]);
-  const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod | undefined>(undefined);
   const [email, setEmail] = useState('');
-  const [selectedProviderName, setSelectedProviderName] = useState<string | undefined>(undefined);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null;
+    setSelectedMethod(stored ?? undefined);
+    setEmail('');
+  }, [isOpen]);
 
   const allCaps = useMemo(() => {
     const caps = new Set<string>();
@@ -83,10 +101,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     }
   }, [isOpen, selectedMethod]);
 
-  const emailValid = useMemo(() => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }, [email]);
+  const emailValid = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), [email]);
 
   const emailValid = useMemo(() => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -148,8 +163,105 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           </LiveRegion>
 
           {/* Content based on status */}
-          {status === 'idle' && (
-            <div className="space-y-4">
+          {status === 'idle' && !selectedMethod && (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <button
+                type="button"
+                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
+                onClick={() => selectMethod('wallet')}
+                aria-label="Connect Stellar wallet"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-600 text-white font-semibold text-sm">W</span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Connect Stellar wallet</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Sign in with a Stellar wallet.
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-3 text-[10px] font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">
+                  Recommended
+                </p>
+              </button>
+
+              <button
+                type="button"
+                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
+                onClick={() => selectMethod('email')}
+                aria-label="Continue with email"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-white font-semibold text-sm">@</span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Continue with email</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Use email for a quick start.
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Add wallet later
+                </p>
+              </button>
+            </div>
+          )}
+
+          {status === 'idle' && selectedMethod === 'email' && (
+            <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Continue with email</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Receive a secure sign-in link via email.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400"
+                  onClick={() => setSelectedMethod(undefined)}
+                >
+                  Back
+                </button>
+              </div>
+
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                Email address
+                <input
+                  type="email"
+                  className="mt-2 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={!emailValid}
+                className="w-full rounded-md bg-cyan-600 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-700 disabled:opacity-50 disabled:pointer-events-none transition-colors"
+              >
+                Send sign-in link
+              </button>
+            </form>
+          )}
+
+          {status === 'idle' && selectedMethod === 'wallet' && (
+            <div className="space-y-4 mt-6">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Select a provider
+                </p>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400"
+                  onClick={() => setSelectedMethod(undefined)}
+                >
+                  Back
+                </button>
+              </div>
+
               {/* Filter chips */}
               {allCaps.length > 0 && (
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by capabilities">
@@ -176,11 +288,6 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
               {/* Matrix List */}
               {filteredProviders.length > 0 ? (
                 <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-1 sm:gap-3">
-                  <div className="hidden sm:grid sm:grid-cols-[1fr_auto_auto] gap-4 px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                    <div>Wallet</div>
-                    <div>Capabilities</div>
-                    <div className="text-right">Action</div>
-                  </div>
                   {filteredProviders.map(p => (
                     <div
                       key={p.id}
@@ -237,9 +344,64 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           )}
 
           {status === 'success' && (
-            <div className="mt-6 flex flex-col items-center gap-4 py-10">
+            <div
+              className={`mt-6 flex flex-col items-center gap-4 py-8 px-4 text-center ${
+                prefersReducedMotion
+                  ? 'transition-opacity duration-200 ease-in-out opacity-100'
+                  : 'animate-in fade-in zoom-in-95 duration-300'
+              }`}
+              data-reduced-motion={prefersReducedMotion ? 'true' : 'false'}
+            >
+              {prefersReducedMotion ? (
+                /* Reduced Motion Alternative: Static success mark with crossfade, no scale/bounce/spin/ping */
+                <div
+                  data-testid="reduced-motion-success-mark"
+                  className="flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                >
+                  <svg
+                    className="w-8 h-8"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              ) : (
+                /* Standard Motion: Animated success mark with subtle spring/pulse */
+                <div
+                  data-testid="standard-motion-success-mark"
+                  className="relative flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                >
+                  <span className="absolute inset-0 rounded-full bg-emerald-400/20 animate-ping duration-1000 opacity-75" />
+                  <svg
+                    className="w-8 h-8 relative z-10"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              )}
+
               <StatusChip tone="positive">Connected</StatusChip>
-              <p className="text-sm text-slate-700 dark:text-slate-200">Your wallet is ready. You can manage connection preferences in settings.</p>
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
+                  Wallet Connected Successfully
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs mx-auto">
+                  Your wallet is ready. You can manage connection preferences in settings.
+                </p>
+              </div>
             </div>
           )}
 

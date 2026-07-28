@@ -150,23 +150,17 @@ export type RatingCriterion = {
   colorClass: string;
 };
 
-export type ConflictChange = {
-  field: string;
-  localValue: string;
-  remoteValue: string;
+export type SentimentBucket = "all" | "positive" | "mixed" | "critical";
+
+export type SentimentCounts = {
+  positive: number;
+  mixed: number;
+  critical: number;
 };
 
-export type SyncConflict = {
-  id: string;
-  eventTitle: string;
-  dateTime: string;
-  localChanges: ConflictChange[];
-  remoteChanges: ConflictChange[];
-};
-
-export type ResolutionStrategy = "useLocal" | "useRemote" | "merge";
-
-export type ConflictResolution = {
-  conflictId: string;
-  strategy: ResolutionStrategy;
+export type SentimentDataPoint = {
+  timestamp: string;
+  positive: number;
+  mixed: number;
+  critical: number;
 };
