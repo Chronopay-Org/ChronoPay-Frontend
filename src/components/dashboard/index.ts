@@ -11,7 +11,8 @@ export * from "./onboarding-walkthrough";
 export * from "./panel-shell";
 export * from "./pricing-calculator";
 export * from "./quick-actions";
-export * from "./sample-badge";
+export * from "./review-reply-thread";
+export * from "./review-thread-types";
 export * from "./slot-list";
 export * from "./holiday-hints-strip";
 export * from "./social-proof-badge";
@@ -23,6 +24,7 @@ export * from "./wallet-card";
 export * from "./card";
 export * from "./services-step";
 export * from "./refund-destination-selector";
+export * from "./rating-breakdown-bars";
 export * from "./refund-confirmation-modal";
 export * from "./export-history-modal";
 

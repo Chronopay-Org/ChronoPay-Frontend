@@ -46,6 +46,8 @@ export interface ToastInput {
    * grouped.
    */
   category?: string;
+  /** Optional reversible action exposed by the toast's Undo control. */
+  onUndo?: () => void;
 }
 
 /** An individual message stored inside a group (or standalone entry). */
@@ -77,6 +79,8 @@ export interface ToastItem {
   count: number;
   /** All individual messages — useful for the expanded panel. */
   messages: ToastMessage[];
+  /** Optional callback for the visible Undo action. */
+  onUndo?: () => void;
 }
 
 /** What callers pass to `toast()` — no `id` needed. */
@@ -189,6 +193,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         category: input.category,
         count: 1,
         messages: [message],
+        onUndo: input.onUndo,
       };
       dispatch({ type: "ADD", toast: item, message });
       return msgId;
