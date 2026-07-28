@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { TimelineItem, statusToneMap } from "./timeline-types";
-import { StatusChip } from "../app/components/ui/status-chip";
-import { KycLivenessCapture } from "./kyc-liveness-capture";
+import { StatusChip } from "./status-chip";
 
 interface StatusTimelineProps {
   items: TimelineItem[];

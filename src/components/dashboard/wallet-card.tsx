@@ -66,53 +66,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
   const balanceId = useId();
   const securityId = useId();
   const statusId = useId();
-  const toast = useToast();
-  const pendingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalStatus, setModalStatus] = useState<ConnectionStatus>("idle");
-
-  useEffect(
-    () => () => {
-      if (pendingTimeout.current) {
-        clearTimeout(pendingTimeout.current);
-      }
-    },
-    [],
-  );
-
-  const handleConnect = (providerId: string) => {
-    setModalStatus("pending");
-    pendingTimeout.current = setTimeout(() => {
-      setModalStatus("success");
-      toast({
-        variant: "success",
-        title: "Wallet connected",
-        description: `Connected with ${providerId}.`,
-        duration: 3000,
-      });
-    }, 1200);
-  };
-
-  const handleRetry = () => {
-    setModalStatus("idle");
-  };
-
-  const handleEmailSubmit = (email: string) => {
-    setIsModalOpen(false);
-    toast({
-      variant: "success",
-      title: "Email path selected",
-      description: `A sign-in link was sent to ${email}. You can connect a wallet later.`,
-      duration: 3000,
-    });
-    setModalStatus("idle");
-  };
-
-  const handleClose = () => {
-    setIsModalOpen(false);
-    setModalStatus("idle");
-  };
+  const { toast } = useToast();
 
   return (
     <>

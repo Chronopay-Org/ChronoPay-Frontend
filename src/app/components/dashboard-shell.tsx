@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
+import { useEffect, useRef, useState } from "react";
 import { HeaderSearch } from "@/app/components/header-search";
-import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
+import { ButtonLink } from "@/app/components/ui/button-link";
+import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
+import { useRole } from "@/app/components/navigation/RoleContext";
+import { getNavForRole, ROLE_META } from "@/app/components/navigation/role-nav";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { role } = useRole();

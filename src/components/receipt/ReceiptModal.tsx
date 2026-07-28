@@ -169,10 +169,7 @@ export function ReceiptModal({
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:border-cyan-300/30 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {shareStatus === "copied" ? (
-                  <Check
-                    className="h-3.5 w-3.5 text-emerald-300"
-                    aria-hidden="true"
-                  />
+                  <Check className="h-3.5 w-3.5 text-emerald-300" aria-hidden={true} />
                 ) : (
                   <Share2 className="h-3.5 w-3.5" aria-hidden={true} />
                 )}
