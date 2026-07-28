@@ -15,6 +15,11 @@
 
 import { useState, useCallback } from "react";
 
+export interface RecentSearchItem {
+  term: string;
+  timestamp: number;
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "chronopay:recent-searches";
@@ -44,17 +49,19 @@ export const SEARCH_SUGGESTIONS: string[] = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function loadRecents(): string[] {
+function loadRecents(): RecentSearchItem[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    if (
-      Array.isArray(parsed) &&
-      parsed.every((item) => typeof item === "string")
-    ) {
-      return (parsed as string[]).slice(0, MAX_RECENTS);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => {
+        if (typeof item === "string") {
+          return { term: item, timestamp: Date.now() - 86400000 * 2 }; // earlier
+        }
+        return item as RecentSearchItem;
+      }).slice(0, MAX_RECENTS);
     }
     return [];
   } catch {
@@ -62,7 +69,7 @@ function loadRecents(): string[] {
   }
 }
 
-function saveRecents(recents: string[]): void {
+function saveRecents(recents: RecentSearchItem[]): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(recents));
@@ -76,7 +83,7 @@ function saveRecents(recents: string[]): void {
 export interface UseSearchReturn {
   query: string;
   setQuery: (q: string) => void;
-  recentSearches: string[];
+  recentSearches: RecentSearchItem[];
   suggestions: string[];
   addRecentSearch: (term: string) => void;
   clearRecentSearches: () => void;
@@ -86,7 +93,7 @@ export interface UseSearchReturn {
 export function useSearch(): UseSearchReturn {
   const [query, setQuery] = useState("");
   // Lazy initializer reads from localStorage once on mount (avoids useEffect setState)
-  const [recentSearches, setRecentSearches] = useState<string[]>(loadRecents);
+  const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>(loadRecents);
 
   // Derive suggestions from the static catalogue, filtered by current query
   const suggestions =
@@ -102,9 +109,9 @@ export function useSearch(): UseSearchReturn {
     setRecentSearches((prev) => {
       // Move to front if already present, otherwise prepend
       const filtered = prev.filter(
-        (r) => r.toLowerCase() !== trimmed.toLowerCase(),
+        (r) => r.term.toLowerCase() !== trimmed.toLowerCase(),
       );
-      const next = [trimmed, ...filtered].slice(0, MAX_RECENTS);
+      const next = [{ term: trimmed, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENTS);
       saveRecents(next);
       return next;
     });
@@ -113,7 +120,7 @@ export function useSearch(): UseSearchReturn {
   const removeRecentSearch = useCallback((term: string) => {
     setRecentSearches((prev) => {
       const next = prev.filter(
-        (r) => r.toLowerCase() !== term.toLowerCase(),
+        (r) => r.term.toLowerCase() !== term.toLowerCase(),
       );
       saveRecents(next);
       return next;

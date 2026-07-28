@@ -1,6 +1,6 @@
-export type Tone = "neutral" | "positive" | "warning" | "critical";
+export type Tone = "neutral" | "positive" | "warning" | "critical" | "muted";
 
-export type AvailabilityLevel = "Healthy" | "Tight" | "Busy";
+export type AvailabilityLevel = "Healthy" | "Tight" | "Busy" | "Sold Out";
 
 export type Slot = {
   id: string;
@@ -11,6 +11,8 @@ export type Slot = {
   rate: string;
   status: AvailabilityLevel;
   isNextAvailable?: boolean;
+  /** When true, row is demo/onboarding content and must show a Sample badge. */
+  isSample?: boolean;
   badges?: SocialProofBadgeEntry[];
 };
 
@@ -27,6 +29,7 @@ export type Metric = {
   value: string;
   detail: string;
   tone: Tone;
+  breakdown?: EarningsSegment[];
 };
 
 export type BookingStage = {
@@ -49,6 +52,7 @@ export type SocialProofBadgeType =
   | "repeatBuyers"
   | "fastResponse"
   | "verified"
+  | "verifiedPayouts"
   | "earlyAdopter";
 
 export type SocialProofBadgeEntry = {
@@ -57,6 +61,7 @@ export type SocialProofBadgeEntry = {
   tone: Tone;
   icon: string;
   criterion: string;
+  explainerKey?: string;
 };
 
 export type Supplier = {
@@ -64,6 +69,7 @@ export type Supplier = {
   name: string;
   title: string;
   badges: SocialProofBadgeEntry[];
+  region?: RegionInfo;
 };
 
 export type CalendarSyncProvider = {
