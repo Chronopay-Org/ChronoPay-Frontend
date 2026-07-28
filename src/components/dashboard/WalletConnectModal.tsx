@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { FocusTrap } from '@/components/common/FocusTrap';
 import { LiveRegion } from '@/components/common/LiveRegion';
 import { StatusChip } from '@/components/dashboard/status-chip';
@@ -7,7 +7,9 @@ import { Spinner } from '@/app/components/ui/spinner';
 export type WalletProvider = {
   id: string;
   name: string;
-  icon: React.ReactNode;
+  icon: React.ReactNode; // e.g., <FreighterIcon />
+  capabilities?: string[];
+  recommended?: boolean;
 };
 
 type ConnectionStatus = 'idle' | 'pending' | 'success' | 'error';
@@ -38,15 +40,26 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   onEmailSubmit,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
-  const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod | undefined>(undefined);
-  const [email, setEmail] = useState('');
+  const [selectedCaps, setSelectedCaps] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null;
-    setSelectedMethod(stored ?? undefined);
-    setEmail('');
-  }, [isOpen]);
+  const allCaps = useMemo(() => {
+    const caps = new Set<string>();
+    providers.forEach(p => p.capabilities?.forEach(c => caps.add(c)));
+    return Array.from(caps);
+  }, [providers]);
+
+  const toggleCap = (cap: string) => {
+    setSelectedCaps(prev =>
+      prev.includes(cap) ? prev.filter(c => c !== cap) : [...prev, cap]
+    );
+  };
+
+  const filteredProviders = useMemo(() => {
+    if (selectedCaps.length === 0) return providers;
+    return providers.filter(p =>
+      selectedCaps.every(cap => p.capabilities?.includes(cap))
+    );
+  }, [providers, selectedCaps]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -94,7 +107,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
       <FocusTrap>
         <div
           ref={modalRef}
-          className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-slate-950 p-6 shadow-2xl"
+          className="relative w-full max-w-2xl rounded-xl bg-white dark:bg-slate-900 p-6 shadow-lg"
         >
           <h2 id="wallet-connect-title" className="text-xl font-semibold text-slate-900 dark:text-slate-50">
             Choose how to connect
@@ -109,148 +122,85 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
             {status === 'error' && `Connection failed: ${errorMessage || 'Unknown error'}`}
           </LiveRegion>
 
-          {status === 'idle' && !selectedMethod && (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <button
-                type="button"
-                className="group rounded-3xl border border-slate-200 bg-slate-50 p-5 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-900"
-                onClick={() => selectMethod('wallet')}
-                aria-label="Connect with your Stellar wallet"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-600 text-white">W</span>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Connect Stellar wallet</p>
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                      Securely sign in with a Stellar wallet and keep your time tokens in a wallet you control.
-                    </p>
+          {/* Content based on status */}
+          {status === 'idle' && (
+            <div className="space-y-4">
+              {/* Filter chips */}
+              {allCaps.length > 0 && (
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by capabilities">
+                  {allCaps.map(cap => {
+                    const isSelected = selectedCaps.includes(cap);
+                    return (
+                      <button
+                        key={cap}
+                        onClick={() => toggleCap(cap)}
+                        aria-pressed={isSelected}
+                        className={`px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+                          isSelected
+                            ? 'bg-cyan-100 border-cyan-300 text-cyan-800 dark:bg-cyan-900/30 dark:border-cyan-700 dark:text-cyan-300'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {cap}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              
+              {/* Matrix List */}
+              {filteredProviders.length > 0 ? (
+                <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-1 sm:gap-3">
+                  <div className="hidden sm:grid sm:grid-cols-[1fr_auto_auto] gap-4 px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                    <div>Wallet</div>
+                    <div>Capabilities</div>
+                    <div className="text-right">Action</div>
                   </div>
-                </div>
-                <p className="mt-4 text-xs font-medium uppercase tracking-[0.24em] text-cyan-500">
-                  Recommended
-                </p>
-              </button>
+                  {filteredProviders.map(p => (
+                    <div
+                      key={p.id}
+                      className="flex flex-col sm:grid sm:grid-cols-[1fr_auto_auto] sm:items-center gap-4 rounded-lg border border-slate-200 dark:border-slate-700 p-4 sm:px-4 sm:py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="h-8 w-8 text-slate-700 dark:text-slate-300 flex-shrink-0">{p.icon}</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                            {p.name}
+                            {p.recommended && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 uppercase tracking-wider">
+                                Recommended
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-wrap sm:justify-end gap-1.5">
+                        {p.capabilities?.map(cap => (
+                          <span key={cap} className="px-2 py-0.5 rounded-md text-xs bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                            {cap}
+                          </span>
+                        )) || <span className="text-xs text-slate-400">-</span>}
+                      </div>
 
-              <button
-                type="button"
-                className="group rounded-3xl border border-slate-200 bg-slate-50 p-5 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-900"
-                onClick={() => selectMethod('email')}
-                aria-label="Continue with email"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white">@</span>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Continue with email</p>
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                      Use email for a fast start. You can connect a wallet later to access Stellar payouts.
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-4 text-xs font-medium uppercase tracking-[0.24em] text-slate-500">
-                  Add wallet later
-                </p>
-              </button>
-            </div>
-          )}
-
-          {status === 'idle' && selectedMethod === 'wallet' && (
-            <div className="mt-6 space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Wallet providers</p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Choose a Stellar wallet to finish connecting.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="text-sm font-medium text-cyan-600 hover:text-cyan-500"
-                  onClick={() => setSelectedMethod(undefined)}
-                >
-                  Back
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {providers.map((provider) => (
-                  <button
-                    key={provider.id}
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-3xl border border-slate-200 bg-white p-4 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-950"
-                    onClick={() => onConnect(provider.id)}
-                  >
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white">
-                      {provider.icon}
-                    </span>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">{provider.name}</p>
-                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Connect with your existing Stellar wallet provider.
-                      </p>
+                      <div className="mt-2 sm:mt-0 sm:text-right">
+                        <button
+                          type="button"
+                          onClick={() => onConnect(p.id)}
+                          className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-cyan-600 rounded-md hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 transition-colors"
+                          aria-label={`Connect to ${p.name}`}
+                        >
+                          Connect
+                        </button>
+                      </div>
                     </div>
-                  </button>
-                ))}
-              </div>
-
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                If you do not have a wallet yet, you can continue with email and add one later.
-              </p>
-            </div>
-          )}
-
-          {status === 'idle' && selectedMethod === 'email' && (
-            <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Continue with email</p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Receive a secure login link and connect a Stellar wallet later from your dashboard.
-                  </p>
+                  ))}
                 </div>
-                <button
-                  type="button"
-                  className="text-sm font-medium text-cyan-600 hover:text-cyan-500"
-                  onClick={() => setSelectedMethod(undefined)}
-                >
-                  Back
-                </button>
-              </div>
-
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                Email address
-                <input
-                  type="email"
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="you@example.com"
-                  aria-describedby="email-help"
-                  required
-                />
-              </label>
-
-              <p id="email-help" className="text-sm text-slate-500 dark:text-slate-400">
-                You'll get a secure sign-in link. This is not a wallet connection, but it lets you start now.
-              </p>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-                <button
-                  type="submit"
-                  disabled={!emailValid}
-                  className="inline-flex items-center justify-center rounded-full bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 disabled:pointer-events-none hover:bg-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
-                >
-                  Send sign-in link
-                </button>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Add a wallet later to access Stellar payouts and token minting.
-                </p>
-              </div>
-            </form>
-          )}
-
-          {status !== 'idle' && status !== 'pending' && selectedMethod === undefined && (
-            <div className="mt-6 text-sm text-slate-500 dark:text-slate-400">
-              Choose a connection path above to continue.
+              ) : (
+                <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
+                  No wallets match the selected capabilities.
+                </div>
+              )}
             </div>
           )}
 
