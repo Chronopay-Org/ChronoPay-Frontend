@@ -1,5 +1,8 @@
 import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
 import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sync-connect';
+import { DeveloperSettings } from '@/components/dashboard/settings/developer-settings';
+import { DensitySwitcher } from '@/app/components/ui/density-switcher';
+import { PasswordStrengthMeter } from '@/app/components/password-strength-meter';
 
 export default function SettingsPage() {
   return (
@@ -40,6 +43,16 @@ export default function SettingsPage() {
           </p>
           <DensitySwitcher />
         </div>
+
+        <section aria-label="Developer and advanced options" className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6">
+          <div className="space-y-1 pb-4 sm:pb-6">
+            <h2 className="text-xl font-semibold text-white">Developer / Advanced</h2>
+            <p className="text-sm leading-6 text-slate-300">
+              Enable experimental features, view debug information, and export logs for troubleshooting.
+            </p>
+          </div>
+          <DeveloperSettings />
+        </section>
       </div>
     </div>
   );
