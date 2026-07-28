@@ -5,6 +5,8 @@ import type {
   Supplier,
   WalletSnapshot,
   TimelineItem,
+  HolidayHint,
+  RegionInfo,
 } from "./types";
 import { BADGE_PRESETS } from "./social-proof-badge";
 
@@ -133,6 +135,47 @@ export const quickActions: QuickAction[] = [
     icon: "CheckCircle",
   },
 ];
+
+export const upcomingHolidays: HolidayHint[] = [
+  {
+    id: "holiday-1",
+    name: "New Year's Day",
+    date: "2027-01-01",
+    dateLabel: "Jan 1, 2027",
+  },
+  {
+    id: "holiday-2",
+    name: "Martin Luther King Jr. Day",
+    date: "2027-01-19",
+    dateLabel: "Jan 19, 2027",
+    isMoving: true,
+  },
+  {
+    id: "holiday-3",
+    name: "Presidents' Day",
+    date: "2027-02-16",
+    dateLabel: "Feb 16, 2027",
+    isMoving: true,
+  },
+  {
+    id: "holiday-4",
+    name: "Memorial Day",
+    date: "2027-05-31",
+    dateLabel: "May 31, 2027",
+    isMoving: true,
+  },
+  {
+    id: "holiday-5",
+    name: "Independence Day",
+    date: "2027-07-04",
+    dateLabel: "Jul 4, 2027",
+  },
+];
+
+export const holidayRegion: RegionInfo = {
+  code: "US",
+  name: "United States",
+};
 
 export const suppliers: Supplier[] = [
   {

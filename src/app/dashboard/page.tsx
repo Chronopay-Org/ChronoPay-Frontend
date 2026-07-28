@@ -13,6 +13,9 @@ import {
   SlotList,
   wallet,
   WalletCard,
+  upcomingHolidays,
+  holidayRegion,
+  HolidayHintsStrip,
 } from "@/components/dashboard";
 import { useToast } from "@/hooks/use-toast";
 import { HelpPopover } from "@/app/components/ui/help-popover";
@@ -139,6 +142,12 @@ export default function Dashboard() {
         <PanelShell id="available-time-slots" title="Available Time Slots">
           <SlotList slots={slots} />
         </PanelShell>
+
+        {/* Holiday Hints Strip */}
+        <HolidayHintsStrip
+          holidays={upcomingHolidays}
+          region={holidayRegion}
+        />
       </div>
     </DashboardShell>
   );
