@@ -119,23 +119,20 @@ export type OfflineQueueState = {
   queue: QueuedAction[];
 };
 
-export type ConflictField = {
-  field: string;
-  localValue: string;
-  remoteValue: string;
+export type RefundDestination = "wallet" | "card";
+
+export type RefundDestinationOption = {
+  id: RefundDestination;
+  label: string;
+  description: string;
+  eta: string;
+  fee: string;
+  icon: string;
+  recommended?: boolean;
+  badge?: string;
 };
 
-export type SyncConflict = {
-  id: string;
-  eventTitle: string;
-  dateTime: string;
-  localChanges: ConflictField[];
-  remoteChanges: ConflictField[];
-};
-
-export type ResolutionStrategy = "useLocal" | "useRemote" | "merge";
-
-export type ConflictResolution = {
-  conflictId: string;
-  strategy: ResolutionStrategy;
+export type RefundDestinationSubmission = {
+  destination: RefundDestination;
+  option: RefundDestinationOption;
 };
