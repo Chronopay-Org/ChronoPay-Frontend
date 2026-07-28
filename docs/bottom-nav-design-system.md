@@ -250,6 +250,92 @@ The previous bottom nav was a simple flex container with text labels. The new ve
 - None - component maintains same API
 - Additional props can be added for customization
 
+## Overflow Menu (> 4 items)
+
+When a role exposes more than `BOTTOM_NAV_MAX_VISIBLE` (4) nav items, the bar
+collapses extras into an overflow bottom sheet.
+
+### Layout
+
+```
+┌────────────┬──────────────┬──────────────┬──────────────┐
+│  Item 1    │   Item 2     │   Item 3     │   ···  More  │
+│  (pinned)  │  (pinned)    │  (default)   │  (trigger)   │
+└────────────┴──────────────┴──────────────┴──────────────┘
+```
+
+When "More" is tapped a bottom sheet rises from the bottom edge:
+
+```
+╔══════════════════════════════════════╗
+║  More navigation              [✕]   ║
+║  Tap 📌 to pin to nav bar           ║
+╠══════════════════════════════════════╣
+║  📆  Calendar              [📌 pin] ║
+║  ⚙️   Settings             [📌 pin] ║
+║  📊  Analytics             [📌]     ║
+╚══════════════════════════════════════╝
+```
+
+### Pinning
+
+- Each overflow row has a toggle button (📌 pinned / ➕ unpinned).
+- Pinned items are sorted to the front of the visible bar slots.
+- Pin state is persisted per-role to `localStorage` under
+  `chronopay:pinnedNav` (JSON `{ buyer: ["/marketplace"], ... }`).
+- If all items are pinned and exceed `BOTTOM_NAV_MAX_VISIBLE`, the last
+  visible slot is still reserved for the "More" trigger so the sheet
+  remains accessible.
+
+### Accessibility
+
+| Requirement | Implementation |
+|---|---|
+| Sheet is a dialog | `role="dialog" aria-modal="true"` with visible label |
+| Overflow trigger | `aria-expanded` + `aria-controls` on "More" button |
+| Focus trap | `<FocusTrap>` wraps sheet content |
+| Escape to close | `keydown` listener restores focus to trigger |
+| Pin state | `aria-pressed` on each toggle button |
+| Announcements | `aria-live="polite"` region announces pin/unpin |
+| Touch targets | All interactive elements ≥ 44 × 44 px |
+| Active indicator | `aria-current="page"` on current route link |
+
+### Reduced Motion
+
+Sheet does not animate when `prefers-reduced-motion: reduce` is set —
+the `transition-transform` class is conditionally omitted.
+
+### Edge Cases
+
+| Scenario | Behaviour |
+|---|---|
+| ≤ 4 items total | "More" button is hidden; all items are shown directly |
+| All items pinned | Pinned items fill visible slots; others remain in sheet |
+| None pinned | Original `role-nav.ts` order is used |
+| Dark mode | Uses existing `slate-900` / `cyan-400` palette; no change needed |
+| RTL | Flex layout mirrors naturally; no explicit RTL overrides needed |
+
+### Component
+
+`src/app/components/navigation/BottomNavOverflow.tsx`
+
+Props:
+
+| Prop | Type | Description |
+|---|---|---|
+| `items` | `NavItem[]` | Full ordered list from `getNavForRole()` |
+| `role` | `UserRole` | Namespaces pin storage per role |
+| `className` | `string?` | Extra class on the `<nav>` element |
+
+### Storage helpers (`role-nav.ts`)
+
+| Export | Description |
+|---|---|
+| `BOTTOM_NAV_MAX_VISIBLE` | Constant — max direct bar slots (default 4) |
+| `readPinnedHrefs(role)` | Reads stored pin order for a role |
+| `writePinnedHrefs(role, hrefs)` | Persists pin order for a role |
+| `sortNavByPins(items, pinned)` | Returns items sorted: pinned-first, then original order |
+
 ## Future Enhancements
 
 - [ ] Badge support for notification counts
@@ -260,6 +346,7 @@ The previous bottom nav was a simple flex container with text labels. The new ve
 - [ ] Light mode variant
 - [ ] Configurable animation timing
 - [ ] A/B testing support for different layouts
+- [ ] Drag-to-reorder pins in the overflow sheet
 
 ## Related Components
 

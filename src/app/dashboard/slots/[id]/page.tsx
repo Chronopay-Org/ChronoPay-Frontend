@@ -3,7 +3,9 @@
 import { use, useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/app/components/dashboard-shell";
+import { BreadcrumbOverflow } from "@/app/components/ui/breadcrumb-overflow";
 import { StatusChip } from "@/components/dashboard/status-chip";
+import { OrderSummaryDrawer } from "@/components/dashboard/order-summary-drawer";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { ReceiptModal } from "@/components/receipt";
 import type { ReceiptData } from "@/components/receipt";
@@ -289,7 +291,7 @@ export default function SlotDetailPage({
 
       <div className="space-y-6">
         {/* Breadcrumb Navigation & Back Button */}
-        <nav aria-label="Breadcrumb" className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/dashboard"
             className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/40 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-cyan-300/30 hover:bg-slate-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
@@ -297,11 +299,17 @@ export default function SlotDetailPage({
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             Back to Dashboard
           </Link>
-          
-          <span className="text-xs text-slate-500 uppercase tracking-widest hidden sm:inline">
-            Slot Booking / Details
-          </span>
-        </nav>
+
+          <BreadcrumbOverflow
+            className="relative"
+            items={[
+              { label: "Dashboard", href: "/dashboard" },
+              { label: "Slots", href: "/dashboard/slots" },
+              { label: "Booking", href: "/dashboard/slots/123" },
+              { label: "Details" },
+            ]}
+          />
+        </div>
 
         {/* ----------------- SCENARIO SIMULATOR (TESTING UTILITY) ----------------- */}
         <section
@@ -432,7 +440,7 @@ export default function SlotDetailPage({
                 {/* CSS Premium Avatar */}
                 <div
                   className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-tr ${details.seller.avatarGradient} text-xl font-bold tracking-wider text-white shadow-lg`}
-                  aria-hidden="true"
+                  aria-hidden={true}
                 >
                   {details.seller.avatarInitials}
                 </div>
@@ -469,16 +477,20 @@ export default function SlotDetailPage({
           <aside className="lg:col-span-1 space-y-6">
             
             {/* Purchase Details & Price Breakdown */}
-            <section
-              className="glass-panel rounded-[2rem] p-6 border border-white/10 bg-slate-950/20 space-y-6"
-              aria-labelledby="pricing-summary-title"
+            <OrderSummaryDrawer
+              title="Purchase details"
+              description="Review pricing, wallet readiness, and confirm the booking before you lock funds."
             >
-              <h2 id="pricing-summary-title" className="text-sm font-bold uppercase tracking-wider text-slate-300">
-                Purchase Details
-              </h2>
+              <section
+                className="glass-panel rounded-[2rem] p-6 border border-white/10 bg-slate-950/20 space-y-6"
+                aria-labelledby="pricing-summary-title"
+              >
+                <h2 id="pricing-summary-title" className="text-sm font-bold uppercase tracking-wider text-slate-300">
+                  Purchase Details
+                </h2>
 
-              {/* Stellar Wallet Integration State Banners */}
-              <div className="space-y-3">
+                {/* Stellar Wallet Integration State Banners */}
+                <div className="space-y-3">
                 {simWallet === "disconnected" && (
                   <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3.5 text-xs text-amber-200 flex items-start gap-2.5">
                     <AlertCircle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
@@ -621,54 +633,55 @@ export default function SlotDetailPage({
                 </p>
               </div>
 
-              {/* CTA Action Buttons */}
-              <div className="pt-2">
-                {simWallet === "disconnected" && (
-                  <button
-                    type="button"
-                    onClick={handleSimulateConnection}
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 shadow-[0_16px_34px_rgba(34,211,238,0.15)]"
-                  >
-                    <Wallet className="h-4 w-4 mr-2" />
-                    Connect Stellar Wallet
-                  </button>
-                )}
+                {/* CTA Action Buttons */}
+                <div className="pt-2">
+                  {simWallet === "disconnected" && (
+                    <button
+                      type="button"
+                      onClick={handleSimulateConnection}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 shadow-[0_16px_34px_rgba(34,211,238,0.15)]"
+                    >
+                      <Wallet className="h-4 w-4 mr-2" />
+                      Connect Stellar Wallet
+                    </button>
+                  )}
 
-                {simWallet === "error" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSimWallet("connected");
-                      announce("Wallet connected successfully.");
-                    }}
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 px-5 py-3 text-sm border border-rose-400/30 bg-rose-400/10 text-rose-200 hover:bg-rose-400/20"
-                  >
-                    Retry Connection Sync
-                  </button>
-                )}
+                  {simWallet === "error" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSimWallet("connected");
+                        announce("Wallet connected successfully.");
+                      }}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 px-5 py-3 text-sm border border-rose-400/30 bg-rose-400/10 text-rose-200 hover:bg-rose-400/20"
+                    >
+                      Retry Connection Sync
+                    </button>
+                  )}
 
-                {isWalletReady && !hasFunds && (
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full flex items-center justify-center rounded-full font-bold px-5 py-3 text-sm border border-white/10 bg-white/5 text-slate-400 cursor-not-allowed"
-                  >
-                    Insufficient Stellar Funds
-                  </button>
-                )}
+                  {isWalletReady && !hasFunds && (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center justify-center rounded-full font-bold px-5 py-3 text-sm border border-white/10 bg-white/5 text-slate-400 cursor-not-allowed"
+                    >
+                      Insufficient Stellar Funds
+                    </button>
+                  )}
 
-                {isWalletReady && hasFunds && (
-                  <button
-                    type="button"
-                    ref={purchaseBtnRef}
-                    onClick={handleOpenModal}
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 hover:scale-[1.01] hover:shadow-[0_16px_34px_rgba(34,211,238,0.22)] active:scale-[0.99]"
-                  >
-                    Purchase Time Token
-                  </button>
-                )}
-              </div>
-            </section>
+                  {isWalletReady && hasFunds && (
+                    <button
+                      type="button"
+                      ref={purchaseBtnRef}
+                      onClick={handleOpenModal}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 hover:scale-[1.01] hover:shadow-[0_16px_34px_rgba(34,211,238,0.22)] active:scale-[0.99]"
+                    >
+                      Purchase Time Token
+                    </button>
+                  )}
+                </div>
+              </section>
+            </OrderSummaryDrawer>
           </aside>
         </div>
       </div>
@@ -782,7 +795,7 @@ export default function SlotDetailPage({
                     </p>
                   </div>
 
-                  <div className="max-w-[240px] mx-auto space-y-2" aria-hidden="true">
+                  <div className="max-w-[240px] mx-auto space-y-2" aria-hidden={true}>
                     <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
                       <div className="h-full bg-cyan-400 animate-[loading-bar_4s_ease-out_forwards]" />
                     </div>

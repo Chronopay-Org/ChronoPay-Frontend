@@ -101,6 +101,24 @@ describe("HelpPopover", () => {
       expect(trigger).toBeInTheDocument();
     });
 
+    it("activates contextual help mode from the ? shortcut", () => {
+      const { trigger } = setup(internalTerm);
+      act(() => {
+        fireEvent.keyDown(document, { key: "?" });
+      });
+      expect(screen.getByRole("status")).toHaveTextContent(/what's this mode/i);
+      expect(trigger).toHaveClass("cursor-help");
+    });
+
+    it("activates contextual help mode after ? then Tab", () => {
+      const { trigger } = setup(internalTerm);
+      act(() => {
+        fireEvent.keyDown(document, { key: "?" });
+        fireEvent.keyDown(document, { key: "Tab" });
+      });
+      expect(trigger).toHaveClass("ring-cyan-400");
+    });
+
     it("uses default aria-label derived from term title", () => {
       setup(internalTerm);
       expect(
