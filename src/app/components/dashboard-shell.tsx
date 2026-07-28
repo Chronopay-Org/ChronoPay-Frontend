@@ -59,9 +59,7 @@ function SystemStatus() {
       </span>
     </div>
   );
-}
-
-function NavRailItem({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
+}({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
   return (
