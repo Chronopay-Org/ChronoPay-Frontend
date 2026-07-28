@@ -175,4 +175,15 @@ export const glossary = {
     learnMoreHref: "/docs/pricing#take-home",
     learnMoreLabel: "Learn more about take-home →",
   },
+
+  /**
+   * Price preservation credit — account credit used to lock the original
+   * booking price when rebooking a more expensive alternative slot.
+   */
+  pricePreservationCredit: {
+    title: "Price preservation credit",
+    body: "When you rebook a slot priced higher than your original, ChronoPay can apply your account credit to cover the difference so you pay the original price. No action is taken until you confirm.",
+    learnMoreHref: "/docs/rebooking#price-preservation",
+    learnMoreLabel: "Learn more about price preservation →",
+  },
 } satisfies Record<string, GlossaryTerm>;

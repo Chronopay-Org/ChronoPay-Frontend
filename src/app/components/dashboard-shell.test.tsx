@@ -36,6 +36,8 @@ vi.mock("next/link", () => ({
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 function renderShell(initialRole: "buyer" | "supplier" | "admin" = "buyer") {
+  window.localStorage.setItem("chronopay:role:selected", "true");
+  window.localStorage.setItem("chronopay:role", initialRole);
   return render(
     <RoleProvider initialRole={initialRole}>
       <DashboardShell>
@@ -49,6 +51,7 @@ function renderShell(initialRole: "buyer" | "supplier" | "admin" = "buyer") {
 
 describe("DashboardShell", () => {
   beforeEach(() => {
+    window.localStorage.clear();
     mockUsePathname.mockReturnValue("/dashboard");
   });
 
