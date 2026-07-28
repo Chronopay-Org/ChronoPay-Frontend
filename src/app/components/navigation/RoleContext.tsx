@@ -48,6 +48,8 @@ interface RoleContextValue {
   role: UserRole;
   /** Switch to a different role (no hard navigation, scroll preserved) */
   setRole: (next: UserRole) => void;
+  /** True once the user has explicitly selected an onboarding role */
+  hasExplicitRoleSelection: boolean;
   /** True while the client-side hydration is pending */
   isHydrating: boolean;
 }
@@ -57,6 +59,7 @@ const RoleContext = createContext<RoleContextValue | null>(null);
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "chronopay:role";
+const ROLE_SELECTION_KEY = "chronopay:role:selected";
 
 function readStoredRole(): UserRole | null {
   if (typeof window === "undefined") return null;
@@ -75,6 +78,24 @@ function writeStoredRole(role: UserRole): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, role);
+  } catch {
+    // ignore
+  }
+}
+
+function readRoleSelectionState(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(ROLE_SELECTION_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeRoleSelectionState(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ROLE_SELECTION_KEY, "true");
   } catch {
     // ignore
   }
@@ -100,6 +121,7 @@ export function RoleProvider({
   // so we never call setState synchronously inside a useEffect body,
   // which is flagged by the react-hooks/set-state-in-effect rule.
   const [role, setRoleState] = useState<UserRole>(initialRole);
+  const [hasExplicitRoleSelection, setHasExplicitRoleSelection] = useState(false);
   const [isHydrating, setIsHydrating] = useState(true);
   const didHydrate = useRef(false);
 
@@ -110,17 +132,21 @@ export function RoleProvider({
     if (didHydrate.current) return;
     didHydrate.current = true;
     const stored = readStoredRole();
+    const hasStoredSelection = readRoleSelectionState();
     // Use queueMicrotask to move the setState call out of the effect body
     // so it is treated as an async update, not a synchronous cascade.
     queueMicrotask(() => {
       if (stored) setRoleState(stored);
+      setHasExplicitRoleSelection(hasStoredSelection);
       setIsHydrating(false);
     });
   }, []);
 
   const setRole = useCallback((next: UserRole) => {
     setRoleState(next);
+    setHasExplicitRoleSelection(true);
     writeStoredRole(next);
+    writeRoleSelectionState();
     // Announce the role change to screen readers via the live region in the
     // shell — see dashboard-shell.tsx. We dispatch a custom event so the shell
     // can update its aria-live region without coupling contexts.
@@ -132,7 +158,9 @@ export function RoleProvider({
   }, []);
 
   return (
-    <RoleContext.Provider value={{ role, setRole, isHydrating }}>
+    <RoleContext.Provider
+      value={{ role, setRole, hasExplicitRoleSelection, isHydrating }}
+    >
       {children}
     </RoleContext.Provider>
   );
