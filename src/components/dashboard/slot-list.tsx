@@ -8,13 +8,17 @@ import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { TimezoneRibbon } from "./timezone-ribbon";
 import { glossary } from "@/lib/glossary";
-import type { Slot, AvailabilityLevel, SlotPickerDensity, HourlySlotBand } from "./types";
+import type { Slot } from "./types";
 import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
-import { slots } from "./dashboard-data";
 
 import { AvailabilityTemplatePicker } from "./availability-template-picker";
-import { Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  AvailabilityConflictDetector,
+  type AvailabilityConflict,
+  type ConflictResolutionEvent,
+} from "./availability-conflict-detector";
+import { Sparkles, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 
 interface SlotListProps {
   slots?: Slot[];
@@ -22,41 +26,10 @@ interface SlotListProps {
   supplierTimeZone?: string;
   supplierName?: string;
   showTemplatePicker?: boolean;
+  showConflictDetector?: boolean;
+  conflicts?: AvailabilityConflict[];
+  suggestedAlternatives?: Slot[];
 }
-
-const defaultSlots: Slot[] = [
-  {
-    id: "slot-1",
-    title: "1-on-1 Architecture Consultation",
-    dateLabel: "Today",
-    timeRange: "14:00 - 15:00 UTC",
-    status: "Available",
-    demand: "High Demand",
-    rate: "50 XLM / hr",
-    isNextAvailable: true,
-  },
-  {
-    id: "slot-2",
-    title: "Code Review & Optimization",
-    dateLabel: "Tomorrow",
-    timeRange: "10:00 - 11:30 UTC",
-    status: "Booked",
-    demand: "Medium Demand",
-    rate: "75 XLM / hr",
-    isNextAvailable: false,
-  },
-];
-
-const mapTone = (status: string) => {
-  switch (status.toLowerCase()) {
-    case "available":
-      return "positive";
-    case "booked":
-      return "neutral";
-    default:
-      return "neutral";
-  }
-};
 
 export const SlotList = ({
   slots = defaultSlots,
@@ -64,19 +37,13 @@ export const SlotList = ({
   supplierTimeZone = "America/New_York",
   supplierName = "Alex",
   showTemplatePicker = true,
+  showConflictDetector = true,
+  conflicts,
+  suggestedAlternatives,
 }: SlotListProps) => {
   const [activeTz, setActiveTz] = useState<string>("UTC");
   const [templatePickerOpen, setTemplatePickerOpen] = useState<boolean>(false);
-  const [{ x }, api] = useSpring(() => ({ x: 0 }));
-
-  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
-    if (swipeX !== 0) {
-      console.log("Day navigation logic: ", swipeX > 0 ? "Next" : "Previous");
-    }
-    if (swipeY === -1) {
-      console.log("Detail reveal logic");
-    }
-  });
+  const [activeConflictSlotId, setActiveConflictSlotId] = useState<string | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const lastSelectedId = useRef<string | null>(null);
@@ -84,68 +51,19 @@ export const SlotList = ({
 
   const announce = useCallback((msg: string) => {
     setLiveMessage(msg);
-    // clear after a moment to allow re-announcement
     setTimeout(() => setLiveMessage(""), 3000);
   }, []);
 
-  const toggleSelection = (id: string, e?: React.MouseEvent | React.KeyboardEvent) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      const isShift = e && 'shiftKey' in e && e.shiftKey;
-      const isMeta = e && ('metaKey' in e && (e.metaKey || e.ctrlKey));
-
-      if (isShift && lastSelectedId.current) {
-        const currentIndex = slots.findIndex(s => s.id === id);
-        const lastIndex = slots.findIndex(s => s.id === lastSelectedId.current);
-        const start = Math.min(currentIndex, lastIndex);
-        const end = Math.max(currentIndex, lastIndex);
-        
-        if (!isMeta) {
-          next.clear();
-        }
-
-        for (let i = start; i <= end; i++) {
-          next.add(slots[i].id);
-        }
-      } else if (isMeta) {
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
-      } else {
-        if (next.has(id) && next.size === 1) {
-          next.delete(id);
-        } else {
-          next.clear();
-          next.add(id);
-        }
-      }
-      
-      announce(`${next.size} slot${next.size !== 1 ? 's' : ''} selected.`);
-      
-      lastSelectedId.current = id;
-      return next;
-    });
-  };
-
-  const handleKeyDown = (id: string, e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggleSelection(id, e);
-    }
-  };
-
-  const clearSelection = () => {
-    setSelectedIds(new Set());
-    announce("Selection cleared.");
-    lastSelectedId.current = null;
-  };
+  const handleFocusSlot = useCallback((slotId: string) => {
+    setActiveConflictSlotId(slotId);
+    announce(`Focused slot ${slotId}`);
+  }, [announce]);
 
   const mapTone = (status: string) => {
-    if (status === "Healthy") return "positive";
-    if (status === "Tight") return "warning";
-    if (status === "Busy") return "danger";
+    const s = status.toLowerCase();
+    if (s === "healthy" || s === "available") return "positive";
+    if (s === "tight") return "warning";
+    if (s === "busy" || s === "booked") return "neutral";
     return "neutral";
   };
 
@@ -158,6 +76,14 @@ export const SlotList = ({
         supplierName={supplierName}
         onTimezoneChange={(_, activeTimeZone) => setActiveTz(activeTimeZone)}
       />
+
+      {/* Availability Conflict Detector Card */}
+      {showConflictDetector && (
+        <AvailabilityConflictDetector
+          conflicts={conflicts}
+          onFocusAffectedSlot={handleFocusSlot}
+        />
+      )}
 
       {/* Availability Template Picker Banner & Drawer */}
       {showTemplatePicker && (
@@ -204,6 +130,61 @@ export const SlotList = ({
         </div>
       )}
 
+      {/* Suggested Alternatives Section if provided */}
+      {suggestedAlternatives !== undefined && (
+        <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-4 font-sans space-y-3">
+          <div>
+            <h3 className="text-base font-semibold text-white">Rebook a matching slot</h3>
+            <p className="text-xs text-slate-300">Suggested alternatives</p>
+          </div>
+
+          {suggestedAlternatives.length === 0 ? (
+            <div className="text-xs text-slate-400 p-3 rounded-xl border border-white/6 bg-white/4">
+              No matching alternatives found. No alternatives currently available.
+            </div>
+          ) : (
+            <div
+              className="flex gap-3 overflow-x-auto pb-2"
+              role="region"
+              aria-label="Suggested alternatives carousel"
+            >
+              {suggestedAlternatives.map((alt) => {
+                const labelText = `Alternative slot: ${alt.title}, ${alt.dateLabel} ${alt.timeRange}`;
+                return (
+                  <div
+                    key={alt.id}
+                    tabIndex={0}
+                    aria-label={labelText}
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowRight") {
+                        e.preventDefault();
+                        const nextEl = e.currentTarget.nextElementSibling as HTMLElement;
+                        nextEl?.focus();
+                      } else if (e.key === "ArrowLeft") {
+                        e.preventDefault();
+                        const prevEl = e.currentTarget.previousElementSibling as HTMLElement;
+                        prevEl?.focus();
+                      }
+                    }}
+                    className="min-w-[240px] shrink-0 rounded-xl border border-white/10 bg-slate-900/80 p-3 hover:border-cyan-400/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer"
+                  >
+                    <div className="font-semibold text-xs text-white truncate">{alt.title}</div>
+                    <div className="text-[11px] text-slate-400 mt-1">
+                      {alt.dateLabel} · {alt.timeRange}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-300">{alt.rate}</span>
+                      <StatusChip tone={mapTone(alt.status)}>{alt.status}</StatusChip>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main Slots List */}
       {slots.length === 0 ? (
         <EmptyStateCard
           title="No slots available"
@@ -214,18 +195,33 @@ export const SlotList = ({
           {slots.map((slot) => {
             const slotTitleId = "slot-" + slot.id + "-title";
             const slotDetailsId = "slot-" + slot.id + "-details";
+            const isConflictTarget = activeConflictSlotId === slot.id || activeConflictSlotId === `slot-${slot.id}`;
 
             return (
               <li
                 key={slot.id}
-                className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5"
+                id={`slot-${slot.id}`}
+                tabIndex={-1}
+                className={`rounded-[1.5rem] border p-4 sm:p-5 transition-all outline-none ${
+                  isConflictTarget
+                    ? "border-amber-400/60 bg-amber-950/20 ring-2 ring-amber-400/50"
+                    : "border-white/10 bg-white/[0.03]"
+                }`}
               >
                 <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 space-y-1">
-                      <h3 id={slotTitleId} className="text-lg font-semibold text-white">
-                        {slot.title}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 id={slotTitleId} className="text-lg font-semibold text-white">
+                          {slot.title}
+                        </h3>
+                        {isConflictTarget && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-200">
+                            <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                            Target Slot
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-slate-300">
                         {slot.dateLabel} · {slot.timeRange}
                       </p>
@@ -241,7 +237,6 @@ export const SlotList = ({
                       {slot.demand}
                     </span>
 
-                    {/* Rate badge — annotated with HelpPopover for XLM and rate concepts */}
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
                       {slot.rate}
                       <HelpPopover
@@ -256,7 +251,6 @@ export const SlotList = ({
                       </span>
                     ) : null}
 
-                    {/* "Rate details" label — links to broader XLM explanation */}
                     <span className="inline-flex items-center gap-1.5">
                       Rate details
                       <HelpPopover
