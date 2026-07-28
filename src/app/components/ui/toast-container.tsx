@@ -4,29 +4,48 @@
  * ToastContainer — fixed viewport region that renders stacked toasts.
  *
  * Placement: bottom-right on md+, bottom-center on mobile.
- * Stacking: newest on top, max 5 visible (enforced by reducer).
- * The outer <div> is the ARIA live-region anchor; individual toasts
- * carry their own role="status" / role="alert" for granular announcements.
+ * Stacking:  newest on top (flex-col-reverse), capped at TOAST_STACK_LIMIT.
+ * Grouping:  same-category toasts are collapsed by the reducer into one entry.
+ *
+ * A "Clear all" button appears when 2+ entries are visible so users can
+ * dismiss the entire stack in one action — useful after a burst.
  */
 
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Toast } from "./toast";
 
 export function ToastContainer() {
-  const { toasts, dismiss } = useToast();
+  const { toasts, dismiss, dismissAll } = useToast();
 
   return (
-    /*
-     * aria-label gives AT users a landmark they can navigate to.
-     * The region itself is not a live region — each Toast carries its own
-     * role="status" or role="alert" so announcements are scoped correctly.
-     */
     <div
       aria-label="Notifications"
       aria-live="off"
       className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col-reverse gap-2 sm:bottom-6 sm:right-6"
     >
+      {/* "Clear all" — shown only when 2+ entries are present */}
+      <AnimatePresence>
+        {toasts.length >= 2 && (
+          <motion.div
+            key="clear-all"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            className="pointer-events-auto flex justify-end"
+          >
+            <button
+              type="button"
+              onClick={dismissAll}
+              className="rounded-full bg-slate-800/80 px-3 py-1 text-xs text-slate-400 backdrop-blur-sm transition-colors hover:bg-slate-700/80 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            >
+              Clear all ({toasts.length})
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence initial={false} mode="sync">
         {toasts.map((t) => (
           <div key={t.id} className="pointer-events-auto">
