@@ -19,9 +19,5 @@ export * from "./state-card";
 export * from "./status-chip";
 export * from "./wallet-card";
 export * from "./card";
-export * from "./notifications";
-
-export { availabilityDays, bookingStages } from "./dashboard-data";
-
-export { availabilityDays, bookingStages } from "./dashboard-data";
+export * from "./services-step";
 

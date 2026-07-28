@@ -7,6 +7,11 @@ import { HelpPopover } from "@/app/components/ui/help-popover";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
+import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
+import { useToast } from "@/hooks/use-toast";
+import { HelpPopover } from "@/app/components/ui/help-popover";
+import { glossary } from "@/lib/glossary";
+
 
 const statusTone = {
   connected: "positive",
@@ -143,9 +148,6 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
                   text={wallet.address}
                   variant="icon"
                   label="Copy address"
-                  onCopied={() => {
-                    // copied
-                  }}
                 />
               </dd>
             </div>

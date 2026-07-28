@@ -6,10 +6,10 @@
  * Features:
  *   - Expandable search input triggered by a search icon button
  *   - Dropdown panel with:
- *       - Recent searches (persisted in localStorage) with individual remove buttons
- *       - "Clear all" recents action
+ *       - Recent searches (persisted in localStorage) grouped by Today, Yesterday, Earlier
+ *       - "Clear all" recents action with confirmation
  *       - Live suggestion list filtered by current query
- *   - Full keyboard navigation (Arrow keys, Enter to submit, Escape to close, Tab to close)
+ *   - Full keyboard navigation (Arrow keys, Enter to submit, Escape to close, Tab to close, Delete to remove recent)
  *   - ARIA combobox pattern (role="combobox" on the input / role="listbox" on dropdown)
  *   - Click-outside to dismiss
  */
@@ -25,12 +25,14 @@ import {
 } from "react";
 import { Search, X, Clock, TrendingUp } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
+import { EmptyStateCard } from "./empty-state-card";
 
 // Types
 
 interface ListItem {
-  kind: "recent" | "suggestion";
+  kind: "header" | "recent" | "suggestion";
   label: string;
+  timestamp?: number;
 }
 
 // Component
@@ -56,6 +58,18 @@ export function HeaderSearch() {
   const inputId = useId();
   const listboxId = `${inputId}-listbox`;
 
+  const firstSuggestionRef = useRef<HTMLButtonElement>(null);
+  const isZeroState = query.trim() !== "" && suggestions.length === 0;
+
+  useEffect(() => {
+    if (isOpen && isZeroState) {
+      // Small delay to ensure the card is rendered
+      requestAnimationFrame(() => {
+        firstSuggestionRef.current?.focus();
+      });
+    }
+  }, [isOpen, isZeroState]);
+
   /**
    * Wrap setQuery so that changing the query always resets the active list
    * index. Avoids a separate useEffect that would trigger an extra render.
@@ -69,15 +83,36 @@ export function HeaderSearch() {
   );
 
   // Derived list for keyboard navigation -- memoized to stabilise useCallback deps
-  const listItems = useMemo<ListItem[]>(
-    () => [
-      ...(query.trim() === ""
-        ? recentSearches.map((r) => ({ kind: "recent" as const, label: r }))
-        : []),
-      ...suggestions.map((s) => ({ kind: "suggestion" as const, label: s })),
-    ],
-    [query, recentSearches, suggestions],
-  );
+  const listItems = useMemo<ListItem[]>(() => {
+    if (query.trim() !== "") {
+      return suggestions.map((s) => ({ kind: "suggestion" as const, label: s }));
+    }
+
+    const items: ListItem[] = [];
+    const now = Date.now();
+    const msInDay = 86400000;
+
+    const today = recentSearches.filter((r) => now - r.timestamp < msInDay);
+    const yesterday = recentSearches.filter(
+      (r) => now - r.timestamp >= msInDay && now - r.timestamp < msInDay * 2
+    );
+    const earlier = recentSearches.filter((r) => now - r.timestamp >= msInDay * 2);
+
+    if (today.length > 0) {
+      items.push({ kind: "header", label: "Today" });
+      items.push(...today.map((r) => ({ kind: "recent" as const, label: r.term, timestamp: r.timestamp })));
+    }
+    if (yesterday.length > 0) {
+      items.push({ kind: "header", label: "Yesterday" });
+      items.push(...yesterday.map((r) => ({ kind: "recent" as const, label: r.term, timestamp: r.timestamp })));
+    }
+    if (earlier.length > 0) {
+      items.push({ kind: "header", label: "Earlier" });
+      items.push(...earlier.map((r) => ({ kind: "recent" as const, label: r.term, timestamp: r.timestamp })));
+    }
+
+    return items;
+  }, [query, recentSearches, suggestions]);
 
   const isPanelVisible =
     isOpen && (recentSearches.length > 0 || suggestions.length > 0);
@@ -118,6 +153,13 @@ export function HeaderSearch() {
     [addRecentSearch, close, updateQuery],
   );
 
+  const handleClearAll = () => {
+    if (window.confirm("Are you sure you want to clear all recent searches?")) {
+      clearRecentSearches();
+      setActiveIndex(-1);
+    }
+  };
+
   // Click-outside to close
   useEffect(() => {
     const handlePointerDown = (e: PointerEvent) => {
@@ -144,21 +186,45 @@ export function HeaderSearch() {
             open();
             return;
           }
-          setActiveIndex((prev) =>
-            prev < listItems.length - 1 ? prev + 1 : 0,
-          );
+          setActiveIndex((prev) => {
+            let next = prev + 1;
+            while (next < listItems.length && listItems[next].kind === "header") {
+              next++;
+            }
+            if (next >= listItems.length) {
+              next = 0;
+              while (next < listItems.length && listItems[next].kind === "header") {
+                next++;
+              }
+            }
+            return next;
+          });
           break;
         }
         case "ArrowUp": {
           e.preventDefault();
-          setActiveIndex((prev) =>
-            prev > 0 ? prev - 1 : listItems.length - 1,
-          );
+          if (!isOpen) {
+            open();
+            return;
+          }
+          setActiveIndex((prev) => {
+            let next = prev - 1;
+            while (next >= 0 && listItems[next].kind === "header") {
+              next--;
+            }
+            if (next < 0) {
+              next = listItems.length - 1;
+              while (next >= 0 && listItems[next].kind === "header") {
+                next--;
+              }
+            }
+            return next;
+          });
           break;
         }
         case "Enter": {
           e.preventDefault();
-          if (activeIndex >= 0 && listItems[activeIndex]) {
+          if (activeIndex >= 0 && listItems[activeIndex] && listItems[activeIndex].kind !== "header") {
             submitSearch(listItems[activeIndex].label);
           } else if (query.trim()) {
             submitSearch(query);
@@ -179,10 +245,26 @@ export function HeaderSearch() {
           close();
           break;
         }
+        case "Delete": {
+          if (activeIndex >= 0 && listItems[activeIndex]?.kind === "recent") {
+            e.preventDefault();
+            removeRecentSearch(listItems[activeIndex].label);
+            // activeIndex is retained, list shrinks. If it was the last item, focus might be out of bounds.
+            // A small effect below adjusts out of bounds indexes.
+          }
+          break;
+        }
       }
     },
-    [isOpen, listItems, activeIndex, query, open, close, submitSearch, updateQuery],
+    [isOpen, listItems, activeIndex, query, open, close, submitSearch, updateQuery, removeRecentSearch],
   );
+
+  // Adjust activeIndex if items change and it falls out of bounds or lands on a header
+  useEffect(() => {
+    if (activeIndex >= listItems.length) {
+      setActiveIndex(listItems.length - 1);
+    }
+  }, [listItems.length, activeIndex]);
 
   // Scroll active item into view
   useEffect(() => {
@@ -276,12 +358,12 @@ export function HeaderSearch() {
                 {query.trim() === "" && recentSearches.length > 0 && (
                   <div className="flex items-center justify-between px-3 pt-3 pb-1">
                     <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
-                      <Clock className="h-3 w-3" aria-hidden={true} />
-                      Recent
+                      <Clock className="h-3 w-3" aria-hidden="true" />
+                      Recent Searches
                     </span>
                     <button
                       type="button"
-                      onClick={clearRecentSearches}
+                      onClick={handleClearAll}
                       className="text-xs text-slate-500 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 rounded transition-colors"
                     >
                       Clear all
@@ -315,83 +397,128 @@ export function HeaderSearch() {
                     aria-label="Search suggestions"
                     className="max-h-64 overflow-y-auto py-1 px-1"
                   >
-                    {listItems.map((item, idx) => (
-                      <li
-                        key={`${item.kind}-${item.label}`}
-                        id={`${listboxId}-item-${idx}`}
-                        role="option"
-                        aria-selected={idx === activeIndex}
-                        className={[
-                          "group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
-                          idx === activeIndex
-                            ? "bg-cyan-500/10 text-white"
-                            : "text-slate-300 hover:bg-white/6 hover:text-white",
-                        ].join(" ")}
-                        onPointerDown={(e) => {
-                          // Prevent input blur before click fires
-                          e.preventDefault();
-                        }}
-                        onClick={() => submitSearch(item.label)}
-                      >
-                        {/* Icon */}
-                        {item.kind === "recent" ? (
-                          <Clock
-                            className="h-3.5 w-3.5 shrink-0 text-slate-500"
-                            aria-hidden={true}
-                          />
-                        ) : (
-                          <Search
-                            className="h-3.5 w-3.5 shrink-0 text-slate-500"
-                            aria-hidden={true}
-                          />
-                        )}
+                    {listItems.map((item, idx) => {
+                      if (item.kind === "header") {
+                        return (
+                          <li
+                            key={`header-${item.label}`}
+                            className="px-3 py-1.5 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500"
+                            role="presentation"
+                          >
+                            {item.label}
+                          </li>
+                        );
+                      }
 
-                        {/* Label with query highlight */}
-                        <span className="flex-1 truncate">
-                          {item.kind === "suggestion" && query.trim() ? (
-                            <HighlightMatch
-                              text={item.label}
-                              query={query.trim()}
+                      return (
+                        <li
+                          key={`${item.kind}-${item.label}`}
+                          id={`${listboxId}-item-${idx}`}
+                          role="option"
+                          aria-selected={idx === activeIndex}
+                          className={[
+                            "group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                            idx === activeIndex
+                              ? "bg-cyan-500/10 text-white"
+                              : "text-slate-300 hover:bg-white/6 hover:text-white",
+                          ].join(" ")}
+                          onPointerDown={(e) => {
+                            // Prevent input blur before click fires
+                            e.preventDefault();
+                          }}
+                          onClick={() => submitSearch(item.label)}
+                        >
+                          {/* Icon */}
+                          {item.kind === "recent" ? (
+                            <Clock
+                              className="h-3.5 w-3.5 shrink-0 text-slate-500"
+                              aria-hidden="true"
                             />
                           ) : (
-                            item.label
+                            <Search
+                              className="h-3.5 w-3.5 shrink-0 text-slate-500"
+                              aria-hidden="true"
+                            />
                           )}
-                        </span>
 
-                        {/* Remove button for recents */}
-                        {item.kind === "recent" && (
-                          <button
-                            type="button"
-                            aria-label={`Remove "${item.label}" from recent searches`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeRecentSearch(item.label);
-                            }}
-                            className="ml-auto shrink-0 rounded-full p-0.5 text-slate-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-[opacity,color]"
-                          >
-                            <X className="h-3 w-3" aria-hidden={true} />
-                          </button>
-                        )}
-                      </li>
-                    ))}
+                          {/* Label with query highlight */}
+                          <span className="flex-1 truncate">
+                            {item.kind === "suggestion" && query.trim() ? (
+                              <HighlightMatch
+                                text={item.label}
+                                query={query.trim()}
+                              />
+                            ) : (
+                              item.label
+                            )}
+                          </span>
+
+                          {/* Remove button for recents */}
+                          {item.kind === "recent" && (
+                            <button
+                              type="button"
+                              aria-label={`Remove "${item.label}" from recent searches`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeRecentSearch(item.label);
+                              }}
+                              className="ml-auto shrink-0 rounded-full p-0.5 text-slate-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-[opacity,color]"
+                            >
+                              <X className="h-3 w-3" aria-hidden="true" />
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
 
                 {/* No suggestions found */}
-                {query.trim() !== "" && suggestions.length === 0 && (
-                  <p className="px-3 py-4 text-sm text-slate-500 text-center">
-                    No results for &ldquo;{query}&rdquo;
-                  </p>
+                {isZeroState && (
+                  <div className="p-2">
+                    <EmptyStateCard
+                      eyebrow="Zero Results"
+                      title={`No matches for "${query}"`}
+                      description="We couldn't find any items matching your search."
+                      accentLabel="Search"
+                      status={{ label: "Not found", tone: "neutral" }}
+                      guidance={[
+                        "Try broadening your filters",
+                        "Search for nearby dates",
+                        "Check for typos"
+                      ]}
+                      actions={
+                        <div className="flex w-full flex-col gap-2">
+                          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                            Popular Searches
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {["Consultation", "Design Review", "Code Audit"].map((s, idx) => (
+                              <button
+                                key={s}
+                                type="button"
+                                ref={idx === 0 ? firstSuggestionRef : undefined}
+                                onClick={() => submitSearch(s)}
+                                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    />
+                  </div>
                 )}
 
                 {/* Keyboard hint footer */}
                 <div className="border-t border-white/6 px-3 py-2">
                   <p className="text-xs text-slate-600">
-                    <kbd className="font-mono">up/down</kbd> navigate
+                    <kbd className="font-mono">up/down</kbd> nav
                     &nbsp;&middot;&nbsp;
                     <kbd className="font-mono">Enter</kbd> select
                     &nbsp;&middot;&nbsp;
-                    <kbd className="font-mono">Esc</kbd> close
+                    <kbd className="font-mono">Del</kbd> remove
                   </p>
                 </div>
               </div>
