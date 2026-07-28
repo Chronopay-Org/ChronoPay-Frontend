@@ -53,6 +53,7 @@ export type SocialProofBadgeType =
   | "repeatBuyers"
   | "fastResponse"
   | "verified"
+  | "verifiedPayouts"
   | "earlyAdopter";
 
 export type SocialProofBadgeEntry = {
@@ -61,6 +62,7 @@ export type SocialProofBadgeEntry = {
   tone: Tone;
   icon: string;
   criterion: string;
+  explainerKey?: string;
 };
 
 export type Supplier = {

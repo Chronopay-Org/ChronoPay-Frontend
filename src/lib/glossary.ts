@@ -124,22 +124,12 @@ export const glossary = {
   },
 
   /**
-   * Holiday hints: upcoming public holidays surfaced to help suppliers plan availability.
+   * Verified payouts: supplier's payout destination authenticated on Stellar.
    */
-  holidayHints: {
-    title: "Holiday hints",
-    body: "ChronoPay surfaces upcoming public holidays for your region so you can plan ahead. Use the quick actions to block these days and avoid accidental bookings when you're unavailable.",
-    learnMoreHref: "/docs/glossary#holiday-hints",
-    learnMoreLabel: "Learn more about holiday hints →",
-  },
-
-  /**
-   * Region-based holidays: holidays vary by country and region.
-   */
-  regionHolidays: {
-    title: "Regional holidays",
-    body: "Public holidays shown are based on your supplier profile's region setting. Update your region in Settings to see holidays relevant to your location.",
-    learnMoreHref: "/docs/glossary#region-holidays",
-    learnMoreLabel: "Learn more about region settings →",
+  verifiedPayouts: {
+    title: "Verified Payout Account",
+    body: "This supplier's payout account and Stellar trustlines have been authenticated and verified on-chain for automated, secure settlement on ChronoPay.",
+    learnMoreHref: "/docs/glossary#verified-payouts",
+    learnMoreLabel: "Learn more about verified payouts →",
   },
 } satisfies Record<string, GlossaryTerm>;

@@ -1,5 +1,7 @@
 import type { SocialProofBadgeEntry, Tone } from "./types";
 import { Tooltip } from "@/app/components/ui/tooltip";
+import { HelpPopover } from "@/app/components/ui/help-popover";
+import { glossary } from "@/lib/glossary";
 import * as Icons from "lucide-react";
 
 const toneClasses: Record<Tone, string> = {
@@ -20,6 +22,14 @@ export function SocialProofBadge({
     | React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>
     | undefined;
 
+  const explainerTermKey =
+    badge.explainerKey ??
+    (badge.type === "verifiedPayouts" ? "verifiedPayouts" : undefined);
+
+  const explainerTerm = explainerTermKey
+    ? glossary[explainerTermKey as keyof typeof glossary]
+    : undefined;
+
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${toneClasses[badge.tone]} ${className}`}
@@ -30,6 +40,12 @@ export function SocialProofBadge({
       ) : null}
       <span className="truncate">{badge.label}</span>
       <Tooltip content={badge.criterion} />
+      {explainerTerm ? (
+        <HelpPopover
+          term={explainerTerm}
+          triggerLabel={`Explainer for ${badge.label}`}
+        />
+      ) : null}
     </span>
   );
 }
@@ -72,6 +88,14 @@ export const BADGE_PRESETS: Record<
     icon: "BadgeCheck",
     criterion:
       "Identity verified through Stellar account authentication and KYC review.",
+  },
+  verifiedPayouts: {
+    label: "Verified Payouts",
+    tone: "positive",
+    icon: "ShieldCheck",
+    criterion:
+      "Supplier's payout account and Stellar trustlines are verified on-chain for automated settlement.",
+    explainerKey: "verifiedPayouts",
   },
   earlyAdopter: {
     label: "Early adopter",

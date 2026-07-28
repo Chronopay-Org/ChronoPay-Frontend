@@ -11,6 +11,7 @@ import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 import { useToast } from "@/hooks/use-toast";
+import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
 const walletProviders: WalletProvider[] = [
