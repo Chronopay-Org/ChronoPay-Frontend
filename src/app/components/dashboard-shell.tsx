@@ -1,259 +1,324 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { clsx } from "clsx";
+import { Menu, X, Shield } from "lucide-react";
+import { useRole } from "@/app/components/navigation/RoleContext";
+import { getNavForRole, ROLE_META, type NavItem } from "@/app/components/navigation/role-nav";
 import { HeaderSearch } from "@/app/components/header-search";
+import { AccountSwitcher } from "@/app/components/account-switcher";
+import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
+import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 
-// ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
-// Icons come from the NavItem definition in role-nav.ts and are displayed with
-// aria-hidden="true" alongside the text label.
+function getOnlineStatus() {
+  if (typeof navigator === "undefined") return true;
+  return navigator.onLine;
+}
 
-// ─── Inner shell (consumes RoleContext) ───────────────────────────────────────
+function SystemStatus() {
+  const isOnline = useSyncExternalStore(
+    (cb) => {
+      window.addEventListener("online", cb);
+      window.addEventListener("offline", cb);
+      return () => {
+        window.removeEventListener("online", cb);
+        window.removeEventListener("offline", cb);
+      };
+    },
+    getOnlineStatus,
+    () => true,
+  );
+  const statusId = useId();
+
+  return (
+    <div
+      className="hidden items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium md:inline-flex"
+      style={{
+        borderColor: "var(--shell-rail-border)",
+        color: "var(--shell-text-muted)",
+      }}
+    >
+      <span
+        className={clsx(
+          "h-2 w-2 rounded-full",
+          isOnline ? "bg-emerald-400" : "bg-rose-400"
+        )}
+        aria-hidden="true"
+      />
+      <span>
+        {isOnline ? "All Systems Nominal" : "Offline"}
+      </span>
+      <span id={statusId} role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {isOnline ? "System online" : "System offline"}
+      </span>
+    </div>
+  );
+}
+
+function NavRailItem({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
+  const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+
+  return (
+    <Link
+      href={item.href}
+      aria-label={item.ariaLabel ?? item.label}
+      aria-current={isActive ? "page" : undefined}
+      onClick={onClick}
+      className={clsx(
+        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
+        "focus-visible:ring-offset-slate-950",
+        isActive
+          ? "bg-white/10 text-white"
+          : "hover:bg-white/6 text-slate-400 hover:text-slate-200"
+      )}
+      style={{
+        backgroundColor: isActive ? "var(--shell-rail-active)" : undefined,
+        color: isActive ? "var(--shell-rail-text-active)" : undefined,
+      }}
+    >
+      <span aria-hidden="true" className="text-lg leading-none w-6 text-center shrink-0">
+        {item.icon}
+      </span>
+      <span className="truncate">{item.label}</span>
+    </Link>
+  );
+}
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const drawerRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const { role } = useRole();
+  const [isRailOpen, setIsRailOpen] = useState(false);
+  const railToggleRef = useRef<HTMLButtonElement>(null);
+  const railRef = useRef<HTMLDivElement>(null);
+  const liveId = useId();
 
-
-
-
-
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [isOpen]);
+  const navItems = getNavForRole(role);
+  const roleMeta = ROLE_META[role];
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isRailOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsRailOpen(false);
+        railToggleRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [isRailOpen]);
 
-    const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
-      "a[href], button:not([disabled])"
+  useEffect(() => {
+    if (!isRailOpen || !railRef.current) return;
+    const focusable = railRef.current.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
     );
-    const first = focusable?.[0];
-    const last = focusable?.[focusable.length - 1];
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
 
-    const handleTab = (event: KeyboardEvent) => {
-      if (event.key !== "Tab" || !focusable) return;
-      if (event.shiftKey) {
-        if (document.activeElement === first) {
-          event.preventDefault();
-          last?.focus();
-        }
-      } else if (document.activeElement === last) {
-        event.preventDefault();
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
         first?.focus();
       }
     };
 
     document.addEventListener("keydown", handleTab);
-    first?.focus();
+    requestAnimationFrame(() => first?.focus());
     return () => document.removeEventListener("keydown", handleTab);
-  }, [isOpen]);
+  }, [isRailOpen]);
 
-
-
-  const routes = [
-    { href: "/", label: "Home" },
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/calendar", label: "Calendar" },
-    { href: "/history", label: "History" },
-  ];
-
-
+  const closeRail = useCallback(() => {
+    setIsRailOpen(false);
+    railToggleRef.current?.focus();
+  }, []);
 
   return (
-    <div
-      className="app-shell min-h-screen"
-      style={{ color: "var(--shell-text)" }}
-    >
-      {/* Screen-reader live region for role changes */}
-      <div
-        ref={liveRef}
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      />
+    <div className="app-shell flex min-h-screen flex-col">
+      <div id={liveId} role="status" aria-live="polite" aria-atomic="true" className="sr-only" />
 
+      {/* ── Command Bar ──────────────────────────────────────────────────── */}
       <header
-        className="border-b backdrop-blur-xl"
+        className="sticky top-0 z-30 border-b backdrop-blur-xl"
         style={{
           background: "var(--shell-header-bg)",
           borderColor: "var(--shell-header-border)",
-          boxShadow: isScrolled ? "0 4px 20px rgba(0,0,0,0.3)" : undefined,
         }}
       >
-        <nav
-          className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:px-6 md:py-4"
-          aria-label="Dashboard navigation"
-        >
-          <div>
-            <Link
-              href="/"
-              className="text-lg font-semibold tracking-tight text-white"
-              aria-label="ChronoPay home"
-            >
-              ChronoPay
-            </Link>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-              Time economy dashboard
-            </p>
-          </div>
+        <div className="mx-auto flex h-14 w-full items-center gap-2 px-4 sm:px-6">
+          {/* Hamburger — visible only on small screens */}
+          <button
+            ref={railToggleRef}
+            type="button"
+            aria-label={isRailOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={isRailOpen}
+            aria-controls="admin-rail"
+            onClick={() => setIsRailOpen((v) => !v)}
+            className={clsx(
+              "rounded-lg p-2 transition-colors lg:hidden",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400",
+              "hover:bg-white/6 text-slate-400 hover:text-white"
+            )}
+          >
+            {isRailOpen ? (
+              <X className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            )}
+          </button>
 
-          <div className="hidden items-center gap-3 text-sm text-slate-300 md:flex">
-            {routes.map((route) => (
-              <Link
-                key={r.href}
-                href={r.href}
-                className="rounded-full px-3 py-2 hover:bg-white/6 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none transition-colors"
-                style={{ color: "var(--shell-text-muted)" }}
-              >
-                <span>{r.label}</span>
-              </Link>
-            ))}
-            <AccountSwitcher />
-            <ThemeSwitcher />
-            <OfflineQueueIndicator />
-            <a
-              href="https://stellar.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full border px-3 py-2 hover:bg-white/6 transition-colors"
-              style={{
-                borderColor: "var(--border-subtle)",
-                color: "var(--shell-text-muted)",
-              }}
-            >
-              Stellar
-            </a>
-            <HeaderSearch />
-          </div>
+          {/* Logo */}
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight"
+            style={{ color: "var(--shell-text)" }}
+            aria-label="ChronoPay home"
+          >
+            <Shield className="h-5 w-5 text-cyan-400" aria-hidden="true" />
+            <span className="hidden sm:inline">ChronoPay</span>
+          </Link>
 
-          <div className="flex items-center gap-1 md:hidden">
-            <HeaderSearch />
-            <button
-              className="rounded-md p-2 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
-              aria-label="Open navigation menu"
-              onClick={() => setIsOpen(true)}
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
+          {/* Desktop nav links inline in command bar — visible only on large screens */}
+          <nav aria-label="Quick navigation" className="hidden lg:flex lg:items-center lg:gap-1">
+            {navItems.slice(0, 3).map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.ariaLabel ?? item.label}
+                  aria-current={isActive ? "page" : undefined}
+                  className={clsx(
+                    "rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400",
+                    isActive
+                      ? "text-white"
+                      : "hover:bg-white/6 text-slate-400 hover:text-slate-200"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Global actions */}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex sm:items-center sm:gap-2">
+              <RoleChip />
+              <AccountSwitcher />
+              <HeaderSearch />
+              <ThemeSwitcher />
+              <OfflineQueueIndicator />
+            </div>
+
+            {/* System Status — visible on medium+ screens */}
+            <SystemStatus />
           </div>
-        </nav>
+        </div>
       </header>
 
-      {isOpen && (
-        <div
-          ref={drawerRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation menu"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-40"
+      {/* ── Body: Rail + Content ─────────────────────────────────────────── */}
+      <div className="flex flex-1">
+        {/* ── Left Rail (Desktop persistent, Mobile overlay) ─────────────── */}
+        <aside
+          id="admin-rail"
+          ref={railRef}
+          role="navigation"
+          aria-label="Module navigation"
+          className={clsx(
+            "flex flex-col border-r shrink-0 overflow-y-auto",
+            "transition-transform duration-200 ease-out motion-reduce:transition-none",
+            "lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:w-[var(--shell-rail-width)]",
+            "fixed inset-y-0 left-0 z-40 w-64",
+            "lg:translate-x-0",
+            isRailOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+          style={{
+            background: "var(--shell-rail-bg)",
+            borderColor: "var(--shell-rail-border)",
+            backdropFilter: "blur(12px)",
+          }}
         >
-          <aside
-            className="w-64 h-full p-4 flex flex-col"
+          {/* Mobile close button */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-2 lg:hidden">
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--shell-text-muted)" }}>
+              Modules
+            </span>
+            <button
+              type="button"
+              aria-label="Close navigation menu"
+              onClick={closeRail}
+              className={clsx(
+                "rounded-lg p-1.5 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400",
+                "hover:bg-white/6 text-slate-400 hover:text-white"
+              )}
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+
+          {/* Role indicator */}
+          <div
+            className="mx-3 mb-3 rounded-xl border p-3 lg:mt-3"
             style={{
-              background: "var(--shell-drawer-bg)",
-              color: "var(--shell-text)",
+              borderColor: "var(--shell-rail-border)",
             }}
           >
+            <div className="flex items-center gap-2.5">
+              <span aria-hidden="true" className="text-lg leading-none">{roleMeta.icon}</span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: "var(--shell-rail-text-active)" }}>
+                  {roleMeta.label}
+                </p>
+                <p className="text-xs truncate" style={{ color: "var(--shell-text-muted)" }}>
+                  {roleMeta.description}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Nav items */}
+          <nav aria-label="Role modules" className="flex flex-col gap-1 px-3 pb-4">
+            {navItems.map((item) => (
+              <NavRailItem key={item.href} item={item} pathname={pathname} onClick={closeRail} />
+            ))}
+          </nav>
+
+          {/* Mobile backdrop */}
+          {isRailOpen && (
             <button
-              className="mb-4 rounded-md p-2 self-start focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
               aria-label="Close navigation menu"
-              onClick={() => setIsOpen(false)}
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-            <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
-              {routes.map((route) => (
-                <Link
-                  key={r.href}
-                  href={r.href}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none transition-colors"
-                  style={{ color: "var(--shell-text)" }}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span>{r.label}</span>
-                </Link>
-              ))}
-            </nav>
+              tabIndex={-1}
+              onClick={closeRail}
+              className="fixed inset-0 z-[-1] bg-black/40 backdrop-blur-sm lg:hidden"
+            />
+          )}
+        </aside>
 
-            <div className="mt-6 px-1">
-              <Link
-                href="/"
-                className="w-full justify-center flex items-center rounded-xl bg-cyan-500 py-2.5 text-sm font-medium text-slate-950 hover:bg-cyan-400 focus-ring-white"
-              >
-                Get Started
-              </Link>
-            </div>
-
-            {/* Stellar link in drawer */}
-            <div className="mt-auto pt-6 border-t border-white/8">
-              <a
-                href="https://stellar.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none"
-              >
-                <span aria-hidden="true">🌐</span>
-                <span>Stellar network</span>
-              </a>
-            </div>
-          </aside>
-
-          <button
-            className="flex-1 cursor-default"
-            onClick={() => setIsOpen(false)}
-            aria-label="Close navigation drawer"
-            tabIndex={-1}
-          />
-        </div>
-      )}
-
-      {/* ── Mobile bottom bar with overflow ────────────────────────────────── */}
-      <BottomNavOverflow items={routes} role={role} />
-
-      {/* Page content — padded so it clears the bottom bar on mobile */}
-      <main id="main-content" className="pb-16 md:pb-0">
-        {children}
-      </main>
+        {/* ── Main Content ──────────────────────────────────────────────── */}
+        <main
+          id="main-content"
+          className="flex-1 min-w-0 px-4 py-6 sm:px-6 lg:px-8"
+          style={{
+            marginInlineStart: 0,
+          }}
+        >
+          {children}
+        </main>
+      </div>
     </div>
-  );
-}
-
-// ─── Public shell export (wraps with RoleProvider) ────────────────────────────
-
-export function DashboardShell({ children }: { children: React.ReactNode }) {
-  return (
-    <RoleProvider>
-      <ShellInner>{children}</ShellInner>
-    </RoleProvider>
   );
 }
