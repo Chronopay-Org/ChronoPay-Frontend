@@ -83,17 +83,10 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     }
   }, [isOpen, selectedMethod]);
 
-  // Reset internal state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      // Restore preferred method from localStorage
-      const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null;
-      setSelectedMethod(stored);
-      setEmail('');
-      setSelectedCaps([]);
-      setSelectedProviderName(undefined);
-    }
-  }, [isOpen]);
+  const emailValid = useMemo(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }, [email]);
 
   const emailValid = useMemo(() => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
