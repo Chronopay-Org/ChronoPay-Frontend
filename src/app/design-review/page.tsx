@@ -1,5 +1,6 @@
 import DesignChecklist from "@/components/design/DesignChecklist";
 import { StatusMatrix, statusMatrixData } from "@/components/design/status-matrix";
+import { A11yAuditDashboard } from "@/components/design/a11y-audit-dashboard";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SentimentChipFilter } from "@/components/dashboard/sentiment-chip-filter";
@@ -169,6 +170,15 @@ export default function DesignReviewPage() {
                 System Status Matrix
               </h2>
               <StatusMatrix config={statusMatrixData} />
+            </div>
+
+            {/* ── Accessibility Audit Dashboard ── */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                Accessibility Audit
+              </h2>
+              <A11yAuditDashboard />
             </div>
           </div>
         </section>
