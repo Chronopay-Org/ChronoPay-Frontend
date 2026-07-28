@@ -113,3 +113,24 @@ export type OfflineQueueState = {
   connection: OfflineQueueConnectionState;
   queue: QueuedAction[];
 };
+
+export type ConflictField = {
+  field: string;
+  localValue: string;
+  remoteValue: string;
+};
+
+export type SyncConflict = {
+  id: string;
+  eventTitle: string;
+  dateTime: string;
+  localChanges: ConflictField[];
+  remoteChanges: ConflictField[];
+};
+
+export type ResolutionStrategy = "useLocal" | "useRemote" | "merge";
+
+export type ConflictResolution = {
+  conflictId: string;
+  strategy: ResolutionStrategy;
+};
