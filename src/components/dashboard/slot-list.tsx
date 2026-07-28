@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useSpring } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import { StatusChip } from "./status-chip";
@@ -27,6 +27,7 @@ export type AlternativeSlot = Slot & {
 
 interface SlotListProps {
   slots?: Slot[];
+  suggestedAlternatives?: Slot[];
   supplierId?: string;
   supplierTimeZone?: string;
   supplierName?: string;
@@ -230,24 +231,55 @@ export const SlotList = ({
   const [activeTz, setActiveTz] = useState<string>("UTC");
   const [{ x }, api] = useSpring(() => ({ x: 0 }));
 
-  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
-    if (swipeX !== 0) {
-      console.log("Day navigation logic: ", swipeX > 0 ? "Next" : "Previous");
-    }
-    if (swipeY === -1) {
-      console.log("Detail reveal logic");
+  const [isDragging, setIsDragging] = useState(false);
+  const [conflicts, setConflicts] = useState<Record<string, string>>({});
+
+  const bind = useDrag((state) => {
+    // state.first / state.last indicate drag lifecycle
+    if (state.first) setIsDragging(true);
+    if (state.last) setIsDragging(false);
+
+    // quick examples of conflict detection while dragging
+    // real app should compute based on drop target + business rules
+    if (state.active) {
+      const found: Record<string, string> = {};
+      slots.forEach((s) => {
+        // Existing booking
+        if (s.status && s.status.toLowerCase() === "booked") {
+          found[s.id] = "Existing booking";
+        }
+
+        // Blocked day flag (some slot data may include `blocked`)
+        if ((s as any).blocked) {
+          found[s.id] = "Blocked day";
+        }
+      });
+      setConflicts(found);
     }
   });
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const lastSelectedId = useRef<string | null>(null);
   const [liveMessage, setLiveMessage] = useState("");
+  const lastSelectedId = useRef<string | null>(null);
+  const alternativeRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const announce = useCallback((msg: string) => {
     setLiveMessage(msg);
-    // clear after a moment to allow re-announcement
     setTimeout(() => setLiveMessage(""), 3000);
   }, []);
+
+  // Announce conflicts to assistive tech when dragging starts
+  useEffect(() => {
+    if (isDragging) {
+      const keys = Object.keys(conflicts);
+      if (keys.length > 0) {
+        announce(`${keys.length} blocked target${keys.length !== 1 ? "s" : ""}.`);
+      } else {
+        announce("No conflicts for current drag target.");
+      }
+    }
+    // only when dragging or conflicts change
+  }, [isDragging, conflicts, announce]);
 
   const toggleSelection = (id: string, e?: React.MouseEvent | React.KeyboardEvent) => {
     setSelectedIds((prev) => {
@@ -304,14 +336,17 @@ export const SlotList = ({
   };
 
   const mapTone = (status: string) => {
-    if (status === "Healthy") return "positive";
-    if (status === "Tight") return "warning";
-    if (status === "Busy") return "danger";
+    const s = status.toLowerCase();
+    if (s === "healthy" || s === "available") return "positive";
+    if (s === "tight") return "warning";
+    if (s === "busy" || s === "booked") return "neutral";
     return "neutral";
   };
 
+  const dir = getDir(locale);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir={dir}>
       {/* Timezone Ribbon Header */}
       <TimezoneRibbon
         supplierId={supplierId}
@@ -350,38 +385,133 @@ export const SlotList = ({
           description="There are currently no scheduled availability slots for this supplier."
         />
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-4" {...bind()}>
           {slots.map((slot) => {
             const slotTitleId = "slot-" + slot.id + "-title";
             const slotDetailsId = "slot-" + slot.id + "-details";
+            const isConflictTarget = activeConflictSlotId === slot.id || activeConflictSlotId === `slot-${slot.id}`;
 
             return (
               <li
                 key={slot.id}
-                className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5"
+                className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5"
+                aria-describedby={conflicts[slot.id] ? `conflict-${slot.id}` : undefined}
               >
+                {/* conflict overlay */}
+                {conflicts[slot.id] ? (
+                  <div
+                    className="pointer-events-none absolute inset-0 z-10 rounded-[1.5rem]"
+                    style={{
+                      backgroundColor: 'rgba(220,38,38,0.12)',
+                      backgroundImage:
+                        'repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 6px, transparent 6px 12px)',
+                    }}
+                    aria-hidden={false}
+                    role="img"
+                    aria-label={`Conflict: ${conflicts[slot.id]}`}
+                  >
+                    <span
+                      id={`conflict-${slot.id}`}
+                      className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
+                      style={{ backdropFilter: 'saturate(120%) blur(2px)' }}
+                    >
+                      {conflicts[slot.id]}
+                    </span>
+                  </div>
+                ) : null}
                 <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 space-y-1">
-                      <h3 id={slotTitleId} className="text-lg font-semibold text-white">
-                        {slot.title}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 id={slotTitleId} className="text-lg font-semibold text-white">
+                          {slot.title}
+                        </h3>
+                        {isJustAdded(slot.mintedAt) && (
+                          <Tooltip
+                            content="This slot was added within the last 24 hours."
+                            trigger={
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[0.65rem] font-bold tracking-wider text-cyan-300 hover:bg-cyan-400/20 transition-colors cursor-help">
+                                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" aria-hidden="true" />
+                                NEW
+                              </span>
+                            }
+                            triggerClassName="inline-flex"
+                            ariaLabel="New slot: added within the last 24 hours"
+                          />
+                        )}
+                      </div>
                       <p className="text-sm text-slate-300">
-                        {slot.dateLabel} · {slot.timeRange}
+                        <BidiIsolate locale={locale}>{slot.dateLabel}</BidiIsolate>
+                        <span aria-hidden="true"> · </span>
+                        <BidiIsolate locale={locale}>{slot.timeRange}</BidiIsolate>
                       </p>
                     </div>
                     <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
                   </div>
 
+              return (
+                <li key={slot.id} className="space-y-2">
+                  {isDropTarget && dropPosition === "before" ? (
+                    <div className="h-1 rounded-full bg-cyan-400/80" />
+                  ) : null}
                   <div
-                    id={slotDetailsId}
-                    className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-300"
+                    data-slot-id={slot.id}
+                    draggable
+                    tabIndex={0}
+                    aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
+                    aria-pressed={isSelected}
+                    onDragStart={(event) => {
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", slot.id);
+                      setDraggingId(slot.id);
+                      setDragOverId(slot.id);
+                      setGhostPosition({ x: event.clientX, y: event.clientY });
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      const rect = event.currentTarget.getBoundingClientRect();
+                      const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after";
+                      setDragOverId(slot.id);
+                      setDropPosition(position);
+                      event.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const sourceId = event.dataTransfer.getData("text/plain") || draggingId;
+                      if (sourceId) {
+                        reorderSlots(sourceId, slot.id, dropPosition);
+                      }
+                      clearDragState();
+                    }}
+                    onDragEnd={() => clearDragState()}
+                    onKeyDown={(event) => handleListKeyDown(slot.id, event)}
+                    className={`rounded-[1.5rem] border p-4 transition-all duration-200 sm:p-5 ${isDragging ? "border-cyan-400/80 bg-cyan-400/10 opacity-70 shadow-[0_0_0_1px_rgba(34,211,238,0.3)]" : isSelected ? "border-cyan-400/40 bg-cyan-400/10" : "border-white/10 bg-white/[0.03] hover:border-cyan-400/30 hover:bg-cyan-400/[0.06]"}`}
                   >
-                    <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                      {slot.demand}
-                    </span>
+                    <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 id={slotTitleId} className="text-lg font-semibold text-white">
+                              {slot.title}
+                            </h3>
+                            {isDragging ? (
+                              <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100">
+                                Moving
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="text-sm text-slate-300">
+                            {slot.dateLabel} · {slot.timeRange}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
+                            Drag to move
+                          </span>
+                          <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
+                        </div>
+                      </div>
 
-                    {/* Rate badge — annotated with HelpPopover for XLM and rate concepts */}
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
                       {slot.rate}
                       <HelpPopover
@@ -390,13 +520,14 @@ export const SlotList = ({
                       />
                     </span>
 
-                    {slot.isNextAvailable ? (
-                      <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-cyan-100">
-                        Next available
-                      </span>
-                    ) : null}
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                          {slot.rate}
+                          <HelpPopover
+                            term={glossary.rate}
+                            triggerLabel="Help: slot rate and XLM pricing"
+                          />
+                        </span>
 
-                    {/* "Rate details" label — links to broader XLM explanation */}
                     <span className="inline-flex items-center gap-1.5">
                       Rate details
                       <HelpPopover
@@ -405,11 +536,54 @@ export const SlotList = ({
                       />
                     </span>
                   </div>
-                </article>
-              </li>
-            );
-          })}
-        </ul>
+                  {isDropTarget && dropPosition === "after" ? (
+                    <div className="h-1 rounded-full bg-cyan-400/80" />
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+
+          {suggestedAlternatives.length > 0 ? (
+            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
+                  <p className="mt-1 text-sm text-slate-300">Suggested alternatives</p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {suggestedAlternatives.map((alternative, index) => (
+                  <button
+                    key={alternative.id}
+                    ref={(element) => {
+                      alternativeRefs.current[index] = element;
+                    }}
+                    type="button"
+                    tabIndex={0}
+                    aria-label={`Alternative slot: ${alternative.title}, ${alternative.dateLabel} ${alternative.timeRange}`}
+                    onKeyDown={(event) => handleAlternativeKeyDown(index, event)}
+                    className="rounded-[1.25rem] border border-white/10 bg-slate-900/70 p-4 text-left transition hover:border-cyan-400/40 hover:bg-slate-800/90"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-white">{alternative.title}</p>
+                      <StatusChip tone={mapTone(alternative.status)}>{alternative.status}</StatusChip>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-300">{alternative.dateLabel} · {alternative.timeRange}</p>
+                    <p className="mt-3 text-sm text-slate-400">{alternative.demand}</p>
+                    <p className="mt-2 text-sm text-cyan-200">{alternative.rate}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+              <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
+              <p className="mt-2 text-sm text-slate-300">No matching alternatives found</p>
+              <p className="mt-1 text-sm text-slate-400">No alternatives</p>
+            </section>
+          )}
+        </>
       )}
 
       {/* Live region for multi-select announcements */}
