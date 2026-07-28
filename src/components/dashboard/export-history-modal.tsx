@@ -214,7 +214,7 @@ export function ExportHistoryModal({
   const [progress, setProgress] = useState(0);
   const [liveMessage, setLiveMessage] = useState("");
 
-  // ── Reset on open ──────────────────────────────────────────────────────────
+  // Reset form state when modal opens.
   useEffect(() => {
     if (!isOpen) return;
     setStep("configure");

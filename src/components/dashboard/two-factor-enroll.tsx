@@ -26,7 +26,7 @@ function Button({ children, onClick, disabled = false, className = '' }: ButtonP
 export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => void }) {
   const [step, setStep] = useState<'intro' | 'qr' | 'verify' | 'recovery' | 'success'>('intro');
   const [code, setCode] = useState('');
-  const [recoveryKey] = useState('CP-' + Array.from({ length: 32 }, () => Math.random().toString(36)[2]).join('').toUpperCase());
+  const [recoveryKey] = useState(() => 'CP-' + Array.from({ length: 32 }, () => Math.random().toString(36)[2]).join('').toUpperCase());
 
   const handleVerify = () => {
     if (code.length === 6) {

@@ -159,6 +159,8 @@ type ExportConfig = {
 
 ---
 
+Closes #460
+
 ## Usage Example
 
 ```tsx
