@@ -59,7 +59,7 @@ export function ButtonLink({
         isDisabled ? "pointer-events-none opacity-60" : ""
       } ${className}`}
     >
-      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden={true} />}
       {children}
     </Link>
   );

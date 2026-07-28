@@ -47,7 +47,7 @@ const VARIANT_COLORS: Record<EmptyStateVariant, { glow: string; accent: string }
  *     the CSS classes in globals.css, so they are a no-op for reduced-motion users.
  *   - An IntersectionObserver adds `.es-paused` when the element leaves the
  *     viewport, freezing animations and saving GPU resources.
- *   - The element keeps `aria-hidden="true"` — it is purely decorative.
+ *   - The element keeps `aria-hidden={true}` — it is purely decorative.
  */
 export function EmptyStateIllustration({
   accentLabel,
