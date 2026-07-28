@@ -91,6 +91,22 @@ The viewer presents every token as a row with **side-by-side dark and light swat
 | `--shell-text` | `#f4f7fb` | `#0a1628` | Shell primary text |
 | `--shell-text-muted` | `#9fb0c7` | `#4a6080` | Shell secondary text |
 
+### Chart
+
+These tokens govern tooltip surfaces and gridline colors in `EarningsChart`,
+`RatingBreakdownBars`, and `SentimentSparkline`. See
+[Chart Tokens](./chart-tokens.md) for full documentation including WCAG contrast
+ratios and usage examples.
+
+| Semantic Token | Dark Value | Light Value | Notes |
+|---|---|---|---|
+| `--chart-tooltip-bg` | `#0f1c2e` | `#ffffff` | Tooltip panel background |
+| `--chart-tooltip-border` | `rgba(148, 163, 184, 0.2)` | `rgba(15, 23, 42, 0.12)` | Tooltip hairline border |
+| `--chart-tooltip-text` | `#f4f7fb` | `#0a1628` | Primary value text inside tooltip |
+| `--chart-tooltip-text-muted` | `#9fb0c7` | `#4a6080` | Secondary/metadata line (e.g. review count) |
+| `--chart-gridline-color` | `rgba(148, 163, 184, 0.15)` | `rgba(15, 23, 42, 0.1)` | Bar-track background and SVG reference lines |
+| `--chart-gridline-stroke-width` | `1px` | `1px` | SVG `stroke-width` for sparkline gridlines |
+
 ## Cross-References
 
 - [Copy Button Standard](./copy-button-standard.md)

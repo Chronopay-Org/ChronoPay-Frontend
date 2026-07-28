@@ -2,31 +2,8 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect } from "vitest";
 import { EarningsChart } from "./earnings-chart";
-import type { EarningsSegment } from "./types";
 
-const mockSegments: EarningsSegment[] = [
-  {
-    id: "base",
-    label: "Base Pay",
-    value: 100,
-    formattedValue: "$100.00",
-    colorClass: "bg-cyan-500",
-  },
-  {
-    id: "tips",
-    label: "Tips",
-    value: 20,
-    formattedValue: "$20.00",
-    colorClass: "bg-amber-500",
-  },
-  {
-    id: "fees",
-    label: "Platform Fees",
-    value: -10,
-    formattedValue: "-$10.00",
-    colorClass: "bg-slate-500",
-  },
-];
+// EarningsSegment type is used inline in each test as object literals
 
 describe("EarningsChart", () => {
   it("renders correctly with multiple segments", () => {
@@ -118,5 +95,58 @@ describe("EarningsChart", () => {
     
     fireEvent.blur(bar);
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
+  it("legend hover dims other segments and shows tooltip on hovered bar", () => {
+    const segments = [
+      { id: "base", label: "Base", value: 80, formattedValue: "$80", colorClass: "bg-cyan-500" },
+      { id: "tips", label: "Tips", value: 20, formattedValue: "$20", colorClass: "bg-amber-500" },
+    ];
+    render(<EarningsChart segments={segments} />);
+
+    // Find the legend items (they are divs with tabIndex=0, not roles)
+    const legendItems = screen
+      .getAllByText("Base")
+      // The legend div wraps the label span; get the parent div
+      .map((el) => el.closest("div[tabindex]"))
+      .filter(Boolean);
+
+    expect(legendItems.length).toBeGreaterThan(0);
+    const legendItem = legendItems[0]!;
+
+    // Hover over the Base legend item
+    fireEvent.mouseEnter(legendItem);
+    // Base bar should still be visible, Tips bar should be dimmed
+    const bars = screen.getAllByRole("progressbar");
+    const tipsBar = bars.find((b) => b.getAttribute("aria-label")?.includes("Tips"));
+    expect(tipsBar?.className).toContain("opacity-40");
+
+    // Mouse leave restores both
+    fireEvent.mouseLeave(legendItem);
+    expect(tipsBar?.className).not.toContain("opacity-40");
+  });
+
+  it("legend focus/blur cycle sets and clears hoveredId", () => {
+    const segments = [
+      { id: "base", label: "Base", value: 80, formattedValue: "$80", colorClass: "bg-cyan-500" },
+      { id: "tips", label: "Tips", value: 20, formattedValue: "$20", colorClass: "bg-amber-500" },
+    ];
+    render(<EarningsChart segments={segments} />);
+
+    // Legend items have tabIndex=0 and are plain divs wrapping the swatch+label+value
+    // We look for the legend container items by finding the legend wrapper
+    const tipsLabel = screen.getByText("Tips");
+    const legendItem = tipsLabel.closest("div[tabindex]") as HTMLElement;
+    expect(legendItem).toBeTruthy();
+
+    // Focus on the Tips legend item → Base bar dimmed
+    fireEvent.focus(legendItem);
+    const bars = screen.getAllByRole("progressbar");
+    const baseBar = bars.find((b) => b.getAttribute("aria-label")?.includes("Base"));
+    expect(baseBar?.className).toContain("opacity-40");
+
+    // Blur → dimming cleared
+    fireEvent.blur(legendItem);
+    expect(baseBar?.className).not.toContain("opacity-40");
   });
 });

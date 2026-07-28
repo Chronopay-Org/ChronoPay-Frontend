@@ -174,9 +174,9 @@ export function SentimentSparkline({
           y1={height / 2}
           x2={width - PAD_X}
           y2={height / 2}
-          stroke="currentColor"
-          strokeOpacity="0.2"
-          strokeWidth="1"
+          stroke="var(--chart-gridline-color, currentColor)"
+          strokeOpacity="0.4"
+          strokeWidth="var(--chart-gridline-stroke-width, 1)"
           strokeDasharray="3 3"
         />
       </svg>
