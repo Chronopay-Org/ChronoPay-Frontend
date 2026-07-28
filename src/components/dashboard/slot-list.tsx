@@ -4,24 +4,60 @@ import { useDrag } from "@use-gesture/react";
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
+import { ResumedBadge } from "@/app/components/ui/resumed-badge";
+import { EmptyStateCard } from "@/app/components/empty-state-card";
 import { glossary } from "@/lib/glossary";
-import type { Slot } from "./types";
+import type { Slot, AvailabilityLevel, SlotPickerDensity, HourlySlotBand } from "./types";
+import { slots as defaultSlots } from "./dashboard-data";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 import { slots } from "./dashboard-data";
 
-// Note: Implementation includes swipe-left/right for day nav
-// and swipe-up for detail reveal, with accessibility focus.
-export const SlotList = () => {
-  const [{ x }, api] = useSpring(() => ({ x: 0 }));
+type SlotListProps = {
+  slots: Slot[];
+  suggestedAlternatives?: Slot[];
+};
 
-  const bind = useDrag(({ swipe: [swipeX, swipeY] }) => {
-    if (swipeX !== 0) {
-      console.log('Day navigation logic: ', swipeX > 0 ? 'Next' : 'Previous');
+export const SlotList = ({ slots, suggestedAlternatives }: SlotListProps) => {
+  const [focusedAlternativeIndex, setFocusedAlternativeIndex] = useState(0);
+  const alternativeCardRefs = useRef<Array<HTMLLIElement | null>>([]);
+
+  useEffect(() => {
+    if (!suggestedAlternatives || suggestedAlternatives.length === 0) return;
+    setFocusedAlternativeIndex(0);
+  }, [suggestedAlternatives]);
+
+  useEffect(() => {
+    if (!suggestedAlternatives || suggestedAlternatives.length === 0) return;
+    const element = alternativeCardRefs.current[focusedAlternativeIndex];
+    if (element) {
+      element.focus({ preventScroll: true });
+      element.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
     }
-    if (swipeY === -1) {
-      console.log('Detail reveal logic');
+  }, [focusedAlternativeIndex, suggestedAlternatives]);
+
+  const handleAlternativeKeyDown = (
+    event: React.KeyboardEvent<HTMLLIElement>,
+    index: number,
+  ) => {
+    if (!suggestedAlternatives) return;
+
+    if (
+      event.key === "ArrowRight" &&
+      index < suggestedAlternatives.length - 1
+    ) {
+      event.preventDefault();
+      setFocusedAlternativeIndex(index + 1);
     }
-  });
+
+    if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      setFocusedAlternativeIndex(index - 1);
+    }
+  };
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const lastSelectedId = useRef<string | null>(null);
