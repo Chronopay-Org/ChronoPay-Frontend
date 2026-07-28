@@ -1,4 +1,5 @@
 import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
+import { PasswordStrengthMeter } from '@/app/components/password-strength-meter';
 
 export default function SettingsPage() {
   return (
@@ -10,6 +11,13 @@ export default function SettingsPage() {
         <div className="bg-slate-900 border border-slate-700 rounded-3xl p-10">
           <h2 className="text-2xl font-semibold mb-8">Security</h2>
           <TwoFactorEnroll onComplete={() => window.location.reload()} />
+
+          <div className='mt-10 border-t border-slate-700 pt-10'>
+            <h3 className='text-lg font-medium text-white mb-4'>Change Password</h3>
+            <div className='max-w-md'>
+              <PasswordStrengthMeter value='' onChange={() => {}} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
