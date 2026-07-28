@@ -17,8 +17,9 @@ import {
   SlotList,
   wallet,
   WalletCard,
-  NotificationList,
-  notifications,
+  kycTimelineEntries,
+  kycPromptPanel,
+  KycStatusTimeline,
 } from "@/components/dashboard";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
@@ -122,6 +123,13 @@ export default function Dashboard() {
           ) : null}
         </div>
 
+        {/* KYC Status Timeline */}
+        <KycStatusTimeline
+          entries={kycTimelineEntries}
+          promptPanel={kycPromptPanel}
+        />
+
+        {/* Wallet and Booking Progress */}
         <div className="grid gap-6 lg:grid-cols-2">
           <PanelShell title="Wallet">
             <WalletCard

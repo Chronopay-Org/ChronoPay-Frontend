@@ -4,10 +4,8 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
-  BookingStage,
 } from "./types";
-import type { TimelineItem } from "./timeline-types";
+import type { TimelineItem, KycTimelineEntry, KycPromptPanel } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
 import type { DayAvailability } from "./availability-strip";
 
@@ -168,6 +166,55 @@ export const quickActions: QuickAction[] = [
     icon: "CheckCircle",
   },
 ];
+
+// ─── KYC timeline data ──────────────────────────────────────────────────────
+
+export const kycTimelineEntries: KycTimelineEntry[] = [
+  {
+    id: "kyc-1",
+    title: "Documents submitted",
+    stage: "submitted",
+    timestamp: "2026-07-10 2:15 PM",
+    actor: "You",
+    details: "Passport scan and proof of address uploaded for review.",
+  },
+  {
+    id: "kyc-2",
+    title: "Under review",
+    stage: "reviewing",
+    timestamp: "2026-07-11 9:30 AM",
+    actor: "Compliance Team",
+    details: "Your documents are being reviewed. This typically takes 1–3 business days.",
+  },
+  {
+    id: "kyc-3",
+    title: "Additional information needed",
+    stage: "needs_info",
+    timestamp: "2026-07-14 11:00 AM",
+    actor: "Compliance Team",
+    details: "The proof of address document was unclear. Please upload a recent utility bill or bank statement showing your full name and current address.",
+    isCurrent: true,
+  },
+  {
+    id: "kyc-4",
+    title: "Verification complete",
+    stage: "verified",
+    timestamp: "—",
+  },
+];
+
+export const kycPromptPanel: KycPromptPanel = {
+  title: "Additional information required",
+  description:
+    "The compliance team needs a clearer proof of address before your identity can be verified. Please upload a recent document (within the last 3 months) that shows your full name and current address.",
+  uploadHref: "/dashboard/settings",
+  guidance: [
+    "Accepted documents: utility bill, bank statement, or government-issued letter.",
+    "The document must be dated within the last 90 days.",
+    "Ensure the image is clear and all four corners of the document are visible.",
+    "Re-submission typically takes 1–2 business days to review.",
+  ],
+};
 
 export const suppliers: Supplier[] = [
   {

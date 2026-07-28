@@ -3,6 +3,7 @@ export * from "./booking-progress";
 export * from "./cancellation-reason-picker";
 export * from "./clear-samples-banner";
 export * from "./status-timeline";
+export * from "./kyc-status-timeline";
 export * from "./timeline-types";
 export * from "./dashboard-data";
 export * from "./metric-card";
