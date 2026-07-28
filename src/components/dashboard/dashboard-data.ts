@@ -4,6 +4,9 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
+  TimelineItem,
+  CalendarSyncProvider,
+  CalendarDefinition,
 } from "./types";
 import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
@@ -14,6 +17,72 @@ export const bookingStages = [
   { label: "Escrow secured", value: 7 },
   { label: "Completed", value: 12 },
 ];
+
+export const calendarSyncProviders: CalendarSyncProvider[] = [
+  {
+    id: "google",
+    name: "Google Calendar",
+    icon: "Google",
+    description: "Sync bookings and availability with your Google workspace calendars.",
+    scopes: [
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/calendar.readonly",
+    ],
+  },
+  {
+    id: "outlook",
+    name: "Outlook Calendar",
+    icon: "Calendar",
+    description: "Sync with Microsoft 365 Outlook and Exchange calendars.",
+    scopes: [
+      "Calendars.ReadWrite",
+      "Calendars.Read",
+      "offline_access",
+    ],
+  },
+  {
+    id: "apple",
+    name: "Apple Calendar",
+    icon: "Apple",
+    description: "Sync via CalDAV with iCloud and on-premise Apple Calendar servers.",
+    scopes: [
+      "https://www.apple.com/cadav/calendar/",
+    ],
+  },
+];
+
+export const sampleCalendars: CalendarDefinition[] = [
+  {
+    id: "cal-1",
+    providerId: "google",
+    title: "Primary Calendar",
+    description: "alex@example.com",
+    color: "#4285F4",
+  },
+  {
+    id: "cal-2",
+    providerId: "google",
+    title: "Work Calendar",
+    description: "team@example.com",
+    color: "#34A853",
+  },
+  {
+    id: "cal-3",
+    providerId: "outlook",
+    title: "Calendar",
+    description: "alex@company.com",
+    color: "#0078D4",
+  },
+];
+
+export const calendarSyncOptions: { value: SyncDirection; label: string; description: string }[] = [
+  { value: "off", label: "Off", description: "No sync for this calendar." },
+  { value: "read", label: "Read only", description: "Import events into ChronoPay." },
+  { value: "write", label: "Write only", description: "Push ChronoPay events to this calendar." },
+  { value: "bidirectional", label: "Bidirectional", description: "Keep both sides in sync." },
+];
+
+export type { CalendarSyncProvider, CalendarDefinition, SyncDirection, AuthorizationState } from "./types";
 
 export const metrics: Metric[] = [
   {
