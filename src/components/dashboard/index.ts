@@ -18,3 +18,5 @@ export * from "./notifications";
 
 export { availabilityDays, bookingStages } from "./dashboard-data";
 
+export { availabilityDays, bookingStages } from "./dashboard-data";
+
