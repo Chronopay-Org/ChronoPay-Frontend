@@ -14,7 +14,7 @@ export default function DashboardLoading() {
           <section
             key={item}
             className="glass-panel rounded-[2rem] p-6 sm:p-8"
-            aria-hidden="true"
+            aria-hidden={true}
           >
             <div className="skeleton h-6 w-28 rounded-full" />
             <div className="skeleton mt-5 h-10 max-w-xl rounded-2xl" />
