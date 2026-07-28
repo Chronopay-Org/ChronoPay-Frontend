@@ -8,6 +8,7 @@ export * from "./quick-actions";
 export * from "./slot-list";
 export * from "./social-proof-badge";
 export * from "./social-proof-badges";
+export * from "./DurationChips";
 export * from "./state-card";
 export * from "./status-chip";
 export * from "./wallet-card";

@@ -45,6 +45,7 @@ export const slots: Slot[] = [
     rate: "120 XLM / hr",
     status: "Healthy",
     isNextAvailable: true,
+    durationMinutes: 90,
     badges: [
       { type: "topRated", ...BADGE_PRESETS.topRated },
       { type: "verified", ...BADGE_PRESETS.verified },
@@ -58,6 +59,7 @@ export const slots: Slot[] = [
     demand: "2 open offers",
     rate: "95 XLM / hr",
     status: "Tight",
+    durationMinutes: 60,
     badges: [
       { type: "verified", ...BADGE_PRESETS.verified },
     ],
@@ -70,6 +72,17 @@ export const slots: Slot[] = [
     demand: "Waitlist enabled",
     rate: "140 XLM / hr",
     status: "Busy",
+    durationMinutes: 30,
+  },
+  {
+    id: "slot-4",
+    title: "Quick 15-minute intro",
+    dateLabel: "Fri, Apr 4",
+    timeRange: "11:00-11:15",
+    demand: "Open",
+    rate: "40 XLM / hr",
+    status: "Healthy",
+    durationMinutes: 15,
   },
 ];
 

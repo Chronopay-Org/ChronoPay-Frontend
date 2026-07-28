@@ -10,6 +10,8 @@ export type Slot = {
   demand: string;
   rate: string;
   status: AvailabilityLevel;
+  /** Duration in minutes for this slot (used by duration filter chips) */
+  durationMinutes?: number;
   isNextAvailable?: boolean;
   badges?: SocialProofBadgeEntry[];
 };
