@@ -271,6 +271,60 @@ body {
 }
 
 /*
+ * Glass panel — shared glassmorphism surface used by the receipt, slot detail
+ * page, and any ad-hoc panel that needs the frosted-glass aesthetic outside
+ * of the Card component system.
+ *
+ * Usage:  className="glass-panel ..."
+ */
+.glass-panel {
+  background: rgba(11, 23, 40, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+[data-theme="light"] .glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(15, 23, 42, 0.10);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .glass-panel {
+    background: rgba(255, 255, 255, 0.72);
+    border-color: rgba(15, 23, 42, 0.10);
+  }
+}
+
+/*
+ * Cross-browser <progress> reset.
+ * Our BookingProgress component uses a semantic <progress> element but
+ * applies the visual gradient via an overlaid sibling span. This block
+ * strips all browser-native progress styling so the element is invisible
+ * and only the accessible semantics remain.
+ */
+progress {
+  /* Remove default appearance across all browsers */
+  appearance: none;
+  -webkit-appearance: none;
+  /* Transparent so the sibling gradient span is visible */
+  color: transparent;
+  background: transparent;
+}
+
+progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+progress::-webkit-progress-value {
+  background: transparent;
+}
+
+progress::-moz-progress-bar {
+  background: transparent;
+}
+
+/*
  * On-chain receipt print stylesheet.
  * Scoped to .receipt-printable so only the receipt prints (or saves to PDF
  * via the browser dialog). Switches to dark-on-white for high contrast on

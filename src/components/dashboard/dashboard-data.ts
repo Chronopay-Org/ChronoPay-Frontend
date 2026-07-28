@@ -4,8 +4,9 @@ import type {
   Slot,
   Supplier,
   WalletSnapshot,
-  TimelineItem,
+  BookingStage,
 } from "./types";
+import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
 
 export const metrics: Metric[] = [
@@ -81,6 +82,12 @@ export const wallet: WalletSnapshot = {
   nextPayout: "Friday, April 4",
   status: "Synced 2 minutes ago",
 };
+
+export const bookingStages: BookingStage[] = [
+  { label: "Reserved", value: 8 },
+  { label: "Confirmed", value: 12 },
+  { label: "Completed", value: 5 },
+];
 
 export const bookingTimeline: TimelineItem[] = [
   {

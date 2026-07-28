@@ -1,22 +1,32 @@
 "use client";
 
 // src/app/components/dashboard-shell.tsx
+
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { HeaderSearch } from "@/app/components/header-search";
-
-// ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
-// Icons come from the NavItem definition in role-nav.ts and are displayed with
-// aria-hidden="true" alongside the text label.
+import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
+import { ButtonLink } from "@/app/components/ui/button-link";
+import { useRole } from "@/app/components/navigation/RoleContext";
+import { getNavForRole, ROLE_META } from "@/app/components/navigation/role-nav";
 
 // ─── Inner shell (consumes RoleContext) ───────────────────────────────────────
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const liveRef = useRef<HTMLSpanElement>(null);
+
+  // Respect prefers-reduced-motion via CSS media query check
+  const prefersReducedMotion =
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false;
+  void prefersReducedMotion; // available for future animation use
 
   const routes = getNavForRole(role);
   const meta = ROLE_META[role];
@@ -28,7 +38,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       const newMeta = ROLE_META[newRole as keyof typeof ROLE_META];
       if (liveRef.current && newMeta) {
         liveRef.current.textContent = `Role switched to ${newMeta.label}. Navigation updated.`;
-        // Clear after announcement so repeat switches are re-announced
         setTimeout(() => {
           if (liveRef.current) liveRef.current.textContent = "";
         }, 3000);
@@ -74,7 +83,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("keydown", handleTab);
   }, [isOpen]);
 
-  // Scroll detection for inset shadow
+  // ── Scroll detection for header shadow ────────────────────────────────
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -83,56 +92,24 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const routes = [
-    { href: "/", label: "Home" },
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/calendar", label: "Calendar" },
-    { href: "/history", label: "History" },
-  ];
-
-  // Animation variants for active tab indicator
-  const tabIndicatorVariants = {
-    inactive: {
-      scale: 0.8,
-      opacity: 0,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.2,
-      },
-    },
-    active: {
-      scale: 1,
-      opacity: 1,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.3,
-      },
-    },
-  };
-
-  // FAB animation variants
-  const fabVariants = {
-    idle: {
-      scale: 1,
-      y: 0,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.2,
-      },
-    },
-    pressed: {
-      scale: 0.95,
-      y: 2,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.1,
-      },
-    },
-  };
-
   return (
     <div
       className="app-shell min-h-screen"
       style={{ color: "var(--shell-text)" }}
     >
+      {/* Hidden live region for role-change announcements */}
+      <span
+        ref={liveRef}
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      />
+
       <header
-        className="border-b backdrop-blur-xl"
+        className={[
+          "sticky top-0 z-30 border-b backdrop-blur-xl transition-shadow",
+          isScrolled ? "shadow-[0_4px_24px_rgba(0,0,0,0.4)]" : "",
+        ].join(" ")}
         style={{
           background: "var(--shell-header-bg)",
           borderColor: "var(--shell-header-border)",
@@ -160,19 +137,29 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             </p>
           </div>
 
-          {/* Desktop: inline links + search */}
-          <div className="hidden md:flex items-center gap-3 text-sm text-slate-300">
-            {routes.map((r) => (
-              <Link
-                key={r.href}
-                href={r.href}
-                className="rounded-full px-3 py-2 hover:bg-white/6 focus-ring-white transition-colors"
-                style={{ color: "var(--shell-text-muted)" }}
-              >
-                <span aria-hidden="true">{r.icon}</span>
-                <span>{r.label}</span>
-              </Link>
-            ))}
+          {/* Desktop: role-aware links + search + theme switcher */}
+          <div className="hidden md:flex items-center gap-3 text-sm">
+            {routes.map((r) => {
+              const isActive = pathname === r.href;
+              return (
+                <Link
+                  key={r.href}
+                  href={r.href}
+                  aria-label={r.ariaLabel ?? r.label}
+                  aria-current={isActive ? "page" : undefined}
+                  className={[
+                    "flex items-center gap-1.5 rounded-full px-3 py-2 focus-ring-white transition-colors",
+                    isActive
+                      ? "bg-white/10 font-medium"
+                      : "hover:bg-white/6",
+                  ].join(" ")}
+                  style={{ color: isActive ? "var(--shell-text)" : "var(--shell-text-muted)" }}
+                >
+                  <span aria-hidden="true">{r.icon}</span>
+                  <span>{r.label}</span>
+                </Link>
+              );
+            })}
             <ThemeSwitcher />
             <a
               href="https://stellar.org"
@@ -186,7 +173,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             >
               Stellar
             </a>
-            {/* Header search affordance */}
             <HeaderSearch />
           </div>
 
@@ -194,16 +180,20 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-1 md:hidden">
             <HeaderSearch />
             <button
+              type="button"
               className="rounded-md p-2 focus-ring-white"
               aria-label="Open navigation menu"
+              aria-expanded={isOpen}
+              aria-controls="mobile-nav-drawer"
               onClick={() => setIsOpen(true)}
             >
               <svg
-                className="h-6 w-6 text-white"
+                className="h-6 w-6"
+                style={{ color: "var(--shell-text)" }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -221,19 +211,22 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       {isOpen && (
         <div
           ref={drawerRef}
+          id="mobile-nav-drawer"
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-40"
+          aria-label="Navigation menu"
+          className="fixed inset-0 z-40 flex justify-end bg-black/50 backdrop-blur-sm"
         >
           <aside
-            className="w-64 h-full p-4"
+            className="flex h-full w-64 flex-col p-4"
             style={{
               background: "var(--shell-drawer-bg)",
               color: "var(--shell-text)",
             }}
           >
             <button
-              className="mb-4 rounded-md p-2 focus-ring-white"
+              type="button"
+              className="mb-4 self-start rounded-md p-2 focus-ring-white"
               aria-label="Close navigation menu"
               onClick={() => setIsOpen(false)}
             >
@@ -243,7 +236,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -253,22 +246,33 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 />
               </svg>
             </button>
-            <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
-              {routes.map((r) => (
-                <Link
-                  key={r.href}
-                  href={r.href}
-                  className="block rounded-md px-3 py-2 hover:bg-white/10 focus-ring-white transition-colors"
-                  style={{ color: "var(--shell-text)" }}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span aria-hidden="true" className="text-base">{r.icon}</span>
-                  <span>{r.label}</span>
-                </Link>
-              ))}
+
+            <nav aria-label="Mobile navigation" className="flex flex-col gap-1">
+              {routes.map((r) => {
+                const isActive = pathname === r.href;
+                return (
+                  <Link
+                    key={r.href}
+                    href={r.href}
+                    aria-label={r.ariaLabel ?? r.label}
+                    aria-current={isActive ? "page" : undefined}
+                    className={[
+                      "flex items-center gap-2 rounded-md px-3 py-2 focus-ring-white transition-colors",
+                      isActive
+                        ? "bg-white/10 font-medium"
+                        : "hover:bg-white/10",
+                    ].join(" ")}
+                    style={{ color: "var(--shell-text)" }}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <span aria-hidden="true" className="text-base">{r.icon}</span>
+                    <span>{r.label}</span>
+                  </Link>
+                );
+              })}
             </nav>
 
-            {/* Primary CTA in drawer */}
+            {/* Primary CTA */}
             <div className="mt-6 px-1">
               <ButtonLink
                 href={meta.primaryCta.href}
@@ -280,13 +284,13 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               </ButtonLink>
             </div>
 
-            {/* Stellar link in drawer */}
-            <div className="mt-auto pt-6 border-t border-white/8">
+            {/* Stellar link */}
+            <div className="mt-auto border-t border-white/8 pt-6">
               <a
                 href="https://stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 focus-ring-white"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white focus-ring-white"
               >
                 <span aria-hidden="true">🌐</span>
                 <span>Stellar network</span>
@@ -296,6 +300,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
           {/* Scrim — click to close */}
           <button
+            type="button"
             className="flex-1 cursor-default"
             onClick={() => setIsOpen(false)}
             aria-label="Close navigation drawer"
@@ -305,26 +310,49 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Mobile Bottom Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 text-slate-100 md:hidden flex justify-around items-center py-2 z-30">
-        {routes.map((r) => (
-          <Link
-            key={r.href}
-            href={r.href}
-            className="flex flex-col items-center text-xs hover:text-white focus-ring-white"
-            onClick={() => setIsOpen(false)}
-          >
-            <span aria-hidden="true" className="text-lg">
-              {r.label === "Home" && "🏠"}
-              {r.label === "Marketplace" && "🛒"}
-              {r.label === "Calendar" && "📅"}
-              {r.label === "History" && "🕘"}
-            </span>
-            <span>{r.label}</span>
-          </Link>
-        ))}
+      <nav
+        aria-label="Bottom navigation"
+        className="fixed bottom-0 left-0 right-0 z-30 flex justify-around items-center py-2 md:hidden"
+        style={{ background: "var(--shell-bottom-bar-bg)", color: "var(--shell-text)" }}
+      >
+        {routes.map((r) => {
+          const isActive = pathname === r.href;
+          return (
+            <Link
+              key={r.href}
+              href={r.href}
+              aria-label={r.ariaLabel ?? r.label}
+              aria-current={isActive ? "page" : undefined}
+              className={[
+                "flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-xs focus-ring-white transition-colors",
+                isActive ? "text-cyan-300" : "text-slate-400 hover:text-white",
+              ].join(" ")}
+            >
+              <span aria-hidden="true" className="text-lg">{r.icon}</span>
+              <span>{r.label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
-      {children}
+      {/* Page content — padded to clear the bottom bar on mobile */}
+      <main id="main-content" className="pb-16 md:pb-0">
+        <div className="mx-auto max-w-6xl px-5 py-6 sm:px-6 sm:py-8">
+          {children}
+        </div>
+      </main>
     </div>
+  );
+}
+
+// ─── Public export wraps inner shell with RoleProvider ───────────────────────
+
+import { RoleProvider } from "@/app/components/navigation/RoleContext";
+
+export function DashboardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <RoleProvider>
+      <ShellInner>{children}</ShellInner>
+    </RoleProvider>
   );
 }
