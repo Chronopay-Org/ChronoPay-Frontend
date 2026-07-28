@@ -2,6 +2,8 @@
 
 import { DashboardShell } from "../components/dashboard-shell";
 import {
+  availabilityDays,
+  AvailabilityStrip,
   bookingStages,
   BookingProgress,
   metrics,
@@ -13,8 +15,9 @@ import {
   SlotList,
   wallet,
   WalletCard,
+  NotificationList,
+  notifications,
 } from "@/components/dashboard";
-import { useToast } from "@/hooks/use-toast";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 
@@ -35,7 +38,8 @@ async function simulateBuy() {
 async function simulateEscrowRelease() {
   await delay(2200);
   // Simulate a failure ~30% of the time for demo
-  if (Math.random() < 0.3) throw new Error("Escrow release rejected by contract");
+  if (Math.random() < 0.3)
+    throw new Error("Escrow release rejected by contract");
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -49,7 +53,6 @@ export default function Dashboard() {
   void simulateMint;
   void simulateBuy;
   void simulateEscrowRelease;
-  void toast;
 
   if (loading) {
     return (
@@ -85,6 +88,8 @@ export default function Dashboard() {
     );
   }
 
+  const suggestedAlternatives = slots.slice(0, 3);
+
   return (
     <DashboardShell>
       <div className="space-y-6 sm:space-y-8 md:space-y-10">
@@ -113,6 +118,9 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {/* Availability Strip - Quick Book */}
+        <AvailabilityStrip days={availabilityDays} />
+
         {/* Metrics */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {metrics.map((metric) => (
@@ -135,9 +143,21 @@ export default function Dashboard() {
           <QuickActions actions={quickActions} />
         </PanelShell>
 
+        {/* Notifications */}
+        <PanelShell id="notifications" title="Notifications">
+          <NotificationList
+            notifications={notifications}
+            onMarkAsRead={(ids) => console.log("Mark as read:", ids)}
+            onArchive={(ids) => console.log("Archive:", ids)}
+          />
+        </PanelShell>
+
         {/* Time Slots */}
         <PanelShell id="available-time-slots" title="Available Time Slots">
-          <SlotList slots={slots} />
+          <SlotList
+            slots={slots}
+            suggestedAlternatives={suggestedAlternatives}
+          />
         </PanelShell>
       </div>
     </DashboardShell>
