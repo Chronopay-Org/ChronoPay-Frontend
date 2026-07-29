@@ -140,9 +140,10 @@ export function RatingBreakdownBars({
               <div className="relative flex-1 min-w-0">
                 <div
                   className={clsx(
-                    "h-4 w-full overflow-hidden rounded-full bg-slate-800/50 dark:bg-slate-800/50 bg-slate-200/60 transition-opacity duration-200 motion-reduce:transition-none",
+                    "h-4 w-full overflow-hidden rounded-full transition-opacity duration-200 motion-reduce:transition-none",
                     isDimmed ? "opacity-40" : "opacity-100",
                   )}
+                  style={{ backgroundColor: "var(--chart-gridline-color)" }}
                   role="progressbar"
                   aria-valuenow={criterion.average}
                   aria-valuemin={1}
@@ -172,17 +173,25 @@ export function RatingBreakdownBars({
                 {/* Tooltip */}
                 {isActive && (
                   <div
-                    className="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 rounded bg-slate-900 px-2.5 py-1.5 text-xs text-white shadow-lg z-20 animate-in fade-in zoom-in-95 duration-200 rtl:translate-x-1/2"
+                    className="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 rounded border px-2.5 py-1.5 text-xs shadow-lg z-20 animate-in fade-in zoom-in-95 duration-200 rtl:translate-x-1/2"
+                    style={{
+                      backgroundColor: "var(--chart-tooltip-bg)",
+                      borderColor: "var(--chart-tooltip-border)",
+                      color: "var(--chart-tooltip-text)",
+                    }}
                     role="tooltip"
                   >
                     <span className="font-medium">{criterion.label}</span>:{" "}
                     {criterion.average.toFixed(1)} / {MAX_SCORE}
                     <br />
-                    <span className="text-slate-400">
+                    <span style={{ color: "var(--chart-tooltip-text-muted)" }}>
                       Based on {criterion.count}{" "}
                       {criterion.count === 1 ? "review" : "reviews"}
                     </span>
-                    <div className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                    <div
+                      className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-4 border-transparent"
+                      style={{ borderTopColor: "var(--chart-tooltip-bg)" }}
+                    />
                   </div>
                 )}
               </div>
