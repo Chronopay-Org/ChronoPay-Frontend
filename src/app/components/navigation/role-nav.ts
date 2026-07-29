@@ -22,6 +22,10 @@ export const ALL_ROLES: UserRole[] = ["supplier", "buyer", "admin"];
 
 // ─── Nav item shape ───────────────────────────────────────────────────────────
 
+export type NavBadge =
+  | { type: "dot" }
+  | { type: "count"; value: number };
+
 export interface NavItem {
   /** Route href */
   href: string;
@@ -35,6 +39,25 @@ export interface NavItem {
   icon: string;
   /** aria-label override for screen readers when label alone is ambiguous */
   ariaLabel?: string;
+  /** Optional badge indicator (dot or count) */
+  badge?: NavBadge;
+}
+
+/**
+ * Formats a badge count for visual display, capping at "99+".
+ */
+export function formatBadgeCount(value: number): string {
+  return value > 99 ? "99+" : value.toString();
+}
+
+/**
+ * Generates an accessible screen reader announcement for the badge.
+ */
+export function getBadgeAriaLabel(badge: NavBadge): string {
+  if (badge.type === "dot") {
+    return "New updates available";
+  }
+  return `${badge.value} new ${badge.value === 1 ? "update" : "updates"}`;
 }
 
 // ─── Shared primitives (common to every role) ─────────────────────────────────

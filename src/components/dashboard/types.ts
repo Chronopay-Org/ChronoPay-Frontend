@@ -13,6 +13,8 @@ export type Slot = {
   /** Duration in minutes for this slot (used by duration filter chips) */
   durationMinutes?: number;
   isNextAvailable?: boolean;
+  /** ISO 8601 string of when the slot was created */
+  mintedAt?: string;
   /** When true, row is demo/onboarding content and must show a Sample badge. */
   isSample?: boolean;
   badges?: SocialProofBadgeEntry[];
@@ -24,6 +26,14 @@ export type QuickAction = {
   href: string;
   tone: Tone;
   icon: string;
+};
+
+export type EarningsSegment = {
+  id: string;
+  label: string;
+  value: number;
+  formattedValue: string;
+  colorClass: string;
 };
 
 export type Metric = {
@@ -40,6 +50,16 @@ export type AutosaveStatus = "saving" | "saved" | "offline" | "error";
 export type BookingStage = {
   label: string;
   value: number;
+};
+
+export type WalletHoldingStatus = "available" | "escrowed" | "redeemed";
+
+export type WalletHolding = {
+  id: string;
+  title: string;
+  amount: string;
+  detail: string;
+  status: WalletHoldingStatus;
 };
 
 export type WalletSnapshot = {
@@ -67,6 +87,13 @@ export type SocialProofBadgeEntry = {
   icon: string;
   criterion: string;
   explainerKey?: string;
+};
+
+export type RegionInfo = {
+  country: string;
+  countryCode?: string;
+  timezone?: string;
+  currency?: string;
 };
 
 export type Supplier = {
@@ -137,6 +164,18 @@ export type RefundDestinationSubmission = {
   option: RefundDestinationOption;
 };
 
+/** Supplier trust metric with sparkline history */
+export type TrustMetric = {
+  id: string;
+  label: string;
+  value: string;
+  unit: string;
+  trend: "up" | "down" | "stable";
+  history: { values: number[] };
+  tooltip: string;
+  tone: Tone;
+};
+
 /** A single criterion in a rating breakdown (e.g. Communication, Expertise). */
 export type RatingCriterion = {
   id: string;
@@ -148,4 +187,19 @@ export type RatingCriterion = {
   count: number;
   /** Sequential-palette bar colour class, e.g. "bg-cyan-500" */
   colorClass: string;
+};
+
+export type SentimentBucket = "all" | "positive" | "mixed" | "critical";
+
+export type SentimentCounts = {
+  positive: number;
+  mixed: number;
+  critical: number;
+};
+
+export type SentimentDataPoint = {
+  timestamp: string;
+  positive: number;
+  mixed: number;
+  critical: number;
 };

@@ -23,6 +23,7 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Empty States**: Follow guidelines in `docs/empty-state-guidelines.md`.
 - [ ] **Error States**: Errors are descriptive and offer a clear path to recovery.
 - [ ] **Interactivity**: Hover, active, and focus states clearly distinguish interactive elements.
+- [ ] **Reduced Motion**: Success states (e.g. WalletConnectModal) provide crossfade + static icon alternatives for `prefers-reduced-motion: reduce` (`docs/wallet-connect-reduced-motion.md`).
 
 ## 🎨 Design Tokens & Patterns
 - [ ] **Helper Text**: Standardized `.helper-text` and `.helper-text--muted` CSS classes are used.
