@@ -6,7 +6,7 @@ import { Tooltip } from "@/app/components/ui/tooltip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
-import type { WalletSnapshot } from "./types";
+import type { WalletHolding, WalletHoldingStatus, WalletSnapshot } from "./types";
 import { WalletConnectModal } from "./WalletConnectModal";
 import { useToast } from "@/hooks/use-toast";
 import { glossary } from "@/lib/glossary";
@@ -24,6 +24,30 @@ const actionLabel = {
   error: "Retry connection",
 } as const;
 
+const HOLDINGS_TAB_IDS = ["available", "escrowed", "redeemed"] as const;
+
+type WalletHoldingsTabId = (typeof HOLDINGS_TAB_IDS)[number];
+
+type WalletHoldingsTabConfig = {
+  id: WalletHoldingsTabId;
+  label: string;
+};
+
+const holdingsTabConfig: readonly WalletHoldingsTabConfig[] = [
+  { id: "available", label: "Available" },
+  { id: "escrowed", label: "Escrowed" },
+  { id: "redeemed", label: "Redeemed" },
+];
+
+const HOLDINGS_STORAGE_KEY = "chronopay.wallet-holdings.active-tab";
+const HOLDINGS_SCROLL_STORAGE_KEY = "chronopay.wallet-holdings.scroll";
+
+function getHoldingsByStatus(
+  holdings: readonly WalletHolding[] | undefined,
+  status: WalletHoldingStatus,
+): WalletHolding[] {
+  return (holdings ?? []).filter((holding) => holding.status === status);
+}
 
 /**
  * Returns true when the wallet balance is zero.
@@ -203,22 +227,144 @@ export function ZeroBalanceNudge({
 export function WalletCard({
   wallet,
   isTestnet = false,
+  holdings,
 }: {
   wallet: WalletSnapshot;
   /** Pass true when the app is running on the Stellar testnet. */
   isTestnet?: boolean;
+  holdings?: WalletHolding[];
 }) {
   const titleId = useId();
   const balanceId = useId();
   const securityId = useId();
   const statusId = useId();
+  const holdingsHeadingId = useId();
   const { toast } = useToast();
   const { network } = useNetwork();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeHoldingsTab, setActiveHoldingsTab] =
+    useState<WalletHoldingsTabId>("available");
+  const [holdingsScrollPositions, setHoldingsScrollPositions] = useState<
+    Record<WalletHoldingsTabId, number>
+  >({ available: 0, escrowed: 0, redeemed: 0 });
+  const holdingsPanelRef = useRef<HTMLDivElement | null>(null);
 
   const handleClose = useCallback(() => {
     setIsModalOpen(false);
   }, []);
+
+  const showZeroBalanceNudge =
+    wallet.connection === "connected" && isZeroBalance(wallet.balance);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const savedTab = window.localStorage.getItem(HOLDINGS_STORAGE_KEY);
+    if (
+      savedTab &&
+      HOLDINGS_TAB_IDS.some((tabId) => tabId === savedTab)
+    ) {
+      setActiveHoldingsTab(savedTab as WalletHoldingsTabId);
+    }
+
+    const savedScrolls = window.localStorage.getItem(HOLDINGS_SCROLL_STORAGE_KEY);
+    if (savedScrolls) {
+      try {
+        const parsed = JSON.parse(savedScrolls) as Partial<Record<WalletHoldingsTabId, number>>;
+        if (parsed && typeof parsed === "object") {
+          setHoldingsScrollPositions((current) => ({
+            ...current,
+            ...parsed,
+          }));
+        }
+      } catch {
+        window.localStorage.removeItem(HOLDINGS_SCROLL_STORAGE_KEY);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(HOLDINGS_STORAGE_KEY, activeHoldingsTab);
+  }, [activeHoldingsTab]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(
+      HOLDINGS_SCROLL_STORAGE_KEY,
+      JSON.stringify(holdingsScrollPositions),
+    );
+  }, [holdingsScrollPositions]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const panel = holdingsPanelRef.current;
+    if (!panel) {
+      return;
+    }
+
+    const scrollValue = holdingsScrollPositions[activeHoldingsTab] ?? 0;
+    panel.scrollTop = scrollValue;
+  }, [activeHoldingsTab, holdingsScrollPositions]);
+
+  const handleHoldingsScroll = useCallback(() => {
+    const panel = holdingsPanelRef.current;
+    if (!panel) {
+      return;
+    }
+
+    setHoldingsScrollPositions((current) => ({
+      ...current,
+      [activeHoldingsTab]: panel.scrollTop,
+    }));
+  }, [activeHoldingsTab]);
+
+  const handleHoldingsKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>, tabId: WalletHoldingsTabId) => {
+      const currentIndex = holdingsTabConfig.findIndex((tab) => tab.id === tabId);
+      const nextTabIds = holdingsTabConfig.map((tab) => tab.id);
+
+      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+        event.preventDefault();
+        const step = event.key === "ArrowRight" ? 1 : -1;
+        const nextIndex =
+          (currentIndex + step + nextTabIds.length) % nextTabIds.length;
+        const nextTab = nextTabIds[nextIndex];
+        setActiveHoldingsTab(nextTab);
+      }
+
+      if (event.key === "Home") {
+        event.preventDefault();
+        setActiveHoldingsTab(nextTabIds[0]);
+      }
+
+      if (event.key === "End") {
+        event.preventDefault();
+        setActiveHoldingsTab(nextTabIds[nextTabIds.length - 1]);
+      }
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        setActiveHoldingsTab(tabId);
+      }
+    },
+    [],
+  );
+
+  const activeHoldings = getHoldingsByStatus(holdings, activeHoldingsTab);
+  const activeHoldingsTabLabel =
+    holdingsTabConfig.find((tab) => tab.id === activeHoldingsTab)?.label ?? "Available";
 
   return (
     <>
@@ -302,6 +448,93 @@ export function WalletCard({
             </div>
           </dl>
 
+          <section
+            aria-labelledby={holdingsHeadingId}
+            className="mt-6 rounded-2xl border border-white/10 bg-slate-950/40 p-4"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 id={holdingsHeadingId} className="text-sm font-semibold text-white">
+                  Wallet holdings
+                </h3>
+                <p className="mt-1 text-sm text-slate-400">
+                  Track available, escrowed, and redeemed balance in one place.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Wallet holdings">
+              {holdingsTabConfig.map((tab) => {
+                const count = getHoldingsByStatus(holdings, tab.id).length;
+                const isActive = activeHoldingsTab === tab.id;
+
+                return (
+                  <button
+                    key={tab.id}
+                    id={`wallet-holdings-tab-${tab.id}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`wallet-holdings-panel-${tab.id}`}
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => setActiveHoldingsTab(tab.id)}
+                    onKeyDown={(event) => handleHoldingsKeyDown(event, tab.id)}
+                    className={[
+                      "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                      isActive
+                        ? "border-cyan-300/40 bg-cyan-500/15 text-cyan-100"
+                        : "border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white",
+                    ].join(" ")}
+                  >
+                    {tab.label} {count}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              id={`wallet-holdings-panel-${activeHoldingsTab}`}
+              role="tabpanel"
+              aria-labelledby={`wallet-holdings-tab-${activeHoldingsTab}`}
+              ref={holdingsPanelRef}
+              onScroll={handleHoldingsScroll}
+              tabIndex={0}
+              className="mt-4 max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-3"
+            >
+              {activeHoldings.length > 0 ? (
+                <ul className="space-y-2" aria-label={`${activeHoldingsTabLabel} holdings`}>
+                  {activeHoldings.map((holding) => (
+                    <li
+                      key={holding.id}
+                      className="flex items-start justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-white">{holding.title}</p>
+                        <p className="mt-1 text-sm text-slate-400">{holding.detail}</p>
+                      </div>
+                      <span className="text-sm font-medium text-cyan-100">
+                        {holding.amount}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex min-h-[140px] flex-col justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-6 text-center">
+                  <p className="text-sm font-semibold text-white">
+                    No {activeHoldingsTab.toLowerCase()} holdings yet
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Next step: {activeHoldingsTab === "available"
+                      ? "add funds or wait for a booking to settle"
+                      : activeHoldingsTab === "escrowed"
+                        ? "keep this tab open while a booking is pending"
+                        : "review recently settled activity"}
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* Zero-balance nudge — only rendered for connected wallets at 0 XLM */}
           {showZeroBalanceNudge && (
             <ZeroBalanceNudge isTestnet={isTestnet} />
@@ -333,7 +566,7 @@ export function WalletCard({
         onClose={handleClose}
         providers={[]}
         status="idle"
-        onConnect={() => {}}
+        onConnect={() => setIsModalOpen(false)}
         onEmailSubmit={() => {}}
       />
     </>
