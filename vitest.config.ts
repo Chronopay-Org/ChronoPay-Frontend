@@ -15,7 +15,12 @@ export default defineConfig({
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
         "src/components/dashboard/review-reply-thread.tsx",
-        "src/components/dashboard/two-factor-fallback-picker.tsx",
+        "src/components/dashboard/earnings-chart.tsx",
+        "src/components/dashboard/rating-breakdown-bars.tsx",
+        "src/components/dashboard/sentiment-sparkline.tsx",
+        "src/components/receipt/RefundConversionNote.tsx",
+        "src/components/receipt/types.ts",
+        "src/components/receipt/Receipt.tsx",
       ],
       thresholds: {
         lines: 95,
