@@ -32,6 +32,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/type-utils": "^8.65.0",
+    "@typescript-eslint/utils": "^8.65.0",
     "@vitejs/plugin-react": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.9",
     "axe-core": "^4.12.1",
