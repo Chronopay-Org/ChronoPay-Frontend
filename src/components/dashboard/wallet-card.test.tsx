@@ -315,6 +315,8 @@ describe("ZeroBalanceNudge", () => {
 
 describe("WalletCard", () => {
   beforeEach(() => {
+    window.localStorage.clear();
+
     // jsdom does not implement window.matchMedia; provide a minimal stub.
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -511,5 +513,94 @@ describe("WalletCard", () => {
     expect(
       screen.getByText(/wallet balance is zero/i),
     ).toBeInTheDocument();
+  });
+
+  it("renders wallet holdings tabs with counts and switches between views", async () => {
+    const user = userEvent.setup();
+    const holdings = [
+      {
+        id: "hold-1",
+        title: "Studio session",
+        amount: "120 XLM",
+        detail: "Ready to payout",
+        status: "available" as const,
+      },
+      {
+        id: "hold-2",
+        title: "Design review",
+        amount: "80 XLM",
+        detail: "Held until the booking completes",
+        status: "escrowed" as const,
+      },
+      {
+        id: "hold-3",
+        title: "Workshop pass",
+        amount: "40 XLM",
+        detail: "Already settled and archived",
+        status: "redeemed" as const,
+      },
+    ];
+
+    renderWithProviders(
+      <WalletCard wallet={connectedWallet} holdings={holdings} />,
+    );
+
+    expect(screen.getByRole("tablist", { name: /wallet holdings/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /available 1/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /escrowed 1/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /redeemed 1/i })).toBeInTheDocument();
+    expect(screen.getByText("Ready to payout")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: /escrowed 1/i }));
+
+    expect(screen.getByRole("tab", { name: /escrowed 1/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("Held until the booking completes")).toBeInTheDocument();
+  });
+
+  it("shows a dedicated empty state per holdings tab and restores the last tab on remount", async () => {
+    const user = userEvent.setup();
+    const emptyHoldings = [];
+
+    const { unmount } = renderWithProviders(
+      <WalletCard wallet={connectedWallet} holdings={emptyHoldings} />,
+    );
+
+    expect(screen.getByText(/No available holdings yet/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: /escrowed 0/i }));
+    expect(screen.getByText(/No escrowed holdings yet/i)).toBeInTheDocument();
+
+    unmount();
+    renderWithProviders(
+      <WalletCard wallet={connectedWallet} holdings={emptyHoldings} />,
+    );
+
+    expect(screen.getByRole("tab", { name: /escrowed 0/i })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("supports keyboard navigation between holdings tabs", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <WalletCard
+        wallet={connectedWallet}
+        holdings={[
+          {
+            id: "hold-1",
+            title: "Studio session",
+            amount: "120 XLM",
+            detail: "Ready to payout",
+            status: "available",
+          },
+        ]}
+      />,
+    );
+
+    const availableTab = screen.getByRole("tab", { name: /available 1/i });
+    const escrowedTab = screen.getByRole("tab", { name: /escrowed 0/i });
+
+    availableTab.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(escrowedTab).toHaveAttribute("aria-selected", "true");
   });
 });
