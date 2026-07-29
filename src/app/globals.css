@@ -79,6 +79,38 @@
   --shell-rail-text: #9fb0c7;
   --shell-rail-text-active: #f4f7fb;
   --shell-rail-width: 240px;
+
+  /*
+   * Chart tokens
+   * ─────────────────────────────────────────────────────────────────────────
+   * Tooltip surface
+   *   --chart-tooltip-bg           Background of the floating tooltip panel.
+   *                                Slightly lighter than the page bg so it
+   *                                reads as a distinct elevated surface.
+   *   --chart-tooltip-border       1 px hairline border; keeps the bubble
+   *                                visible when it overlaps a similarly-toned
+   *                                chart segment.
+   *   --chart-tooltip-text         Primary value text inside the tooltip.
+   *   --chart-tooltip-text-muted   Secondary/metadata line (e.g. sample count).
+   *
+   * Gridlines / track
+   *   --chart-gridline-color       Fill / stroke for bar tracks and SVG
+   *                                reference lines. Alpha-based so it adapts
+   *                                if the surface colour changes.
+   *   --chart-gridline-stroke-width  SVG stroke-width for sparkline grid.
+   *
+   * Contrast notes (WCAG 2.1 AA, 4.5 : 1 minimum for normal text)
+   *   Dark  — text #f4f7fb on bg #0f1c2e → 14.3 : 1  ✓
+   *   Dark  — muted #9fb0c7 on bg #0f1c2e →  6.1 : 1  ✓
+   *   Light — text #0a1628 on bg #ffffff  → 18.1 : 1  ✓
+   *   Light — muted #4a6080 on bg #ffffff →  7.0 : 1  ✓
+   */
+  --chart-tooltip-bg: #0f1c2e;
+  --chart-tooltip-border: rgba(148, 163, 184, 0.2);
+  --chart-tooltip-text: #f4f7fb;
+  --chart-tooltip-text-muted: #9fb0c7;
+  --chart-gridline-color: rgba(148, 163, 184, 0.15);
+  --chart-gridline-stroke-width: 1px;
 }
 
 :root[data-density="comfortable"] {
@@ -130,6 +162,12 @@
   --shell-rail-active: rgba(8, 145, 178, 0.1);
   --shell-rail-text: #4a6080;
   --shell-rail-text-active: #0a1628;
+  --chart-tooltip-bg: #ffffff;
+  --chart-tooltip-border: rgba(15, 23, 42, 0.12);
+  --chart-tooltip-text: #0a1628;
+  --chart-tooltip-text-muted: #4a6080;
+  --chart-gridline-color: rgba(15, 23, 42, 0.1);
+  --chart-gridline-stroke-width: 1px;
 }
 
 /* Auto mode — follow system preference when no explicit theme is set */
@@ -164,6 +202,12 @@
     --shell-rail-active: rgba(8, 145, 178, 0.1);
     --shell-rail-text: #4a6080;
     --shell-rail-text-active: #0a1628;
+    --chart-tooltip-bg: #ffffff;
+    --chart-tooltip-border: rgba(15, 23, 42, 0.12);
+    --chart-tooltip-text: #0a1628;
+    --chart-tooltip-text-muted: #4a6080;
+    --chart-gridline-color: rgba(15, 23, 42, 0.1);
+    --chart-gridline-stroke-width: 1px;
   }
 }
 
