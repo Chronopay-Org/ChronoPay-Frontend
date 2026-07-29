@@ -10,7 +10,7 @@
  *
  * Variants map to WCAG live-region roles:
  *   success | info  --> role="status"  aria-live="polite"
- *   warning | error --> role="alert"   aria-live="assertive"
+ *   warning | error | critical --> role="alert"   aria-live="assertive"
  *
  * Grouping:
  *   Toasts with the same `category` string are merged into a single grouped
