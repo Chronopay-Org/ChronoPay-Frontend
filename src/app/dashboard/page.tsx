@@ -11,6 +11,7 @@ import {
   PricingCalculator,
   QuickActions,
   RatingBreakdownBars,
+  SecurityStatusCard,
   SlotList,
   WalletCard,
   bookingChecklistSteps,
@@ -208,6 +209,14 @@ export default function Dashboard() {
             defaultCollapsed={false}
           />
         </div>
+
+        {/* Security Status */}
+        <PanelShell
+          title="Security Status"
+          description="Review your account security settings."
+        >
+          <SecurityStatusCard />
+        </PanelShell>
 
         {/* Rating Breakdown */}
         {showSamples && (

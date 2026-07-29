@@ -35,3 +35,4 @@ export * from "./refund-confirmation-modal";
 export * from "./export-history-modal";
 
 export * from "./receive-token-panel";
+export * from "./security-status-card";
