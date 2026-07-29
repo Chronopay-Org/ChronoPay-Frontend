@@ -28,10 +28,11 @@ Four variants map to the existing tone scale used by `StatusChip`.
 | `info` | `status` | `polite` | `Info` (cyan) | `border-cyan-400/25 bg-cyan-950/85` |
 | `warning` | `alert` | `assertive` | `AlertTriangle` (amber) | `border-amber-400/25 bg-amber-950/85` |
 | `error` | `alert` | `assertive` | `XCircle` (rose) | `border-rose-400/25 bg-rose-950/85` |
+| `critical` | `alert` | `assertive` | `AlertOctagon` (pulsing red) | `border-red-500/50 bg-red-950` |
 
 `success` and `info` use `polite` — they wait for the screen reader to finish
-its current sentence. `warning` and `error` use `assertive` — they interrupt
-immediately because the user needs to act.
+its current sentence. `warning`, `error`, and `critical` use `assertive` — they interrupt
+immediately because the user needs to act. `critical` toasts are forced to persist until acknowledged (`duration` = 0).
 
 ---
 
@@ -177,7 +178,7 @@ const { toast, dismiss, dismissAll, toasts } = useToast();
 
 // Fire a toast
 const id = toast({
-  variant: "success",          // "success" | "info" | "warning" | "error"
+  variant: "success",          // "success" | "info" | "warning" | "error" | "critical"
   title: "Wallet connected",
   description: "Optional detail line.",  // optional
   duration: 5000,              // optional, default 5000, 0 = persistent
@@ -282,6 +283,7 @@ All four variants are designed for the dark (`#07111f`) background:
 | info | `text-cyan-100` (#cffafe) | `bg-cyan-950/85` | ≥ 7:1 ✓ |
 | warning | `text-amber-100` (#fef3c7) | `bg-amber-950/85` | ≥ 7:1 ✓ |
 | error | `text-rose-100` (#ffe4e6) | `bg-rose-950/85` | ≥ 7:1 ✓ |
+| critical | `text-red-50 font-bold` (#fef2f2) | `bg-red-950` | ≥ 7:1 ✓ |
 
 All variants exceed WCAG 2.1 AA (4.5:1) and approach AAA (7:1) on the
 dark surface. The description line uses `text-slate-300` (#cbd5e1) which
