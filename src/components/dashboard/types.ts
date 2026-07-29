@@ -52,6 +52,16 @@ export type BookingStage = {
   value: number;
 };
 
+export type WalletHoldingStatus = "available" | "escrowed" | "redeemed";
+
+export type WalletHolding = {
+  id: string;
+  title: string;
+  amount: string;
+  detail: string;
+  status: WalletHoldingStatus;
+};
+
 export type WalletSnapshot = {
   connection: "connected" | "disconnected" | "error";
   address?: string;

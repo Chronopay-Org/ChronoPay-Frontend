@@ -16,6 +16,47 @@ const tokens = [
   { name: "Radius MD", value: "8px", category: "Borders" },
   { name: "Radius XL", value: "16px", category: "Borders" },
   { name: "Shadow MD", value: "0 4px 8px rgba(0,0,0,0.15)", category: "Shadows" },
+  // Chart tokens — tooltip surface + gridlines
+  // See docs/chart-tokens.md for full documentation
+  {
+    name: "--chart-tooltip-bg",
+    value: "var(--chart-tooltip-bg)",
+    category: "Charts",
+    description: "Tooltip panel background (dark: #0f1c2e / light: #ffffff)",
+  },
+  {
+    name: "--chart-tooltip-border",
+    value: "var(--chart-tooltip-border)",
+    category: "Charts",
+    description:
+      "Tooltip hairline border (dark: rgba(148,163,184,0.2) / light: rgba(15,23,42,0.12))",
+  },
+  {
+    name: "--chart-tooltip-text",
+    value: "var(--chart-tooltip-text)",
+    category: "Charts",
+    description: "Primary value text inside tooltip (dark: #f4f7fb / light: #0a1628)",
+  },
+  {
+    name: "--chart-tooltip-text-muted",
+    value: "var(--chart-tooltip-text-muted)",
+    category: "Charts",
+    description:
+      "Secondary/metadata line in tooltip (dark: #9fb0c7 / light: #4a6080)",
+  },
+  {
+    name: "--chart-gridline-color",
+    value: "var(--chart-gridline-color)",
+    category: "Charts",
+    description:
+      "Bar-track background and SVG reference lines (dark: rgba(148,163,184,0.15) / light: rgba(15,23,42,0.1))",
+  },
+  {
+    name: "--chart-gridline-stroke-width",
+    value: "1px",
+    category: "Charts",
+    description: "SVG stroke-width for sparkline gridlines",
+  },
 ];
 
 const categories = [
@@ -25,6 +66,7 @@ const categories = [
   "Spacing",
   "Borders",
   "Shadows",
+  "Charts",
 ];
 
 export default function DesignTokensPage() {
