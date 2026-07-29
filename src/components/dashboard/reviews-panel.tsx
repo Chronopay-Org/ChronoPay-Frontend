@@ -9,11 +9,16 @@
  * This component is the primary integration point for the sentiment chip
  * filter feature — it demonstrates how to wire counts, trend data, and the
  * onChange callback together.
+ *
+ * Each review item now includes helpful/unhelpful vote buttons via
+ * ReviewVoteButtons, satisfying #261 (optimistic voting with undo toast).
  */
 
 import { useState, Suspense } from "react";
 import { PanelShell } from "./panel-shell";
 import { SentimentChipFilter } from "./sentiment-chip-filter";
+import { ReviewVoteButtons } from "./review-vote-buttons";
+import type { VoteType } from "./review-vote-buttons";
 import { reviewSentimentCounts, reviewSentimentTrend } from "./dashboard-data";
 import type { SentimentBucket } from "./types";
 
@@ -25,6 +30,9 @@ interface ReviewStub {
   excerpt: string;
   bucket: Exclude<SentimentBucket, "all">;
   date: string;
+  helpfulCount: number;
+  unhelpfulCount: number;
+  userVote: VoteType;
 }
 
 const REVIEW_STUBS: ReviewStub[] = [
@@ -34,6 +42,9 @@ const REVIEW_STUBS: ReviewStub[] = [
     excerpt: "Incredibly responsive and delivered exactly what was scoped. Will book again.",
     bucket: "positive",
     date: "Jul 22, 2026",
+    helpfulCount: 12,
+    unhelpfulCount: 1,
+    userVote: null,
   },
   {
     id: "r2",
@@ -41,6 +52,9 @@ const REVIEW_STUBS: ReviewStub[] = [
     excerpt: "Good depth of knowledge but ran a few minutes over the agreed slot.",
     bucket: "mixed",
     date: "Jul 20, 2026",
+    helpfulCount: 5,
+    unhelpfulCount: 2,
+    userVote: null,
   },
   {
     id: "r3",
@@ -48,6 +62,9 @@ const REVIEW_STUBS: ReviewStub[] = [
     excerpt: "Session was rescheduled twice with no notice. Communication needs improvement.",
     bucket: "critical",
     date: "Jul 18, 2026",
+    helpfulCount: 8,
+    unhelpfulCount: 0,
+    userVote: null,
   },
   {
     id: "r4",
@@ -55,6 +72,9 @@ const REVIEW_STUBS: ReviewStub[] = [
     excerpt: "Walked me through the full Stellar onboarding flow — exactly what I needed.",
     bucket: "positive",
     date: "Jul 16, 2026",
+    helpfulCount: 20,
+    unhelpfulCount: 0,
+    userVote: null,
   },
   {
     id: "r5",
@@ -62,6 +82,9 @@ const REVIEW_STUBS: ReviewStub[] = [
     excerpt: "Solid advice but some recommendations felt generic rather than tailored.",
     bucket: "mixed",
     date: "Jul 14, 2026",
+    helpfulCount: 3,
+    unhelpfulCount: 4,
+    userVote: null,
   },
   {
     id: "r6",
@@ -69,6 +92,9 @@ const REVIEW_STUBS: ReviewStub[] = [
     excerpt: "Did not address my questions and ended early without explanation.",
     bucket: "critical",
     date: "Jul 12, 2026",
+    helpfulCount: 7,
+    unhelpfulCount: 1,
+    userVote: null,
   },
   {
     id: "r7",
@@ -76,6 +102,9 @@ const REVIEW_STUBS: ReviewStub[] = [
     excerpt: "Top-tier expertise and a pleasure to work with. Highly recommend.",
     bucket: "positive",
     date: "Jul 10, 2026",
+    helpfulCount: 15,
+    unhelpfulCount: 0,
+    userVote: null,
   },
 ];
 
@@ -160,6 +189,18 @@ export function ReviewsPanel({ className = "" }: { className?: string }) {
               <p className="text-sm leading-relaxed text-slate-300 pl-4">
                 {review.excerpt}
               </p>
+              {/* Helpful / Unhelpful voting — Issue #261 */}
+              <div className="flex items-center gap-1.5 pl-4 pt-1">
+                <span className="text-xs text-slate-500 me-1">
+                  Was this helpful?
+                </span>
+                <ReviewVoteButtons
+                  reviewId={review.id}
+                  initialHelpfulCount={review.helpfulCount}
+                  initialUnhelpfulCount={review.unhelpfulCount}
+                  initialUserVote={review.userVote}
+                />
+              </div>
             </li>
           ))}
         </ul>
