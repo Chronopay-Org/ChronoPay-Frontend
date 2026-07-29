@@ -12,6 +12,7 @@ import type { ReceiptData } from "@/components/receipt";
 import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
 import { GiftPurchaseToggle } from "@/components/dashboard/gift-purchase-toggle";
 import type { GiftDetails } from "@/components/dashboard/gift-purchase-toggle";
+import { BookingAbandonmentBanner } from "@/components/dashboard/booking-abandonment-banner";
 import {
   ArrowLeft,
   Wallet,
@@ -152,6 +153,44 @@ export default function SlotDetailPage({
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountedTotal, setDiscountedTotal] = useState(totalCost);
   const [giftDetails, setGiftDetails] = useState<GiftDetails | null>(null);
+
+  // DRAFT ABANDONMENT STATE
+  const [hasDraft, setHasDraft] = useState(false);
+  const draftKey = `draft-booking-${id}`;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) setHasDraft(true);
+    }
+  }, [draftKey]);
+
+  // Handle saving draft automatically when modal is open
+  useEffect(() => {
+    if (isModalOpen && typeof window !== "undefined") {
+      localStorage.setItem(draftKey, "true");
+    }
+  }, [isModalOpen, draftKey]);
+
+  const handleResumeDraft = () => {
+    setHasDraft(false);
+    if (!isWalletReady || !hasFunds) return;
+    setPurchaseStep("auth");
+    setIsModalOpen(true);
+  };
+
+  const handleDiscardDraft = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(draftKey);
+    }
+    setHasDraft(false);
+  };
+
+  const handleViewDetails = () => {
+    if (!isWalletReady || !hasFunds) return;
+    setPurchaseStep("auth");
+    setIsModalOpen(true);
+  };
 
   // RECEIPT STATE (only meaningful once the transaction has settled)
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -298,6 +337,13 @@ export default function SlotDetailPage({
       </div>
 
       <div className="space-y-6">
+        {hasDraft && (
+          <BookingAbandonmentBanner
+            onResume={handleResumeDraft}
+            onDiscard={handleDiscardDraft}
+            onViewDetails={handleViewDetails}
+          />
+        )}
         {/* Breadcrumb Navigation & Back Button */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
