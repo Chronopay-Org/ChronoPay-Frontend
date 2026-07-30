@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { FacetCountBadge } from "./facet-count-badge";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,11 @@ export interface ActiveFilter {
   label: string;
   /** Category group, e.g. "category", "availability" */
   group: string;
+  /**
+   * Optional facet count shown as a badge on the filter chip.
+   * When provided, a FacetCountBadge is rendered. Omit to hide the badge.
+   */
+  count?: number;
 }
 
 interface StickyFiltersBarProps {
@@ -195,6 +201,13 @@ export function StickyFiltersBar({
                       className="inline-flex shrink-0 items-center gap-1 rounded-full border border-cyan-200/20 bg-cyan-400/10 pl-2.5 pr-1 py-0.5 text-xs font-medium text-cyan-300"
                     >
                       <span className="truncate max-w-[120px]">{filter.label}</span>
+                      {filter.count !== undefined && (
+                        <FacetCountBadge
+                          count={filter.count}
+                          tone="active"
+                          className="ml-0.5"
+                        />
+                      )}
                       <button
                         type="button"
                         aria-label={`Remove filter: ${filter.label}`}
