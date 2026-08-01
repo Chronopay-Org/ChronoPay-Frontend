@@ -2,6 +2,7 @@ export * from "./availability-strip";
 export * from "./booking-checklist";
 export * from "./booking-progress";
 export * from "./cancellation-reason-picker";
+export * from "./supplier-faq-accordion";
 export * from "./clear-samples-banner";
 export * from "./keep-original-price-chip";
 export * from "./status-timeline";
