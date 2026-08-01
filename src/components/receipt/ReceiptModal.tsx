@@ -14,6 +14,7 @@ import { Printer, Share2, X, Check, Calendar, Twitter, Linkedin, MessageCircle }
 import { FocusTrap } from "@/components/common/FocusTrap";
 import { LiveRegion } from "@/components/common/LiveRegion";
 import { Receipt } from "./Receipt";
+import { SharePreview } from "./SharePreview";
 import { buildShareLink } from "./masking";
 import type { ReceiptData } from "./types";
 import confetti from "canvas-confetti";
@@ -80,6 +81,9 @@ export function ReceiptModal({
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, onClose]);
 
+  // Reset tip state when dialog opens. This is a state initialisation
+  // pattern triggered by props, not cascading renders.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isOpen) return;
     setSelectedTipAmount(null);
@@ -313,6 +317,10 @@ export function ReceiptModal({
             <div className="receipt-no-print mb-6 rounded-3xl border border-cyan-300/20 bg-cyan-950/20 p-4 text-sm text-cyan-100">
               {tipMessage}
             </div>
+          )}
+
+          {tipPromptCompleted && receipt && (
+            <SharePreview receipt={receipt} />
           )}
 
           <Receipt receipt={enhancedReceipt} loading={loading} error={error} />

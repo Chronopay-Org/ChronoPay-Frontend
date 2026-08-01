@@ -38,3 +38,4 @@ export * from "./export-history-modal";
 export * from "./receive-token-panel";
 export * from "./security-status-card";
 export * from "./review-vote-buttons";
+export * from "./supplier-onboarding-wizard";

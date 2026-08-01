@@ -10,6 +10,9 @@ import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { ReceiptModal } from "@/components/receipt";
 import type { ReceiptData } from "@/components/receipt";
 import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
+import { GiftPurchaseToggle } from "@/components/dashboard/gift-purchase-toggle";
+import type { GiftDetails } from "@/components/dashboard/gift-purchase-toggle";
+import { BookingAbandonmentBanner } from "@/components/dashboard/booking-abandonment-banner";
 import {
   ArrowLeft,
   Wallet,
@@ -143,12 +146,51 @@ export default function SlotDetailPage({
 
   // MODAL / CHECKOUT STATE
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [purchaseStep, setPurchaseStep] = useState<"confirm" | "loading" | "success">("confirm");
+  const [purchaseStep, setPurchaseStep] = useState<"auth" | "confirm" | "loading" | "success">("auth");
   const [loadingMessage, setLoadingMessage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [announcement, setAnnouncement] = useState(""); // Screen reader announcer
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountedTotal, setDiscountedTotal] = useState(totalCost);
+  const [giftDetails, setGiftDetails] = useState<GiftDetails | null>(null);
+
+  // DRAFT ABANDONMENT STATE
+  const [hasDraft, setHasDraft] = useState(false);
+  const draftKey = `draft-booking-${id}`;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) setHasDraft(true);
+    }
+  }, [draftKey]);
+
+  // Handle saving draft automatically when modal is open
+  useEffect(() => {
+    if (isModalOpen && typeof window !== "undefined") {
+      localStorage.setItem(draftKey, "true");
+    }
+  }, [isModalOpen, draftKey]);
+
+  const handleResumeDraft = () => {
+    setHasDraft(false);
+    if (!isWalletReady || !hasFunds) return;
+    setPurchaseStep("auth");
+    setIsModalOpen(true);
+  };
+
+  const handleDiscardDraft = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(draftKey);
+    }
+    setHasDraft(false);
+  };
+
+  const handleViewDetails = () => {
+    if (!isWalletReady || !hasFunds) return;
+    setPurchaseStep("auth");
+    setIsModalOpen(true);
+  };
 
   // RECEIPT STATE (only meaningful once the transaction has settled)
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -194,13 +236,13 @@ export default function SlotDetailPage({
 
   const handleOpenModal = () => {
     if (!isWalletReady || !hasFunds) return;
-    setPurchaseStep("confirm");
+    setPurchaseStep("auth");
     setIsModalOpen(true);
   };
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
-    setPurchaseStep("confirm");
+    setPurchaseStep("auth");
   }, []);
 
   // Keyboard navigation & focus management inside checkout modal
@@ -295,6 +337,13 @@ export default function SlotDetailPage({
       </div>
 
       <div className="space-y-6">
+        {hasDraft && (
+          <BookingAbandonmentBanner
+            onResume={handleResumeDraft}
+            onDiscard={handleDiscardDraft}
+            onViewDetails={handleViewDetails}
+          />
+        )}
         {/* Breadcrumb Navigation & Back Button */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
@@ -622,6 +671,8 @@ export default function SlotDetailPage({
                 </dl>
               </div>
 
+              <GiftPurchaseToggle onChange={setGiftDetails} />
+
               <PromoCodeEntry
                 baseTotal={totalCost}
                 onDiscountApplied={({ percent, discountedTotal: nextTotal }) => {
@@ -712,11 +763,107 @@ export default function SlotDetailPage({
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 z-10"
                   aria-label="Close modal dialog"
                 >
                   ✕
                 </button>
+              )}
+
+              {/* STEP 0: AUTHENTICATION / PATH SELECTION */}
+              {purchaseStep === "auth" && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <h3 id="modal-headline" className="text-xl font-bold text-white">
+                      How would you like to continue?
+                    </h3>
+                    <p className="text-xs leading-relaxed text-slate-400 max-w-sm mx-auto">
+                      Choose your checkout path to secure this booking.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Guest Card */}
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all hover:border-cyan-400/30">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-bold text-white">Guest (Wallet Only)</h4>
+                      </div>
+                      <ul className="space-y-2 mb-4 text-xs text-slate-300">
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Fast checkout</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                          <span>No booking history or preferences saved</span>
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => setPurchaseStep("confirm")}
+                        className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-white/10 text-slate-300 hover:bg-white/5"
+                      >
+                        Continue as Guest
+                      </button>
+                    </div>
+
+                    {/* Sign In Card */}
+                    <div className="rounded-2xl border border-cyan-400/30 bg-cyan-400/5 p-4 transition-all hover:border-cyan-400/50 relative">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-bold text-cyan-300 flex items-center gap-1.5">
+                          Sign In
+                          <span className="group relative ml-1">
+                            <Info className="h-3.5 w-3.5 text-cyan-400/60 cursor-pointer hover:text-cyan-300" aria-label="Why sign in?" />
+                            <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-900 border border-white/10 p-2 text-[10px] text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-xl z-20">
+                              Signing in syncs your wallet with your profile, giving you access to purchase history, saved settings, and priority support.
+                            </span>
+                          </span>
+                        </h4>
+                        <span className="inline-flex rounded bg-cyan-400/10 px-1.5 py-0.5 text-[10px] font-bold text-cyan-400 uppercase border border-cyan-400/20">
+                          Recommended
+                        </span>
+                      </div>
+                      <ul className="space-y-2 mb-4 text-xs text-slate-300">
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Full booking history & receipts</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Saved preferences & notifications</span>
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => setPurchaseStep("confirm")}
+                        className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs bg-cyan-400/20 text-cyan-100 hover:bg-cyan-400/30 border border-cyan-400/30"
+                      >
+                        Sign In to Continue
+                      </button>
+                    </div>
+
+                    {/* Create Account Card */}
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all hover:border-cyan-400/30">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-bold text-white">Create Account</h4>
+                      </div>
+                      <ul className="space-y-2 mb-4 text-xs text-slate-300">
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Unlock all platform features</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Setup takes &lt; 1 minute</span>
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => setPurchaseStep("confirm")}
+                        className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-white/10 text-slate-300 hover:bg-white/5"
+                      >
+                        Create Account
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* STEP 1: INITIAL CONFIRMATION DETAILS */}
@@ -751,6 +898,15 @@ export default function SlotDetailPage({
                       <span className="text-slate-400">Seller</span>
                       <span className="font-semibold text-white">{details.seller.name}</span>
                     </div>
+
+                    {giftDetails?.isGift && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Gift for</span>
+                        <span className="font-semibold text-white max-w-[180px] truncate text-right">
+                          {giftDetails.recipientName || giftDetails.recipientEmail || "Recipient"}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between border-t border-white/5 pt-3.5">
                       <span className="text-slate-400">Network + Escrow Fee</span>
