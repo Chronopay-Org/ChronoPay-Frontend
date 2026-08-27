@@ -1,9 +1,11 @@
+"use client";
+
 import DesignChecklist from "@/components/design/DesignChecklist";
 import { StatusMatrix, statusMatrixData } from "@/components/design/status-matrix";
 import { A11yTrendChart, a11yTrendSampleData } from "@/components/design/a11y-trend-chart";
 import { UptimeChart, DayData, Incident } from "@/components/uptime";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useId, useState } from "react";
 import { SentimentChipFilter } from "@/components/dashboard/sentiment-chip-filter";
 import { SentimentSparkline } from "@/components/dashboard/sentiment-sparkline";
 import {
@@ -97,6 +99,161 @@ function generate90DaysMockData(): DayData[] {
   }
 
   return days;
+}
+
+const statusSubscribeChannels = [
+  { id: "email", label: "Email", helper: "Account alerts and updates" },
+  { id: "sms", label: "SMS", helper: "Critical outage notices" },
+  { id: "rss", label: "RSS", helper: "Feed for changelog watchers" },
+  { id: "webhook", label: "Webhook", helper: "Integrate with your tools" },
+] as const;
+
+type StatusSubscribeChannel = (typeof statusSubscribeChannels)[number]["id"];
+
+function validateStatusSubscribeValue(channel: StatusSubscribeChannel, value: string) {
+  const trimmedValue = value.trim();
+
+  switch (channel) {
+    case "email": {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedValue)
+        ? ""
+        : "Enter a valid email address, such as ops@chronopay.com.";
+    }
+    case "sms": {
+      return /^[+]?[(]?[0-9\s()-]{7,20}$/.test(trimmedValue)
+        ? ""
+        : "Enter a valid phone number, including the country code if needed.";
+    }
+    case "rss": {
+      return /^https?:\/\//.test(trimmedValue) && trimmedValue.length > 12
+        ? ""
+        : "Use a full RSS or feed URL, beginning with http:// or https://.";
+    }
+    case "webhook": {
+      return /^https?:\/\//.test(trimmedValue) && trimmedValue.length > 12
+        ? ""
+        : "Use a valid webhook URL starting with http:// or https://.";
+    }
+    default:
+      return "";
+  }
+}
+
+function StatusSubscribeForm() {
+  const [channel, setChannel] = useState<StatusSubscribeChannel>("email");
+  const [value, setValue] = useState("");
+  const [error, setError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const id = useId();
+  const selectedChannel = statusSubscribeChannels.find((item) => item.id === channel) ?? statusSubscribeChannels[0];
+
+  const getPlaceholder = () => {
+    switch (channel) {
+      case "email":
+        return "ops@chronopay.com";
+      case "sms":
+        return "+1 (415) 555-0174";
+      case "rss":
+        return "https://status.chronopay.com/feed.xml";
+      case "webhook":
+        return "https://hooks.example.com/chronopay-status";
+      default:
+        return "";
+    }
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const nextError = validateStatusSubscribeValue(channel, value);
+    if (nextError) {
+      setError(nextError);
+      setStatusMessage("");
+      return;
+    }
+
+    setError("");
+    const label = selectedChannel.label.toLowerCase();
+    setStatusMessage(`You are subscribed to status updates via ${label}. We will keep you informed as conditions change.`);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+      <div role="group" aria-label="Choose a channel for status updates" className="flex flex-wrap gap-2">
+        {statusSubscribeChannels.map((item) => {
+          const active = item.id === channel;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => {
+                setChannel(item.id);
+                setError("");
+                setStatusMessage("");
+              }}
+              className={[
+                "rounded-full border px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+                active
+                  ? "border-cyan-400 bg-cyan-500/15 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.3)]"
+                  : "border-slate-700 bg-slate-900/60 text-slate-300 hover:border-slate-500 hover:text-white",
+              ].join(" ")}
+            >
+              <span className="block">{item.label}</span>
+              <span className="mt-0.5 block text-[10px] font-normal text-slate-400">{item.helper}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor={`${id}-subscribe-value`} className="block text-sm font-medium text-slate-200">
+          {selectedChannel.label} destination
+        </label>
+        <input
+          id={`${id}-subscribe-value`}
+          type={channel === "email" ? "email" : channel === "sms" ? "tel" : "url"}
+          inputMode={channel === "sms" ? "tel" : "text"}
+          value={value}
+          onChange={(event) => {
+            setValue(event.target.value);
+            if (error) setError("");
+            if (statusMessage) setStatusMessage("");
+          }}
+          placeholder={getPlaceholder()}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-subscribe-error` : `${id}-subscribe-help`}
+          className="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+        />
+        <p id={`${id}-subscribe-help`} className="text-xs text-slate-400">
+          We only send service updates for the selected channel.
+        </p>
+        {error ? (
+          <p id={`${id}-subscribe-error`} role="alert" className="text-sm text-rose-300">
+            {error}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
+        <p className="text-xs text-slate-400">
+          Preferred channel: <span className="font-medium text-slate-200">{selectedChannel.label}</span>
+        </p>
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+        >
+          Subscribe
+        </button>
+      </div>
+
+      {statusMessage ? (
+        <p role="status" aria-live="polite" className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+          {statusMessage}
+        </p>
+      ) : null}
+    </form>
+  );
 }
 
 export default function DesignReviewPage() {
@@ -279,6 +436,29 @@ export default function DesignReviewPage() {
                 </div>
               </div>
             </Link>
+
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-fuchsia-500" />
+                Status page — subscribe to updates
+              </h2>
+              <p className="text-sm text-slate-400 max-w-2xl">
+                Lightweight subscribe form with channel chips, per-channel validation,
+                and polite confirmation. Inputs stay responsive across small screens and
+                maintain focus clarity for keyboard use.
+              </p>
+
+              <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
+                <StatusSubscribeForm />
+              </div>
+
+              <div
+                data-theme="light"
+                className="rounded-2xl border border-black/10 bg-white/90 p-5"
+              >
+                <StatusSubscribeForm />
+              </div>
+            </div>
 
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
