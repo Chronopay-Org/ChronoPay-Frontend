@@ -1,10 +1,19 @@
 "use client";
 
-import { useState, useRef, useId, useCallback } from "react";
+import { useState, useRef, useId, useCallback, useEffect } from "react";
 import { TimelineItem, TimelineNode, TimelineBranchGroup, statusToneMap } from "./timeline-types";
 import { StatusChip } from "./status-chip";
 import { KycDocUpload } from "./kyc-doc-upload";
-import { Filter, GitFork, GitMerge } from "lucide-react";
+import {
+  Filter,
+  GitFork,
+  GitMerge,
+  MessageSquareText,
+  Clock3,
+  CheckCircle2,
+  XCircle,
+  ArrowRightLeft,
+} from "lucide-react";
 
 interface StatusTimelineProps {
   items: TimelineNode[];
@@ -68,6 +77,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
   const [announcement, setAnnouncement] = useState("");
   const listRef = useRef<HTMLOListElement>(null);
   const scrollTopRef = useRef(0);
+  const statusId = useId();
 
   // Determine which items to display
   const displayedNodes = milestonesOnly
@@ -386,6 +396,10 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
           <MediatorAssignmentCard item={item} />
         ) : null}
 
+        {item.variant === "proposed_resolution" && item.proposedResolution ? (
+          <ProposedResolutionOfferCard item={item} />
+        ) : null}
+
         {hasDetails ? (
           <button
             type="button"
@@ -421,6 +435,168 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
         </div>
       ) : null}
     </li>
+  );
+}
+
+function ProposedResolutionOfferCard({ item }: { item: TimelineItem }) {
+  const offer = item.proposedResolution!;
+  const [decision, setDecision] = useState<"accepted" | "declined" | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const expiresAtMs = new Date(offer.expiresAt).getTime();
+  const timeRemainingMs = Math.max(0, expiresAtMs - now);
+  const isExpired = timeRemainingMs === 0;
+
+  const formatCountdown = (milliseconds: number) => {
+    const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    }
+    return `${seconds}s`;
+  };
+
+  const statusMessage = decision
+    ? decision === "accepted"
+      ? `Accepted ${offer.offeredBy}'s proposed resolution and confirmation is on the way.`
+      : `Declined ${offer.offeredBy}'s proposed resolution. A counter-offer remains available.`
+    : "";
+
+  return (
+    <section
+      className="rounded-3xl border border-violet-400/20 bg-[linear-gradient(135deg,rgba(167,139,250,0.16),rgba(15,23,42,0.92))] p-4 shadow-[0_20px_60px_-30px_rgba(167,139,250,0.35)]"
+      aria-label={`Proposed resolution offered by ${offer.offeredBy}`}
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-violet-200">
+            <ArrowRightLeft className="h-4 w-4" aria-hidden="true" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em]">
+              Proposed resolution
+            </span>
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-white">{offer.headline}</p>
+            <p className="mt-1 text-sm text-slate-300">
+              Offered by <span className="font-medium text-white">{offer.offeredBy}</span> to <span className="font-medium text-white">{offer.offeredTo}</span>
+            </p>
+          </div>
+        </div>
+
+        <div
+          className={[
+            "inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-xs font-medium",
+            isExpired
+              ? "border-rose-400/30 bg-rose-500/10 text-rose-200"
+              : "border-violet-300/30 bg-violet-500/10 text-violet-100",
+          ].join(" ")}
+          aria-live="polite"
+        >
+          <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+          {isExpired ? "Expired" : `Expires in ${formatCountdown(timeRemainingMs)}`}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Settlement
+          </p>
+          <p className="mt-2 text-2xl font-bold text-white">{offer.amount}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Owner
+          </p>
+          <p className="mt-2 text-sm font-medium text-white">{offer.offeredBy}</p>
+          <p className="mt-1 text-xs text-slate-400">{offer.offeredTo} is the recipient</p>
+        </div>
+      </div>
+
+      <ul className="mt-4 space-y-2 text-sm text-slate-200">
+        {offer.terms.map((term) => (
+          <li key={term} className="flex items-start gap-2">
+            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-violet-300" aria-hidden="true" />
+            <span>{term}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setDecision("accepted")}
+            disabled={Boolean(decision) || isExpired}
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          >
+            <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
+            Accept
+          </button>
+          <button
+            type="button"
+            onClick={() => setDecision("declined")}
+            disabled={Boolean(decision) || isExpired}
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:border-slate-700 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          >
+            <XCircle className="mr-2 h-4 w-4" aria-hidden="true" />
+            Decline
+          </button>
+        </div>
+
+        {offer.counterOfferHref ? (
+          <a
+            href={offer.counterOfferHref}
+            className="text-sm font-medium text-violet-200 underline decoration-violet-400/70 underline-offset-4 hover:text-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          >
+            Counter-offer
+          </a>
+        ) : null}
+      </div>
+
+      {statusMessage ? (
+        <p role="status" aria-live="polite" className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+          {statusMessage}
+        </p>
+      ) : null}
+
+      {offer.history && offer.history.length > 0 ? (
+        <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/40 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+            Offer history
+          </p>
+          <ul className="mt-3 space-y-2">
+            {offer.history.map((entry) => (
+              <li key={entry.id} className="flex items-start justify-between gap-3 rounded-xl bg-white/5 p-2.5">
+                <div>
+                  <p className="text-sm font-medium text-white">{entry.summary}</p>
+                  <p className="mt-1 text-xs text-slate-400">{entry.actor} · {entry.timestamp}</p>
+                </div>
+                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-slate-300">
+                  {entry.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

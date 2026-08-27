@@ -1,6 +1,27 @@
 export type TimelineItemStatus = "pending" | "completed" | "failed" | "warning";
 
-export type TimelineItemVariant = "default" | "mediator_assigned";
+export type TimelineItemVariant = "default" | "mediator_assigned" | "proposed_resolution";
+
+export type DisputeOfferHistoryEntry = {
+  id: string;
+  actor: string;
+  summary: string;
+  amount: string;
+  timestamp: string;
+  status: "accepted" | "declined" | "countered" | "expired";
+};
+
+export type DisputeResolutionOffer = {
+  id: string;
+  offeredBy: string;
+  offeredTo: string;
+  headline: string;
+  amount: string;
+  terms: string[];
+  expiresAt: string;
+  counterOfferHref?: string;
+  history?: DisputeOfferHistoryEntry[];
+};
 
 export type MediatorAssignmentDetails = {
   name: string;
@@ -20,6 +41,7 @@ export type TimelineItem = {
   actor?: string;
   details?: string;
   mediator?: MediatorAssignmentDetails;
+  proposedResolution?: DisputeResolutionOffer;
   isCurrent?: boolean;
   /**
    * Flags this event as a high-signal milestone.
