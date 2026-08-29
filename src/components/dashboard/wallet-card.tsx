@@ -169,9 +169,15 @@ export function ZeroBalanceNudge({
       >
         Your wallet is empty — here&apos;s how to get started
       </h3>
-      <p className="helper-text helper-text--emphasis mt-1">
-        Add funds or explore the testnet to start listing time tokens.
-      </p>
+      <div className="helper-text helper-text--emphasis mt-1">
+        Add funds or explore the testnet to start listing time tokens
+        <HelpPopover
+          term={glossary.timeToken}
+          triggerLabel="Help: Time tokens"
+          className="ml-1 align-middle"
+        />
+        .
+      </div>
 
       <ul
         role="list"
@@ -457,9 +463,21 @@ export function WalletCard({
                 <h3 id={holdingsHeadingId} className="text-sm font-semibold text-white">
                   Wallet holdings
                 </h3>
-                <p className="mt-1 text-sm text-slate-400">
-                  Track available, escrowed, and redeemed balance in one place.
-                </p>
+                <div className="mt-1 text-sm text-slate-400">
+                  Track available, escrowed
+                  <HelpPopover
+                    term={glossary.escrow}
+                    triggerLabel="Help: Escrowed holdings"
+                    className="ml-1 align-middle"
+                  />
+                  , and redeemed
+                  <HelpPopover
+                    term={glossary.redemption}
+                    triggerLabel="Help: Redeemed holdings"
+                    className="ml-1 align-middle"
+                  />
+                  {" "}balance in one place.
+                </div>
               </div>
             </div>
 
