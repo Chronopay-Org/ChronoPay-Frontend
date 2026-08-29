@@ -25,6 +25,7 @@
 }
 
 :root {
+  /* Core surface colors */
   --background: #07111f;
   --foreground: #f4f7fb;
   --surface: rgba(11, 23, 40, 0.82);
@@ -38,6 +39,47 @@
   --danger: #f87171;
   --muted: #9fb0c7;
 
+  /* Spacing scale: use values from the scale to preserve rhythm and avoid ad hoc gaps. */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px */
+
+  /* Radius scale */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 24px;
+  --radius-lg: 28px;
+  --radius-xl: 32px;
+
+  /* Motion scale */
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 200ms;
+  --motion-duration-slow: 320ms;
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Typography scale */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-md: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.5rem; /* 24px */
+  --font-size-2xl: 2rem; /* 32px */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.25;
+  --line-height-body: 1.5;
+  --line-height-loose: 1.75;
+
   /* Helper text — secondary explanations beneath labels, statuses, and CTAs. */
   --helper-text-size: 0.875rem;
   --helper-text-leading: 1.5rem;
@@ -48,9 +90,6 @@
   --skeleton-highlight: rgba(207, 250, 254, 0.18);
 
   /* Reusable Card design tokens */
-  --radius-md: 24px;
-  --radius-lg: 28px;
-  --radius-xl: 32px;
   --border: 1px solid var(--border-subtle);
   --density-card-padding: 1.25rem;
   --density-card-header-gap: 1rem;
@@ -70,6 +109,8 @@
   --shell-bottom-bar-bg: #0f172a;
   --shell-text: #f4f7fb;
   --shell-text-muted: #9fb0c7;
+  /* Mobile bottom navigation height includes iOS home-indicator safe area. */
+  --bottom-nav-height: calc(4rem + env(safe-area-inset-bottom, 0px));
 
   /* Shell left rail */
   --shell-rail-bg: rgba(7, 17, 31, 0.55);
@@ -508,6 +549,85 @@ body {
 .card--interactive:active {
   border-color: rgba(103, 232, 249, 0.6); /* active:border-cyan-300/60 */
   background-color: rgb(30, 41, 59); /* active:bg-slate-800 */
+}
+
+/* Mobile bottom navigation — shown below 640px only. */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  min-height: var(--bottom-nav-height, calc(4rem + env(safe-area-inset-bottom, 0px)));
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  background: var(--shell-bottom-bar-bg, #0f172a);
+  border-top: 1px solid var(--shell-header-border, rgba(148, 163, 184, 0.08));
+  box-shadow: var(--elevation-3);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.bottom-nav__item {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  min-width: 0;
+  padding: 0.5rem 0.25rem;
+  color: var(--shell-text-muted, #9fb0c7);
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: var(--line-height-tight, 1.25);
+  text-decoration: none;
+  border-radius: var(--radius-sm, 12px);
+}
+
+.bottom-nav__item:hover {
+  color: var(--shell-text, #f4f7fb);
+  background: var(--shell-rail-hover, rgba(148, 163, 184, 0.08));
+}
+
+.bottom-nav__item[aria-current="page"] {
+  color: var(--shell-rail-text-active, #f4f7fb);
+  background: var(--shell-rail-active, rgba(103, 232, 249, 0.1));
+}
+
+.bottom-nav__item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2rem;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--accent-strong, #22d3ee);
+  transform: translateX(-50%);
+}
+
+.bottom-nav-spacer {
+  display: block;
+  height: var(--bottom-nav-height, calc(4rem + env(safe-area-inset-bottom, 0px)));
+}
+
+@media (max-width: 639px) {
+  .fab,
+  .toast,
+  .toast-container {
+    bottom: calc(var(--bottom-nav-height, calc(4rem + env(safe-area-inset-bottom, 0px))) + var(--space-4, 1rem));
+  }
+}
+
+@media (min-width: 640px) {
+  .bottom-nav,
+  .bottom-nav-spacer {
+    display: none;
+  }
 }
 
 /*
