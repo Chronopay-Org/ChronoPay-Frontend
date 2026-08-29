@@ -204,8 +204,9 @@ export function MonthCalendarView({
       }
 
       if (newIndex >= 0 && newIndex < days.length) {
+        // The day-button ref callback focuses the element when its index
+        // matches focusedDayIndex, so no direct DOM focus is needed here.
         setFocusedDayIndex(newIndex);
-        days[newIndex]?.focus?.();
       }
     },
     [days, handleDayClick, navigateMonth]

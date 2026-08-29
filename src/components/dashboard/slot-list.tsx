@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { useSpring } from "@react-spring/web";
-import { useDrag } from "@use-gesture/react";
+import { useCallback, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { StatusChip } from "./status-chip";
-import { HelpPopover } from "@/app/components/ui/help-popover";
 import { TimezoneRibbon } from "./timezone-ribbon";
 import { KeepOriginalPriceChip } from "./keep-original-price-chip";
+import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
@@ -18,40 +16,31 @@ import { EmptyStateCard } from "../../app/components/empty-state-card";
  * Extends the base Slot with optional pricing metadata for the nudge chip.
  */
 export type AlternativeSlot = Slot & {
-  /**
-   * Numeric price in XLM for this alternative slot.
-   * Required for the KeepOriginalPriceChip to compute the price difference.
-   */
+  /** Numeric price in XLM for this alternative slot. */
   priceXlm?: number;
 };
 
 interface SlotListProps {
+  /** Availability slots to render. Falls back to local sample data. */
   slots?: Slot[];
-  suggestedAlternatives?: Slot[];
+  /** Supplier identifiers passed through to the TimezoneRibbon. */
   supplierId?: string;
   supplierTimeZone?: string;
   supplierName?: string;
   /**
    * Alternative slots offered to the buyer during a rebooking flow.
    * When provided (even as an empty array) the "Rebook a matching slot"
-   * section is rendered. Pass `undefined` to hide the section entirely.
+   * section renders. Pass `undefined` to hide the section entirely.
    */
   suggestedAlternatives?: AlternativeSlot[];
   /**
    * Original booking price in XLM — used by the KeepOriginalPriceChip to
-   * compute whether a price-preservation credit offer should appear on each
-   * alternative card.
+   * decide whether a price-preservation credit offer should appear.
    */
   originalPriceXlm?: number;
-  /**
-   * Buyer's available account credit in XLM.
-   * Passed through to KeepOriginalPriceChip on each alternative card.
-   */
+  /** Buyer's available account credit in XLM. */
   availableCreditXlm?: number;
-  /**
-   * Called when the buyer applies a price-preservation credit on an
-   * alternative slot.  Receives the slot id and price difference covered.
-   */
+  /** Called when the buyer applies a price-preservation credit. */
   onApplyCredit?: (slotId: string, priceDiff: number) => void;
 }
 
@@ -60,32 +49,53 @@ interface SlotListProps {
 const localDefaultSlots: Slot[] = [
   {
     id: "slot-1",
-    title: "1-on-1 Architecture Consultation",
+    title: "Founder office hours",
     dateLabel: "Today",
-    timeRange: "14:00 - 15:00 UTC",
-    status: "Available",
+    timeRange: "10:30 - 11:00 UTC",
+    status: "Healthy",
     demand: "High Demand",
     rate: "50 XLM / hr",
+    durationMinutes: 30,
     isNextAvailable: true,
   },
   {
     id: "slot-2",
-    title: "Code Review & Optimization",
+    title: "1-on-1 Architecture Consultation",
     dateLabel: "Tomorrow",
-    timeRange: "10:00 - 11:30 UTC",
-    status: "Booked",
+    timeRange: "14:00 - 15:00 UTC",
+    status: "Tight",
     demand: "Medium Demand",
     rate: "75 XLM / hr",
-    isNextAvailable: false,
+    durationMinutes: 60,
+  },
+  {
+    id: "slot-3",
+    title: "Code Review & Optimization",
+    dateLabel: "Fri, Apr 4",
+    timeRange: "09:00 - 10:30 UTC",
+    status: "Busy",
+    demand: "Low Demand",
+    rate: "90 XLM / hr",
+    durationMinutes: 90,
   },
 ];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function mapTone(
+  status: Slot["status"],
+): "positive" | "warning" | "critical" | "neutral" {
+  if (status === "Healthy") return "positive";
+  if (status === "Tight") return "warning";
+  return "critical";
+}
 
 // ─── SuggestedAlternativesCarousel ────────────────────────────────────────────
 
 /**
- * Internal carousel that renders the suggested alternative slots during
- * a rebooking flow.  Supports arrow-key navigation between cards and
- * surfaces the KeepOriginalPriceChip when there is a price difference.
+ * Carousel of suggested alternative slots during a rebooking flow.
+ * Supports arrow-key navigation between cards and surfaces the
+ * KeepOriginalPriceChip when the alternative costs more than the original.
  */
 function SuggestedAlternativesCarousel({
   alternatives,
@@ -101,27 +111,26 @@ function SuggestedAlternativesCarousel({
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const handleCardKeyDown = (
-    e: React.KeyboardEvent<HTMLDivElement>,
+    e: ReactKeyboardEvent<HTMLDivElement>,
     index: number,
   ) => {
+    const count = alternatives.length;
+    if (count === 0) return;
+
+    let nextIndex: number | null = null;
     if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-      e.preventDefault();
-      const next = cardRefs.current[(index + 1) % alternatives.length];
-      next?.focus();
+      nextIndex = (index + 1) % count;
     } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-      e.preventDefault();
-      const prev =
-        cardRefs.current[
-          (index - 1 + alternatives.length) % alternatives.length
-        ];
-      prev?.focus();
+      nextIndex = (index - 1 + count) % count;
     } else if (e.key === "Home") {
-      e.preventDefault();
-      cardRefs.current[0]?.focus();
+      nextIndex = 0;
     } else if (e.key === "End") {
-      e.preventDefault();
-      cardRefs.current[alternatives.length - 1]?.focus();
+      nextIndex = count - 1;
     }
+
+    if (nextIndex === null) return;
+    e.preventDefault();
+    cardRefs.current[nextIndex]?.focus();
   };
 
   if (alternatives.length === 0) {
@@ -168,7 +177,6 @@ function SuggestedAlternativesCarousel({
               "transition-colors hover:border-cyan-300/20 hover:bg-white/[0.05]",
             ].join(" ")}
           >
-            {/* Card header */}
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">
@@ -178,12 +186,11 @@ function SuggestedAlternativesCarousel({
                   {alt.dateLabel} · {alt.timeRange}
                 </p>
               </div>
-              <StatusChip tone={mapToneAlt(alt.status)} className="shrink-0">
+              <StatusChip tone={mapTone(alt.status)} className="shrink-0">
                 {alt.status}
               </StatusChip>
             </div>
 
-            {/* Metadata row */}
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
               <span className="rounded-full border border-white/8 bg-white/4 px-2.5 py-1">
                 {alt.demand}
@@ -193,7 +200,6 @@ function SuggestedAlternativesCarousel({
               </span>
             </div>
 
-            {/* Price nudge chip — only when alternative is more expensive */}
             {showPriceChip && (
               <KeepOriginalPriceChip
                 originalPrice={originalPriceXlm!}
@@ -209,13 +215,6 @@ function SuggestedAlternativesCarousel({
   );
 }
 
-function mapToneAlt(status: string) {
-  if (status === "Healthy") return "positive";
-  if (status === "Tight") return "warning";
-  if (status === "Busy") return "danger";
-  return "neutral";
-}
-
 // ─── SlotList ─────────────────────────────────────────────────────────────────
 
 export const SlotList = ({
@@ -228,134 +227,84 @@ export const SlotList = ({
   availableCreditXlm = 0,
   onApplyCredit,
 }: SlotListProps) => {
-  const [activeTz, setActiveTz] = useState<string>("UTC");
-  const [{ x }, api] = useSpring(() => ({ x: 0 }));
-
-  const [isDragging, setIsDragging] = useState(false);
-  const [conflicts, setConflicts] = useState<Record<string, string>>({});
-
-  const bind = useDrag((state) => {
-    // state.first / state.last indicate drag lifecycle
-    if (state.first) setIsDragging(true);
-    if (state.last) setIsDragging(false);
-
-    // quick examples of conflict detection while dragging
-    // real app should compute based on drop target + business rules
-    if (state.active) {
-      const found: Record<string, string> = {};
-      slots.forEach((s) => {
-        // Existing booking
-        if (s.status && s.status.toLowerCase() === "booked") {
-          found[s.id] = "Existing booking";
-        }
-
-        // Blocked day flag (some slot data may include `blocked`)
-        if ((s as any).blocked) {
-          found[s.id] = "Blocked day";
-        }
-      });
-      setConflicts(found);
-    }
-  });
-
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Local reorder state so keyboard nudging and drag-and-drop can reorder the
+  // rendered list without mutating the parent's prop.
+  const [orderedSlots, setOrderedSlots] = useState<Slot[] | null>(null);
   const [liveMessage, setLiveMessage] = useState("");
-  const lastSelectedId = useRef<string | null>(null);
-  const alternativeRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const draggingIdRef = useRef<string | null>(null);
 
-  const announce = useCallback((msg: string) => {
-    setLiveMessage(msg);
-    setTimeout(() => setLiveMessage(""), 3000);
+  const visibleSlots = orderedSlots ?? slots;
+
+  const announce = useCallback((message: string) => {
+    setLiveMessage(message);
+    window.setTimeout(() => setLiveMessage(""), 3000);
   }, []);
 
-  // Announce conflicts to assistive tech when dragging starts
-  useEffect(() => {
-    if (isDragging) {
-      const keys = Object.keys(conflicts);
-      if (keys.length > 0) {
-        announce(`${keys.length} blocked target${keys.length !== 1 ? "s" : ""}.`);
-      } else {
-        announce("No conflicts for current drag target.");
-      }
-    }
-    // only when dragging or conflicts change
-  }, [isDragging, conflicts, announce]);
+  const swapSlots = useCallback(
+    (sourceId: string, targetId: string) => {
+      if (!sourceId || sourceId === targetId) return;
+      setOrderedSlots((prev) => {
+        const list = prev ?? slots;
+        const sourceIndex = list.findIndex((s) => s.id === sourceId);
+        const targetIndex = list.findIndex((s) => s.id === targetId);
+        if (sourceIndex === -1 || targetIndex === -1) return prev;
+        const next = [...list];
+        [next[sourceIndex], next[targetIndex]] = [next[targetIndex], next[sourceIndex]];
+        return next;
+      });
+      announce("Slot order updated.");
+    },
+    [slots, announce],
+  );
 
-  const toggleSelection = (id: string, e?: React.MouseEvent | React.KeyboardEvent) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      const isShift = e && 'shiftKey' in e && e.shiftKey;
-      const isMeta = e && ('metaKey' in e && (e.metaKey || e.ctrlKey));
-
-      if (isShift && lastSelectedId.current) {
-        const currentIndex = slots.findIndex(s => s.id === id);
-        const lastIndex = slots.findIndex(s => s.id === lastSelectedId.current);
-        const start = Math.min(currentIndex, lastIndex);
-        const end = Math.max(currentIndex, lastIndex);
-        
-        if (!isMeta) {
-          next.clear();
-        }
-
-        for (let i = start; i <= end; i++) {
-          next.add(slots[i].id);
-        }
-      } else if (isMeta) {
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
-      } else {
-        if (next.has(id) && next.size === 1) {
-          next.delete(id);
-        } else {
-          next.clear();
-          next.add(id);
-        }
-      }
-      
-      announce(`${next.size} slot${next.size !== 1 ? 's' : ''} selected.`);
-      
-      lastSelectedId.current = id;
-      return next;
-    });
-  };
-
-  const handleKeyDown = (id: string, e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggleSelection(id, e);
+  const handleSlotKeyDown = (
+    id: string,
+    e: ReactKeyboardEvent<HTMLLIElement>,
+  ) => {
+    if (!e.altKey || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+    e.preventDefault();
+    const list = orderedSlots ?? slots;
+    const index = list.findIndex((s) => s.id === id);
+    if (e.key === "ArrowDown" && index >= 0 && index < list.length - 1) {
+      swapSlots(id, list[index + 1].id);
+    } else if (e.key === "ArrowUp" && index > 0) {
+      swapSlots(id, list[index - 1].id);
     }
   };
 
-  const clearSelection = () => {
-    setSelectedIds(new Set());
-    announce("Selection cleared.");
-    lastSelectedId.current = null;
+  const handleDragStart = (id: string, e: React.DragEvent<HTMLLIElement>) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+    draggingIdRef.current = id;
   };
 
-  const mapTone = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === "healthy" || s === "available") return "positive";
-    if (s === "tight") return "warning";
-    if (s === "busy" || s === "booked") return "neutral";
-    return "neutral";
+  const handleDragOver = (e: React.DragEvent<HTMLLIElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
   };
 
-  const dir = getDir(locale);
+  const handleDrop = (id: string, e: React.DragEvent<HTMLLIElement>) => {
+    e.preventDefault();
+    const sourceId = e.dataTransfer.getData("text/plain") || draggingIdRef.current;
+    if (sourceId) {
+      swapSlots(sourceId, id);
+    }
+    draggingIdRef.current = null;
+  };
+
+  const handleDragEnd = () => {
+    draggingIdRef.current = null;
+  };
 
   return (
-    <div className="space-y-4" dir={dir}>
-      {/* Timezone Ribbon Header */}
+    <div className="space-y-4">
       <TimezoneRibbon
         supplierId={supplierId}
         supplierTimeZone={supplierTimeZone}
         supplierName={supplierName}
-        onTimezoneChange={(_, activeTimeZone) => setActiveTz(activeTimeZone)}
       />
 
-      {/* ── Suggested alternatives (rebooking flow) ─────────────────────── */}
+      {/* Suggested alternatives (rebooking flow) */}
       {suggestedAlternatives !== undefined && (
         <section aria-labelledby="rebook-heading" className="space-y-3">
           <div className="flex items-center gap-2">
@@ -365,9 +314,7 @@ export const SlotList = ({
             >
               Rebook a matching slot
             </h2>
-            <span className="text-xs text-slate-400">
-              Suggested alternatives
-            </span>
+            <span className="text-xs text-slate-400">Suggested alternatives</span>
           </div>
           <SuggestedAlternativesCarousel
             alternatives={suggestedAlternatives}
@@ -378,197 +325,86 @@ export const SlotList = ({
         </section>
       )}
 
-      {/* ── Primary slot list ───────────────────────────────────────────── */}
-      {slots.length === 0 ? (
+      {/* Primary slot list */}
+      {visibleSlots.length === 0 ? (
         <EmptyStateCard
+          eyebrow="Slots"
           title="No slots available"
           description="There are currently no scheduled availability slots for this supplier."
+          accentLabel="Slots"
+          status={{ label: "Empty", tone: "neutral" }}
+          guidance={[
+            "Create your first availability block to begin selling time.",
+            "Set clear availability windows so customers can book reliably.",
+          ]}
         />
       ) : (
-        <>
-          <ul className="space-y-4" {...bind()}>
-          {slots.map((slot) => {
-            const slotTitleId = "slot-" + slot.id + "-title";
-            const slotDetailsId = "slot-" + slot.id + "-details";
-            const isConflictTarget = activeConflictSlotId === slot.id || activeConflictSlotId === `slot-${slot.id}`;
+        <ul className="space-y-4">
+          {visibleSlots.map((slot) => {
+            const slotTitleId = `slot-${slot.id}-title`;
+            const slotDetailsId = `slot-${slot.id}-details`;
 
             return (
               <li
                 key={slot.id}
-                className="space-y-2 relative"
-                aria-describedby={conflicts[slot.id] ? `conflict-${slot.id}` : undefined}
+                draggable
+                aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
+                onDragStart={(e) => handleDragStart(slot.id, e)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(slot.id, e)}
+                onDragEnd={handleDragEnd}
+                onKeyDown={(e) => handleSlotKeyDown(slot.id, e)}
+                className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-cyan-300/20 sm:p-5"
               >
-                {/* conflict overlay */}
-                {conflicts[slot.id] ? (
+                <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 space-y-1">
+                      <h3 id={slotTitleId} className="text-lg font-semibold text-white">
+                        {slot.title}
+                      </h3>
+                      <p className="text-sm text-slate-300">
+                        {slot.dateLabel} · {slot.timeRange}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
+                        Drag to move
+                      </span>
+                      <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
+                    </div>
+                  </div>
+
                   <div
-                    className="pointer-events-none absolute inset-0 z-10 rounded-[1.5rem]"
-                    style={{
-                      backgroundColor: 'rgba(220,38,38,0.12)',
-                      backgroundImage:
-                        'repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 6px, transparent 6px 12px)',
-                    }}
-                    aria-hidden={false}
-                    role="img"
-                    aria-label={`Conflict: ${conflicts[slot.id]}`}
+                    id={slotDetailsId}
+                    className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-300"
                   >
-                    <span
-                      id={`conflict-${slot.id}`}
-                      className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
-                      style={{ backdropFilter: 'saturate(120%) blur(2px)' }}
-                    >
-                      {conflicts[slot.id]}
+                    <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                      {slot.demand}
+                    </span>
+                    <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 font-mono tabular-nums">
+                      {slot.rate}
+                    </span>
+                    {slot.isNextAvailable ? (
+                      <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-cyan-100">
+                        Next available
+                      </span>
+                    ) : null}
+                    <span className="inline-flex items-center gap-1.5">
+                      Rate details
+                      <HelpPopover
+                        term={glossary.rate}
+                        triggerLabel="Help: slot rate and XLM pricing"
+                      />
                     </span>
                   </div>
-                ) : null}
-                
-                {isDropTarget && dropPosition === "before" ? (
-                  <div className="h-1 rounded-full bg-cyan-400/80" />
-                ) : null}
-                
-                <div
-                  data-slot-id={slot.id}
-                  draggable
-                  tabIndex={0}
-                  aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
-                  aria-pressed={isSelected}
-                  onDragStart={(event) => {
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData("text/plain", slot.id);
-                    setDraggingId(slot.id);
-                    setDragOverId(slot.id);
-                    setGhostPosition({ x: event.clientX, y: event.clientY });
-                  }}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after";
-                    setDragOverId(slot.id);
-                    setDropPosition(position);
-                    event.dataTransfer.dropEffect = "move";
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const sourceId = event.dataTransfer.getData("text/plain") || draggingId;
-                    if (sourceId) {
-                      reorderSlots(sourceId, slot.id, dropPosition);
-                    }
-                    clearDragState();
-                  }}
-                  onDragEnd={() => clearDragState()}
-                  onKeyDown={(event) => handleListKeyDown(slot.id, event)}
-                  className={`rounded-[1.5rem] border p-4 transition-all duration-200 sm:p-5 ${isDragging ? "border-cyan-400/80 bg-cyan-400/10 opacity-70 shadow-[0_0_0_1px_rgba(34,211,238,0.3)]" : isSelected ? "border-cyan-400/40 bg-cyan-400/10" : "border-white/10 bg-white/[0.03] hover:border-cyan-400/30 hover:bg-cyan-400/[0.06]"}`}
-                >
-                  <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 id={slotTitleId} className="text-lg font-semibold text-white">
-                            {slot.title}
-                          </h3>
-                          {isJustAdded(slot.mintedAt) && (
-                            <Tooltip
-                              content="This slot was added within the last 24 hours."
-                              trigger={
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[0.65rem] font-bold tracking-wider text-cyan-300 hover:bg-cyan-400/20 transition-colors cursor-help">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" aria-hidden="true" />
-                                  NEW
-                                </span>
-                              }
-                              triggerClassName="inline-flex"
-                              ariaLabel="New slot: added within the last 24 hours"
-                            />
-                          )}
-                          {isDragging ? (
-                            <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100">
-                              Moving
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="text-sm text-slate-300">
-                          <BidiIsolate locale={locale}>{slot.dateLabel}</BidiIsolate>
-                          <span aria-hidden="true"> · </span>
-                          <BidiIsolate locale={locale}>{slot.timeRange}</BidiIsolate>
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
-                          Drag to move
-                        </span>
-                        <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-400" id={slotDetailsId}>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                        {slot.rate}
-                        <HelpPopover
-                          term={glossary.rate}
-                          triggerLabel="Help: slot rate and XLM pricing"
-                        />
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        Rate details
-                        <HelpPopover
-                          term={glossary.xlm}
-                          triggerLabel="Help: XLM and Stellar network fees"
-                        />
-                      </span>
-                    </div>
-                  </article>
-                </div>
-                
-                {isDropTarget && dropPosition === "after" ? (
-                  <div className="h-1 rounded-full bg-cyan-400/80" />
-                ) : null}
+                </article>
               </li>
             );
-            })}
-          </ul>
-        )}
-
-        {suggestedAlternatives.length > 0 ? (
-            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
-                  <p className="mt-1 text-sm text-slate-300">Suggested alternatives</p>
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {suggestedAlternatives.map((alternative, index) => (
-                  <button
-                    key={alternative.id}
-                    ref={(element) => {
-                      alternativeRefs.current[index] = element;
-                    }}
-                    type="button"
-                    tabIndex={0}
-                    aria-label={`Alternative slot: ${alternative.title}, ${alternative.dateLabel} ${alternative.timeRange}`}
-                    onKeyDown={(event) => handleAlternativeKeyDown(index, event)}
-                    className="rounded-[1.25rem] border border-white/10 bg-slate-900/70 p-4 text-left transition hover:border-cyan-400/40 hover:bg-slate-800/90"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-white">{alternative.title}</p>
-                      <StatusChip tone={mapTone(alternative.status)}>{alternative.status}</StatusChip>
-                    </div>
-                    <p className="mt-2 text-sm text-slate-300">{alternative.dateLabel} · {alternative.timeRange}</p>
-                    <p className="mt-3 text-sm text-slate-400">{alternative.demand}</p>
-                    <p className="mt-2 text-sm text-cyan-200">{alternative.rate}</p>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ) : (
-            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-              <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
-              <p className="mt-2 text-sm text-slate-300">No matching alternatives found</p>
-              <p className="mt-1 text-sm text-slate-400">No alternatives</p>
-            </section>
-          )}
-        </>
+          })}
+        </ul>
       )}
 
-      {/* Live region for multi-select announcements */}
+      {/* Live region for reorder announcements */}
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {liveMessage}
       </div>

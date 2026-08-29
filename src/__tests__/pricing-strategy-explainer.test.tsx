@@ -51,7 +51,7 @@ describe("QuickActions integration", () => {
       },
     ];
 
-    render(<QuickActions actions={actions as any} />);
+    render(<QuickActions actions={actions as never[]} />);
     expect(screen.getByRole("button", { name: /Pricing explainer/i })).toBeTruthy();
   });
 });

@@ -133,9 +133,16 @@ export default function SlotDetailPage({
   const stellarFee = 0.0001;
   const totalCost = subtotal + escrowFee + stellarFee;
 
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountedTotal, setDiscountedTotal] = useState(totalCost);
+
   useEffect(() => {
-    setDiscountPercent(0);
-    setDiscountedTotal(totalCost);
+    // Reset discount state when the slot or total price changes. Deferred so
+    // the writes don't run synchronously inside the effect body.
+    window.setTimeout(() => {
+      setDiscountPercent(0);
+      setDiscountedTotal(totalCost);
+    }, 0);
   }, [id, totalCost]);
 
   const effectiveTotalCost = discountPercent > 0 ? discountedTotal : totalCost;
@@ -150,8 +157,6 @@ export default function SlotDetailPage({
   const [loadingMessage, setLoadingMessage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [announcement, setAnnouncement] = useState(""); // Screen reader announcer
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [discountedTotal, setDiscountedTotal] = useState(totalCost);
   const [giftDetails, setGiftDetails] = useState<GiftDetails | null>(null);
 
   // DRAFT ABANDONMENT STATE
@@ -161,7 +166,11 @@ export default function SlotDetailPage({
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(draftKey);
-      if (saved) setHasDraft(true);
+      if (saved) {
+        // Deferred so the live-region state write doesn't run synchronously
+        // inside the effect body.
+        window.setTimeout(() => setHasDraft(true), 0);
+      }
     }
   }, [draftKey]);
 

@@ -65,7 +65,7 @@ interface ToastProps { toast: ToastItem; onDismiss: (id: string) => void; }
 
 export function Toast({ toast, onDismiss }: ToastProps) {
   const { id, variant, title, description, count, messages, category, onUndo } = toast;
-  const isCritical = variant === "critical";
+  const isCritical = variant === "error";
   const duration = isCritical ? 0 : (toast.duration ?? 5000);
   const config = variantConfig[variant];
   const Icon = config.icon;

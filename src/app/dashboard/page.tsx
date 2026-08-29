@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { DashboardShell } from "../components/dashboard-shell";
 import {
   BookingChecklist,
@@ -41,32 +41,8 @@ import { useOnboardingTour } from "@/hooks/use-onboarding-tour";
 import { OnboardingTour } from "@/components/dashboard/onboarding-tour";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
-import {
-  NetworkProvider,
-  NetworkSelector,
-} from "@/components/checkout/NetworkSelector";
+import { NetworkProvider } from "@/components/checkout/NetworkSelector";
 import { useSearchParams } from "next/navigation";
-
-// ─── Simulated async time-token actions ───────────────────────────────────────
-
-function delay(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
-async function simulateMint() {
-  await delay(2000);
-}
-
-async function simulateBuy() {
-  await delay(1800);
-}
-
-async function simulateEscrowRelease() {
-  await delay(2200);
-  // Simulate a failure ~30% of the time for demo
-  if (Math.random() < 0.3)
-    throw new Error("Escrow release rejected by contract");
-}
 
 // ─── Sample marketplace data ───────────────────────────────────────
 
@@ -203,11 +179,13 @@ export default function Dashboard() {
   const error = false;
   const hasData = true;
   const [activeFilters, setActiveFilters] = useState<ChipFilter[]>([]);
+  const [isEnrolling2FA, setIsEnrolling2FA] = useState(false);
+  const [twoFactorStatus, setTwoFactorStatus] =
+    useState<"enabled" | "disabled">("disabled");
 
   const {
     showSamples,
     showTour,
-    showClearBanner,
     clearSamples,
     dismissTour,
   } = useOnboardingSamples();
@@ -216,11 +194,6 @@ export default function Dashboard() {
     tourOpen,
     completeTour,
   } = useOnboardingTour();
-
-  // Suppress lint warnings for demo simulation functions
-  void simulateMint;
-  void simulateBuy;
-  void simulateEscrowRelease;
 
   // Update active filters from URL params
   const updateActiveFilters = useCallback(() => {

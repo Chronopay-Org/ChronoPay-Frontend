@@ -135,7 +135,11 @@ async function runTabCycleTest(container: HTMLElement): Promise<TestResult> {
 }
 
 function tick(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
 }
 
 // ── Test case modals ──────────────────────────────────────────────────────────
