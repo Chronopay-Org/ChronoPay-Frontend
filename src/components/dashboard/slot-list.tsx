@@ -385,7 +385,8 @@ export const SlotList = ({
           description="There are currently no scheduled availability slots for this supplier."
         />
       ) : (
-        <ul className="space-y-4" {...bind()}>
+        <>
+          <ul className="space-y-4" {...bind()}>
           {slots.map((slot) => {
             const slotTitleId = "slot-" + slot.id + "-title";
             const slotDetailsId = "slot-" + slot.id + "-details";
