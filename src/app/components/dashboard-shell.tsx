@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { clsx } from "clsx";
-import { Menu, X, Shield, Keyboard } from "lucide-react";
+import { Menu, X, Shield, Keyboard, Settings } from "lucide-react";
 import { useRole } from "@/app/components/navigation/RoleContext";
 import { RoleOnboardingDialog } from "@/app/components/navigation/role-onboarding-dialog";
 import { getNavForRole, ROLE_META, type NavItem } from "@/app/components/navigation/role-nav";
@@ -15,81 +15,6 @@ import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 import { ContextualKeysPanel } from "@/app/components/ui/contextual-keys-panel";
-import { Pin, Clock, Star } from 'lucide-react';
-import { useCommandPaletteStorage } from '../hooks/use-command-palette-storage';
-
-// Inside your Command Palette component logic:
-export const CommandPalette = () => {
-  const { pinned, recent, togglePin, trackUsage } = useCommandPaletteStorage();
-  
-  // Example list of all available actions in the app
-  const ALL_ACTIONS = [
-    { id: 'send', label: 'Send Payment', icon: <Send /> },
-    { id: 'settings', label: 'Settings', icon: <Settings /> },
-    // ...
-  ];
-
-  const pinnedActions = ALL_ACTIONS.filter(a => pinned.includes(a.id));
-  const recentActions = ALL_ACTIONS.filter(a => recent.includes(a.id) && !pinned.includes(a.id));
-
-  return (
-    <Command.List role="listbox" aria-label="Command Palette Actions">
-      {pinnedActions.length > 0 && (
-        <Command.Group heading="Pinned" role="presentation">
-          {pinnedActions.map(action => (
-            <ActionRow 
-              key={action.id} 
-              action={action} 
-              isPinned={true} 
-              onPin={() => togglePin(action.id)} 
-              onSelect={() => { trackUsage(action.id); execute(action.id); }}
-            />
-          ))}
-        </Command.Group>
-      )}
-
-      {recentActions.length > 0 && (
-        <Command.Group heading="Recent" role="presentation">
-          {recentActions.map(action => (
-            <ActionRow 
-              key={action.id} 
-              action={action} 
-              isPinned={false} 
-              onPin={() => togglePin(action.id)} 
-              onSelect={() => { trackUsage(action.id); execute(action.id); }}
-            />
-          ))}
-        </Command.Group>
-      )}
-      
-      {/* Existing App Sections... */}
-    </Command.List>
-  );
-};
-
-// Sub-component for accessibility and pinning control
-const ActionRow = ({ action, isPinned, onPin, onSelect }) => (
-  <Command.Item 
-    onSelect={onSelect}
-    className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-accent"
-  >
-    <div className="flex items-center gap-2">
-      {action.icon}
-      <span>{action.label}</span>
-    </div>
-    <button
-      onClick={(e) => {
-        e.stopPropagation(); // Prevent triggering the action
-        onPin();
-      }}
-      aria-label={isPinned ? `Unpin ${action.label}` : `Pin ${action.label}`}
-      aria-pressed={isPinned}
-      className="p-1 transition-colors hover:text-primary"
-    >
-      <Pin className={isPinned ? "fill-current" : "opacity-40"} size={16} />
-    </button>
-  </Command.Item>
-);
 
 function getOnlineStatus() {
   if (typeof navigator === "undefined") return true;
@@ -134,7 +59,9 @@ function SystemStatus() {
       </span>
     </div>
   );
-}({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
+}
+
+function NavLink({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
   return (
@@ -161,6 +88,64 @@ function SystemStatus() {
       </span>
       <span className="truncate">{item.label}</span>
     </Link>
+  );
+}
+
+function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) {
+  if (items.length === 0) return null;
+
+  return (
+    <nav
+      aria-label="Bottom navigation"
+      className="fixed inset-x-0 bottom-0 z-40 border-t sm:hidden"
+      style={{
+        background: "var(--shell-header-bg)",
+        borderColor: "var(--shell-header-border)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        backdropFilter: "blur(12px)",
+      }}
+    >
+      <div className="flex h-16 items-stretch">
+        {items.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={item.ariaLabel ?? item.label}
+              aria-current={isActive ? "page" : undefined}
+              className={clsx(
+                "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 text-xs font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-inset",
+                isActive
+                  ? "text-white"
+                  : "text-slate-400 hover:text-slate-200"
+              )}
+              style={isActive ? { color: "var(--shell-rail-text-active)" } : undefined}
+            >
+              <span
+                aria-hidden="true"
+                className={clsx(
+                  "flex h-8 w-12 items-center justify-center rounded-full text-lg leading-none transition-colors",
+                  isActive && "bg-white/10"
+                )}
+                style={isActive ? { backgroundColor: "var(--shell-rail-active)" } : undefined}
+              >
+                {item.icon}
+              </span>
+              <span className="max-w-full truncate">{item.label}</span>
+              <span
+                aria-hidden="true"
+                className={clsx(
+                  "absolute top-0 h-0.5 w-8 rounded-full transition-colors",
+                  isActive ? "bg-cyan-400" : "bg-transparent"
+                )}
+              />
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
@@ -346,6 +331,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 <Keyboard className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
+            <Link
+              href="/dashboard/settings"
+              aria-label="Settings"
+              aria-current={pathname.startsWith("/dashboard/settings") ? "page" : undefined}
+              title="Settings"
+              className={clsx(
+                "rounded-full p-2 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
+                "focus-visible:ring-offset-slate-950",
+                "hover:bg-white/6 text-slate-400 hover:text-white"
+              )}
+            >
+              <Settings className="h-4 w-4" aria-hidden="true" />
+            </Link>
 
             {/* System Status — visible on medium+ screens */}
             <SystemStatus />
@@ -417,7 +416,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* Nav items */}
           <nav aria-label="Role modules" className="flex flex-col gap-1 px-3 pb-4">
             {navItems.map((item) => (
-              <NavRailItem key={item.href} item={item} pathname={pathname} onClick={closeRail} />
+              <NavLink key={item.href} item={item} pathname={pathname} onClick={closeRail} />
             ))}
           </nav>
 
@@ -442,8 +441,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         >
           <ContextualKeysPanel />
           {children}
+          {navItems.length > 0 && (
+            <div
+              aria-hidden="true"
+              className="sm:hidden"
+              style={{ height: "calc(env(safe-area-inset-bottom) + 4rem)" }}
+            />
+          )}
         </main>
       </div>
+
+      <BottomNav items={navItems} pathname={pathname} />
 
       {/* ── Keyboard shortcuts overlay ─────────────────────────────────────── */}
       <KeyboardShortcutsOverlay
