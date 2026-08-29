@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, keyboard, KeyboardEvent } from 'react';
-import Two&FactorEnroll from '@/components/dashboard/two-factor-enroll';
+import { useState, useCallback } from 'react';
+import { useOnboardingTour } from '@/hooks/use-onboarding-tour';
+import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
 import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sync-connect';
 import { CalendarSyncConflictModal } from '@/components/dashboard/settings/calendar-sync-conflict-modal';
 import { DeveloperSettings } from '@/components/dashboard/settings/developer-settings';
@@ -38,56 +39,7 @@ function getTabFromHash(): TabId {
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>('account');
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
-  const [walletMessage, setWalletMessage] = useState<string | null>(null);
-  const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({
-    account: null,
-    security: null,
-    notifications: null,
-    appearance: null,
-    wallets: null,
-  });
-
-  useEffect(() => {
-    setActiveTab(getTabFromHash());
-    const handleHashChange = () => setActiveTab(getTabFromHash());
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  const selectTab = useCallback((tab: TabId) => {
-    setActiveTab(tab);
-    window.location.hash = `?tb=${tab}`;
-  }, []);
-
-  const handleTabKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLButton>) => {
-      const index = TABS.findIndex(t => t[id] === activeTab);
-      let nextIndex: number | null = null;
-
-      switch (event.key) {
-        case 'ArrowRight':
-          nextIndex = (index + 1) % TABS.length;
-          break;
-        case 'ArrowLeft':
-          nextIndex = (index - 1 + TABS.length) % TABS.length;
-          break;
-        case 'Home':
-          nextIndex = 0;
-          break;
-        case 'End':
-          nextIndex = TABS.length - 1;
-          break;
-      }
-
-      if (nextIndex !== null) {
-        event.preventDefault();
-        const nextTab = TABS[nextIndex].id;
-        selectTab(nextTab);
-        tabRefs.current[nextTab]?.focus();
-      }
-    },
-    [activeTab, selectTab, tabRefs]
-  );
+  const { resetTour } = useOnboardingTour();
 
   const handleSyncWithConflicts = useCallback(() => {
     setConflicts(sampleConflicts);
@@ -232,6 +184,56 @@ export default function SettingsPage() {
           onResolve={handleResolveConflicts}
           onClose={handleCloseConflicts}
         />
+
+        <section className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6">
+          <h2 className="pb-4 text-xl font-semibold text-white sm:pb-6">Security</h2>
+          <TwoFactorEnroll onComplete={() => window.location.reload()} />
+
+          <div className="mt-10 border-t border-slate-700 pt-10">
+            <h3 className="mb-4 text-lg font-medium text-white">Change password</h3>
+            <div className="max-w-md">
+              <PasswordStrengthMeter value="" onChange={() => {}} />
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-[28px] border border-slate-700 bg-slate-900 p-6">
+          <h2 className="mb-4 text-2xl font-semibold text-white">Display density</h2>
+          <p className="mb-6 text-slate-400">
+            Choose how much spacing you want in your dashboard. Your preference is stored locally and reapplied on every visit.
+          </p>
+          <DensitySwitcher />
+        </section>
+
+        <section className="rounded-[28px] border border-slate-700 bg-slate-900 p-6">
+          <h2 className="mb-4 text-2xl font-semibold text-white">Onboarding</h2>
+          <p className="mb-6 text-slate-400">
+            Replay the guided tour to learn about key dashboard features.
+          </p>
+          <button
+            type="button"
+            onClick={resetTour}
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-500/10 px-6 py-2 text-sm font-medium text-cyan-300 transition hover:border-cyan-500/50 hover:bg-cyan-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          >
+            Replay tour
+          </button>
+        </section>
+
+        <section
+          aria-label="Developer and advanced options"
+          className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6"
+        >
+          <div className="space-y-1 pb-4 sm:pb-6">
+            <h2 className="text-xl font-semibold text-white">Developer / Advanced</h2>
+            <p className="text-sm leading-6 text-slate-300">
+              Enable experimental features, view debug information, and export logs for troubleshooting.
+            </p>
+          </div>
+          <DeveloperSettings />
+        </section>
+
+        {/* Danger Zone */}
+        <DangerZone />
       </div>
     </div>
   );
