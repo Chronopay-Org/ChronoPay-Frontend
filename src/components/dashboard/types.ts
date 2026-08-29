@@ -52,6 +52,33 @@ export type BookingStage = {
   value: number;
 };
 
+export type WalletHoldingStatus = "available" | "escrowed" | "redeemed";
+
+export type WalletHolding = {
+  id: string;
+  title: string;
+  amount: string;
+  detail: string;
+  status: WalletHoldingStatus;
+};
+
+export type WalletActivityEntry = {
+  id: string;
+  type: "mint" | "transfer" | "redemption" | "settlement";
+  title: string;
+  amount: string;
+  date: string;
+  detail: string;
+};
+
+export type WalletLifetimeStats = {
+  totalMinted: string;
+  totalTraded: string;
+  totalRedeemed: string;
+  transactionCount: number;
+  accountAge: string;
+};
+
 export type WalletSnapshot = {
   connection: "connected" | "disconnected" | "error";
   address?: string;

@@ -7,12 +7,22 @@ import { SigningSkeleton } from '@/components/checkout/SigningSkeleton';
 export type WalletProvider = {
   id: string;
   name: string;
-  icon: React.ReactNode; // e.g., <FreighterIcon />
+  icon: React.ReactNode;
   capabilities?: string[];
   recommended?: boolean;
 };
 
 type ConnectionStatus = 'idle' | 'pending' | 'success' | 'error';
+type ConnectionMethod = 'wallet' | 'email';
+
+const LOCAL_STORAGE_KEY = 'wallet_connect_method';
+
+export interface CheckoutData {
+  slot: string;
+  price: string;
+  fees: string;
+  escrowTerms: string;
+}
 
 interface WalletConnectModalProps {
   isOpen: boolean;
@@ -22,6 +32,10 @@ interface WalletConnectModalProps {
   errorMessage?: string;
   onConnect: (providerId: string) => void;
   onRetry?: () => void;
+  mode?: 'connect' | 'review' | 'handoff';
+  checkoutData?: CheckoutData;
+  onSign?: () => void;
+  onCancelHandoff?: () => void;
 }
 
 export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
@@ -32,14 +46,29 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   errorMessage,
   onConnect,
   onRetry,
+  mode = 'connect',
+  checkoutData,
+  onSign,
+  onCancelHandoff,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [selectedCaps, setSelectedCaps] = useState<string[]>([]);
-  const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod | undefined>(undefined);
   const [email, setEmail] = useState('');
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+  const [selectedProviderId, setSelectedProviderId] = useState<string | undefined>();
+  const [showAlternativeWallets, setShowAlternativeWallets] = useState(false);
+
+  const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod | undefined>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        return (window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod) ?? undefined;
+      }
+    } catch {
+      return undefined;
+    }
   });
 
   useEffect(() => {
@@ -52,9 +81,10 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null;
+    const stored = typeof window !== 'undefined' ? window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null : null;
     setSelectedMethod(stored ?? undefined);
     setEmail('');
+    setShowAlternativeWallets(false);
   }, [isOpen]);
 
   const allCaps = useMemo(() => {
@@ -88,27 +118,19 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
-  const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod>(
-    () => {
-      try {
-        return (window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod) ?? 'wallet';
-      } catch {
-        return 'wallet';
-      }
-    },
-  );
-
   useEffect(() => {
     if (isOpen && modalRef.current) {
       const firstButton = modalRef.current.querySelector('button, input') as HTMLElement;
       firstButton?.focus();
     }
-  }, [isOpen, selectedMethod]);
+  }, [isOpen, selectedMethod, mode]);
 
   const handleSelectMethod = useCallback(
     (method: ConnectionMethod) => {
       try {
-        window.localStorage.setItem(LOCAL_STORAGE_KEY, method);
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(LOCAL_STORAGE_KEY, method);
+        }
       } catch {
         // localStorage may be unavailable
       }
@@ -116,6 +138,27 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     },
     [],
   );
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // handled elsewhere or mock
+  };
+
+  const handleConnect = (id: string) => {
+    setSelectedProviderId(id);
+    onConnect(id);
+  };
+
+  const handleCancelSigning = () => {
+    if (onCancelHandoff) {
+      onCancelHandoff();
+    } else {
+      onClose();
+    }
+  };
+
+  const emailValid = email.includes('@') && email.includes('.');
+  const selectedProviderName = providers.find(p => p.id === selectedProviderId)?.name || 'wallet';
 
   if (!isOpen) return null;
 
@@ -131,12 +174,16 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           ref={modalRef}
           className="elevation-4 relative w-full max-w-md rounded-xl bg-white p-6 dark:bg-slate-900"
         >
-          <h2 id="wallet-connect-title" className="text-xl font-semibold text-slate-900 dark:text-slate-50">
-            Choose how to connect
-          </h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Pick a path that fits your workflow. You can add the other option later.
-          </p>
+          {mode === 'connect' && (
+            <>
+              <h2 id="wallet-connect-title" className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+                Choose how to connect
+              </h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                Pick a path that fits your workflow. You can add the other option later.
+              </p>
+            </>
+          )}
 
           <LiveRegion>
             {status === 'pending' && selectedProviderName
@@ -148,13 +195,79 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
             {status === 'error' && `Connection failed: ${errorMessage || 'Unknown error'}`}
           </LiveRegion>
 
-          {/* Content based on status */}
-          {status === 'idle' && !selectedMethod && (
+          {/* CHECKOUT REVIEW MODE */}
+          {mode === 'review' && checkoutData && status !== 'success' && status !== 'error' && (
+            <div className="space-y-6 mt-2">
+              <div>
+                <h2 id="wallet-connect-title" className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+                  Review your checkout
+                </h2>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  Please review the details before signing with your Stellar wallet.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+                <dl className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-slate-500 dark:text-slate-400">Slot</dt>
+                    <dd className="font-medium text-slate-900 dark:text-slate-100">{checkoutData.slot}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-slate-500 dark:text-slate-400">Price</dt>
+                    <dd className="font-medium text-slate-900 dark:text-slate-100">{checkoutData.price}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-slate-500 dark:text-slate-400">Fees</dt>
+                    <dd className="font-medium text-slate-900 dark:text-slate-100">{checkoutData.fees}</dd>
+                  </div>
+                  <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-700">
+                    <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Escrow Terms</dt>
+                    <dd className="text-xs text-slate-600 dark:text-slate-300">{checkoutData.escrowTerms}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-3 text-sm text-cyan-800 dark:text-cyan-200 border border-cyan-100 dark:border-cyan-800">
+                <strong>What happens next:</strong> You will be prompted in your wallet to sign this transaction. No funds will be transferred until the escrow conditions are met.
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <button
+                  type="button"
+                  className="flex-1 rounded-full bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  onClick={onSign}
+                >
+                  Continue to Sign
+                </button>
+                <button
+                  type="button"
+                  className="flex-1 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  onClick={onClose}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* HANDOFF MODE */}
+          {mode === 'handoff' && status !== 'success' && status !== 'error' && (
+            <div className="mt-2">
+               <SigningSkeleton
+                 walletName={selectedProviderName}
+                 onCancel={handleCancelSigning}
+               />
+            </div>
+          )}
+
+          {/* CONNECT MODE */}
+          {mode === 'connect' && status === 'idle' && !selectedMethod && (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <button
                 type="button"
                 className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
-                onClick={() => selectMethod('wallet')}
+                onClick={() => handleSelectMethod('wallet')}
                 aria-label="Connect Stellar wallet"
               >
                 <div className="flex items-center gap-3">
@@ -174,7 +287,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
               <button
                 type="button"
                 className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
-                onClick={() => selectMethod('email')}
+                onClick={() => handleSelectMethod('email')}
                 aria-label="Continue with email"
               >
                 <div className="flex items-center gap-3">
@@ -193,7 +306,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
             </div>
           )}
 
-          {status === 'idle' && selectedMethod === 'email' && (
+          {mode === 'connect' && status === 'idle' && selectedMethod === 'email' && (
             <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -233,7 +346,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
             </form>
           )}
 
-          {status === 'idle' && selectedMethod === 'wallet' && (
+          {mode === 'connect' && status === 'idle' && selectedMethod === 'wallet' && (
             <div className="space-y-4 mt-6">
               <div className="flex items-center justify-between gap-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -322,7 +435,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
             </div>
           )}
 
-          {status === 'pending' && (
+          {mode === 'connect' && status === 'pending' && (
             <SigningSkeleton
               walletName={selectedProviderName}
               onCancel={handleCancelSigning}

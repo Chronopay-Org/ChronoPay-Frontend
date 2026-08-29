@@ -136,7 +136,7 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
                     className="group flex items-center gap-1.5 text-xs font-medium text-cyan-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 rounded"
                     aria-label="Refresh network fee estimate"
                   >
-                    <RefreshCw className={\`h-3.5 w-3.5 \${isRefreshing ? 'animate-spin' : 'transition-transform group-hover:rotate-180'}\`} />
+                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : 'transition-transform group-hover:rotate-180'}`} />
                     Refresh
                   </button>
                 </div>

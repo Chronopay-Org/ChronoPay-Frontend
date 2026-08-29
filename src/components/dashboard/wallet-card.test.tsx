@@ -197,7 +197,12 @@ describe("ZeroBalanceNudge", () => {
 
   it("renders the sr-only aria-live announcement on mount", () => {
     render(<ZeroBalanceNudge />);
-    const announcement = screen.getByRole("status");
+    // ZeroBalanceNudge now also contains a HelpPopover (issue #652), which
+    // renders its own role="status" region for help-mode state. Target the
+    // zero-balance announcement specifically by its text rather than by
+    // role alone, since there are legitimately two status regions here.
+    const announcement = screen.getByText(/wallet balance is zero/i);
+    expect(announcement).toHaveAttribute("role", "status");
     expect(announcement).toHaveTextContent(/wallet balance is zero/i);
   });
 
@@ -315,6 +320,8 @@ describe("ZeroBalanceNudge", () => {
 
 describe("WalletCard", () => {
   beforeEach(() => {
+    window.localStorage.clear();
+
     // jsdom does not implement window.matchMedia; provide a minimal stub.
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -511,5 +518,204 @@ describe("WalletCard", () => {
     expect(
       screen.getByText(/wallet balance is zero/i),
     ).toBeInTheDocument();
+  });
+
+  it("renders wallet holdings tabs with counts and switches between views", async () => {
+    const user = userEvent.setup();
+    const holdings = [
+      {
+        id: "hold-1",
+        title: "Studio session",
+        amount: "120 XLM",
+        detail: "Ready to payout",
+        status: "available" as const,
+      },
+      {
+        id: "hold-2",
+        title: "Design review",
+        amount: "80 XLM",
+        detail: "Held until the booking completes",
+        status: "escrowed" as const,
+      },
+      {
+        id: "hold-3",
+        title: "Workshop pass",
+        amount: "40 XLM",
+        detail: "Already settled and archived",
+        status: "redeemed" as const,
+      },
+    ];
+
+    renderWithProviders(
+      <WalletCard wallet={connectedWallet} holdings={holdings} />,
+    );
+
+    expect(screen.getByRole("tablist", { name: /wallet holdings/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /available 1/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /escrowed 1/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /redeemed 1/i })).toBeInTheDocument();
+    expect(screen.getByText("Ready to payout")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: /escrowed 1/i }));
+
+    expect(screen.getByRole("tab", { name: /escrowed 1/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("Held until the booking completes")).toBeInTheDocument();
+  });
+
+  it("shows a dedicated empty state per holdings tab and restores the last tab on remount", async () => {
+    const user = userEvent.setup();
+    const emptyHoldings = [];
+
+    const { unmount } = renderWithProviders(
+      <WalletCard wallet={connectedWallet} holdings={emptyHoldings} />,
+    );
+
+    expect(screen.getByText(/No available holdings yet/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: /escrowed 0/i }));
+    expect(screen.getByText(/No escrowed holdings yet/i)).toBeInTheDocument();
+
+    unmount();
+    renderWithProviders(
+      <WalletCard wallet={connectedWallet} holdings={emptyHoldings} />,
+    );
+
+    expect(screen.getByRole("tab", { name: /escrowed 0/i })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("supports keyboard navigation between holdings tabs", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <WalletCard
+        wallet={connectedWallet}
+        holdings={[
+          {
+            id: "hold-1",
+            title: "Studio session",
+            amount: "120 XLM",
+            detail: "Ready to payout",
+            status: "available",
+          },
+        ]}
+      />,
+    );
+
+    const availableTab = screen.getByRole("tab", { name: /available 1/i });
+    const escrowedTab = screen.getByRole("tab", { name: /escrowed 0/i });
+
+    availableTab.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(escrowedTab).toHaveAttribute("aria-selected", "true");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Contextual help (HelpPopover) for domain jargon — issue #652
+// ---------------------------------------------------------------------------
+
+describe("WalletCard contextual help", () => {
+  it("renders a click-triggered help trigger for 'escrowed' in the holdings subtitle", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<WalletCard wallet={connectedWallet} />);
+
+    const escrowTrigger = screen.getByRole("button", {
+      name: "Help: Escrowed holdings",
+    });
+    expect(escrowTrigger).toBeInTheDocument();
+    expect(escrowTrigger).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(escrowTrigger);
+
+    expect(escrowTrigger).toHaveAttribute("aria-expanded", "true");
+    const dialog = screen.getByRole("dialog", { name: /^Escrow$/i });
+    expect(dialog).toHaveTextContent(/locked by a smart contract/i);
+  });
+
+  it("renders a click-triggered help trigger for 'redeemed' in the holdings subtitle", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<WalletCard wallet={connectedWallet} />);
+
+    const redemptionTrigger = screen.getByRole("button", {
+      name: "Help: Redeemed holdings",
+    });
+    await user.click(redemptionTrigger);
+
+    const dialog = screen.getByRole("dialog", { name: /token redemption/i });
+    expect(dialog).toHaveTextContent(/exchanges their time token/i);
+  });
+
+  it("is keyboard-operable (Enter opens, Escape closes and returns focus) rather than hover-only", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<WalletCard wallet={connectedWallet} />);
+
+    const escrowTrigger = screen.getByRole("button", {
+      name: "Help: Escrowed holdings",
+    });
+    escrowTrigger.focus();
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByRole("dialog", { name: /^Escrow$/i })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog", { name: /^Escrow$/i })).not.toBeInTheDocument();
+    expect(escrowTrigger).toHaveFocus();
+  });
+
+  it("renders a help trigger for 'time tokens' in the zero-balance nudge", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<WalletCard wallet={zeroWallet} />);
+
+    const timeTokenTrigger = screen.getByRole("button", {
+      name: "Help: Time tokens",
+    });
+    await user.click(timeTokenTrigger);
+
+    const dialog = screen.getByRole("dialog", { name: /^Time token$/i });
+    expect(dialog).toHaveTextContent(/Stellar-based digital asset/i);
+  });
+
+  it("does not render the 'time tokens' help trigger when the balance is non-zero (nudge not shown)", () => {
+    renderWithProviders(<WalletCard wallet={connectedWallet} />);
+    expect(
+      screen.queryByRole("button", { name: "Help: Time tokens" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the wallet holdings tabs valid: no interactive HelpPopover trigger is nested inside a role=tab element", () => {
+    renderWithProviders(
+      <WalletCard
+        wallet={connectedWallet}
+        holdings={[
+          {
+            id: "hold-1",
+            title: "Studio session",
+            amount: "120 XLM",
+            detail: "Ready to payout",
+            status: "available",
+          },
+        ]}
+      />,
+    );
+
+    const tabs = screen.getAllByRole("tab");
+    tabs.forEach((tab) => {
+      expect(tab.querySelector("[data-help-popover-trigger='true']")).toBeNull();
+    });
+  });
+
+  it("each help trigger has a learn-more link pointing at the glossary", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<WalletCard wallet={connectedWallet} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Help: Escrowed holdings" }),
+    );
+
+    const learnMoreLink = screen.getByRole("link", {
+      name: /learn more about escrow/i,
+    });
+    expect(learnMoreLink).toHaveAttribute("href", "/docs/glossary#escrow");
   });
 });
