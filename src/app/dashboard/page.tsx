@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { DashboardShell } from "../components/dashboard-shell";
 import {
   BookingChecklist,
@@ -12,6 +13,7 @@ import {
   QuickActions,
   RatingBreakdownBars,
   SecurityStatusCard,
+  createSecurityItems,
   SlotList,
   WalletCard,
   bookingChecklistSteps,
@@ -27,6 +29,7 @@ import {
   emptyResponseTime,
   emptyAcceptanceRate,
 } from "@/components/dashboard";
+import TwoFactorEnroll from "@/components/dashboard/two-factor-enroll";
 import { KycStatusTimeline } from "@/components/dashboard/kyc-status-timeline";
 import { kycTimelineEntries, kycPromptPanel } from "@/components/dashboard/kyc-status-timeline";
 import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
@@ -62,6 +65,8 @@ export default function Dashboard() {
   const loading = false;
   const error = false;
   const hasData = true;
+  const [isEnrolling2FA, setIsEnrolling2FA] = useState(false);
+  const [twoFactorStatus, setTwoFactorStatus] = useState<"enabled" | "disabled">("disabled");
   const {
     showSamples,
     showTour,
@@ -215,7 +220,20 @@ export default function Dashboard() {
           title="Security Status"
           description="Review your account security settings."
         >
-          <SecurityStatusCard />
+          {isEnrolling2FA ? (
+            <TwoFactorEnroll onComplete={() => {
+              setIsEnrolling2FA(false);
+              setTwoFactorStatus("enabled");
+            }} />
+          ) : (
+            <SecurityStatusCard 
+              items={createSecurityItems({ twoFactor: twoFactorStatus }).map(item => 
+                item.id === "two-factor" && item.status === "disabled"
+                  ? { ...item, onAction: () => setIsEnrolling2FA(true) }
+                  : item
+              )}
+            />
+          )}
         </PanelShell>
 
         {/* Rating Breakdown */}
