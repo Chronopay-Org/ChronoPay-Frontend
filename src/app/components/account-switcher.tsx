@@ -316,6 +316,7 @@ export function AccountSwitcher({ className = "" }: AccountSwitcherProps) {
               </span>
             )}
           </div>
+          <div className="flex items-center justify-between">
             <p className="truncate text-xs text-slate-500 font-mono" aria-label={account.address} data-testid="account-address">
               {truncateAddress(account.address)}
             </p>
