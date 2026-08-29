@@ -523,8 +523,9 @@ export const SlotList = ({
             );
             })}
           </ul>
+        )}
 
-          {suggestedAlternatives.length > 0 ? (
+        {suggestedAlternatives.length > 0 ? (
             <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>

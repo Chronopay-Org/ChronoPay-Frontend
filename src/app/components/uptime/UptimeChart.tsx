@@ -29,6 +29,29 @@ export function UptimeChart({
   // Ensure we have exactly 90 days
   const displayDays = days?.slice(-90) || []; // Take last 90 days (newest last)
 
+  // Keyboard navigation: arrow keys move focus between cells
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!displayDays || displayDays.length === 0) return;
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+
+        const cells = Array.from(cellsRef.current.values());
+        const currentIndex = cells.indexOf(e.currentTarget);
+
+        if (currentIndex !== -1) {
+          const nextIndex =
+            e.key === "ArrowRight"
+              ? Math.min(currentIndex + 1, cells.length - 1)
+              : Math.max(currentIndex - 1, 0);
+
+          cells[nextIndex]?.focus();
+        }
+      }
+    },
+    [displayDays]
+  );
+
   if (!days || days.length === 0) {
     return (
       <div className="text-slate-400 text-sm">
@@ -52,28 +75,6 @@ export function UptimeChart({
     day: "numeric",
   });
 
-  // Keyboard navigation: arrow keys move focus between cells
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!displayDays || displayDays.length === 0) return;
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        e.preventDefault();
-
-        const cells = Array.from(cellsRef.current.values());
-        const currentIndex = cells.indexOf(e.currentTarget);
-
-        if (currentIndex !== -1) {
-          const nextIndex =
-            e.key === "ArrowRight"
-              ? Math.min(currentIndex + 1, cells.length - 1)
-              : Math.max(currentIndex - 1, 0);
-
-          cells[nextIndex]?.focus();
-        }
-      }
-    },
-    []
-  );
 
   // Determine text direction (RTL)
   const dir = typeof window !== "undefined" && 
