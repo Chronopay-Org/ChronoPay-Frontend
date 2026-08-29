@@ -511,15 +511,7 @@ export const SlotList = ({
                           <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
                         </div>
                       </div>
-
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                      {slot.rate}
-                      <HelpPopover
-                        term={glossary.rate}
-                        triggerLabel="Help: slot rate and XLM pricing"
-                      />
-                    </span>
-
+                      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-400" id={slotDetailsId}>
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
                           {slot.rate}
                           <HelpPopover
@@ -527,15 +519,15 @@ export const SlotList = ({
                             triggerLabel="Help: slot rate and XLM pricing"
                           />
                         </span>
-
-                    <span className="inline-flex items-center gap-1.5">
-                      Rate details
-                      <HelpPopover
-                        term={glossary.xlm}
-                        triggerLabel="Help: XLM and Stellar network fees"
-                      />
-                    </span>
-                  </div>
+                        <span className="inline-flex items-center gap-1.5">
+                          Rate details
+                          <HelpPopover
+                            term={glossary.xlm}
+                            triggerLabel="Help: XLM and Stellar network fees"
+                          />
+                        </span>
+                      </div>
+                    </article>
                   {isDropTarget && dropPosition === "after" ? (
                     <div className="h-1 rounded-full bg-cyan-400/80" />
                   ) : null}

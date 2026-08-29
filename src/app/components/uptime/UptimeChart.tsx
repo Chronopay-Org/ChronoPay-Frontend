@@ -26,6 +26,9 @@ export function UptimeChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const cellsRef = useRef<Map<string, HTMLDivElement>>(new Map());
 
+  // Ensure we have exactly 90 days
+  const displayDays = days?.slice(-90) || []; // Take last 90 days (newest last)
+
   if (!days || days.length === 0) {
     return (
       <div className="text-slate-400 text-sm">
@@ -33,9 +36,6 @@ export function UptimeChart({
       </div>
     );
   }
-
-  // Ensure we have exactly 90 days
-  const displayDays = days.slice(-90); // Take last 90 days (newest last)
 
   // Format dates for labels
   const oldestDate = new Date(`${displayDays[0].date}T00:00:00Z`);
@@ -55,6 +55,7 @@ export function UptimeChart({
   // Keyboard navigation: arrow keys move focus between cells
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!displayDays || displayDays.length === 0) return;
       if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
         e.preventDefault();
 
