@@ -4,7 +4,8 @@ import { useState, useRef, useId, useCallback } from "react";
 import { TimelineItem, TimelineNode, TimelineBranchGroup, statusToneMap } from "./timeline-types";
 import { StatusChip } from "./status-chip";
 import { KycDocUpload } from "./kyc-doc-upload";
-import { Filter, GitFork, GitMerge } from "lucide-react";
+import { KycLivenessCapture } from "./kyc-liveness-capture";
+import { Filter, GitFork, GitMerge, MessageSquareText } from "lucide-react";
 
 interface StatusTimelineProps {
   items: TimelineNode[];
@@ -206,23 +207,24 @@ function BranchGroupEntry({
     (e: React.KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
-        setFocusedBranchIndex((prev) => (prev + 1) % branchCount);
-        focusBranch((focusedBranchIndex + 1) % branchCount);
+        const nextIndex = (focusedBranchIndex + 1) % branchCount;
+        setFocusedBranchIndex(nextIndex);
+        const branchEls = containerRef.current?.querySelectorAll("[data-branch-index]");
+        if (branchEls && branchEls[nextIndex]) {
+          (branchEls[nextIndex] as HTMLElement).focus();
+        }
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
-        setFocusedBranchIndex((prev) => (prev - 1 + branchCount) % branchCount);
-        focusBranch((focusedBranchIndex - 1 + branchCount) % branchCount);
+        const nextIndex = (focusedBranchIndex - 1 + branchCount) % branchCount;
+        setFocusedBranchIndex(nextIndex);
+        const branchEls = containerRef.current?.querySelectorAll("[data-branch-index]");
+        if (branchEls && branchEls[nextIndex]) {
+          (branchEls[nextIndex] as HTMLElement).focus();
+        }
       }
     },
     [branchCount, focusedBranchIndex],
   );
-
-  function focusBranch(index: number) {
-    const branchEls = containerRef.current?.querySelectorAll("[data-branch-index]");
-    if (branchEls && branchEls[index]) {
-      (branchEls[index] as HTMLElement).focus();
-    }
-  }
 
   return (
     <li

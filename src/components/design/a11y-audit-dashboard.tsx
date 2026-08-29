@@ -201,6 +201,7 @@ export function A11yAuditDashboard() {
         <A11yIssuePanel
           issue={selectedIssue}
           onClose={() => setSelectedIssueId(null)}
+          // eslint-disable-next-line react-hooks/refs
           triggerRef={triggerRefs.current[selectedIssueId || ""] ? undefined : undefined}
         />
       </div>

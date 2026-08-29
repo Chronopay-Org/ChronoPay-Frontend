@@ -1,10 +1,1 @@
-import { DashboardShell } from "@/app/components/dashboard-shell";
-import SettingsPage from "@/components/dashboard/settings/page";
-
-export default function SettingsRoute() {
-  return (
-    <DashboardShell>
-      <SettingsPage />
-    </DashboardShell>
-  );
-}
+import { DashboardShell } from "@/app/components/dashboard-shell";export default function SettingsPage() { return <DashboardShell><h1>Settings</h1></DashboardShell>; }

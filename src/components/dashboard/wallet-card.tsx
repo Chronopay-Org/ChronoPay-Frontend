@@ -6,7 +6,7 @@ import { Tooltip } from "@/app/components/ui/tooltip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
-import type { WalletHolding, WalletHoldingStatus, WalletSnapshot } from "./types";
+import type { WalletHolding, WalletHoldingStatus, WalletSnapshot, WalletActivityEntry, WalletLifetimeStats } from "./types";
 import { WalletConnectModal } from "./WalletConnectModal";
 import { useToast } from "@/hooks/use-toast";
 import { glossary } from "@/lib/glossary";
@@ -24,23 +24,26 @@ const actionLabel = {
   error: "Retry connection",
 } as const;
 
-const HOLDINGS_TAB_IDS = ["available", "escrowed", "redeemed"] as const;
+const HOLDINGS_TAB_IDS = ["holdings-available", "holdings-escrowed", "holdings-redeemed", "activity", "lifetime"] as const;
 
-type WalletHoldingsTabId = (typeof HOLDINGS_TAB_IDS)[number];
+type WalletPanelTabId = (typeof HOLDINGS_TAB_IDS)[number];
 
-type WalletHoldingsTabConfig = {
-  id: WalletHoldingsTabId;
+type WalletPanelTabConfig = {
+  id: WalletPanelTabId;
   label: string;
+  category: "holdings" | "activity" | "lifetime";
 };
 
-const holdingsTabConfig: readonly WalletHoldingsTabConfig[] = [
-  { id: "available", label: "Available" },
-  { id: "escrowed", label: "Escrowed" },
-  { id: "redeemed", label: "Redeemed" },
+const walletPanelTabConfig: readonly WalletPanelTabConfig[] = [
+  { id: "holdings-available", label: "Available", category: "holdings" },
+  { id: "holdings-escrowed", label: "Escrowed", category: "holdings" },
+  { id: "holdings-redeemed", label: "Redeemed", category: "holdings" },
+  { id: "activity", label: "Activity", category: "activity" },
+  { id: "lifetime", label: "Lifetime stats", category: "lifetime" },
 ];
 
-const HOLDINGS_STORAGE_KEY = "chronopay.wallet-holdings.active-tab";
-const HOLDINGS_SCROLL_STORAGE_KEY = "chronopay.wallet-holdings.scroll";
+const HOLDINGS_STORAGE_KEY = "chronopay.wallet-panel.active-tab";
+const HOLDINGS_SCROLL_STORAGE_KEY = "chronopay.wallet-panel.scroll";
 
 function getHoldingsByStatus(
   holdings: readonly WalletHolding[] | undefined,
@@ -169,9 +172,15 @@ export function ZeroBalanceNudge({
       >
         Your wallet is empty — here&apos;s how to get started
       </h3>
-      <p className="helper-text helper-text--emphasis mt-1">
-        Add funds or explore the testnet to start listing time tokens.
-      </p>
+      <div className="helper-text helper-text--emphasis mt-1">
+        Add funds or explore the testnet to start listing time tokens
+        <HelpPopover
+          term={glossary.timeToken}
+          triggerLabel="Help: Time tokens"
+          className="ml-1 align-middle"
+        />
+        .
+      </div>
 
       <ul
         role="list"
@@ -228,11 +237,15 @@ export function WalletCard({
   wallet,
   isTestnet = false,
   holdings,
+  activity,
+  lifetimeStats,
 }: {
   wallet: WalletSnapshot;
   /** Pass true when the app is running on the Stellar testnet. */
   isTestnet?: boolean;
   holdings?: WalletHolding[];
+  activity?: WalletActivityEntry[];
+  lifetimeStats?: WalletLifetimeStats;
 }) {
   const titleId = useId();
   const balanceId = useId();
@@ -242,12 +255,12 @@ export function WalletCard({
   const { toast } = useToast();
   const { network } = useNetwork();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeHoldingsTab, setActiveHoldingsTab] =
-    useState<WalletHoldingsTabId>("available");
-  const [holdingsScrollPositions, setHoldingsScrollPositions] = useState<
-    Record<WalletHoldingsTabId, number>
-  >({ available: 0, escrowed: 0, redeemed: 0 });
-  const holdingsPanelRef = useRef<HTMLDivElement | null>(null);
+  const [activeTab, setActiveTab] =
+    useState<WalletPanelTabId>("holdings-available");
+  const [panelScrollPositions, setpanelScrollPositions] = useState<
+    Record<WalletPanelTabId, number>
+  >({ "holdings-available": 0, "holdings-escrowed": 0, "holdings-redeemed": 0, activity: 0, lifetime: 0 });
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   const handleClose = useCallback(() => {
     setIsModalOpen(false);
@@ -266,15 +279,15 @@ export function WalletCard({
       savedTab &&
       HOLDINGS_TAB_IDS.some((tabId) => tabId === savedTab)
     ) {
-      setActiveHoldingsTab(savedTab as WalletHoldingsTabId);
+      setActiveTab(savedTab as WalletPanelTabId);
     }
 
     const savedScrolls = window.localStorage.getItem(HOLDINGS_SCROLL_STORAGE_KEY);
     if (savedScrolls) {
       try {
-        const parsed = JSON.parse(savedScrolls) as Partial<Record<WalletHoldingsTabId, number>>;
+        const parsed = JSON.parse(savedScrolls) as Partial<Record<WalletPanelTabId, number>>;
         if (parsed && typeof parsed === "object") {
-          setHoldingsScrollPositions((current) => ({
+          setpanelScrollPositions((current) => ({
             ...current,
             ...parsed,
           }));
@@ -290,8 +303,8 @@ export function WalletCard({
       return;
     }
 
-    window.localStorage.setItem(HOLDINGS_STORAGE_KEY, activeHoldingsTab);
-  }, [activeHoldingsTab]);
+    window.localStorage.setItem(HOLDINGS_STORAGE_KEY, activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -300,40 +313,40 @@ export function WalletCard({
 
     window.localStorage.setItem(
       HOLDINGS_SCROLL_STORAGE_KEY,
-      JSON.stringify(holdingsScrollPositions),
+      JSON.stringify(panelScrollPositions),
     );
-  }, [holdingsScrollPositions]);
+  }, [panelScrollPositions]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
 
-    const panel = holdingsPanelRef.current;
+    const panel = panelRef.current;
     if (!panel) {
       return;
     }
 
-    const scrollValue = holdingsScrollPositions[activeHoldingsTab] ?? 0;
+    const scrollValue = panelScrollPositions[activeTab] ?? 0;
     panel.scrollTop = scrollValue;
-  }, [activeHoldingsTab, holdingsScrollPositions]);
+  }, [activeTab, panelScrollPositions]);
 
-  const handleHoldingsScroll = useCallback(() => {
-    const panel = holdingsPanelRef.current;
+  const handlePanelScroll = useCallback(() => {
+    const panel = panelRef.current;
     if (!panel) {
       return;
     }
 
-    setHoldingsScrollPositions((current) => ({
+    setpanelScrollPositions((current) => ({
       ...current,
-      [activeHoldingsTab]: panel.scrollTop,
+      [activeTab]: panel.scrollTop,
     }));
-  }, [activeHoldingsTab]);
+  }, [activeTab]);
 
-  const handleHoldingsKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, tabId: WalletHoldingsTabId) => {
-      const currentIndex = holdingsTabConfig.findIndex((tab) => tab.id === tabId);
-      const nextTabIds = holdingsTabConfig.map((tab) => tab.id);
+  const handleTabKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>, tabId: WalletPanelTabId) => {
+      const currentIndex = walletPanelTabConfig.findIndex((tab) => tab.id === tabId);
+      const nextTabIds = walletPanelTabConfig.map((tab) => tab.id);
 
       if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
         event.preventDefault();
@@ -341,30 +354,37 @@ export function WalletCard({
         const nextIndex =
           (currentIndex + step + nextTabIds.length) % nextTabIds.length;
         const nextTab = nextTabIds[nextIndex];
-        setActiveHoldingsTab(nextTab);
+        setActiveTab(nextTab);
       }
 
       if (event.key === "Home") {
         event.preventDefault();
-        setActiveHoldingsTab(nextTabIds[0]);
+        setActiveTab(nextTabIds[0]);
       }
 
       if (event.key === "End") {
         event.preventDefault();
-        setActiveHoldingsTab(nextTabIds[nextTabIds.length - 1]);
+        setActiveTab(nextTabIds[nextTabIds.length - 1]);
       }
 
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        setActiveHoldingsTab(tabId);
+        setActiveTab(tabId);
       }
     },
     [],
   );
 
-  const activeHoldings = getHoldingsByStatus(holdings, activeHoldingsTab);
-  const activeHoldingsTabLabel =
-    holdingsTabConfig.find((tab) => tab.id === activeHoldingsTab)?.label ?? "Available";
+  const getHoldingsByCategory = (tabId: WalletPanelTabId): WalletHolding[] => {
+    if (tabId === "holdings-available") return getHoldingsByStatus(holdings, "available");
+    if (tabId === "holdings-escrowed") return getHoldingsByStatus(holdings, "escrowed");
+    if (tabId === "holdings-redeemed") return getHoldingsByStatus(holdings, "redeemed");
+    return [];
+  };
+
+  const activeHoldings = getHoldingsByCategory(activeTab);
+  const activeTabLabel =
+    walletPanelTabConfig.find((tab) => tab.id === activeTab)?.label ?? "Holdings";
 
   return (
     <>
@@ -455,30 +475,30 @@ export function WalletCard({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 id={holdingsHeadingId} className="text-sm font-semibold text-white">
-                  Wallet holdings
+                  Wallet panel
                 </h3>
                 <p className="mt-1 text-sm text-slate-400">
-                  Track available, escrowed, and redeemed balance in one place.
+                  Track holdings, activity, and lifetime metrics.
                 </p>
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Wallet holdings">
-              {holdingsTabConfig.map((tab) => {
-                const count = getHoldingsByStatus(holdings, tab.id).length;
-                const isActive = activeHoldingsTab === tab.id;
+            <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Wallet panel">
+              {walletPanelTabConfig.map((tab) => {
+                const isActive = activeTab === tab.id;
+                const count = tab.category === "holdings" ? getHoldingsByCategory(tab.id).length : null;
 
                 return (
                   <button
                     key={tab.id}
-                    id={`wallet-holdings-tab-${tab.id}`}
+                    id={`wallet-panel-tab-${tab.id}`}
                     type="button"
                     role="tab"
                     aria-selected={isActive}
-                    aria-controls={`wallet-holdings-panel-${tab.id}`}
+                    aria-controls={`wallet-panel-content-${tab.id}`}
                     tabIndex={isActive ? 0 : -1}
-                    onClick={() => setActiveHoldingsTab(tab.id)}
-                    onKeyDown={(event) => handleHoldingsKeyDown(event, tab.id)}
+                    onClick={() => setActiveTab(tab.id)}
+                    onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
                     className={[
                       "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
                       isActive
@@ -486,51 +506,129 @@ export function WalletCard({
                         : "border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white",
                     ].join(" ")}
                   >
-                    {tab.label} {count}
+                    {tab.label} {count !== null ? count : ""}
                   </button>
                 );
               })}
             </div>
 
             <div
-              id={`wallet-holdings-panel-${activeHoldingsTab}`}
+              id={`wallet-panel-content-${activeTab}`}
               role="tabpanel"
-              aria-labelledby={`wallet-holdings-tab-${activeHoldingsTab}`}
-              ref={holdingsPanelRef}
-              onScroll={handleHoldingsScroll}
+              aria-labelledby={`wallet-panel-tab-${activeTab}`}
+              ref={panelRef}
+              onScroll={handlePanelScroll}
               tabIndex={0}
               className="mt-4 max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-3"
             >
-              {activeHoldings.length > 0 ? (
-                <ul className="space-y-2" aria-label={`${activeHoldingsTabLabel} holdings`}>
-                  {activeHoldings.map((holding) => (
-                    <li
-                      key={holding.id}
-                      className="flex items-start justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-white">{holding.title}</p>
-                        <p className="mt-1 text-sm text-slate-400">{holding.detail}</p>
+              {/* Holdings tabs */}
+              {(activeTab === "holdings-available" || activeTab === "holdings-escrowed" || activeTab === "holdings-redeemed") && (
+                <>
+                  {activeHoldings.length > 0 ? (
+                    <ul className="space-y-2" aria-label={`${activeTabLabel} holdings`}>
+                      {activeHoldings.map((holding) => (
+                        <li
+                          key={holding.id}
+                          className="flex items-start justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-white">{holding.title}</p>
+                            <p className="mt-1 text-sm text-slate-400">{holding.detail}</p>
+                          </div>
+                          <span className="text-sm font-medium text-cyan-100">
+                            {holding.amount}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="flex min-h-[140px] flex-col justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-6 text-center">
+                      <p className="text-sm font-semibold text-white">
+                        No {activeTabLabel.toLowerCase()} holdings yet
+                      </p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        Next step: {activeTab === "holdings-available"
+                          ? "add funds or wait for a booking to settle"
+                          : activeTab === "holdings-escrowed"
+                            ? "keep this tab open while a booking is pending"
+                            : "review recently settled activity"}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Activity tab */}
+              {activeTab === "activity" && (
+                <>
+                  {activity && activity.length > 0 ? (
+                    <ul className="space-y-2" aria-label="Wallet activity">
+                      {activity.map((entry) => (
+                        <li
+                          key={entry.id}
+                          className="flex items-start justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-white">{entry.title}</p>
+                            <p className="mt-1 text-xs text-slate-400">{entry.date}</p>
+                            <p className="mt-1 text-sm text-slate-400">{entry.detail}</p>
+                          </div>
+                          <span className="text-sm font-medium text-cyan-100">
+                            {entry.amount}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="flex min-h-[140px] flex-col justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-6 text-center">
+                      <p className="text-sm font-semibold text-white">
+                        No activity yet
+                      </p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        Your transaction history will appear here as you use the wallet.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Lifetime stats tab */}
+              {activeTab === "lifetime" && (
+                <>
+                  {lifetimeStats ? (
+                    <dl className="space-y-3" aria-label="Lifetime statistics">
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                        <dt className="text-sm font-semibold text-white">Total minted</dt>
+                        <dd className="text-sm font-medium text-cyan-100">{lifetimeStats.totalMinted}</dd>
                       </div>
-                      <span className="text-sm font-medium text-cyan-100">
-                        {holding.amount}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="flex min-h-[140px] flex-col justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-6 text-center">
-                  <p className="text-sm font-semibold text-white">
-                    No {activeHoldingsTab.toLowerCase()} holdings yet
-                  </p>
-                  <p className="mt-2 text-sm text-slate-400">
-                    Next step: {activeHoldingsTab === "available"
-                      ? "add funds or wait for a booking to settle"
-                      : activeHoldingsTab === "escrowed"
-                        ? "keep this tab open while a booking is pending"
-                        : "review recently settled activity"}
-                  </p>
-                </div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                        <dt className="text-sm font-semibold text-white">Total traded value</dt>
+                        <dd className="text-sm font-medium text-cyan-100">{lifetimeStats.totalTraded}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                        <dt className="text-sm font-semibold text-white">Total redeemed</dt>
+                        <dd className="text-sm font-medium text-cyan-100">{lifetimeStats.totalRedeemed}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                        <dt className="text-sm font-semibold text-white">Transaction count</dt>
+                        <dd className="text-sm font-medium text-cyan-100">{lifetimeStats.transactionCount}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                        <dt className="text-sm font-semibold text-white">Account age</dt>
+                        <dd className="text-sm font-medium text-cyan-100">{lifetimeStats.accountAge}</dd>
+                      </div>
+                    </dl>
+                  ) : (
+                    <div className="flex min-h-[140px] flex-col justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-6 text-center">
+                      <p className="text-sm font-semibold text-white">
+                        No lifetime data available
+                      </p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        Lifetime statistics will be generated after your first transaction.
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </section>

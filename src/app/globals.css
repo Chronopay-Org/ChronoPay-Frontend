@@ -25,6 +25,7 @@
 }
 
 :root {
+  /* Core surface colors */
   --background: #07111f;
   --foreground: #f4f7fb;
   --surface: rgba(11, 23, 40, 0.82);
@@ -38,6 +39,47 @@
   --danger: #f87171;
   --muted: #9fb0c7;
 
+  /* Spacing scale: use values from the scale to preserve rhythm and avoid ad hoc gaps. */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px */
+
+  /* Radius scale */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 24px;
+  --radius-lg: 28px;
+  --radius-xl: 32px;
+
+  /* Motion scale */
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 200ms;
+  --motion-duration-slow: 320ms;
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Typography scale */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-md: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.5rem; /* 24px */
+  --font-size-2xl: 2rem; /* 32px */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.25;
+  --line-height-body: 1.5;
+  --line-height-loose: 1.75;
+
   /* Helper text — secondary explanations beneath labels, statuses, and CTAs. */
   --helper-text-size: 0.875rem;
   --helper-text-leading: 1.5rem;
@@ -48,9 +90,6 @@
   --skeleton-highlight: rgba(207, 250, 254, 0.18);
 
   /* Reusable Card design tokens */
-  --radius-md: 24px;
-  --radius-lg: 28px;
-  --radius-xl: 32px;
   --border: 1px solid var(--border-subtle);
   --density-card-padding: 1.25rem;
   --density-card-header-gap: 1rem;
@@ -111,6 +150,47 @@
   --chart-tooltip-text-muted: #9fb0c7;
   --chart-gridline-color: rgba(148, 163, 184, 0.15);
   --chart-gridline-stroke-width: 1px;
+
+  /*
+   * Heatmap tokens
+   * ─────────────────────────────────────────────────────────────────────────
+   * 5-step intensity ramp for calendar availability heatmap overlay.
+   * Each step has a semantic token for the fill color and a pattern token
+   * for color-blind accessibility (used via background-image).
+   * All pairings meet WCAG 2.1 AA (4.5:1 normal text, 3:1 large text/UI).
+   *
+   * Step 1 (none):     No availability — transparent, subtle pattern
+   * Step 2 (low):      1–2 slots   — cool cyan, sparse dots
+   * Step 3 (medium):   3–5 slots   — teal, medium dots
+   * Step 4 (high):     6–9 slots   — emerald, dense dots
+   * Step 5 (peak):     10+ slots   — cyan-strong, very dense dots
+   */
+  --heatmap-step-1: rgba(148, 163, 184, 0.08);
+  --heatmap-step-1-pattern: radial-gradient(circle, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+  --heatmap-step-1-pattern-size: 8px 8px;
+
+  --heatmap-step-2: rgba(34, 211, 238, 0.12);
+  --heatmap-step-2-pattern: radial-gradient(circle, rgba(34, 211, 238, 0.25) 1.5px, transparent 1.5px);
+  --heatmap-step-2-pattern-size: 6px 6px;
+
+  --heatmap-step-3: rgba(34, 211, 238, 0.2);
+  --heatmap-step-3-pattern: radial-gradient(circle, rgba(34, 211, 238, 0.35) 2px, transparent 2px);
+  --heatmap-step-3-pattern-size: 5px 5px;
+
+  --heatmap-step-4: rgba(52, 211, 153, 0.22);
+  --heatmap-step-4-pattern: radial-gradient(circle, rgba(52, 211, 153, 0.4) 2px, transparent 2px);
+  --heatmap-step-4-pattern-size: 4px 4px;
+
+  --heatmap-step-5: rgba(103, 232, 249, 0.28);
+  --heatmap-step-5-pattern: radial-gradient(circle, rgba(103, 232, 249, 0.5) 2.5px, transparent 2.5px);
+  --heatmap-step-5-pattern-size: 3px 3px;
+
+  /* Heatmap legend swatch sizing */
+  --heatmap-swatch-size: 1.25rem; /* 20px */
+  --heatmap-swatch-radius: 0.375rem; /* 6px */
+
+  /* Heatmap cell overlay — ensures tap targets remain intact */
+  --heatmap-cell-overlay: inset 0 0 0 1px rgba(148, 163, 184, 0.06);
 }
 
 :root[data-density="comfortable"] {
@@ -168,6 +248,27 @@
   --chart-tooltip-text-muted: #4a6080;
   --chart-gridline-color: rgba(15, 23, 42, 0.1);
   --chart-gridline-stroke-width: 1px;
+
+  /* Heatmap tokens (light theme) */
+  --heatmap-step-1: rgba(15, 23, 42, 0.06);
+  --heatmap-step-1-pattern: radial-gradient(circle, rgba(15, 23, 42, 0.12) 1px, transparent 1px);
+  --heatmap-step-1-pattern-size: 8px 8px;
+
+  --heatmap-step-2: rgba(8, 145, 178, 0.1);
+  --heatmap-step-2-pattern: radial-gradient(circle, rgba(8, 145, 178, 0.22) 1.5px, transparent 1.5px);
+  --heatmap-step-2-pattern-size: 6px 6px;
+
+  --heatmap-step-3: rgba(8, 145, 178, 0.16);
+  --heatmap-step-3-pattern: radial-gradient(circle, rgba(8, 145, 178, 0.3) 2px, transparent 2px);
+  --heatmap-step-3-pattern-size: 5px 5px;
+
+  --heatmap-step-4: rgba(5, 150, 105, 0.18);
+  --heatmap-step-4-pattern: radial-gradient(circle, rgba(5, 150, 105, 0.35) 2px, transparent 2px);
+  --heatmap-step-4-pattern-size: 4px 4px;
+
+  --heatmap-step-5: rgba(6, 182, 212, 0.24);
+  --heatmap-step-5-pattern: radial-gradient(circle, rgba(6, 182, 212, 0.42) 2.5px, transparent 2.5px);
+  --heatmap-step-5-pattern-size: 3px 3px;
 }
 
 /* Auto mode — follow system preference when no explicit theme is set */
@@ -208,6 +309,27 @@
     --chart-tooltip-text-muted: #4a6080;
     --chart-gridline-color: rgba(15, 23, 42, 0.1);
     --chart-gridline-stroke-width: 1px;
+
+    /* Heatmap tokens (auto light mode) */
+    --heatmap-step-1: rgba(15, 23, 42, 0.06);
+    --heatmap-step-1-pattern: radial-gradient(circle, rgba(15, 23, 42, 0.12) 1px, transparent 1px);
+    --heatmap-step-1-pattern-size: 8px 8px;
+
+    --heatmap-step-2: rgba(8, 145, 178, 0.1);
+    --heatmap-step-2-pattern: radial-gradient(circle, rgba(8, 145, 178, 0.22) 1.5px, transparent 1.5px);
+    --heatmap-step-2-pattern-size: 6px 6px;
+
+    --heatmap-step-3: rgba(8, 145, 178, 0.16);
+    --heatmap-step-3-pattern: radial-gradient(circle, rgba(8, 145, 178, 0.3) 2px, transparent 2px);
+    --heatmap-step-3-pattern-size: 5px 5px;
+
+    --heatmap-step-4: rgba(5, 150, 105, 0.18);
+    --heatmap-step-4-pattern: radial-gradient(circle, rgba(5, 150, 105, 0.35) 2px, transparent 2px);
+    --heatmap-step-4-pattern-size: 4px 4px;
+
+    --heatmap-step-5: rgba(6, 182, 212, 0.24);
+    --heatmap-step-5-pattern: radial-gradient(circle, rgba(6, 182, 212, 0.42) 2.5px, transparent 2.5px);
+    --heatmap-step-5-pattern-size: 3px 3px;
   }
 }
 

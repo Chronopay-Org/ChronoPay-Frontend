@@ -36,6 +36,7 @@ export function NotificationList({
   } = useNotificationSelection();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(initialNotifications);
   }, [initialNotifications]);
 

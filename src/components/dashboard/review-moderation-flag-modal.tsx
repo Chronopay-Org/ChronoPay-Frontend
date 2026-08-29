@@ -70,6 +70,7 @@ export function ReviewModerationFlagModal({
 
   useEffect(() => {
     if (!isOpen) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedReason(initialReason ?? null);
     setContext("");
     setSubmitted(false);

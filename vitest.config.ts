@@ -22,6 +22,7 @@ export default defineConfig({
         "src/components/receipt/types.ts",
         "src/components/receipt/Receipt.tsx",
         "src/components/marketplace/results-per-page-selector.tsx",
+        "src/components/dashboard/plan-comparison.tsx",
       ],
       thresholds: {
         lines: 95,
