@@ -134,7 +134,9 @@ function SystemStatus() {
       </span>
     </div>
   );
-}({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
+}
+
+function NavRailItem({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
   return (
@@ -362,12 +364,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           role="navigation"
           aria-label="Module navigation"
           className={clsx(
-            "flex flex-col border-r shrink-0 overflow-y-auto",
+            "flex flex-col border-e shrink-0 overflow-y-auto",
             "transition-transform duration-200 ease-out motion-reduce:transition-none",
             "lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:w-[var(--shell-rail-width)]",
-            "fixed inset-y-0 left-0 z-40 w-64",
+            "fixed inset-y-0 inset-inline-start-0 z-40 w-64",
             "lg:translate-x-0",
-            isRailOpen ? "translate-x-0" : "-translate-x-full"
+            isRailOpen ? "translate-x-0" : "-translate-x-full rtl:translate-x-full"
           )}
           style={{
             background: "var(--shell-rail-bg)",
