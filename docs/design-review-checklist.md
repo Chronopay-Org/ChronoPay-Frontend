@@ -11,6 +11,16 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Semantics**: ARIA labels, landmarks (`<header>`, `<main>`, `<nav>`), and alt text are correctly used.
 - [ ] **Skip Link**: The "Skip to content" link is present and functional.
 
+## 🔑 Autocomplete / Password Manager
+- [ ] **Primitive**: Auth/account inputs use the `FormField` primitive in `src/app/components/ui/form-field.tsx` so `autocomplete`/`name`/`inputmode` pairs are enforced.
+- [ ] **Password inputs**: Every existing-password field uses `autocomplete="current-password"`; every new-password field uses `autocomplete="new-password"` — never both on the same input.
+- [ ] **OTP/2FA**: One-time code inputs use `autocomplete="one-time-code"` and `inputMode="numeric"` (e.g. the TOTP field in `two-factor-enroll.tsx`).
+- [ ] **Identity fields**: `name` and `email` fields carry `autocomplete="name"` / `autocomplete="email"` with matching `name` attributes so password managers can map them.
+- [ ] **Non-credential fields**: Search, promo code, and similar non-auth inputs intentionally use `autocomplete="off"` so managers don't save them.
+- [ ] **Labels**: Never rely on placeholder text; every field has an associated `<label>` (WCAG 3.3.2 / 2.4.6).
+- [ ] **Tokens reference**: Supported tokens match `docs/password-manager-guide.md`; the `AutocompleteToken` union is the single source of truth.
+- [ ] **Verified**: Changed forms tested with 1Password, Bitwarden, and browser autofill per the browser matrix in `docs/password-manager-guide.md`.
+
 ## 📱 Responsive & Layout
 - [ ] **Mobile-First**: No horizontal scrolling on small screens; layout adapts to narrow viewports.
 - [ ] **Above-the-Fold**: Critical info (title, wallet, CTA) is visible on 1280x720 laptop viewports.
