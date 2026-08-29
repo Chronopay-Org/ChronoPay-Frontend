@@ -1,8 +1,19 @@
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
-import type { BookingStage } from "./types";
+import type { AutosaveStatus, BookingStage } from "./types";
+import { AutosaveIndicator } from "./autosave-indicator";
 
-export function BookingProgress({ stages }: { stages: BookingStage[] }) {
+export function BookingProgress({
+  stages,
+  autosaveStatus,
+  autosaveLastSavedAt,
+  onAutosaveRetry,
+}: {
+  stages: BookingStage[];
+  autosaveStatus?: AutosaveStatus;
+  autosaveLastSavedAt?: Date;
+  onAutosaveRetry?: () => void;
+}) {
   const maxValue = Math.max(...stages.map((stage) => stage.value), 1);
 
   return (
@@ -16,6 +27,13 @@ export function BookingProgress({ stages }: { stages: BookingStage[] }) {
           term={glossary.bookingStages}
           triggerLabel="Help: booking lifecycle stages"
         />
+        {autosaveStatus ? (
+          <AutosaveIndicator
+            status={autosaveStatus}
+            lastSavedAt={autosaveLastSavedAt}
+            onRetry={onAutosaveRetry}
+          />
+        ) : null}
       </div>
 
       {stages.map((stage, index) => {
@@ -36,7 +54,7 @@ export function BookingProgress({ stages }: { stages: BookingStage[] }) {
                 {stage.value} bookings
               </p>
             </div>
-            <div className="h-2.5 rounded-full bg-white/10" aria-hidden="true">
+            <div className="h-2.5 rounded-full bg-white/10" aria-hidden={true}>
               <div
                 className="h-2.5 rounded-full bg-[linear-gradient(90deg,#67e8f9,#22c55e)]"
                 style={{ width: `${(stage.value / maxValue) * 100}%` }}

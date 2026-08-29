@@ -3,10 +3,16 @@
 import { use, useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/app/components/dashboard-shell";
+import { BreadcrumbOverflow } from "@/app/components/ui/breadcrumb-overflow";
 import { StatusChip } from "@/components/dashboard/status-chip";
+import { OrderSummaryDrawer } from "@/components/dashboard/order-summary-drawer";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { ReceiptModal } from "@/components/receipt";
 import type { ReceiptData } from "@/components/receipt";
+import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
+import { GiftPurchaseToggle } from "@/components/dashboard/gift-purchase-toggle";
+import type { GiftDetails } from "@/components/dashboard/gift-purchase-toggle";
+import { BookingAbandonmentBanner } from "@/components/dashboard/booking-abandonment-banner";
 import {
   ArrowLeft,
   Wallet,
@@ -20,8 +26,13 @@ import {
   Sparkles,
   Check,
   Receipt,
-  Users
+  Users,
+  LayoutDashboard
 } from "lucide-react";
+
+function FocusTrap({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
 
 // Robust metadata/details mapper for slots
 const slotDetailsMap: Record<
@@ -122,16 +133,64 @@ export default function SlotDetailPage({
   const stellarFee = 0.0001;
   const totalCost = subtotal + escrowFee + stellarFee;
 
+  useEffect(() => {
+    setDiscountPercent(0);
+    setDiscountedTotal(totalCost);
+  }, [id, totalCost]);
+
+  const effectiveTotalCost = discountPercent > 0 ? discountedTotal : totalCost;
+
   // Validation
-  const hasFunds = availableFunds >= totalCost;
+  const hasFunds = availableFunds >= effectiveTotalCost;
   const isWalletReady = simWallet === "connected";
 
   // MODAL / CHECKOUT STATE
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [purchaseStep, setPurchaseStep] = useState<"confirm" | "loading" | "success">("confirm");
+  const [purchaseStep, setPurchaseStep] = useState<"auth" | "confirm" | "loading" | "success">("auth");
   const [loadingMessage, setLoadingMessage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [announcement, setAnnouncement] = useState(""); // Screen reader announcer
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountedTotal, setDiscountedTotal] = useState(totalCost);
+  const [giftDetails, setGiftDetails] = useState<GiftDetails | null>(null);
+
+  // DRAFT ABANDONMENT STATE
+  const [hasDraft, setHasDraft] = useState(false);
+  const draftKey = `draft-booking-${id}`;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) setHasDraft(true);
+    }
+  }, [draftKey]);
+
+  // Handle saving draft automatically when modal is open
+  useEffect(() => {
+    if (isModalOpen && typeof window !== "undefined") {
+      localStorage.setItem(draftKey, "true");
+    }
+  }, [isModalOpen, draftKey]);
+
+  const handleResumeDraft = () => {
+    setHasDraft(false);
+    if (!isWalletReady || !hasFunds) return;
+    setPurchaseStep("auth");
+    setIsModalOpen(true);
+  };
+
+  const handleDiscardDraft = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(draftKey);
+    }
+    setHasDraft(false);
+  };
+
+  const handleViewDetails = () => {
+    if (!isWalletReady || !hasFunds) return;
+    setPurchaseStep("auth");
+    setIsModalOpen(true);
+  };
 
   // RECEIPT STATE (only meaningful once the transaction has settled)
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -177,13 +236,13 @@ export default function SlotDetailPage({
 
   const handleOpenModal = () => {
     if (!isWalletReady || !hasFunds) return;
-    setPurchaseStep("confirm");
+    setPurchaseStep("auth");
     setIsModalOpen(true);
   };
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
-    setPurchaseStep("confirm");
+    setPurchaseStep("auth");
   }, []);
 
   // Keyboard navigation & focus management inside checkout modal
@@ -278,20 +337,33 @@ export default function SlotDetailPage({
       </div>
 
       <div className="space-y-6">
+        {hasDraft && (
+          <BookingAbandonmentBanner
+            onResume={handleResumeDraft}
+            onDiscard={handleDiscardDraft}
+            onViewDetails={handleViewDetails}
+          />
+        )}
         {/* Breadcrumb Navigation & Back Button */}
-        <nav aria-label="Breadcrumb" className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/dashboard"
             className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/40 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-cyan-300/30 hover:bg-slate-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
           >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            <ArrowLeft className="icon-directional h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             Back to Dashboard
           </Link>
-          
-          <span className="text-xs text-slate-500 uppercase tracking-widest hidden sm:inline">
-            Slot Booking / Details
-          </span>
-        </nav>
+
+          <BreadcrumbOverflow
+            className="relative"
+            items={[
+              { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+              { label: "Slots", href: "/dashboard/slots" },
+              { label: "Booking", href: "/dashboard/slots/123" },
+              { label: "Details" },
+            ]}
+          />
+        </div>
 
         {/* ----------------- SCENARIO SIMULATOR (TESTING UTILITY) ----------------- */}
         <section
@@ -422,7 +494,7 @@ export default function SlotDetailPage({
                 {/* CSS Premium Avatar */}
                 <div
                   className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-tr ${details.seller.avatarGradient} text-xl font-bold tracking-wider text-white shadow-lg`}
-                  aria-hidden="true"
+                  aria-hidden={true}
                 >
                   {details.seller.avatarInitials}
                 </div>
@@ -459,16 +531,20 @@ export default function SlotDetailPage({
           <aside className="lg:col-span-1 space-y-6">
             
             {/* Purchase Details & Price Breakdown */}
-            <section
-              className="glass-panel rounded-[2rem] p-6 border border-white/10 bg-slate-950/20 space-y-6"
-              aria-labelledby="pricing-summary-title"
+            <OrderSummaryDrawer
+              title="Purchase details"
+              description="Review pricing, wallet readiness, and confirm the booking before you lock funds."
             >
-              <h2 id="pricing-summary-title" className="text-sm font-bold uppercase tracking-wider text-slate-300">
-                Purchase Details
-              </h2>
+              <section
+                className="glass-panel rounded-[2rem] p-6 border border-white/10 bg-slate-950/20 space-y-6"
+                aria-labelledby="pricing-summary-title"
+              >
+                <h2 id="pricing-summary-title" className="text-sm font-bold uppercase tracking-wider text-slate-300">
+                  Purchase Details
+                </h2>
 
-              {/* Stellar Wallet Integration State Banners */}
-              <div className="space-y-3">
+                {/* Stellar Wallet Integration State Banners */}
+                <div className="space-y-3">
                 {simWallet === "disconnected" && (
                   <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3.5 text-xs text-amber-200 flex items-start gap-2.5">
                     <AlertCircle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
@@ -499,7 +575,7 @@ export default function SlotDetailPage({
                     <div>
                       <p className="font-semibold">Insufficient Balance</p>
                       <p className="helper-text helper-text--muted mt-1">
-                        Your balance ({availableFunds} XLM) is lower than the total cost ({totalCost.toFixed(4)} XLM).
+                        Your balance ({availableFunds} XLM) is lower than the total cost ({effectiveTotalCost.toFixed(4)} XLM).
                       </p>
                     </div>
                   </div>
@@ -568,12 +644,42 @@ export default function SlotDetailPage({
                   </div>
 
                   {/* Total Cost */}
+                  <div className="space-y-2 rounded-xl border border-cyan-400/10 bg-cyan-400/5 p-3 text-sm">
+                    {discountPercent > 0 ? (
+                      <div className="flex justify-between text-cyan-100">
+                        <dt>Discounted total</dt>
+                        <dd className="font-semibold">{discountedTotal.toFixed(4)} XLM</dd>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between text-cyan-100">
+                        <dt>Base total</dt>
+                        <dd className="font-semibold">{totalCost.toFixed(4)} XLM</dd>
+                      </div>
+                    )}
+                    {discountPercent > 0 && (
+                      <div className="flex justify-between text-xs text-cyan-200/80">
+                        <dt>{discountPercent}% promo applied</dt>
+                        <dd>{(totalCost - discountedTotal).toFixed(4)} XLM saved</dd>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex justify-between text-base font-bold text-white pt-1">
                     <dt className="text-cyan-300">Total Purchase Cost</dt>
-                    <dd className="text-cyan-300 font-extrabold">{totalCost.toFixed(4)} XLM</dd>
+                    <dd className="text-cyan-300 font-extrabold">{effectiveTotalCost.toFixed(4)} XLM</dd>
                   </div>
                 </dl>
               </div>
+
+              <GiftPurchaseToggle onChange={setGiftDetails} />
+
+              <PromoCodeEntry
+                baseTotal={totalCost}
+                onDiscountApplied={({ percent, discountedTotal: nextTotal }) => {
+                  setDiscountPercent(percent);
+                  setDiscountedTotal(nextTotal);
+                }}
+              />
 
               {/* Escrow Guarantee Statement */}
               <div className="rounded-xl bg-white/4 border border-white/8 p-3.5 text-[11px] text-slate-300 flex gap-2">
@@ -583,54 +689,55 @@ export default function SlotDetailPage({
                 </p>
               </div>
 
-              {/* CTA Action Buttons */}
-              <div className="pt-2">
-                {simWallet === "disconnected" && (
-                  <button
-                    type="button"
-                    onClick={handleSimulateConnection}
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 shadow-[0_16px_34px_rgba(34,211,238,0.15)]"
-                  >
-                    <Wallet className="h-4 w-4 mr-2" />
-                    Connect Stellar Wallet
-                  </button>
-                )}
+                {/* CTA Action Buttons */}
+                <div className="pt-2">
+                  {simWallet === "disconnected" && (
+                    <button
+                      type="button"
+                      onClick={handleSimulateConnection}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 shadow-[0_16px_34px_rgba(34,211,238,0.15)]"
+                    >
+                      <Wallet className="h-4 w-4 mr-2" />
+                      Connect Stellar Wallet
+                    </button>
+                  )}
 
-                {simWallet === "error" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSimWallet("connected");
-                      announce("Wallet connected successfully.");
-                    }}
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 px-5 py-3 text-sm border border-rose-400/30 bg-rose-400/10 text-rose-200 hover:bg-rose-400/20"
-                  >
-                    Retry Connection Sync
-                  </button>
-                )}
+                  {simWallet === "error" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSimWallet("connected");
+                        announce("Wallet connected successfully.");
+                      }}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 px-5 py-3 text-sm border border-rose-400/30 bg-rose-400/10 text-rose-200 hover:bg-rose-400/20"
+                    >
+                      Retry Connection Sync
+                    </button>
+                  )}
 
-                {isWalletReady && !hasFunds && (
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full flex items-center justify-center rounded-full font-bold px-5 py-3 text-sm border border-white/10 bg-white/5 text-slate-400 cursor-not-allowed"
-                  >
-                    Insufficient Stellar Funds
-                  </button>
-                )}
+                  {isWalletReady && !hasFunds && (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center justify-center rounded-full font-bold px-5 py-3 text-sm border border-white/10 bg-white/5 text-slate-400 cursor-not-allowed"
+                    >
+                      Insufficient Stellar Funds
+                    </button>
+                  )}
 
-                {isWalletReady && hasFunds && (
-                  <button
-                    type="button"
-                    ref={purchaseBtnRef}
-                    onClick={handleOpenModal}
-                    className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 hover:scale-[1.01] hover:shadow-[0_16px_34px_rgba(34,211,238,0.22)] active:scale-[0.99]"
-                  >
-                    Purchase Time Token
-                  </button>
-                )}
-              </div>
-            </section>
+                  {isWalletReady && hasFunds && (
+                    <button
+                      type="button"
+                      ref={purchaseBtnRef}
+                      onClick={handleOpenModal}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 hover:scale-[1.01] hover:shadow-[0_16px_34px_rgba(34,211,238,0.22)] active:scale-[0.99]"
+                    >
+                      Purchase Time Token
+                    </button>
+                  )}
+                </div>
+              </section>
+            </OrderSummaryDrawer>
           </aside>
         </div>
       </div>
@@ -656,11 +763,107 @@ export default function SlotDetailPage({
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 z-10"
                   aria-label="Close modal dialog"
                 >
                   ✕
                 </button>
+              )}
+
+              {/* STEP 0: AUTHENTICATION / PATH SELECTION */}
+              {purchaseStep === "auth" && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <h3 id="modal-headline" className="text-xl font-bold text-white">
+                      How would you like to continue?
+                    </h3>
+                    <p className="text-xs leading-relaxed text-slate-400 max-w-sm mx-auto">
+                      Choose your checkout path to secure this booking.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Guest Card */}
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all hover:border-cyan-400/30">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-bold text-white">Guest (Wallet Only)</h4>
+                      </div>
+                      <ul className="space-y-2 mb-4 text-xs text-slate-300">
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Fast checkout</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                          <span>No booking history or preferences saved</span>
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => setPurchaseStep("confirm")}
+                        className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-white/10 text-slate-300 hover:bg-white/5"
+                      >
+                        Continue as Guest
+                      </button>
+                    </div>
+
+                    {/* Sign In Card */}
+                    <div className="rounded-2xl border border-cyan-400/30 bg-cyan-400/5 p-4 transition-all hover:border-cyan-400/50 relative">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-bold text-cyan-300 flex items-center gap-1.5">
+                          Sign In
+                          <span className="group relative ml-1">
+                            <Info className="h-3.5 w-3.5 text-cyan-400/60 cursor-pointer hover:text-cyan-300" aria-label="Why sign in?" />
+                            <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-900 border border-white/10 p-2 text-[10px] text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-xl z-20">
+                              Signing in syncs your wallet with your profile, giving you access to purchase history, saved settings, and priority support.
+                            </span>
+                          </span>
+                        </h4>
+                        <span className="inline-flex rounded bg-cyan-400/10 px-1.5 py-0.5 text-[10px] font-bold text-cyan-400 uppercase border border-cyan-400/20">
+                          Recommended
+                        </span>
+                      </div>
+                      <ul className="space-y-2 mb-4 text-xs text-slate-300">
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Full booking history & receipts</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Saved preferences & notifications</span>
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => setPurchaseStep("confirm")}
+                        className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs bg-cyan-400/20 text-cyan-100 hover:bg-cyan-400/30 border border-cyan-400/30"
+                      >
+                        Sign In to Continue
+                      </button>
+                    </div>
+
+                    {/* Create Account Card */}
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all hover:border-cyan-400/30">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-bold text-white">Create Account</h4>
+                      </div>
+                      <ul className="space-y-2 mb-4 text-xs text-slate-300">
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Unlock all platform features</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Setup takes &lt; 1 minute</span>
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => setPurchaseStep("confirm")}
+                        className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-white/10 text-slate-300 hover:bg-white/5"
+                      >
+                        Create Account
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* STEP 1: INITIAL CONFIRMATION DETAILS */}
@@ -696,6 +899,15 @@ export default function SlotDetailPage({
                       <span className="font-semibold text-white">{details.seller.name}</span>
                     </div>
 
+                    {giftDetails?.isGift && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Gift for</span>
+                        <span className="font-semibold text-white max-w-[180px] truncate text-right">
+                          {giftDetails.recipientName || giftDetails.recipientEmail || "Recipient"}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between border-t border-white/5 pt-3.5">
                       <span className="text-slate-400">Network + Escrow Fee</span>
                       <span className="font-semibold text-slate-200">{(escrowFee + stellarFee).toFixed(4)} XLM</span>
@@ -703,7 +915,7 @@ export default function SlotDetailPage({
 
                     <div className="flex justify-between text-base font-bold border-t border-white/5 pt-3.5">
                       <span className="text-cyan-300">Total locked</span>
-                      <span className="text-cyan-300 font-extrabold">{totalCost.toFixed(4)} XLM</span>
+                      <span className="text-cyan-300 font-extrabold">{effectiveTotalCost.toFixed(4)} XLM</span>
                     </div>
                   </div>
 
@@ -744,7 +956,7 @@ export default function SlotDetailPage({
                     </p>
                   </div>
 
-                  <div className="max-w-[240px] mx-auto space-y-2" aria-hidden="true">
+                  <div className="max-w-[240px] mx-auto space-y-2" aria-hidden={true}>
                     <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
                       <div className="h-full bg-cyan-400 animate-[loading-bar_4s_ease-out_forwards]" />
                     </div>
@@ -796,7 +1008,7 @@ export default function SlotDetailPage({
 
                     <div className="flex justify-between border-t border-white/5 pt-3.5">
                       <span className="text-slate-400">Total Locked</span>
-                      <span className="font-bold text-white">{totalCost.toFixed(4)} XLM</span>
+                      <span className="font-bold text-white">{effectiveTotalCost.toFixed(4)} XLM</span>
                     </div>
                   </div>
 

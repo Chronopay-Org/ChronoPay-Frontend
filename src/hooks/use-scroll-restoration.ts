@@ -11,7 +11,7 @@ interface ScrollData {
 export function useScrollRestoration(listId: string) {
   const [restoredItemId, setRestoredItemId] = useState<string | null>(null);
   const containerRef = useRef<HTMLUListElement | HTMLDivElement | null>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
     try {
@@ -22,11 +22,9 @@ export function useScrollRestoration(listId: string) {
         // Only restore if within reasonable time (e.g., 1 hour) to avoid stale data, 
         // or just rely on manual clears (e.g. on filter change)
         if (Date.now() - data.timestamp < 3600000) {
-          // eslint-disable-next-line react-hooks/set-state-in-effect
-          setRestoredItemId(data.itemId);
-          
           // Wait for render
           requestAnimationFrame(() => {
+            setRestoredItemId(data.itemId);
             const element = document.getElementById(`list-item-${data.itemId}`);
             if (element) {
               element.scrollIntoView({ behavior: "instant", block: "center" });
