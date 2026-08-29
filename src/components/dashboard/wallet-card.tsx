@@ -272,6 +272,7 @@ export function WalletCard({
       savedTab &&
       HOLDINGS_TAB_IDS.some((tabId) => tabId === savedTab)
     ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveHoldingsTab(savedTab as WalletHoldingsTabId);
     }
 

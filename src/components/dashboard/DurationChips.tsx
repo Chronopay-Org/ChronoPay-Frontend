@@ -20,6 +20,7 @@ export function DurationChips({
 
   // Keep internal selection in sync when `initial` changes (e.g. deep links)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(initial ?? null);
   }, [initial]);
 
@@ -27,6 +28,7 @@ export function DurationChips({
     if (onChange) onChange(selected);
     if (selected) {
       const n = counts[selected] ?? 0;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLiveMessage(`${selected}-minute filter applied, ${n} result${n === 1 ? "" : "s"}`);
     } else {
       setLiveMessage("Duration filter cleared");

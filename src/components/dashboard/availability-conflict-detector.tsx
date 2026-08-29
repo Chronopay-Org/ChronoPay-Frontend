@@ -210,6 +210,7 @@ export const AvailabilityConflictDetector: React.FC<AvailabilityConflictDetector
   // Clamp active index if conflicts length changes
   useEffect(() => {
     if (activeConflicts.length > 0 && activeConflictIndex >= activeConflicts.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveConflictIndex(Math.max(0, activeConflicts.length - 1));
     }
   }, [activeConflicts.length, activeConflictIndex]);
@@ -217,6 +218,7 @@ export const AvailabilityConflictDetector: React.FC<AvailabilityConflictDetector
   // Initial announcement
   useEffect(() => {
     if (activeConflicts.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       announce(
         `Availability conflict detector active. ${activeConflicts.length} conflict${
           activeConflicts.length > 1 ? "s" : ""

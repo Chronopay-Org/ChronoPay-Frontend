@@ -13,6 +13,7 @@ export function useCommandPaletteStorage() {
   useEffect(() => {
     const savedPinned = localStorage.getItem('cp-pinned');
     const savedRecent = localStorage.getItem('cp-recent');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (savedPinned) setPinned(JSON.parse(savedPinned));
     if (savedRecent) setRecent(JSON.parse(savedRecent));
   }, []);

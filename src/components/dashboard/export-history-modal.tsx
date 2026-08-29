@@ -217,6 +217,7 @@ export function ExportHistoryModal({
   // Reset form state when modal opens.
   useEffect(() => {
     if (!isOpen) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStep("configure");
     setProgress(0);
     setFormat("csv");

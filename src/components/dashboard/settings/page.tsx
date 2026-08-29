@@ -6,6 +6,7 @@ import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sy
 import { CalendarSyncConflictModal } from '@/components/dashboard/settings/calendar-sync-conflict-modal';
 import { DeveloperSettings } from '@/components/dashboard/settings/developer-settings';
 import { DangerZone } from '@/components/dashboard/settings/danger-zone';
+import { NotificationPreferencesPanel } from '@/components/dashboard/settings/notification-preferences-panel';
 import { DensitySwitcher } from '@/app/components/ui/density-switcher';
 import { PasswordStrengthMeter } from '@/app/components/password-strength-meter';
 import type { SyncConflict, ConflictResolution } from '@/components/dashboard/settings/conflict-mock-data';
