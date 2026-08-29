@@ -1,7 +1,7 @@
 // src/app/components/ui/button-link.tsx
 "use client";
 
-import Link, { type LinkProps } from "next/link";
+import Link from "next/link";
 import { type ComponentProps, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -51,15 +51,15 @@ export function ButtonLink({
   const isDisabled = disabled || loading;
   return (
     <Link
-      {...(props as LinkProps)}
       href={href}
+      {...props}
       aria-disabled={isDisabled}
       tabIndex={isDisabled ? -1 : undefined}
       className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${
         isDisabled ? "pointer-events-none opacity-60" : ""
       } ${className}`}
     >
-      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden={true} />}
       {children}
     </Link>
   );

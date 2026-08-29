@@ -23,6 +23,7 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Empty States**: Follow guidelines in `docs/empty-state-guidelines.md`.
 - [ ] **Error States**: Errors are descriptive and offer a clear path to recovery.
 - [ ] **Interactivity**: Hover, active, and focus states clearly distinguish interactive elements.
+- [ ] **Reduced Motion**: Success states (e.g. WalletConnectModal) provide crossfade + static icon alternatives for `prefers-reduced-motion: reduce` (`docs/wallet-connect-reduced-motion.md`).
 
 ## 🎨 Design Tokens & Patterns
 - [ ] **Helper Text**: Standardized `.helper-text` and `.helper-text--muted` CSS classes are used.
@@ -30,13 +31,15 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Hierarchy**: Heading levels (`h1` → `h6`) follow a logical, non-skipping hierarchy.
 - [ ] **Consistency**: Card padding and border-radius match existing dashboard patterns.
 
-## 🌗 Theme (ThemeSwitcher)
-- [ ] **Control**: A `ThemeSwitcher` segmented radio control offers **Light / Dark / Auto** in the dashboard header.
-- [ ] **Persistence**: Selection persists per-user in `localStorage` under `chronopay:theme`.
-- [ ] **Auto mode**: Resolves to the OS `prefers-color-scheme` and updates live when the OS theme changes.
-- [ ] **No FOUC**: An inline pre-hydration script in `src/app/layout.tsx` sets `data-theme` before React hydrates.
-- [ ] **a11y**: `role="radiogroup"` + `role="radio"` with `aria-checked`, arrow-key support, and visible focus rings.
-- [ ] **Contrast**: Active/inactive states meet contrast ratios in both light and dark themes.
+## 💬 Contextual Help (HelpPopover)
+- [ ] **Jargon annotated**: Domain-specific terms (escrow, mint, time token, XLM, etc.) have an inline `HelpPopover`.
+- [ ] **Glossary entry**: Each annotated term has a corresponding entry in `src/lib/glossary.ts` (title ≤ 6 words, body ≤ 2 sentences).
+- [ ] **Learn-more link**: Every glossary term includes a `learnMoreHref` pointing to the relevant docs section.
+- [ ] **ARIA correct**: Popover uses `role="dialog"`, `aria-labelledby`, `aria-describedby`, and `aria-expanded` on the trigger.
+- [ ] **Focus management**: Opening moves focus to the close button; closing returns focus to the trigger.
+- [ ] **Keyboard operable**: Enter/Space opens; Escape closes; Tab/Shift+Tab cycles within the open popover.
+- [ ] **What's this mode**: The `?` shortcut activates a contextual help mode with a cursor change, hover/focus highlight, and descriptive popovers; it respects reduced-motion and remains keyboard accessible.
+- [ ] **Click-outside**: Clicking outside the popover closes it without disrupting other interactions.
 
 ---
 

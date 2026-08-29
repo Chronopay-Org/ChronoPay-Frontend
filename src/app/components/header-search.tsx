@@ -1,0 +1,679 @@
+"use client";
+
+/**
+ * HeaderSearch -- search affordance for the ChronoPay dashboard header.
+ *
+ * Features:
+ *   - Expandable search input triggered by a search icon button
+ *   - Dropdown panel with:
+ *       - Recent searches (persisted in localStorage) grouped by Today, Yesterday, Earlier
+ *       - "Clear all" recents action with confirmation
+ *       - Live suggestion list filtered by current query
+ *       - "Did you mean X?" typo suggestion when the query is close to a known term
+ *       - Revert chip that keeps the original query after accepting a correction
+ *   - Full keyboard navigation (Arrow keys, Enter to submit, Escape to close, Tab to close, Delete to remove recent)
+ *   - ARIA combobox pattern (role="combobox" on the input / role="listbox" on dropdown)
+ *   - Click-outside to dismiss
+ *   - LiveRegion announcements for screen readers on correction/revert
+ *   - Analytics stub for did-you-mean click-through tracking
+ */
+
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  KeyboardEvent as ReactKeyboardEvent,
+} from "react";
+import { Search, X, Clock, TrendingUp, ArrowLeft } from "lucide-react";
+import { useSearch } from "@/hooks/use-search";
+import { EmptyStateCard } from "./empty-state-card";
+import { LiveRegion } from "@/components/common/LiveRegion";
+
+// Types
+
+interface ListItem {
+  kind: "header" | "recent" | "suggestion";
+  label: string;
+  timestamp?: number;
+}
+
+// ─── Analytics stub ───────────────────────────────────────────────────────────
+
+/**
+ * Placeholder analytics tracker for the did-you-mean suggestion click-through.
+ * Replace with real analytics instrumentation when available.
+ */
+function trackDidYouMeanClick(original: string, suggested: string): void {
+  if (process.env.NODE_ENV === "production") {
+    // Stub: dispatch to real analytics pipeline
+    // e.g. analytics.track("did_you_mean_click", { original, suggested });
+  } else {
+    // eslint-disable-next-line no-console
+    console.log("[analytics] did_you_mean_click", { original, suggested });
+  }
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function HeaderSearch() {
+  const {
+    query,
+    setQuery,
+    recentSearches,
+    suggestions,
+    didYouMeanSuggestion,
+    addRecentSearch,
+    clearRecentSearches,
+    removeRecentSearch,
+  } = useSearch();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  /**
+   * When a did-you-mean suggestion is accepted, `correctedQuery` holds the
+   * corrected search term (the suggestion), and `revertQuery` holds the original
+   * user-typed query so it can be shown as a removable chip.
+   */
+  const [correctedQuery, setCorrectedQuery] = useState<string | null>(null);
+  const [revertQuery, setRevertQuery] = useState<string | null>(null);
+
+  /** Message announced to screen readers via LiveRegion when a correction is applied. */
+  const [liveRegionMessage, setLiveRegionMessage] = useState("");
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listboxRef = useRef<HTMLUListElement>(null);
+
+  const inputId = useId();
+  const listboxId = `${inputId}-listbox`;
+
+  const firstSuggestionRef = useRef<HTMLButtonElement>(null);
+  const isZeroState = query.trim() !== "" && suggestions.length === 0;
+
+  useEffect(() => {
+    if (isOpen && isZeroState) {
+      // Small delay to ensure the card is rendered
+      requestAnimationFrame(() => {
+        firstSuggestionRef.current?.focus();
+      });
+    }
+  }, [isOpen, isZeroState]);
+
+  /**
+   * Wrap setQuery so that changing the query always resets the active list
+   * index. Avoids a separate useEffect that would trigger an extra render.
+   */
+  const updateQuery = useCallback(
+    (q: string) => {
+      setQuery(q);
+      setActiveIndex(-1);
+    },
+    [setQuery],
+  );
+
+  // Capture now once via lazy state to avoid impure Date.now() in render
+  const [now] = useState(() => Date.now());
+
+  // Derived list for keyboard navigation -- memoized to stabilise useCallback deps
+  const listItems = useMemo<ListItem[]>(() => {
+    if (query.trim() !== "") {
+      return suggestions.map((s) => ({ kind: "suggestion" as const, label: s }));
+    }
+
+    const items: ListItem[] = [];
+    const msInDay = 86400000;
+
+    const today = recentSearches.filter((r) => now - r.timestamp < msInDay);
+    const yesterday = recentSearches.filter(
+      (r) => now - r.timestamp >= msInDay && now - r.timestamp < msInDay * 2
+    );
+    const earlier = recentSearches.filter((r) => now - r.timestamp >= msInDay * 2);
+
+    if (today.length > 0) {
+      items.push({ kind: "header", label: "Today" });
+      items.push(...today.map((r) => ({ kind: "recent" as const, label: r.term, timestamp: r.timestamp })));
+    }
+    if (yesterday.length > 0) {
+      items.push({ kind: "header", label: "Yesterday" });
+      items.push(...yesterday.map((r) => ({ kind: "recent" as const, label: r.term, timestamp: r.timestamp })));
+    }
+    if (earlier.length > 0) {
+      items.push({ kind: "header", label: "Earlier" });
+      items.push(...earlier.map((r) => ({ kind: "recent" as const, label: r.term, timestamp: r.timestamp })));
+    }
+
+    return items;
+  }, [query, recentSearches, suggestions]);
+
+  const isPanelVisible =
+    isOpen && (recentSearches.length > 0 || suggestions.length > 0 || didYouMeanSuggestion !== null);
+
+  const showEmptyHint =
+    isOpen && query.trim() === "" && recentSearches.length === 0 && !didYouMeanSuggestion;
+
+  // Open / close helpers
+  const open = useCallback(() => {
+    setIsOpen(true);
+  }, []);
+
+  const close = useCallback(() => {
+    setIsOpen(false);
+    setActiveIndex(-1);
+  }, []);
+
+  const toggleExpand = useCallback(() => {
+    setIsOpen((prev) => {
+      if (!prev) {
+        requestAnimationFrame(() => inputRef.current?.focus());
+      }
+      return !prev;
+    });
+    setActiveIndex(-1);
+  }, []);
+
+  // Submit a search term
+  const submitSearch = useCallback(
+    (term: string) => {
+      const trimmed = term.trim();
+      if (!trimmed) return;
+      addRecentSearch(trimmed);
+      updateQuery(trimmed);
+      // Clear correction state when submitting a typed query
+      setCorrectedQuery(null);
+      setRevertQuery(null);
+      setLiveRegionMessage("");
+      close();
+      // In a real app, trigger navigation / search results here.
+    },
+    [addRecentSearch, close, updateQuery],
+  );
+
+  /**
+   * Accept a did-you-mean suggestion: update the query to the corrected term
+   * and store the original query as a revert chip. Also announces via LiveRegion.
+   */
+  const acceptDidYouMean = useCallback(
+    (suggestion: string) => {
+      const original = query.trim();
+      if (!original || !suggestion) return;
+      trackDidYouMeanClick(original, suggestion);
+      setCorrectedQuery(suggestion);
+      setRevertQuery(original);
+      updateQuery(suggestion);
+      setLiveRegionMessage(
+        `Showing results for "${suggestion}". Click to revert to original search "${original}".`,
+      );
+      // Keep panel open so the user sees results; close is handled by interaction
+    },
+    [query, updateQuery],
+  );
+
+  /** Revert the did-you-mean correction and restore the original query. */
+  const revertCorrection = useCallback(() => {
+    if (!revertQuery) return;
+    updateQuery(revertQuery);
+    setCorrectedQuery(null);
+    setRevertQuery(null);
+    setLiveRegionMessage(`Reverted to original search "${revertQuery}".`);
+    inputRef.current?.focus();
+  }, [revertQuery, updateQuery]);
+
+  const handleClearAll = () => {
+    if (window.confirm("Are you sure you want to clear all recent searches?")) {
+      clearRecentSearches();
+      setActiveIndex(-1);
+    }
+  };
+
+  // Click-outside to close
+  useEffect(() => {
+    const handlePointerDown = (e: PointerEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        close();
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("pointerdown", handlePointerDown);
+    }
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isOpen, close]);
+
+  // Keyboard navigation
+  const handleKeyDown = useCallback(
+    (e: ReactKeyboardEvent<HTMLInputElement>) => {
+      switch (e.key) {
+        case "ArrowDown": {
+          e.preventDefault();
+          if (!isOpen) {
+            open();
+            return;
+          }
+          setActiveIndex((prev) => {
+            let next = prev + 1;
+            while (next < listItems.length && listItems[next].kind === "header") {
+              next++;
+            }
+            if (next >= listItems.length) {
+              next = 0;
+              while (next < listItems.length && listItems[next].kind === "header") {
+                next++;
+              }
+            }
+            return next;
+          });
+          break;
+        }
+        case "ArrowUp": {
+          e.preventDefault();
+          if (!isOpen) {
+            open();
+            return;
+          }
+          setActiveIndex((prev) => {
+            let next = prev - 1;
+            while (next >= 0 && listItems[next].kind === "header") {
+              next--;
+            }
+            if (next < 0) {
+              next = listItems.length - 1;
+              while (next >= 0 && listItems[next].kind === "header") {
+                next--;
+              }
+            }
+            return next;
+          });
+          break;
+        }
+        case "Enter": {
+          e.preventDefault();
+          if (activeIndex >= 0 && listItems[activeIndex] && listItems[activeIndex].kind !== "header") {
+            submitSearch(listItems[activeIndex].label);
+          } else if (query.trim()) {
+            submitSearch(query);
+          }
+          break;
+        }
+        case "Escape": {
+          e.preventDefault();
+          if (query) {
+            updateQuery("");
+          } else {
+            close();
+            inputRef.current?.blur();
+          }
+          break;
+        }
+        case "Tab": {
+          close();
+          break;
+        }
+        case "Delete": {
+          if (activeIndex >= 0 && listItems[activeIndex]?.kind === "recent") {
+            e.preventDefault();
+            removeRecentSearch(listItems[activeIndex].label);
+            // activeIndex is retained, list shrinks. If it was the last item, focus might be out of bounds.
+            // A small effect below adjusts out of bounds indexes.
+          }
+          break;
+        }
+      }
+    },
+    [isOpen, listItems, activeIndex, query, open, close, submitSearch, updateQuery, removeRecentSearch],
+  );
+
+  // Derive clamped activeIndex to avoid setState-in-effect
+  const clampedActiveIndex =
+    activeIndex >= listItems.length && listItems.length > 0
+      ? listItems.length - 1
+      : activeIndex;
+
+  // Scroll active item into view
+  useEffect(() => {
+    if (activeIndex < 0 || !listboxRef.current) return;
+    const item = listboxRef.current.children[activeIndex] as
+      | HTMLElement
+      | undefined;
+    item?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
+
+  const activeItemId =
+    clampedActiveIndex >= 0 ? `${listboxId}-item-${clampedActiveIndex}` : undefined;
+
+  return (
+    <div ref={containerRef} className="relative flex items-center">
+      {/* Collapsed: search icon toggle */}
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={toggleExpand}
+          aria-label="Open search"
+          className="rounded-full p-2 text-slate-400 hover:bg-white/6 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 transition-colors"
+        >
+          <Search className="h-4 w-4" aria-hidden={true} />
+        </button>
+      )}
+
+      {/* Expanded: input + dropdown */}
+      {isOpen && (
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <label htmlFor={inputId} className="sr-only">
+              Search ChronoPay
+            </label>
+            <div className="relative flex items-center">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                aria-hidden={true}
+              />
+              {/* Input carries all combobox ARIA */}
+              <input
+                ref={inputRef}
+                id={inputId}
+                type="search"
+                role="combobox"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="Search..."
+                value={query}
+                onChange={(e) => {
+                  updateQuery(e.target.value);
+                  if (!isOpen) open();
+                }}
+                onFocus={open}
+                onKeyDown={handleKeyDown}
+                aria-expanded={isPanelVisible || showEmptyHint}
+                aria-autocomplete="list"
+                aria-controls={listboxId}
+                aria-activedescendant={activeItemId}
+                className="
+                  h-8 w-48 rounded-full border border-white/10 bg-white/6 pl-8 pr-7
+                  text-sm text-white placeholder:text-slate-500
+                  focus:border-cyan-300/40 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 focus:ring-offset-slate-950
+                  transition-[width,background-color,border-color] duration-200
+                  sm:w-56
+                "
+              />
+              {/* Clear input button */}
+              {query && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => {
+                    updateQuery("");
+                    inputRef.current?.focus();
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-colors"
+                >
+                  <X className="h-3 w-3" aria-hidden={true} />
+                </button>
+              )}
+            </div>
+
+            {/* Dropdown panel */}
+            {(isPanelVisible || showEmptyHint) && (
+              <div
+                className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur-xl ring-1 ring-black/20 z-50"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                {/* Recent searches header -- shown when query is empty */}
+                {query.trim() === "" && recentSearches.length > 0 && (
+                  <div className="flex items-center justify-between px-3 pt-3 pb-1">
+                    <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+                      <Clock className="h-3 w-3" aria-hidden="true" />
+                      Recent Searches
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleClearAll}
+                      className="text-xs text-slate-500 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 rounded transition-colors"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                )}
+
+                {/* Suggestions header -- shown when query has text */}
+                {query.trim() !== "" && suggestions.length > 0 && (
+                  <div className="flex items-center gap-1.5 px-3 pt-3 pb-1">
+                    <TrendingUp className="h-3 w-3 text-slate-500" aria-hidden={true} />
+                    <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      Suggestions
+                    </span>
+                  </div>
+                )}
+
+                {/* Empty recents hint */}
+                {showEmptyHint && (
+                  <p className="px-3 py-4 text-sm text-slate-500 text-center">
+                    No recent searches yet.
+                  </p>
+                )}
+
+                {/* Listbox */}
+                {listItems.length > 0 && (
+                  <ul
+                    ref={listboxRef}
+                    id={listboxId}
+                    role="listbox"
+                    aria-label="Search suggestions"
+                    className="max-h-64 overflow-y-auto py-1 px-1"
+                  >
+                    {listItems.map((item, idx) => {
+                      if (item.kind === "header") {
+                        return (
+                          <li
+                            key={`header-${item.label}`}
+                            className="px-3 py-1.5 mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-500"
+                            role="presentation"
+                          >
+                            {item.label}
+                          </li>
+                        );
+                      }
+
+                      return (
+                        <li
+                          key={`${item.kind}-${item.label}`}
+                          id={`${listboxId}-item-${idx}`}
+                          role="option"
+              aria-selected={idx === clampedActiveIndex}
+              className={[
+                "group flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                idx === clampedActiveIndex
+                  ? "bg-cyan-500/10 text-white"
+                  : "text-slate-300 hover:bg-white/6 hover:text-white",
+              ].join(" ")}
+                          onPointerDown={(e) => {
+                            // Prevent input blur before click fires
+                            e.preventDefault();
+                          }}
+                          onClick={() => submitSearch(item.label)}
+                        >
+                          {/* Icon */}
+                          {item.kind === "recent" ? (
+                            <Clock
+                              className="h-3.5 w-3.5 shrink-0 text-slate-500"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <Search
+                              className="h-3.5 w-3.5 shrink-0 text-slate-500"
+                              aria-hidden="true"
+                            />
+                          )}
+
+                          {/* Label with query highlight */}
+                          <span className="flex-1 truncate">
+                            {item.kind === "suggestion" && query.trim() ? (
+                              <HighlightMatch
+                                text={item.label}
+                                query={query.trim()}
+                              />
+                            ) : (
+                              item.label
+                            )}
+                          </span>
+
+                          {/* Remove button for recents */}
+                          {item.kind === "recent" && (
+                            <button
+                              type="button"
+                              aria-label={`Remove "${item.label}" from recent searches`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeRecentSearch(item.label);
+                              }}
+                              className="ml-auto shrink-0 rounded-full p-0.5 text-slate-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-[opacity,color]"
+                            >
+                              <X className="h-3 w-3" aria-hidden="true" />
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+
+                {/* No suggestions found */}
+
+                {/* Did-you-mean suggestion (zero-state but with a close match) */}
+                {isZeroState && didYouMeanSuggestion && (
+                  <div className="px-3 pt-3 pb-1">
+                    <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
+                      <span className="text-sm text-amber-300">
+                        Did you mean{" "}
+                        <button
+                          type="button"
+                          onClick={() => acceptDidYouMean(didYouMeanSuggestion)}
+                          className="font-semibold underline underline-offset-2 text-amber-200 hover:text-amber-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-300 rounded transition-colors"
+                        >
+                          {didYouMeanSuggestion}
+                        </button>
+                        ?
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Revert chip — shown when a did-you-mean correction is active */}
+                {revertQuery && (
+                  <div className="px-3 pt-3 pb-1">
+                    <div className="flex items-center gap-1.5">
+                      <ArrowLeft className="h-3 w-3 text-slate-500" aria-hidden="true" />
+                      <span className="text-xs text-slate-500">
+                        Original search:{" "}
+                        <button
+                          type="button"
+                          onClick={revertCorrection}
+                          className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-colors"
+                          aria-label={`Revert to original search: ${revertQuery}`}
+                        >
+                          {revertQuery}
+                          <X className="h-2.5 w-2.5" aria-hidden="true" />
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {isZeroState && (
+                  <div className="p-2">
+                    <EmptyStateCard
+                      eyebrow="Zero Results"
+                      title={`No matches for "${query}"`}
+                      description="We couldn't find any items matching your search."
+                      accentLabel="Search"
+                      status={{ label: "Not found", tone: "neutral" }}
+                      guidance={[
+                        "Try broadening your filters",
+                        "Search for nearby dates",
+                        "Check for typos"
+                      ]}
+                      actions={
+                        <div className="flex w-full flex-col gap-2">
+                          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                            Popular Searches
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {["Consultation", "Design Review", "Code Audit"].map((s, idx) => (
+                              <button
+                                key={s}
+                                type="button"
+                                ref={idx === 0 ? firstSuggestionRef : undefined}
+                                onClick={() => submitSearch(s)}
+                                className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      }
+                    />
+                  </div>
+                )}
+
+                {/* Keyboard hint footer */}
+                <div className="border-t border-white/6 px-3 py-2">
+                  <p className="text-xs text-slate-600">
+                    <kbd className="font-mono">up/down</kbd> nav
+                    &nbsp;&middot;&nbsp;
+                    <kbd className="font-mono">Enter</kbd> select
+                    &nbsp;&middot;&nbsp;
+                    <kbd className="font-mono">Del</kbd> remove
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Screen-reader announcement for corrections */}
+          <LiveRegion>{liveRegionMessage}</LiveRegion>
+
+          {/* Collapse / close button */}
+          <button
+            type="button"
+            onClick={() => {
+              updateQuery("");
+              setCorrectedQuery(null);
+              setRevertQuery(null);
+              setLiveRegionMessage("");
+              close();
+            }}
+            aria-label="Close search"
+            className="rounded-full p-2 text-slate-400 hover:bg-white/6 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 transition-colors"
+          >
+            <X className="h-4 w-4" aria-hidden={true} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// HighlightMatch
+
+/**
+ * Renders a suggestion label with the matching portion of the query highlighted.
+ */
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <>{text}</>;
+
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-transparent text-cyan-300 font-semibold">
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}

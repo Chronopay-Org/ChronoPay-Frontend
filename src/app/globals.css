@@ -1,17 +1,31 @@
-@import "tailwindcss";
-
-/* Focus ring utilities */
+/* Focus ring utilities — plain CSS nesting (Tailwind v4 does not support variant
+   prefixes inside @apply, so we use native :focus-visible selectors instead). */
 @layer utilities {
-  .focus-ring-cyan {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+  .focus-ring-cyan:focus-visible {
+    outline: none;
+    /* 2px offset (slate-950 bg) + 2px ring (cyan-300) */
+    box-shadow:
+      0 0 0 2px #07111f,
+      0 0 0 4px #67e8f9;
   }
-  .focus-ring-white {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950;
+  .focus-ring-white:focus-visible {
+    outline: none;
+    /* 2px offset (slate-950 bg) + 2px ring (white) */
+    box-shadow:
+      0 0 0 2px #07111f,
+      0 0 0 4px #ffffff;
   }
+
+  /* Shared elevation scale: use the smallest level that communicates stacking. */
+  .elevation-1 { box-shadow: var(--elevation-1); }
+  .elevation-2 { box-shadow: var(--elevation-2); }
+  .elevation-3 { box-shadow: var(--elevation-3); }
+  .elevation-4 { box-shadow: var(--elevation-4); }
+  .elevation-5 { box-shadow: var(--elevation-5); }
 }
 
-
 :root {
+  /* Core surface colors */
   --background: #07111f;
   --foreground: #f4f7fb;
   --surface: rgba(11, 23, 40, 0.82);
@@ -25,18 +39,298 @@
   --danger: #f87171;
   --muted: #9fb0c7;
 
-  /* Helper text — secondary explanations beneath labels, statuses, and CTAs. */
-  --helper-text-size: 0.875rem;          /* 14px */
-  --helper-text-leading: 1.5rem;         /* 24px */
-  --helper-text-color: rgb(203 213 225);          /* slate-300, primary helper tone */
-  --helper-text-color-muted: rgb(148 163 184);    /* slate-400, metadata / empty states */
-  --helper-text-color-emphasis: rgb(207 250 254 / 0.8); /* cyan-100/80, accent panels */
+  /* Spacing scale: use values from the scale to preserve rhythm and avoid ad hoc gaps. */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px */
 
-  /* Reusable Card design tokens */
+  /* Radius scale */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
   --radius-md: 24px;
   --radius-lg: 28px;
   --radius-xl: 32px;
+
+  /* Motion scale */
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 200ms;
+  --motion-duration-slow: 320ms;
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Typography scale */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-md: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.5rem; /* 24px */
+  --font-size-2xl: 2rem; /* 32px */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.25;
+  --line-height-body: 1.5;
+  --line-height-loose: 1.75;
+
+  /* Helper text — secondary explanations beneath labels, statuses, and CTAs. */
+  --helper-text-size: 0.875rem;
+  --helper-text-leading: 1.5rem;
+  --helper-text-color: rgb(203 213 225);
+  --helper-text-color-muted: rgb(148 163 184);
+  --helper-text-color-emphasis: rgb(207 250 254 / 0.8);
+  --skeleton-base: rgba(148, 163, 184, 0.14);
+  --skeleton-highlight: rgba(207, 250, 254, 0.18);
+
+  /* Reusable Card design tokens */
   --border: 1px solid var(--border-subtle);
+  --density-card-padding: 1.25rem;
+  --density-card-header-gap: 1rem;
+  --density-card-footer-gap: 1.25rem;
+
+  /* Dark-mode elevation uses cool ambient light instead of opaque black. */
+  --elevation-1: 0 1px 2px rgba(34, 211, 238, 0.12), 0 6px 18px -12px rgba(56, 189, 248, 0.38);
+  --elevation-2: 0 2px 4px rgba(34, 211, 238, 0.14), 0 12px 28px -14px rgba(56, 189, 248, 0.44);
+  --elevation-3: 0 4px 8px rgba(34, 211, 238, 0.16), 0 18px 40px -16px rgba(59, 130, 246, 0.48);
+  --elevation-4: 0 8px 16px rgba(34, 211, 238, 0.18), 0 28px 64px -20px rgba(59, 130, 246, 0.54);
+  --elevation-5: 0 12px 24px rgba(34, 211, 238, 0.20), 0 40px 88px -24px rgba(99, 102, 241, 0.58);
+
+  /* Shell surfaces */
+  --shell-header-bg: rgba(7, 17, 31, 0.4);
+  --shell-header-border: rgba(148, 163, 184, 0.08);
+  --shell-drawer-bg: #0f172a;
+  --shell-bottom-bar-bg: #0f172a;
+  --shell-text: #f4f7fb;
+  --shell-text-muted: #9fb0c7;
+
+  /* Shell left rail */
+  --shell-rail-bg: rgba(7, 17, 31, 0.55);
+  --shell-rail-border: rgba(148, 163, 184, 0.08);
+  --shell-rail-hover: rgba(148, 163, 184, 0.08);
+  --shell-rail-active: rgba(103, 232, 249, 0.1);
+  --shell-rail-text: #9fb0c7;
+  --shell-rail-text-active: #f4f7fb;
+  --shell-rail-width: 240px;
+
+  /*
+   * Chart tokens
+   * ─────────────────────────────────────────────────────────────────────────
+   * Tooltip surface
+   *   --chart-tooltip-bg           Background of the floating tooltip panel.
+   *                                Slightly lighter than the page bg so it
+   *                                reads as a distinct elevated surface.
+   *   --chart-tooltip-border       1 px hairline border; keeps the bubble
+   *                                visible when it overlaps a similarly-toned
+   *                                chart segment.
+   *   --chart-tooltip-text         Primary value text inside the tooltip.
+   *   --chart-tooltip-text-muted   Secondary/metadata line (e.g. sample count).
+   *
+   * Gridlines / track
+   *   --chart-gridline-color       Fill / stroke for bar tracks and SVG
+   *                                reference lines. Alpha-based so it adapts
+   *                                if the surface colour changes.
+   *   --chart-gridline-stroke-width  SVG stroke-width for sparkline grid.
+   *
+   * Contrast notes (WCAG 2.1 AA, 4.5 : 1 minimum for normal text)
+   *   Dark  — text #f4f7fb on bg #0f1c2e → 14.3 : 1  ✓
+   *   Dark  — muted #9fb0c7 on bg #0f1c2e →  6.1 : 1  ✓
+   *   Light — text #0a1628 on bg #ffffff  → 18.1 : 1  ✓
+   *   Light — muted #4a6080 on bg #ffffff →  7.0 : 1  ✓
+   */
+  --chart-tooltip-bg: #0f1c2e;
+  --chart-tooltip-border: rgba(148, 163, 184, 0.2);
+  --chart-tooltip-text: #f4f7fb;
+  --chart-tooltip-text-muted: #9fb0c7;
+  --chart-gridline-color: rgba(148, 163, 184, 0.15);
+  --chart-gridline-stroke-width: 1px;
+
+  /*
+   * Heatmap tokens
+   * ─────────────────────────────────────────────────────────────────────────
+   * 5-step intensity ramp for calendar availability heatmap overlay.
+   * Each step has a semantic token for the fill color and a pattern token
+   * for color-blind accessibility (used via background-image).
+   * All pairings meet WCAG 2.1 AA (4.5:1 normal text, 3:1 large text/UI).
+   *
+   * Step 1 (none):     No availability — transparent, subtle pattern
+   * Step 2 (low):      1–2 slots   — cool cyan, sparse dots
+   * Step 3 (medium):   3–5 slots   — teal, medium dots
+   * Step 4 (high):     6–9 slots   — emerald, dense dots
+   * Step 5 (peak):     10+ slots   — cyan-strong, very dense dots
+   */
+  --heatmap-step-1: rgba(148, 163, 184, 0.08);
+  --heatmap-step-1-pattern: radial-gradient(circle, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+  --heatmap-step-1-pattern-size: 8px 8px;
+
+  --heatmap-step-2: rgba(34, 211, 238, 0.12);
+  --heatmap-step-2-pattern: radial-gradient(circle, rgba(34, 211, 238, 0.25) 1.5px, transparent 1.5px);
+  --heatmap-step-2-pattern-size: 6px 6px;
+
+  --heatmap-step-3: rgba(34, 211, 238, 0.2);
+  --heatmap-step-3-pattern: radial-gradient(circle, rgba(34, 211, 238, 0.35) 2px, transparent 2px);
+  --heatmap-step-3-pattern-size: 5px 5px;
+
+  --heatmap-step-4: rgba(52, 211, 153, 0.22);
+  --heatmap-step-4-pattern: radial-gradient(circle, rgba(52, 211, 153, 0.4) 2px, transparent 2px);
+  --heatmap-step-4-pattern-size: 4px 4px;
+
+  --heatmap-step-5: rgba(103, 232, 249, 0.28);
+  --heatmap-step-5-pattern: radial-gradient(circle, rgba(103, 232, 249, 0.5) 2.5px, transparent 2.5px);
+  --heatmap-step-5-pattern-size: 3px 3px;
+
+  /* Heatmap legend swatch sizing */
+  --heatmap-swatch-size: 1.25rem; /* 20px */
+  --heatmap-swatch-radius: 0.375rem; /* 6px */
+
+  /* Heatmap cell overlay — ensures tap targets remain intact */
+  --heatmap-cell-overlay: inset 0 0 0 1px rgba(148, 163, 184, 0.06);
+}
+
+:root[data-density="comfortable"] {
+  --density-card-padding: 1.75rem;
+  --density-card-header-gap: 1.25rem;
+  --density-card-footer-gap: 1.75rem;
+}
+
+:root[data-density="balanced"] {
+  --density-card-padding: 1.25rem;
+  --density-card-header-gap: 1rem;
+  --density-card-footer-gap: 1.25rem;
+}
+
+:root[data-density="compact"] {
+  --density-card-padding: 0.85rem;
+  --density-card-header-gap: 0.75rem;
+  --density-card-footer-gap: 0.85rem;
+}
+
+/* Light theme — explicit user selection */
+[data-theme="light"] {
+  --background: #f0f5fb;
+  --foreground: #0a1628;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-strong: rgba(255, 255, 255, 0.98);
+  --border-subtle: rgba(15, 23, 42, 0.1);
+  --border-strong: rgba(8, 145, 178, 0.28);
+  --accent: #0891b2;
+  --accent-strong: #06b6d4;
+  --accent-warm: #d97706;
+  --success: #059669;
+  --danger: #dc2626;
+  --muted: #4a6080;
+  --helper-text-color: rgb(30 58 138);
+  --helper-text-color-muted: rgb(71 85 105);
+  --helper-text-color-emphasis: rgb(8 145 178 / 0.9);
+  --skeleton-base: rgba(71, 85, 105, 0.14);
+  --skeleton-highlight: rgba(255, 255, 255, 0.55);
+  --shell-header-bg: rgba(240, 245, 251, 0.75);
+  --shell-header-border: rgba(15, 23, 42, 0.1);
+  --shell-drawer-bg: #ffffff;
+  --shell-bottom-bar-bg: #f8fafc;
+  --shell-text: #0a1628;
+  --shell-text-muted: #4a6080;
+  --shell-rail-bg: rgba(240, 245, 251, 0.85);
+  --shell-rail-border: rgba(15, 23, 42, 0.08);
+  --shell-rail-hover: rgba(15, 23, 42, 0.06);
+  --shell-rail-active: rgba(8, 145, 178, 0.1);
+  --shell-rail-text: #4a6080;
+  --shell-rail-text-active: #0a1628;
+  --chart-tooltip-bg: #ffffff;
+  --chart-tooltip-border: rgba(15, 23, 42, 0.12);
+  --chart-tooltip-text: #0a1628;
+  --chart-tooltip-text-muted: #4a6080;
+  --chart-gridline-color: rgba(15, 23, 42, 0.1);
+  --chart-gridline-stroke-width: 1px;
+
+  /* Heatmap tokens (light theme) */
+  --heatmap-step-1: rgba(15, 23, 42, 0.06);
+  --heatmap-step-1-pattern: radial-gradient(circle, rgba(15, 23, 42, 0.12) 1px, transparent 1px);
+  --heatmap-step-1-pattern-size: 8px 8px;
+
+  --heatmap-step-2: rgba(8, 145, 178, 0.1);
+  --heatmap-step-2-pattern: radial-gradient(circle, rgba(8, 145, 178, 0.22) 1.5px, transparent 1.5px);
+  --heatmap-step-2-pattern-size: 6px 6px;
+
+  --heatmap-step-3: rgba(8, 145, 178, 0.16);
+  --heatmap-step-3-pattern: radial-gradient(circle, rgba(8, 145, 178, 0.3) 2px, transparent 2px);
+  --heatmap-step-3-pattern-size: 5px 5px;
+
+  --heatmap-step-4: rgba(5, 150, 105, 0.18);
+  --heatmap-step-4-pattern: radial-gradient(circle, rgba(5, 150, 105, 0.35) 2px, transparent 2px);
+  --heatmap-step-4-pattern-size: 4px 4px;
+
+  --heatmap-step-5: rgba(6, 182, 212, 0.24);
+  --heatmap-step-5-pattern: radial-gradient(circle, rgba(6, 182, 212, 0.42) 2.5px, transparent 2.5px);
+  --heatmap-step-5-pattern-size: 3px 3px;
+}
+
+/* Auto mode — follow system preference when no explicit theme is set */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --background: #f0f5fb;
+    --foreground: #0a1628;
+    --surface: rgba(255, 255, 255, 0.88);
+    --surface-strong: rgba(255, 255, 255, 0.98);
+    --border-subtle: rgba(15, 23, 42, 0.1);
+    --border-strong: rgba(8, 145, 178, 0.28);
+    --accent: #0891b2;
+    --accent-strong: #06b6d4;
+    --accent-warm: #d97706;
+    --success: #059669;
+    --danger: #dc2626;
+    --muted: #4a6080;
+    --helper-text-color: rgb(30 58 138);
+    --helper-text-color-muted: rgb(71 85 105);
+    --helper-text-color-emphasis: rgb(8 145 178 / 0.9);
+    --skeleton-base: rgba(71, 85, 105, 0.14);
+    --skeleton-highlight: rgba(255, 255, 255, 0.55);
+    --shell-header-bg: rgba(240, 245, 251, 0.75);
+    --shell-header-border: rgba(15, 23, 42, 0.1);
+    --shell-drawer-bg: #ffffff;
+    --shell-bottom-bar-bg: #f8fafc;
+    --shell-text: #0a1628;
+    --shell-text-muted: #4a6080;
+    --shell-rail-bg: rgba(240, 245, 251, 0.85);
+    --shell-rail-border: rgba(15, 23, 42, 0.08);
+    --shell-rail-hover: rgba(15, 23, 42, 0.06);
+    --shell-rail-active: rgba(8, 145, 178, 0.1);
+    --shell-rail-text: #4a6080;
+    --shell-rail-text-active: #0a1628;
+    --chart-tooltip-bg: #ffffff;
+    --chart-tooltip-border: rgba(15, 23, 42, 0.12);
+    --chart-tooltip-text: #0a1628;
+    --chart-tooltip-text-muted: #4a6080;
+    --chart-gridline-color: rgba(15, 23, 42, 0.1);
+    --chart-gridline-stroke-width: 1px;
+
+    /* Heatmap tokens (auto light mode) */
+    --heatmap-step-1: rgba(15, 23, 42, 0.06);
+    --heatmap-step-1-pattern: radial-gradient(circle, rgba(15, 23, 42, 0.12) 1px, transparent 1px);
+    --heatmap-step-1-pattern-size: 8px 8px;
+
+    --heatmap-step-2: rgba(8, 145, 178, 0.1);
+    --heatmap-step-2-pattern: radial-gradient(circle, rgba(8, 145, 178, 0.22) 1.5px, transparent 1.5px);
+    --heatmap-step-2-pattern-size: 6px 6px;
+
+    --heatmap-step-3: rgba(8, 145, 178, 0.16);
+    --heatmap-step-3-pattern: radial-gradient(circle, rgba(8, 145, 178, 0.3) 2px, transparent 2px);
+    --heatmap-step-3-pattern-size: 5px 5px;
+
+    --heatmap-step-4: rgba(5, 150, 105, 0.18);
+    --heatmap-step-4-pattern: radial-gradient(circle, rgba(5, 150, 105, 0.35) 2px, transparent 2px);
+    --heatmap-step-4-pattern-size: 4px 4px;
+
+    --heatmap-step-5: rgba(6, 182, 212, 0.24);
+    --heatmap-step-5-pattern: radial-gradient(circle, rgba(6, 182, 212, 0.42) 2.5px, transparent 2.5px);
+    --heatmap-step-5-pattern-size: 3px 3px;
+  }
 }
 
 @theme inline {
@@ -59,24 +353,18 @@ html {
     linear-gradient(180deg, #09111e 0%, #050b14 100%);
 }
 
-/* Light theme — applied pre-hydration via data-theme="light" (see layout.tsx). */
 html[data-theme="light"] {
-  color-scheme: light;
-  --background: #f4f7fb;
-  --foreground: #0b1422;
-  --surface: rgba(255, 255, 255, 0.86);
-  --surface-strong: rgba(255, 255, 255, 0.98);
-  --border-subtle: rgba(15, 23, 42, 0.12);
-  --border-strong: rgba(8, 145, 178, 0.28);
-  --accent: #0891b2;
-  --accent-strong: #0e7490;
-  --muted: #475569;
-  --helper-text-color: rgb(51 65 85);          /* slate-700 */
-  --helper-text-color-muted: rgb(100 116 139); /* slate-500 */
-  --helper-text-color-emphasis: rgb(8 145 178 / 0.9); /* cyan-700 */
   background:
-    radial-gradient(circle at top, rgba(8, 145, 178, 0.12), transparent 34%),
-    linear-gradient(180deg, #eef4fb 0%, #e2eaf4 100%);
+    radial-gradient(circle at top, rgba(8, 145, 178, 0.1), transparent 30%),
+    linear-gradient(180deg, #e8f4f8 0%, #f0f5fb 100%);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme="dark"]) {
+    background:
+      radial-gradient(circle at top, rgba(8, 145, 178, 0.1), transparent 30%),
+      linear-gradient(180deg, #e8f4f8 0%, #f0f5fb 100%);
+  }
 }
 
 body {
@@ -112,6 +400,49 @@ body {
 }
 
 /*
+ * Loading skeletons shimmer only when the user has not requested reduced
+ * motion. The base tint remains visible as a stable fallback.
+ */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton-base);
+}
+
+.skeleton::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--skeleton-highlight) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after {
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    content: none;
+    animation: none;
+    transform: none;
+  }
+}
+
+/*
  * Reusable Card Design Pattern
  * Source of consistency for borders, backgrounds, spacing, and hover feedback.
  */
@@ -119,16 +450,17 @@ body {
   border-radius: var(--radius-md);
   border: var(--border);
   background-color: var(--surface);
-  padding: 1.25rem; /* p-5 (20px) */
+  padding: var(--density-card-padding, 1.25rem); /* p-5 (20px) */
   display: flex;
   flex-direction: column;
+  box-shadow: var(--elevation-1);
 }
 
 .card-header {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--density-card-header-gap, 1rem);
 }
 
 .card-body {
@@ -136,7 +468,7 @@ body {
 }
 
 .card-footer {
-  margin-top: 1.25rem; /* mt-5 */
+  margin-top: var(--density-card-footer-gap, 1.25rem); /* mt-5 */
 }
 
 /* Panel Shell Variant */
@@ -145,40 +477,42 @@ body {
   background-color: rgba(15, 23, 42, 0.7); /* slate-950/70 */
   backdrop-filter: blur(8px);
   padding: 1rem; /* p-4 */
-  box-shadow: 0 24px 80px -40px rgba(15, 23, 42, 0.95);
+  box-shadow: var(--elevation-2);
 }
 
-@media (min-width: 640px) {
-  .card--panel {
-    padding: 1.25rem; /* sm:p-5 */
-  }
-}
-
-@media (min-width: 1280px) {
-  .card--panel {
-    padding: 1.5rem; /* xl:p-6 */
-  }
-}
-
-/* Glass Card Variant (used by empty states) */
 .card--glass {
   border-radius: var(--radius-xl); /* 2rem */
   background: rgba(11, 23, 40, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
   padding: 1.25rem; /* p-5 */
+  box-shadow: var(--elevation-1);
 }
 
 @media (min-width: 640px) {
-  .card--glass {
-    padding: 1.5rem; /* sm:p-6 */
+  .card--panel,
+  .card--glass,
+  .card--accent {
+    padding: var(--density-card-padding, 1.25rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .card--panel,
+  .card--glass,
+  .card--accent {
+    padding: var(--density-card-padding, 1.5rem);
   }
 }
 
 /* Accent Card Variant (used by Wallet Card) */
 .card--accent {
   border-color: rgba(34, 211, 238, 0.2); /* border-cyan-400/20 */
-  background: linear-gradient(160deg, rgba(14, 116, 144, 0.18), rgba(15, 23, 42, 0.92));
+  background: linear-gradient(
+    160deg,
+    rgba(14, 116, 144, 0.18),
+    rgba(15, 23, 42, 0.92)
+  );
 }
 
 .card--accent:hover {
@@ -187,7 +521,9 @@ body {
 
 /* Interactive Card Modifier (hover, active, transition effects) */
 .card--interactive {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke,
+    opacity, box-shadow, transform, filter, backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
@@ -212,4 +548,157 @@ body {
 .card--interactive:active {
   border-color: rgba(103, 232, 249, 0.6); /* active:border-cyan-300/60 */
   background-color: rgb(30, 41, 59); /* active:bg-slate-800 */
+}
+
+/*
+ * On-chain receipt print stylesheet.
+ * Scoped to .receipt-printable so only the receipt prints (or saves to PDF
+ * via the browser dialog). Switches to dark-on-white for high contrast on
+ * paper, keeps full-text labels, and drops interactive-only controls.
+ */
+@media print {
+  /* ── Paper size & margins ──────────────────────────────────────────── */
+  @page {
+    size: A4;
+    margin: 1.8cm 1.5cm;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-printable,
+  .receipt-printable * {
+    visibility: visible;
+  }
+
+  .receipt-printable {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    backdrop-filter: none;
+    font-size: 10pt;
+    line-height: 1.5;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Force readable ink for every receipt element. */
+  .receipt-printable :where(p, span, dt, dd, h2, h3, li, a) {
+    color: #0f172a !important;
+  }
+
+  /* Keep dividers visible on paper. */
+  .receipt-printable :where(header, section, footer, .border-t, .border-b) {
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Copy / explorer / share / interactive controls — hidden on paper. */
+  .receipt-no-print {
+    display: none !important;
+  }
+
+  /* ── Print-specific watermark ──────────────────────────────────────── */
+  .receipt-printable::before {
+    content: "ChronoPay — On-chain Receipt";
+    position: fixed;
+    bottom: 0.6cm;
+    right: 1.5cm;
+    font-size: 7pt;
+    color: #94a3b8;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── Signature block ───────────────────────────────────────────────── */
+  .receipt-signature-block {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid #0f172a;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .receipt-signature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 1.5rem;
+  }
+
+  .receipt-signature-label {
+    display: block;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #64748b;
+  }
+
+  .receipt-signature-value {
+    display: block;
+    font-size: 10pt;
+    color: #0f172a;
+  }
+
+  .receipt-signature-line {
+    margin-top: 1rem;
+    border-top: 1px solid #cbd5e1;
+    width: 55%;
+  }
+
+  /* ── Tamper-evident footer ─────────────────────────────────────────── */
+  .receipt-tamper-footer {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px dashed #cbd5e1;
+    background: #f8fafc;
+    border-radius: 4px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .receipt-tamper-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #475569;
+    margin: 0 0 0.35rem;
+  }
+
+  .receipt-tamper-hash {
+    font-family: "SFMono-Regular", "Cascadia Code", "Fira Code", Consolas, monospace;
+    font-size: 7pt;
+    word-break: break-all;
+    color: #334155;
+    margin: 0 0 0.35rem;
+  }
+
+  .receipt-tamper-meta {
+    font-size: 7pt;
+    color: #64748b;
+    margin: 0 0 0.2rem;
+  }
+
+  .receipt-tamper-verify {
+    font-size: 7pt;
+    color: #64748b;
+    margin: 0;
+  }
+
+  .receipt-tamper-url {
+    color: #1d4ed8;
+    text-decoration: underline;
+    word-break: break-all;
+  }
 }
