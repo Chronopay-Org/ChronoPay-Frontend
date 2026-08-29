@@ -42,6 +42,7 @@ export default function DesignChecklist() {
         "Button variants (primary, secondary, ghost) used correctly",
         "Consistent card padding and border-radius patterns",
         "Typography hierarchy followed (no skipping heading levels)",
+        "Design token guide reviewed: see /design-tokens and docs/design-tokens.md",
       ],
     },
   ];
