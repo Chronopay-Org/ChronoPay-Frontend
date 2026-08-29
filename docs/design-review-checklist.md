@@ -30,6 +30,14 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Hierarchy**: Heading levels (`h1` → `h6`) follow a logical, non-skipping hierarchy.
 - [ ] **Consistency**: Card padding and border-radius match existing dashboard patterns.
 
+## 🌗 Theme (ThemeSwitcher)
+- [ ] **Control**: A `ThemeSwitcher` segmented radio control offers **Light / Dark / Auto** in the dashboard header.
+- [ ] **Persistence**: Selection persists per-user in `localStorage` under `chronopay:theme`.
+- [ ] **Auto mode**: Resolves to the OS `prefers-color-scheme` and updates live when the OS theme changes.
+- [ ] **No FOUC**: An inline pre-hydration script in `src/app/layout.tsx` sets `data-theme` before React hydrates.
+- [ ] **a11y**: `role="radiogroup"` + `role="radio"` with `aria-checked`, arrow-key support, and visible focus rings.
+- [ ] **Contrast**: Active/inactive states meet contrast ratios in both light and dark themes.
+
 ---
 
 *To use this in a PR, copy and paste the relevant sections above into your PR description.*

@@ -2,19 +2,16 @@
 
 import { use, useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { DashboardShell } from "@/app/components/dashboard-shell";
 import { StatusChip } from "@/components/dashboard/status-chip";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import {
   ArrowLeft,
   Wallet,
-  CheckCircle2,
   AlertCircle,
   Calendar,
   Clock,
   ShieldCheck,
-  HelpCircle,
   Info,
   ExternalLink,
   Loader2,
@@ -99,7 +96,6 @@ export default function SlotDetailPage({
 }) {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
-  const router = useRouter();
 
   // Find the current slot, fallback to slot-1 if invalid
   const slot = mockSlots.find((s) => s.id === id) || mockSlots[0];
@@ -144,6 +140,19 @@ export default function SlotDetailPage({
     setAnnouncement(msg);
   };
 
+  // Modal open/close handlers (declared before effects that reference them)
+  const handleOpenModal = () => {
+    if (!isWalletReady || !hasFunds) return;
+    setPurchaseStep("confirm");
+    setIsModalOpen(true);
+    announce("Confirm purchase modal opened. Press Tab to navigate.");
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setPurchaseStep("confirm");
+  };
+
   // Keyboard navigation & focus management inside checkout modal
   useEffect(() => {
     if (isModalOpen) {
@@ -154,7 +163,6 @@ export default function SlotDetailPage({
       if (modalRef.current) {
         modalRef.current.focus();
       }
-      announce("Confirm purchase modal opened. Press Tab to navigate.");
     } else {
       // Restore focus
       if (lastActiveElementRef.current) {
@@ -173,17 +181,6 @@ export default function SlotDetailPage({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isModalOpen]);
-
-  const handleOpenModal = () => {
-    if (!isWalletReady || !hasFunds) return;
-    setPurchaseStep("confirm");
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setPurchaseStep("confirm");
-  };
 
   // Simulated blockchain transaction workflow
   const handleProceedPurchase = () => {
@@ -220,9 +217,9 @@ export default function SlotDetailPage({
   };
 
   const mapTone = (status: typeof slot.status) => {
-    if (status === "Healthy") return "success";
+    if (status === "Healthy") return "positive";
     if (status === "Tight") return "warning";
-    return "danger";
+    return "critical";
   };
 
   return (

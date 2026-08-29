@@ -51,8 +51,8 @@ export function ButtonLink({
   const isDisabled = disabled || loading;
   return (
     <Link
-      href={href}
       {...(props as LinkProps)}
+      href={href}
       aria-disabled={isDisabled}
       tabIndex={isDisabled ? -1 : undefined}
       className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${

@@ -1,6 +1,9 @@
 // src/app/components/dashboard-shell.tsx
+"use client";
+
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { ThemeSwitcher } from "@/components/dashboard";
 
 type DashboardShellProps = {
   children: React.ReactNode;
@@ -93,9 +96,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
             >
               Stellar
             </a>
+            <ThemeSwitcher />
           </div>
-          {/* Hamburger for mobile */}
-          <button
+          {/* Mobile controls: theme + hamburger (desktop version lives in inline links) */}
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeSwitcher />
+            <button
             className="md:hidden rounded-md p-2 focus-ring-white"
             aria-label="Open navigation menu"
             onClick={() => setIsOpen(true)}
@@ -111,6 +117,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
+          </div>
         </nav>
       </header>
 

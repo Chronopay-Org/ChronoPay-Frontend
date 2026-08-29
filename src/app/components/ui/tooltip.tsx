@@ -60,7 +60,9 @@ export function Tooltip({ content, children, className = "" }: TooltipProps) {
     toggleTooltip();
   };
 
-  // Positioning – compute collision with viewport edges
+  // Positioning – compute collision with viewport edges.
+  // This measures the rendered tooltip, so it must run in an effect after
+  // paint; we only write state when the resolved placement actually changes.
   useEffect(() => {
     if (!isVisible || !triggerRef.current || !tooltipRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
@@ -68,7 +70,7 @@ export function Tooltip({ content, children, className = "" }: TooltipProps) {
     const margin = 8; // space between trigger and tooltip
     // Prefer top placement; if not enough space, place bottom
     const canPlaceTop = triggerRect.top - tooltipRect.height - margin > 0;
-    setPlacement(canPlaceTop ? "top" : "bottom");
+    setPlacement((prev) => (canPlaceTop ? "top" : "bottom") === prev ? prev : canPlaceTop ? "top" : "bottom");
   }, [isVisible]);
 
   // Styling helpers

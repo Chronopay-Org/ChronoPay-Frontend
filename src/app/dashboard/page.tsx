@@ -1,3 +1,6 @@
+"use client";
+
+import DashboardError from "./error";
 import { DashboardShell } from "../components/dashboard-shell";
 
 import {

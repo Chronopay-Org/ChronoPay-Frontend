@@ -5,22 +5,7 @@ import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletSnapshot } from "./types";
-import { useState, useEffect } from "react";
-import { WalletConnectModal, type WalletProvider } from "./WalletConnectModal";
-
-// Define the wallet providers used in the picker. Icons are placeholders; replace with real SVGs.
-const walletProviders: WalletProvider[] = [
-  {
-    id: "freighter",
-    name: "Freighter",
-    icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l9 21H3L12 2z"/></svg>,
-  },
-  {
-    id: "albedo",
-    name: "Albedo",
-    icon: <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/></svg>,
-  },
-];
+import { useToast } from "@/hooks/use-toast";
 
 const statusTone = {
   connected: "positive",
@@ -57,8 +42,6 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
   const statusId = useId();
   const { toast } = useToast();
 
-  const isConnected = wallet.connection === "connected";
-
   async function handleWalletAction() {
     await simulateWalletAction(wallet.connection);
 
@@ -76,27 +59,6 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
       });
     }
   }
-
-  const buttonLabels = {
-    connected: {
-      idle: "Review wallet",
-      pending: "Loading…",
-      confirmed: "Loaded",
-      error: "Retry",
-    },
-    disconnected: {
-      idle: "Connect wallet",
-      pending: "Connecting…",
-      confirmed: "Connected",
-      error: "Retry connection",
-    },
-    error: {
-      idle: "Retry connection",
-      pending: "Retrying…",
-      confirmed: "Connected",
-      error: "Still failing",
-    },
-  };
 
   return (
     <Card
@@ -157,6 +119,7 @@ export function WalletCard({ wallet }: { wallet: WalletSnapshot }) {
         <button
           type="button"
           className="inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 px-4 py-2.5 text-sm border border-white/12 bg-white/6 text-slate-100 hover:border-cyan-200/30 hover:bg-white/10"
+          onClick={handleWalletAction}
         >
           {actionLabel[wallet.connection]}
         </button>
