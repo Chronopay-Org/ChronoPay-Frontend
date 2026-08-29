@@ -1022,6 +1022,15 @@ export default function SlotDetailPage({
                       Add Booking to Calendar
                     </button>
 
+                    <button
+                      type="button"
+                      onClick={() => setIsReceiptOpen(true)}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-cyan-400/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20"
+                    >
+                      View Receipt
+                      <Receipt className="h-3 w-3 ml-1.5" />
+                    </button>
+
                     <a
                       href="https://stellar.expert"
                       target="_blank"
