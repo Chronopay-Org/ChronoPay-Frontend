@@ -172,9 +172,15 @@ export function ZeroBalanceNudge({
       >
         Your wallet is empty — here&apos;s how to get started
       </h3>
-      <p className="helper-text helper-text--emphasis mt-1">
-        Add funds or explore the testnet to start listing time tokens.
-      </p>
+      <div className="helper-text helper-text--emphasis mt-1">
+        Add funds or explore the testnet to start listing time tokens
+        <HelpPopover
+          term={glossary.timeToken}
+          triggerLabel="Help: Time tokens"
+          className="ml-1 align-middle"
+        />
+        .
+      </div>
 
       <ul
         role="list"

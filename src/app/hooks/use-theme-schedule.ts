@@ -13,6 +13,7 @@ export function useThemeSchedule() {
 
   useEffect(() => {
     const saved = localStorage.getItem('theme-schedule');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (saved) setConfig(JSON.parse(saved));
   }, []);
 

@@ -126,6 +126,7 @@ export function UptimeCell({
       {isTooltipVisible && (
         <UptimeTooltip
           tooltipId={tooltipId}
+          // eslint-disable-next-line react-hooks/refs
           triggerElement={cellRef.current}
           date={date}
           uptimePercent={uptimePercent}

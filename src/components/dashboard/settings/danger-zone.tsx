@@ -74,17 +74,46 @@ function ConfirmByTypingModal({ action, onConfirm, onCancel }: ConfirmByTypingMo
   const descriptionId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const isConfirmed = typedValue === action.confirmPhrase;
 
-  // Focus trap — focus the cancel button on mount, then trap Tab
+  // Focus trap — focus the cancel button on mount, restore focus on close,
+  // and keep Tab/Shift+Tab within the modal.
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     cancelRef.current?.focus();
+    return () => previouslyFocused?.focus();
   }, []);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Escape") {
         onCancel();
+        return;
+      }
+
+      if (e.key !== "Tab") return;
+
+      const modal = modalRef.current;
+      if (!modal) return;
+
+      const focusable = Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     },
     [onCancel],
@@ -92,6 +121,7 @@ function ConfirmByTypingModal({ action, onConfirm, onCancel }: ConfirmByTypingMo
 
   return (
     <div
+      ref={modalRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4"
       role="dialog"
       aria-modal="true"

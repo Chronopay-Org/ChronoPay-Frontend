@@ -399,6 +399,7 @@ export function useMapView(storageKey = "chronopay-marketplace-view") {
   useEffect(() => {
     const saved = localStorage.getItem(storageKey);
     if (saved === "list" || saved === "map" || saved === "split") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setViewMode(saved);
     }
   }, [storageKey]);

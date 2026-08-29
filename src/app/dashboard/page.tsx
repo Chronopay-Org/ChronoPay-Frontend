@@ -13,6 +13,7 @@ import {
   QuickActions,
   RatingBreakdownBars,
   SecurityStatusCard,
+  createSecurityItems,
   SlotList,
   WalletCard,
   bookingChecklistSteps,
@@ -28,6 +29,7 @@ import {
   emptyResponseTime,
   emptyAcceptanceRate,
 } from "@/components/dashboard";
+import TwoFactorEnroll from "@/components/dashboard/two-factor-enroll";
 import { KycStatusTimeline } from "@/components/dashboard/kyc-status-timeline";
 import { kycTimelineEntries, kycPromptPanel } from "@/components/dashboard/kyc-status-timeline";
 import { SearchTypeahead } from "@/components/dashboard/search-typeahead";
@@ -388,7 +390,20 @@ export default function Dashboard() {
           title="Security Status"
           description="Review your account security settings."
         >
-          <SecurityStatusCard />
+          {isEnrolling2FA ? (
+            <TwoFactorEnroll onComplete={() => {
+              setIsEnrolling2FA(false);
+              setTwoFactorStatus("enabled");
+            }} />
+          ) : (
+            <SecurityStatusCard 
+              items={createSecurityItems({ twoFactor: twoFactorStatus }).map(item => 
+                item.id === "two-factor" && item.status === "disabled"
+                  ? { ...item, onAction: () => setIsEnrolling2FA(true) }
+                  : item
+              )}
+            />
+          )}
         </PanelShell>
 
         {/* Rating Breakdown */}
