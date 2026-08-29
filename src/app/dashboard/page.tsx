@@ -35,6 +35,8 @@ import { FilterSidebar, FilterGroup } from "@/components/dashboard/filter-sideba
 import { ActiveFiltersChips, ChipFilter } from "@/components/dashboard/active-filters-chips";
 import { MarketplaceGrid, MarketplaceItem } from "@/components/dashboard/marketplace-grid";
 import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
+import { useOnboardingTour } from "@/hooks/use-onboarding-tour";
+import { OnboardingTour } from "@/components/dashboard/onboarding-tour";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 import {
@@ -208,6 +210,11 @@ export default function Dashboard() {
     dismissTour,
   } = useOnboardingSamples();
 
+  const {
+    tourOpen,
+    completeTour,
+  } = useOnboardingTour();
+
   // Suppress lint warnings for demo simulation functions
   void simulateMint;
   void simulateBuy;
@@ -351,7 +358,7 @@ export default function Dashboard() {
 
         {/* Wallet and Booking Progress */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <PanelShell title="Wallet">
+          <PanelShell title="Wallet" data-tour-target="wallet-card">
             <WalletCard
               wallet={
                 showSamples
@@ -406,11 +413,11 @@ export default function Dashboard() {
           <PricingCalculator />
         </PanelShell>
 
-        <PanelShell id="quick-actions" title="Quick Actions">
+        <PanelShell id="quick-actions" title="Quick Actions" data-tour-target="quick-actions">
           <QuickActions actions={quickActions} />
         </PanelShell>
 
-        <PanelShell id="available-time-slots" title="Available Time Slots">
+        <PanelShell id="available-time-slots" title="Available Time Slots" data-tour-target="available-time-slots">
           <SlotList
             slots={slots}
             suggestedAlternatives={suggestedAlternatives}
@@ -461,6 +468,11 @@ export default function Dashboard() {
         onSkip={dismissTour}
         onComplete={dismissTour}
         onClearSamples={clearSamples}
+      />
+
+      <OnboardingTour
+        open={tourOpen}
+        onComplete={completeTour}
       />
     </DashboardShell>
   );

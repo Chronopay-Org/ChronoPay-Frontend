@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
+import { useOnboardingTour } from '@/hooks/use-onboarding-tour';
 import TwoFactorEnroll from '@/components/dashboard/two-factor-enroll';
 import { CalendarSyncConnect } from '@/components/dashboard/settings/calendar-sync-connect';
 import { CalendarSyncConflictModal } from '@/components/dashboard/settings/calendar-sync-conflict-modal';
@@ -13,6 +14,7 @@ import { sampleConflicts } from '@/components/dashboard/settings/conflict-mock-d
 
 export default function SettingsPage() {
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
+  const { resetTour } = useOnboardingTour();
 
   const handleSyncWithConflicts = useCallback(() => {
     setConflicts(sampleConflicts);
@@ -84,6 +86,20 @@ export default function SettingsPage() {
             Choose how much spacing you want in your dashboard. Your preference is stored locally and reapplied on every visit.
           </p>
           <DensitySwitcher />
+        </section>
+
+        <section className="rounded-[28px] border border-slate-700 bg-slate-900 p-6">
+          <h2 className="mb-4 text-2xl font-semibold text-white">Onboarding</h2>
+          <p className="mb-6 text-slate-400">
+            Replay the guided tour to learn about key dashboard features.
+          </p>
+          <button
+            type="button"
+            onClick={resetTour}
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-500/10 px-6 py-2 text-sm font-medium text-cyan-300 transition hover:border-cyan-500/50 hover:bg-cyan-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          >
+            Replay tour
+          </button>
         </section>
 
         <section
