@@ -15,81 +15,6 @@ import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 import { ContextualKeysPanel } from "@/app/components/ui/contextual-keys-panel";
-import { Pin, Clock, Star } from 'lucide-react';
-import { useCommandPaletteStorage } from '../hooks/use-command-palette-storage';
-
-// Inside your Command Palette component logic:
-export const CommandPalette = () => {
-  const { pinned, recent, togglePin, trackUsage } = useCommandPaletteStorage();
-  
-  // Example list of all available actions in the app
-  const ALL_ACTIONS = [
-    { id: 'send', label: 'Send Payment', icon: <Send /> },
-    { id: 'settings', label: 'Settings', icon: <Settings /> },
-    // ...
-  ];
-
-  const pinnedActions = ALL_ACTIONS.filter(a => pinned.includes(a.id));
-  const recentActions = ALL_ACTIONS.filter(a => recent.includes(a.id) && !pinned.includes(a.id));
-
-  return (
-    <Command.List role="listbox" aria-label="Command Palette Actions">
-      {pinnedActions.length > 0 && (
-        <Command.Group heading="Pinned" role="presentation">
-          {pinnedActions.map(action => (
-            <ActionRow 
-              key={action.id} 
-              action={action} 
-              isPinned={true} 
-              onPin={() => togglePin(action.id)} 
-              onSelect={() => { trackUsage(action.id); execute(action.id); }}
-            />
-          ))}
-        </Command.Group>
-      )}
-
-      {recentActions.length > 0 && (
-        <Command.Group heading="Recent" role="presentation">
-          {recentActions.map(action => (
-            <ActionRow 
-              key={action.id} 
-              action={action} 
-              isPinned={false} 
-              onPin={() => togglePin(action.id)} 
-              onSelect={() => { trackUsage(action.id); execute(action.id); }}
-            />
-          ))}
-        </Command.Group>
-      )}
-      
-      {/* Existing App Sections... */}
-    </Command.List>
-  );
-};
-
-// Sub-component for accessibility and pinning control
-const ActionRow = ({ action, isPinned, onPin, onSelect }) => (
-  <Command.Item 
-    onSelect={onSelect}
-    className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-accent"
-  >
-    <div className="flex items-center gap-2">
-      {action.icon}
-      <span>{action.label}</span>
-    </div>
-    <button
-      onClick={(e) => {
-        e.stopPropagation(); // Prevent triggering the action
-        onPin();
-      }}
-      aria-label={isPinned ? `Unpin ${action.label}` : `Pin ${action.label}`}
-      aria-pressed={isPinned}
-      className="p-1 transition-colors hover:text-primary"
-    >
-      <Pin className={isPinned ? "fill-current" : "opacity-40"} size={16} />
-    </button>
-  </Command.Item>
-);
 
 function getOnlineStatus() {
   if (typeof navigator === "undefined") return true;
@@ -419,7 +344,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* Nav items */}
           <nav aria-label="Role modules" className="flex flex-col gap-1 px-3 pb-4">
             {navItems.map((item) => (
-              <NavRailItem key={item.href} item={item} pathname={pathname} onClick={closeRail} />
+              <NavLink key={item.href} item={item} pathname={pathname} onClick={closeRail} />
             ))}
           </nav>
 

@@ -86,6 +86,7 @@ export function ReceiptModal({
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isOpen) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedTipAmount(null);
     setCustomTipValue("");
     setTipPromptCompleted(false);

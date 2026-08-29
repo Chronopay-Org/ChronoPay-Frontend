@@ -46,6 +46,7 @@ export function useReceiptNotes(receiptId: string): UseReceiptNotesReturn {
   useEffect(() => {
     receiptIdRef.current = receiptId;
     const saved = loadNotes(receiptId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTextRaw(saved);
     latestRef.current = saved;
     setSaveStatus("saved");

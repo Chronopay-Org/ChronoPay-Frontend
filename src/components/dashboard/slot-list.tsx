@@ -394,7 +394,7 @@ export const SlotList = ({
             return (
               <li
                 key={slot.id}
-                className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5"
+                className="space-y-2 relative"
                 aria-describedby={conflicts[slot.id] ? `conflict-${slot.id}` : undefined}
               >
                 {/* conflict overlay */}
@@ -419,120 +419,108 @@ export const SlotList = ({
                     </span>
                   </div>
                 ) : null}
-                <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 id={slotTitleId} className="text-lg font-semibold text-white">
-                          {slot.title}
-                        </h3>
-                        {isJustAdded(slot.mintedAt) && (
-                          <Tooltip
-                            content="This slot was added within the last 24 hours."
-                            trigger={
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[0.65rem] font-bold tracking-wider text-cyan-300 hover:bg-cyan-400/20 transition-colors cursor-help">
-                                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" aria-hidden="true" />
-                                NEW
-                              </span>
-                            }
-                            triggerClassName="inline-flex"
-                            ariaLabel="New slot: added within the last 24 hours"
-                          />
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-300">
-                        <BidiIsolate locale={locale}>{slot.dateLabel}</BidiIsolate>
-                        <span aria-hidden="true"> · </span>
-                        <BidiIsolate locale={locale}>{slot.timeRange}</BidiIsolate>
-                      </p>
-                    </div>
-                    <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
-                  </div>
-
-              return (
-                <li key={slot.id} className="space-y-2">
-                  {isDropTarget && dropPosition === "before" ? (
-                    <div className="h-1 rounded-full bg-cyan-400/80" />
-                  ) : null}
-                  <div
-                    data-slot-id={slot.id}
-                    draggable
-                    tabIndex={0}
-                    aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
-                    aria-pressed={isSelected}
-                    onDragStart={(event) => {
-                      event.dataTransfer.effectAllowed = "move";
-                      event.dataTransfer.setData("text/plain", slot.id);
-                      setDraggingId(slot.id);
-                      setDragOverId(slot.id);
-                      setGhostPosition({ x: event.clientX, y: event.clientY });
-                    }}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      const rect = event.currentTarget.getBoundingClientRect();
-                      const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after";
-                      setDragOverId(slot.id);
-                      setDropPosition(position);
-                      event.dataTransfer.dropEffect = "move";
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      const sourceId = event.dataTransfer.getData("text/plain") || draggingId;
-                      if (sourceId) {
-                        reorderSlots(sourceId, slot.id, dropPosition);
-                      }
-                      clearDragState();
-                    }}
-                    onDragEnd={() => clearDragState()}
-                    onKeyDown={(event) => handleListKeyDown(slot.id, event)}
-                    className={`rounded-[1.5rem] border p-4 transition-all duration-200 sm:p-5 ${isDragging ? "border-cyan-400/80 bg-cyan-400/10 opacity-70 shadow-[0_0_0_1px_rgba(34,211,238,0.3)]" : isSelected ? "border-cyan-400/40 bg-cyan-400/10" : "border-white/10 bg-white/[0.03] hover:border-cyan-400/30 hover:bg-cyan-400/[0.06]"}`}
-                  >
-                    <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h3 id={slotTitleId} className="text-lg font-semibold text-white">
-                              {slot.title}
-                            </h3>
-                            {isDragging ? (
-                              <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100">
-                                Moving
-                              </span>
-                            ) : null}
-                          </div>
-                          <p className="text-sm text-slate-300">
-                            {slot.dateLabel} · {slot.timeRange}
-                          </p>
-                        </div>
+                
+                {isDropTarget && dropPosition === "before" ? (
+                  <div className="h-1 rounded-full bg-cyan-400/80" />
+                ) : null}
+                
+                <div
+                  data-slot-id={slot.id}
+                  draggable
+                  tabIndex={0}
+                  aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
+                  aria-pressed={isSelected}
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("text/plain", slot.id);
+                    setDraggingId(slot.id);
+                    setDragOverId(slot.id);
+                    setGhostPosition({ x: event.clientX, y: event.clientY });
+                  }}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after";
+                    setDragOverId(slot.id);
+                    setDropPosition(position);
+                    event.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const sourceId = event.dataTransfer.getData("text/plain") || draggingId;
+                    if (sourceId) {
+                      reorderSlots(sourceId, slot.id, dropPosition);
+                    }
+                    clearDragState();
+                  }}
+                  onDragEnd={() => clearDragState()}
+                  onKeyDown={(event) => handleListKeyDown(slot.id, event)}
+                  className={`rounded-[1.5rem] border p-4 transition-all duration-200 sm:p-5 ${isDragging ? "border-cyan-400/80 bg-cyan-400/10 opacity-70 shadow-[0_0_0_1px_rgba(34,211,238,0.3)]" : isSelected ? "border-cyan-400/40 bg-cyan-400/10" : "border-white/10 bg-white/[0.03] hover:border-cyan-400/30 hover:bg-cyan-400/[0.06]"}`}
+                >
+                  <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
-                            Drag to move
-                          </span>
-                          <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
+                          <h3 id={slotTitleId} className="text-lg font-semibold text-white">
+                            {slot.title}
+                          </h3>
+                          {isJustAdded(slot.mintedAt) && (
+                            <Tooltip
+                              content="This slot was added within the last 24 hours."
+                              trigger={
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[0.65rem] font-bold tracking-wider text-cyan-300 hover:bg-cyan-400/20 transition-colors cursor-help">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" aria-hidden="true" />
+                                  NEW
+                                </span>
+                              }
+                              triggerClassName="inline-flex"
+                              ariaLabel="New slot: added within the last 24 hours"
+                            />
+                          )}
+                          {isDragging ? (
+                            <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100">
+                              Moving
+                            </span>
+                          ) : null}
                         </div>
+                        <p className="text-sm text-slate-300">
+                          <BidiIsolate locale={locale}>{slot.dateLabel}</BidiIsolate>
+                          <span aria-hidden="true"> · </span>
+                          <BidiIsolate locale={locale}>{slot.timeRange}</BidiIsolate>
+                        </p>
                       </div>
-                      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-400" id={slotDetailsId}>
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                          {slot.rate}
-                          <HelpPopover
-                            term={glossary.rate}
-                            triggerLabel="Help: slot rate and XLM pricing"
-                          />
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
+                          Drag to move
                         </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          Rate details
-                          <HelpPopover
-                            term={glossary.xlm}
-                            triggerLabel="Help: XLM and Stellar network fees"
-                          />
-                        </span>
+                        <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
                       </div>
-                    </article>
-                  {isDropTarget && dropPosition === "after" ? (
-                    <div className="h-1 rounded-full bg-cyan-400/80" />
-                  ) : null}
-                </li>
-              );
+                    </div>
+                    
+                    <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-400" id={slotDetailsId}>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                        {slot.rate}
+                        <HelpPopover
+                          term={glossary.rate}
+                          triggerLabel="Help: slot rate and XLM pricing"
+                        />
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        Rate details
+                        <HelpPopover
+                          term={glossary.xlm}
+                          triggerLabel="Help: XLM and Stellar network fees"
+                        />
+                      </span>
+                    </div>
+                  </article>
+                </div>
+                
+                {isDropTarget && dropPosition === "after" ? (
+                  <div className="h-1 rounded-full bg-cyan-400/80" />
+                ) : null}
+              </li>
+            );
             })}
           </ul>
 
