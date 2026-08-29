@@ -121,6 +121,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
         </nav>
       </header>
 
+      {/* Page content */}
+      <main id="main-content" className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-6 sm:py-8">
+        {children}
+      </main>
+
       {/* Mobile Drawer */}
       {isOpen && (
         <div
