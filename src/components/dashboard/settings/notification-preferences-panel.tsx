@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 
 type NotificationChannel = "email" | "push" | "sms";
 
@@ -17,6 +17,16 @@ const CHANNELS: { id: NotificationChannel; label: string; shortLabel: string }[]
   { id: "email", label: "Email", shortLabel: "Email" },
   { id: "push", label: "Push", shortLabel: "Push" },
   { id: "sms", label: "SMS", shortLabel: "SMS" },
+];
+
+type SettingsTabId = "account" | "security" | "notifications" | "appearance" | "wallets";
+
+const SETTINGS_TABS: { id: SettingsTabId; label: string }[] = [
+  { id: "account", label: "Account" },
+  { id: "security", label: "Security" },
+  { id: "notifications", label: "Notifications" },
+  { id: "appearance", label: "Appearance" },
+  { id: "wallets", label: "Wallets" },
 ];
 
 const DEFAULT_CATEGORIES: PreferenceCategory[] = [
@@ -59,6 +69,104 @@ function readStoredPreferences() {
   } catch {
     return null;
   }
+}
+
+export function SettingsTabs() {
+  const [activeTab, setActiveTab] = useState<SettingsTabId>("notifications");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (SETTINGS_TABS.some((tab) => tab.id === hash)) {
+      setActiveTab(hash as SettingsTabId);
+    }
+  }, []);
+
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const currentIndex = SETTINGS_TABS.findIndex((tab) => tab.id === activeTab);
+    let nextIndex = currentIndex;
+
+    if (event.key === "ArrowRight") {
+      nextIndex = (currentIndex + 1) % SETTINGS_TABS.length;
+    } else if (event.key === "ArrowLeft") {
+      nextIndex = (currentIndex - 1 + SETTINGS_TABS.length) % SETTINGS_TABS.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = SETTINGS_TABS.length - 1;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    const nextTab = SETTINGS_TABS[nextIndex];
+    setActiveTab(nextTab.id);
+    tabRefs.current[nextIndex]?.focus();
+  };
+
+  return (
+    <div>
+      <div
+        role="tablist"
+        aria-label="Settings sections"
+        className="mb-6 flex flex-wrap gap-2 border-b border-white/10 pb-3"
+      >
+        {SETTINGS_TABS.map((tab, index) => (
+          <button
+            key={tab.id}
+            ref={(node) => {
+              tabRefs.current[index] = node;
+            }}
+            type="button"
+            role="tab"
+            id={`settings-tab-${tab.id}`}
+            aria-selected={activeTab === tab.id}
+            aria-controls={`settings-panel-${tab.id}`}
+            tabIndex={activeTab === tab.id ? 0 : -1}
+            onClick={() => {
+              setActiveTab(tab.id);
+              if (typeof window !== "undefined") {
+                window.location.hash = tab.id;
+              }
+            }}
+            onKeyDown={onTabKeyDown}
+            className={[
+              "inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-medium transition",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+              activeTab === tab.id
+                ? "bg-cyan-300 text-slate-950"
+                : "text-slate-300 hover:bg-white/10 hover:text-white",
+            ].join(" ")}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {SETTINGS_TABS.map((tab) => (
+        <div
+          key={tab.id}
+          id={`settings-panel-${tab.id}`}
+          role="tabpanel"
+          aria-labelledby={`settings-tab-${tab.id}`}
+          tabIndex={0}
+          hidden={activeTab !== tab.id}
+        >
+          {tab.id === "notifications" ? (
+            <NotificationPreferencesPanel />
+          ) : (
+            <div className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6">
+              <h2 className="text-xl font-semibold text-white">
+                {tab.label} settings
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                This section is not implemented yet. Use the tabs above to switch back to Notifications.
+              </p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function NotificationPreferencesPanel() {

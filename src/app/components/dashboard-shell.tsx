@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { clsx } from "clsx";
-import { Menu, X, Shield, Keyboard } from "lucide-react";
+import { Menu, X, Shield, Keyboard, Settings } from "lucide-react";
 import { useRole } from "@/app/components/navigation/RoleContext";
 import { RoleOnboardingDialog } from "@/app/components/navigation/role-onboarding-dialog";
 import { getNavForRole, ROLE_META, type NavItem } from "@/app/components/navigation/role-nav";
@@ -346,6 +346,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 <Keyboard className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
+            <Link
+              href="/dashboard/settings"
+              aria-label="Settings"
+              aria-current={pathname.startsWith("/dashboard/settings") ? "page" : undefined}
+              title="Settings"
+              className={clsx(
+                "rounded-full p-2 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
+                "focus-visible:ring-offset-slate-950",
+                "hover:bg-white/6 text-slate-400 hover:text-white"
+              )}
+            >
+              <Settings className="h-4 w-4" aria-hidden="true" />
+            </Link>
 
             {/* System Status — visible on medium+ screens */}
             <SystemStatus />
