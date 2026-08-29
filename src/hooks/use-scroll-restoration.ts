@@ -22,6 +22,7 @@ export function useScrollRestoration(listId: string) {
         // Only restore if within reasonable time (e.g., 1 hour) to avoid stale data, 
         // or just rely on manual clears (e.g. on filter change)
         if (Date.now() - data.timestamp < 3600000) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setRestoredItemId(data.itemId);
           
           // Wait for render

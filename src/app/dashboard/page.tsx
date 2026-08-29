@@ -14,9 +14,10 @@ import {
   wallet,
   WalletCard,
 } from "@/components/dashboard";
-import { useToast } from "@/hooks/use-toast";
+
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
+import TwoFactorEnroll from "@/components/dashboard/two-factor-enroll";
 
 // ─── Simulated async time-token actions ───────────────────────────────────────
 
@@ -138,6 +139,13 @@ export default function Dashboard() {
         {/* Time Slots */}
         <PanelShell id="available-time-slots" title="Available Time Slots">
           <SlotList slots={slots} />
+        </PanelShell>
+
+        {/* Settings */}
+        <PanelShell id="settings" title="Settings">
+          <div className="max-w-xl">
+            <TwoFactorEnroll onComplete={() => console.log('2FA setup complete')} />
+          </div>
         </PanelShell>
       </div>
     </DashboardShell>
