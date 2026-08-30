@@ -1,4 +1,4 @@
-import { PlanComparison, type PricingPlan } from "@/components/dashboard/plan-comparison";
+import { PlanComparison, type PricingPlan } from "../../components/dashboard/plan-comparison";
 
 /**
  * Pricing Page
