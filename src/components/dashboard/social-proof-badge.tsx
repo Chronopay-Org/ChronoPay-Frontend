@@ -104,4 +104,10 @@ export const BADGE_PRESETS: Record<
     criterion:
       "One of the first 100 sellers to join the ChronoPay platform.",
   },
+  pro: {
+    label: "Pro",
+    tone: "neutral",
+    icon: "Briefcase",
+    criterion: "Professional seller with verified business credentials.",
+  },
 };
