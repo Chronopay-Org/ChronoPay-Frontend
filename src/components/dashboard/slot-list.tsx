@@ -1,58 +1,81 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { useSpring } from "@react-spring/web";
-import { useDrag } from "@use-gesture/react";
+/**
+ * SlotList
+ *
+ * Supplier availability list with:
+ *  - a timezone ribbon, plus a "Rebook a matching slot" carousel when
+ *    suggested alternatives are provided (arrow-key navigable),
+ *  - draggable slot cards that support mouse drag-and-drop reordering, a
+ *    keyboard "nudge" with Alt+Arrow keys, and a multi-step selection gesture
+ *    (Enter / Space toggle, Shift for ranges, Meta/Ctrl to add),
+ *  - a rebooking flow for cancelled / rescheduled time-tokens that opens the
+ *    RebookingDialog with nearest-equivalent slots from the same supplier.
+ *
+ * Accessibility (WCAG 2.1 AA):
+ *  - List rows expose stable aria-labels and toggle state via aria-pressed.
+ *  - All state changes are announced through a polite live region (selection,
+ *    reorder, nudge, conflicts during drag).
+ *  - Drag count / conflict state is also available to keyboard users via the
+ *    same live region once a drag starts.
+ *  - Interactive elements follow the project's focus-ring-cyan pattern.
+ */
+
+import { useCallback, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import clsx from "clsx";
+import { RotateCcw } from "lucide-react";
 import { StatusChip } from "./status-chip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { TimezoneRibbon } from "./timezone-ribbon";
 import { KeepOriginalPriceChip } from "./keep-original-price-chip";
+import { RebookingDialog } from "./rebooking-dialog";
 import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
-import { EmptyStateCard } from "../../app/components/empty-state-card";
+import type {
+  AlternativeSlot,
+  RebookingChoice,
+} from "./rebooking-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-/**
- * A suggested alternative slot shown in the rebooking carousel.
- * Extends the base Slot with optional pricing metadata for the nudge chip.
- */
-export type AlternativeSlot = Slot & {
-  /**
-   * Numeric price in XLM for this alternative slot.
-   * Required for the KeepOriginalPriceChip to compute the price difference.
-   */
-  priceXlm?: number;
-};
+export type { AlternativeSlot } from "./rebooking-utils";
+
+export type RebookingDetail = { alternativeId?: string };
 
 interface SlotListProps {
   slots?: Slot[];
-  suggestedAlternatives?: Slot[];
   supplierId?: string;
   supplierTimeZone?: string;
   supplierName?: string;
   /**
-   * Alternative slots offered to the buyer during a rebooking flow.
-   * When provided (even as an empty array) the "Rebook a matching slot"
-   * section is rendered. Pass `undefined` to hide the section entirely.
+   * Alternative slots offered to the buyer during a rebooking flow. When
+   * provided (even as an empty array) the "Rebook a matching slot" section is
+   * rendered. Pass `undefined` to hide the section entirely.
    */
   suggestedAlternatives?: AlternativeSlot[];
   /**
    * Original booking price in XLM — used by the KeepOriginalPriceChip to
-   * compute whether a price-preservation credit offer should appear on each
-   * alternative card.
+   * compute whether a price-preservation credit offer should appear.
    */
   originalPriceXlm?: number;
   /**
-   * Buyer's available account credit in XLM.
-   * Passed through to KeepOriginalPriceChip on each alternative card.
+   * Buyer's available account credit in XLM. Passed through to the chips.
    */
   availableCreditXlm?: number;
   /**
    * Called when the buyer applies a price-preservation credit on an
-   * alternative slot.  Receives the slot id and price difference covered.
+   * alternative slot. Receives the slot id and price difference covered.
    */
   onApplyCredit?: (slotId: string, priceDiff: number) => void;
+  /**
+   * Called when a cancelled / rescheduled time-token is rebooked through the
+   * dialog. May be async; if it rejects the dialog surfaces an inline error
+   * with a retry action.
+   */
+  onRebookConfirm?: (
+    choice: RebookingChoice,
+    detail: RebookingDetail,
+  ) => Promise<void> | void;
 }
 
 // ─── Local default data ────────────────────────────────────────────────────────
@@ -63,7 +86,7 @@ const localDefaultSlots: Slot[] = [
     title: "1-on-1 Architecture Consultation",
     dateLabel: "Today",
     timeRange: "14:00 - 15:00 UTC",
-    status: "Available",
+    status: "Healthy",
     demand: "High Demand",
     rate: "50 XLM / hr",
     isNextAvailable: true,
@@ -73,19 +96,48 @@ const localDefaultSlots: Slot[] = [
     title: "Code Review & Optimization",
     dateLabel: "Tomorrow",
     timeRange: "10:00 - 11:30 UTC",
-    status: "Booked",
+    status: "Tight",
     demand: "Medium Demand",
     rate: "75 XLM / hr",
     isNextAvailable: false,
   },
+  {
+    id: "slot-3",
+    title: "Pair Programming Session",
+    dateLabel: "Fri, Aug 14",
+    timeRange: "16:00 - 17:30 UTC",
+    status: "Busy",
+    demand: "High Demand",
+    rate: "85 XLM / hr",
+    isNextAvailable: false,
+    lifecycleStatus: "rescheduled",
+  },
 ];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function isRebookable(slot: Slot): boolean {
+  return (
+    slot.lifecycleStatus === "cancelled" ||
+    slot.lifecycleStatus === "rescheduled"
+  );
+}
+
+function toneForStatus(status: string) {
+  const s = status.toLowerCase();
+  if (s === "healthy" || s === "available") return "positive";
+  if (s === "tight" || s === "busy") return "warning";
+  return "neutral";
+}
+
+type DropPosition = "before" | "after";
 
 // ─── SuggestedAlternativesCarousel ────────────────────────────────────────────
 
 /**
  * Internal carousel that renders the suggested alternative slots during
- * a rebooking flow.  Supports arrow-key navigation between cards and
- * surfaces the KeepOriginalPriceChip when there is a price difference.
+ * a rebooking flow. Supports arrow-key navigation between cards and surfaces
+ * the KeepOriginalPriceChip when there is a price difference.
  */
 function SuggestedAlternativesCarousel({
   alternatives,
@@ -101,26 +153,24 @@ function SuggestedAlternativesCarousel({
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const handleCardKeyDown = (
-    e: React.KeyboardEvent<HTMLDivElement>,
+    e: KeyboardEvent<HTMLDivElement>,
     index: number,
   ) => {
+    const count = alternatives.length;
     if (e.key === "ArrowRight" || e.key === "ArrowDown") {
       e.preventDefault();
-      const next = cardRefs.current[(index + 1) % alternatives.length];
-      next?.focus();
+      const next = (index + 1) % count;
+      cardRefs.current[next]?.focus();
     } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
       e.preventDefault();
-      const prev =
-        cardRefs.current[
-          (index - 1 + alternatives.length) % alternatives.length
-        ];
-      prev?.focus();
+      const prev = (index - 1 + count) % count;
+      cardRefs.current[prev]?.focus();
     } else if (e.key === "Home") {
       e.preventDefault();
       cardRefs.current[0]?.focus();
     } else if (e.key === "End") {
       e.preventDefault();
-      cardRefs.current[alternatives.length - 1]?.focus();
+      cardRefs.current[count - 1]?.focus();
     }
   };
 
@@ -162,11 +212,11 @@ function SuggestedAlternativesCarousel({
             tabIndex={0}
             aria-label={cardLabel}
             onKeyDown={(e) => handleCardKeyDown(e, index)}
-            className={[
+            className={clsx(
               "flex min-w-[260px] flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:min-w-0",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
               "transition-colors hover:border-cyan-300/20 hover:bg-white/[0.05]",
-            ].join(" ")}
+            )}
           >
             {/* Card header */}
             <div className="flex items-start justify-between gap-2">
@@ -178,7 +228,7 @@ function SuggestedAlternativesCarousel({
                   {alt.dateLabel} · {alt.timeRange}
                 </p>
               </div>
-              <StatusChip tone={mapToneAlt(alt.status)} className="shrink-0">
+              <StatusChip tone={toneForStatus(alt.status)} className="shrink-0">
                 {alt.status}
               </StatusChip>
             </div>
@@ -196,8 +246,8 @@ function SuggestedAlternativesCarousel({
             {/* Price nudge chip — only when alternative is more expensive */}
             {showPriceChip && (
               <KeepOriginalPriceChip
-                originalPrice={originalPriceXlm!}
-                alternativePrice={alt.priceXlm!}
+                originalPrice={originalPriceXlm as number}
+                alternativePrice={alt.priceXlm as number}
                 availableCredit={availableCreditXlm}
                 onApplyCredit={(diff) => onApplyCredit?.(alt.id, diff)}
               />
@@ -207,13 +257,6 @@ function SuggestedAlternativesCarousel({
       })}
     </div>
   );
-}
-
-function mapToneAlt(status: string) {
-  if (status === "Healthy") return "positive";
-  if (status === "Tight") return "warning";
-  if (status === "Busy") return "danger";
-  return "neutral";
 }
 
 // ─── SlotList ─────────────────────────────────────────────────────────────────
@@ -227,147 +270,231 @@ export const SlotList = ({
   originalPriceXlm,
   availableCreditXlm = 0,
   onApplyCredit,
+  onRebookConfirm,
 }: SlotListProps) => {
-  const [activeTz, setActiveTz] = useState<string>("UTC");
-  const [{ x }, api] = useSpring(() => ({ x: 0 }));
-
-  const [isDragging, setIsDragging] = useState(false);
-  const [conflicts, setConflicts] = useState<Record<string, string>>({});
-
-  const bind = useDrag((state) => {
-    // state.first / state.last indicate drag lifecycle
-    if (state.first) setIsDragging(true);
-    if (state.last) setIsDragging(false);
-
-    // quick examples of conflict detection while dragging
-    // real app should compute based on drop target + business rules
-    if (state.active) {
-      const found: Record<string, string> = {};
-      slots.forEach((s) => {
-        // Existing booking
-        if (s.status && s.status.toLowerCase() === "booked") {
-          found[s.id] = "Existing booking";
-        }
-
-        // Blocked day flag (some slot data may include `blocked`)
-        if ((s as any).blocked) {
-          found[s.id] = "Blocked day";
-        }
-      });
-      setConflicts(found);
-    }
-  });
+  const [orderedSlots, setOrderedSlots] = useState<Slot[]>(slots);
+  const [prevSlots, setPrevSlots] = useState<Slot[]>(slots);
+  // Reflect external prop updates without writing state during effects.
+  if (slots !== prevSlots) {
+    setPrevSlots(slots);
+    setOrderedSlots(slots);
+  }
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{
+    id: string;
+    position: DropPosition;
+  } | null>(null);
+  const [conflicts, setConflicts] = useState<Record<string, string>>({});
+  const [activeRebook, setActiveRebook] = useState<Slot | null>(null);
   const [liveMessage, setLiveMessage] = useState("");
+  const liveMessageTimer = useRef<number | null>(null);
   const lastSelectedId = useRef<string | null>(null);
-  const alternativeRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const announce = useCallback((msg: string) => {
-    setLiveMessage(msg);
-    setTimeout(() => setLiveMessage(""), 3000);
+  const announce = useCallback((message: string) => {
+    if (liveMessageTimer.current !== null) {
+      window.clearTimeout(liveMessageTimer.current);
+    }
+    setLiveMessage(message);
+    liveMessageTimer.current = window.setTimeout(
+      () => setLiveMessage(""),
+      3000,
+    );
   }, []);
 
-  // Announce conflicts to assistive tech when dragging starts
-  useEffect(() => {
-    if (isDragging) {
-      const keys = Object.keys(conflicts);
-      if (keys.length > 0) {
-        announce(`${keys.length} blocked target${keys.length !== 1 ? "s" : ""}.`);
+  // ── Selection (multi-select with range / additive modifiers) ───────────────
+  const toggleSelection = useCallback(
+    (id: string, e?: { shiftKey?: boolean; metaKey?: boolean; ctrlKey?: boolean }) => {
+      const shift = e?.shiftKey ?? false;
+      const meta = e?.metaKey ?? false;
+      const ctrl = e?.ctrlKey ?? false;
+
+      const next = new Set(selectedIds);
+      if (shift && lastSelectedId.current) {
+        const currentIndex = orderedSlots.findIndex((s) => s.id === id);
+        const lastIndex = orderedSlots.findIndex(
+          (s) => s.id === lastSelectedId.current,
+        );
+        if (currentIndex >= 0 && lastIndex >= 0) {
+          if (!meta && !ctrl) next.clear();
+          const start = Math.min(currentIndex, lastIndex);
+          const end = Math.max(currentIndex, lastIndex);
+          for (let i = start; i <= end; i++) {
+            next.add(orderedSlots[i].id);
+          }
+        }
+      } else if (meta || ctrl) {
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
       } else {
-        announce("No conflicts for current drag target.");
-      }
-    }
-    // only when dragging or conflicts change
-  }, [isDragging, conflicts, announce]);
-
-  const toggleSelection = (id: string, e?: React.MouseEvent | React.KeyboardEvent) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      const isShift = e && 'shiftKey' in e && e.shiftKey;
-      const isMeta = e && ('metaKey' in e && (e.metaKey || e.ctrlKey));
-
-      if (isShift && lastSelectedId.current) {
-        const currentIndex = slots.findIndex(s => s.id === id);
-        const lastIndex = slots.findIndex(s => s.id === lastSelectedId.current);
-        const start = Math.min(currentIndex, lastIndex);
-        const end = Math.max(currentIndex, lastIndex);
-        
-        if (!isMeta) {
-          next.clear();
-        }
-
-        for (let i = start; i <= end; i++) {
-          next.add(slots[i].id);
-        }
-      } else if (isMeta) {
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
-      } else {
-        if (next.has(id) && next.size === 1) {
-          next.delete(id);
-        } else {
+        if (next.has(id) && next.size === 1) next.delete(id);
+        else {
           next.clear();
           next.add(id);
         }
       }
-      
-      announce(`${next.size} slot${next.size !== 1 ? 's' : ''} selected.`);
-      
+
+      setSelectedIds(next);
       lastSelectedId.current = id;
-      return next;
-    });
-  };
+      announce(`${next.size} slot${next.size !== 1 ? "s" : ""} selected.`);
+    },
+    [announce, orderedSlots, selectedIds],
+  );
 
-  const handleKeyDown = (id: string, e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggleSelection(id, e);
-    }
-  };
-
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
-    announce("Selection cleared.");
     lastSelectedId.current = null;
-  };
+    announce("Selection cleared.");
+  }, [announce]);
 
-  const mapTone = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === "healthy" || s === "available") return "positive";
-    if (s === "tight") return "warning";
-    if (s === "busy" || s === "booked") return "neutral";
-    return "neutral";
-  };
+  const handleRowKeyDown = useCallback(
+    (slot: Slot, e: KeyboardEvent<HTMLElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggleSelection(slot.id, e);
+        return;
+      }
+      if (e.key === "Escape" && selectedIds.size > 0) {
+        e.preventDefault();
+        clearSelection();
+        return;
+      }
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const dir = e.key === "ArrowDown" ? 1 : -1;
+        const index = orderedSlots.findIndex((s) => s.id === slot.id);
+        const targetIndex = index + dir;
+        if (index < 0 || targetIndex < 0 || targetIndex >= orderedSlots.length)
+          return;
+        const next = [...orderedSlots];
+        [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+        setOrderedSlots(next);
+        announce(
+          `Moved ${slot.title} ${dir === 1 ? "down" : "up"} one position.`,
+        );
+      }
+    },
+    [announce, clearSelection, orderedSlots, selectedIds.size, toggleSelection],
+  );
 
-  const dir = getDir(locale);
+  // ── Drag-and-drop reordering ───────────────────────────────────────────────
+  const clearDragState = useCallback(() => {
+    setIsDragging(false);
+    setDraggingId(null);
+    setDropTarget(null);
+    setConflicts({});
+  }, []);
+
+  const computeConflicts = useCallback(() => {
+    const found: Record<string, string> = {};
+    orderedSlots.forEach((s) => {
+      if (s.status.toLowerCase() === "booked") found[s.id] = "Existing booking";
+      if ((s as Slot & { blocked?: boolean }).blocked)
+        found[s.id] = "Blocked day";
+    });
+    return found;
+  }, [orderedSlots]);
+
+  const handleDragStart = useCallback(
+    (slot: Slot, e: DragEvent<HTMLElement>) => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", slot.id);
+      setDraggingId(slot.id);
+      setIsDragging(true);
+      const found = computeConflicts();
+      setConflicts(found);
+      const count = Object.keys(found).length;
+      announce(
+        count > 0
+          ? `${count} blocked target${count !== 1 ? "s" : ""}.`
+          : "No conflicts for the current drag.",
+      );
+    },
+    [announce, computeConflicts],
+  );
+
+  const handleDragOver = useCallback(
+    (slot: Slot, e: DragEvent<HTMLElement>) => {
+      e.preventDefault();
+      // When the layout engine reports no height (e.g. jsdom) we cannot
+      // compute a midpoint, so default to "before".
+      const rect = e.currentTarget.getBoundingClientRect();
+      const mid = rect.height > 0 ? rect.top + rect.height / 2 : Infinity;
+      const position: DropPosition = e.clientY < mid ? "before" : "after";
+      setDropTarget({ id: slot.id, position });
+      e.dataTransfer.dropEffect = "move";
+    },
+    [],
+  );
+
+  const reorder = useCallback(
+    (sourceId: string, targetId: string, position: DropPosition) => {
+      const sourceIndex = orderedSlots.findIndex((s) => s.id === sourceId);
+      if (sourceIndex < 0) return;
+      const moved = orderedSlots[sourceIndex];
+      const next = orderedSlots.filter((s) => s.id !== sourceId);
+      const targetIndex = next.findIndex((s) => s.id === targetId);
+      // A missing target index (source dropped on itself) anchors to the end
+      // of the list, which keeps the drop deterministic.
+      const insertionPoint =
+        position === "after" ? targetIndex + 1 : targetIndex;
+      const targetTitle = orderedSlots.find((s) => s.id === targetId)?.title;
+      next.splice(insertionPoint, 0, moved);
+      setOrderedSlots(next);
+      setSelectedIds(new Set());
+      lastSelectedId.current = null;
+      announce(
+        position === "after" && targetTitle
+          ? `Moved ${moved.title} after ${targetTitle}.`
+          : `Moved ${moved.title} before ${targetTitle ?? "its drop position"}.`,
+      );
+    },
+    [announce, orderedSlots],
+  );
+
+  const handleDrop = useCallback(
+    (slot: Slot, e: DragEvent<HTMLElement>) => {
+      e.preventDefault();
+      const sourceId =
+        e.dataTransfer.getData("text/plain") || draggingId || null;
+      if (sourceId) {
+        const position =
+          dropTarget?.id === slot.id ? dropTarget.position : "before";
+        reorder(sourceId, slot.id, position);
+      }
+      clearDragState();
+    },
+    [clearDragState, draggingId, dropTarget, reorder],
+  );
+
+  // ── Rebooking flow ─────────────────────────────────────────────────────────
+  const handleRebookConfirm = useCallback(
+    async (choice: RebookingChoice, detail: RebookingDetail) => {
+      await onRebookConfirm?.(choice, detail);
+    },
+    [onRebookConfirm],
+  );
 
   return (
-    <div className="space-y-4" dir={dir}>
+    <div className="space-y-4">
       {/* Timezone Ribbon Header */}
       <TimezoneRibbon
         supplierId={supplierId}
         supplierTimeZone={supplierTimeZone}
         supplierName={supplierName}
-        onTimezoneChange={(_, activeTimeZone) => setActiveTz(activeTimeZone)}
+        onTimezoneChange={() => {}}
       />
 
       {/* ── Suggested alternatives (rebooking flow) ─────────────────────── */}
       {suggestedAlternatives !== undefined && (
         <section aria-labelledby="rebook-heading" className="space-y-3">
           <div className="flex items-center gap-2">
-            <h2
-              id="rebook-heading"
-              className="text-base font-semibold text-white"
-            >
+            <h2 id="rebook-heading" className="text-base font-semibold text-white">
               Rebook a matching slot
             </h2>
-            <span className="text-xs text-slate-400">
-              Suggested alternatives
-            </span>
+            <span className="text-xs text-slate-400">Suggested alternatives</span>
           </div>
           <SuggestedAlternativesCarousel
             alternatives={suggestedAlternatives}
@@ -379,197 +506,202 @@ export const SlotList = ({
       )}
 
       {/* ── Primary slot list ───────────────────────────────────────────── */}
-      {slots.length === 0 ? (
-        <EmptyStateCard
-          title="No slots available"
-          description="There are currently no scheduled availability slots for this supplier."
-        />
+      {orderedSlots.length === 0 ? (
+        <div
+          role="status"
+          className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-8 text-center"
+        >
+          <h2 className="text-base font-semibold text-white">
+            No slots available
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
+            There are currently no scheduled availability slots for this
+            supplier.
+          </p>
+          <p className="mx-auto mt-2 max-w-md text-xs text-slate-500">
+            Rebook a previously cancelled or rescheduled time-token from this
+            supplier, or check back later for newly opened availability
+            windows.
+          </p>
+        </div>
       ) : (
-        <>
-          <ul className="space-y-4" {...bind()}>
-          {slots.map((slot) => {
-            const slotTitleId = "slot-" + slot.id + "-title";
-            const slotDetailsId = "slot-" + slot.id + "-details";
-            const isConflictTarget = activeConflictSlotId === slot.id || activeConflictSlotId === `slot-${slot.id}`;
-
-            return (
-              <li
-                key={slot.id}
-                className="space-y-2 relative"
-                aria-describedby={conflicts[slot.id] ? `conflict-${slot.id}` : undefined}
+        <section aria-label="Availability slots" className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-400">
+              Tip: drag slots to reorder, or use Alt + ↑/↓. Enter selects.
+            </p>
+            {selectedIds.size > 0 ? (
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="text-xs font-semibold text-cyan-300 transition hover:text-cyan-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               >
-                {/* conflict overlay */}
-                {conflicts[slot.id] ? (
-                  <div
-                    className="pointer-events-none absolute inset-0 z-10 rounded-[1.5rem]"
-                    style={{
-                      backgroundColor: 'rgba(220,38,38,0.12)',
-                      backgroundImage:
-                        'repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 6px, transparent 6px 12px)',
-                    }}
-                    aria-hidden={false}
-                    role="img"
-                    aria-label={`Conflict: ${conflicts[slot.id]}`}
-                  >
-                    <span
-                      id={`conflict-${slot.id}`}
-                      className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
-                      style={{ backdropFilter: 'saturate(120%) blur(2px)' }}
-                    >
-                      {conflicts[slot.id]}
-                    </span>
-                  </div>
-                ) : null}
-                
-                {isDropTarget && dropPosition === "before" ? (
-                  <div className="h-1 rounded-full bg-cyan-400/80" />
-                ) : null}
-                
-                <div
+                Clear selection ({selectedIds.size})
+              </button>
+            ) : null}
+          </div>
+          <ul className="space-y-4">
+            {orderedSlots.map((slot) => {
+              const slotTitleId = `slot-${slot.id}-title`;
+              const slotDetailsId = `slot-${slot.id}-details`;
+              const isSelected = selectedIds.has(slot.id);
+              const isBefore =
+                dropTarget?.id === slot.id && dropTarget.position === "before";
+              const isAfter =
+                dropTarget?.id === slot.id && dropTarget.position === "after";
+
+              return (
+                <li
+                  key={slot.id}
                   data-slot-id={slot.id}
                   draggable
                   tabIndex={0}
                   aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
                   aria-pressed={isSelected}
-                  onDragStart={(event) => {
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData("text/plain", slot.id);
-                    setDraggingId(slot.id);
-                    setDragOverId(slot.id);
-                    setGhostPosition({ x: event.clientX, y: event.clientY });
-                  }}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after";
-                    setDragOverId(slot.id);
-                    setDropPosition(position);
-                    event.dataTransfer.dropEffect = "move";
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const sourceId = event.dataTransfer.getData("text/plain") || draggingId;
-                    if (sourceId) {
-                      reorderSlots(sourceId, slot.id, dropPosition);
-                    }
-                    clearDragState();
-                  }}
-                  onDragEnd={() => clearDragState()}
-                  onKeyDown={(event) => handleListKeyDown(slot.id, event)}
-                  className={`rounded-[1.5rem] border p-4 transition-all duration-200 sm:p-5 ${isDragging ? "border-cyan-400/80 bg-cyan-400/10 opacity-70 shadow-[0_0_0_1px_rgba(34,211,238,0.3)]" : isSelected ? "border-cyan-400/40 bg-cyan-400/10" : "border-white/10 bg-white/[0.03] hover:border-cyan-400/30 hover:bg-cyan-400/[0.06]"}`}
+                  onDragStart={(e) => handleDragStart(slot, e)}
+                  onDragOver={(e) => handleDragOver(slot, e)}
+                  onDrop={(e) => handleDrop(slot, e)}
+                  onDragEnd={clearDragState}
+                  onKeyDown={(e) => handleRowKeyDown(slot, e)}
+                  className="relative space-y-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                  aria-describedby={
+                    conflicts[slot.id] ? `conflict-${slot.id}` : undefined
+                  }
                 >
-                  <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 id={slotTitleId} className="text-lg font-semibold text-white">
-                            {slot.title}
-                          </h3>
-                          {isJustAdded(slot.mintedAt) && (
-                            <Tooltip
-                              content="This slot was added within the last 24 hours."
-                              trigger={
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[0.65rem] font-bold tracking-wider text-cyan-300 hover:bg-cyan-400/20 transition-colors cursor-help">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" aria-hidden="true" />
-                                  NEW
-                                </span>
-                              }
-                              triggerClassName="inline-flex"
-                              ariaLabel="New slot: added within the last 24 hours"
-                            />
-                          )}
-                          {isDragging ? (
-                            <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100">
-                              Moving
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="text-sm text-slate-300">
-                          <BidiIsolate locale={locale}>{slot.dateLabel}</BidiIsolate>
-                          <span aria-hidden="true"> · </span>
-                          <BidiIsolate locale={locale}>{slot.timeRange}</BidiIsolate>
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
-                          Drag to move
+                  {isBefore ? (
+                    <div className="h-1 rounded-full bg-cyan-400/80" />
+                  ) : null}
+
+                  <div
+                    className={clsx(
+                      "rounded-[1.5rem] border p-4 transition-colors sm:p-5",
+                      isSelected
+                        ? "border-cyan-400/40 bg-cyan-400/10"
+                        : "border-white/10 bg-white/[0.03] hover:border-cyan-400/30 hover:bg-cyan-400/[0.06]",
+                      isDragging && draggingId === slot.id &&
+                        "border-cyan-400/80 bg-cyan-400/10 opacity-70",
+                    )}
+                  >
+                    {conflicts[slot.id] ? (
+                      <div className="absolute inset-0 z-10 rounded-[1.5rem] bg-red-400/10"
+                        style={{
+                          backgroundImage:
+                            "repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 6px, transparent 6px 12px)",
+                        }}
+                        role="img"
+                        aria-label={`Conflict: ${conflicts[slot.id]}`}
+                      >
+                        <span
+                          id={`conflict-${slot.id}`}
+                          className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
+                        >
+                          {conflicts[slot.id]}
                         </span>
-                        <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
                       </div>
-                    </div>
-                    
-                    <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-400" id={slotDetailsId}>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                        {slot.rate}
-                        <HelpPopover
-                          term={glossary.rate}
-                          triggerLabel="Help: slot rate and XLM pricing"
-                        />
+                    ) : null}
+
+                    <article aria-labelledby={slotTitleId}>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3
+                              id={slotTitleId}
+                              className="text-lg font-semibold text-white"
+                            >
+                              {slot.title}
+                            </h3>
+                            {isDragging && draggingId === slot.id ? (
+                              <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100">
+                                Moving
+                              </span>
+                            ) : null}
+                          </div>
+                          <p
+                            className="text-sm text-slate-300"
+                            id={slotDetailsId}
+                          >
+                            {slot.dateLabel}
+                            <span aria-hidden="true"> · </span>
+                            {slot.timeRange}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
+                            Drag to move
+                          </span>
+                          <StatusChip tone={toneForStatus(slot.status)}>
+                            {slot.status}
+                          </StatusChip>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-400">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
+                          {slot.rate}
+                          <HelpPopover
+                            term={glossary.rate}
+                            triggerLabel="Help: slot rate and XLM pricing"
+                          />
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          Rate details
+                          <HelpPopover
+                            term={glossary.xlm}
+                            triggerLabel="Help: XLM and Stellar network fees"
+                          />
+                        </span>
+                      </div>
+                    </article>
+                  </div>
+
+                  {/* Rebooking trigger for cancelled / rescheduled tokens */}
+                  {isRebookable(slot) ? (
+                    <div className="flex flex-wrap items-center gap-2 pl-1">
+                      <span className="text-xs text-slate-400">
+                        This time-token was {slot.status.toLowerCase()}.
                       </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        Rate details
-                        <HelpPopover
-                          term={glossary.xlm}
-                          triggerLabel="Help: XLM and Stellar network fees"
-                        />
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveRebook(slot)}
+                        aria-label={`Rebook ${slot.title}`}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-200 transition hover:border-cyan-400/60 hover:bg-cyan-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                        Rebook this time-token
+                      </button>
                     </div>
-                  </article>
-                </div>
-                
-                {isDropTarget && dropPosition === "after" ? (
-                  <div className="h-1 rounded-full bg-cyan-400/80" />
-                ) : null}
-              </li>
-            );
+                  ) : null}
+
+                  {isAfter ? (
+                    <div className="h-1 rounded-full bg-cyan-400/80" />
+                  ) : null}
+                </li>
+              );
             })}
           </ul>
-        )}
-
-        {suggestedAlternatives.length > 0 ? (
-            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
-                  <p className="mt-1 text-sm text-slate-300">Suggested alternatives</p>
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {suggestedAlternatives.map((alternative, index) => (
-                  <button
-                    key={alternative.id}
-                    ref={(element) => {
-                      alternativeRefs.current[index] = element;
-                    }}
-                    type="button"
-                    tabIndex={0}
-                    aria-label={`Alternative slot: ${alternative.title}, ${alternative.dateLabel} ${alternative.timeRange}`}
-                    onKeyDown={(event) => handleAlternativeKeyDown(index, event)}
-                    className="rounded-[1.25rem] border border-white/10 bg-slate-900/70 p-4 text-left transition hover:border-cyan-400/40 hover:bg-slate-800/90"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-white">{alternative.title}</p>
-                      <StatusChip tone={mapTone(alternative.status)}>{alternative.status}</StatusChip>
-                    </div>
-                    <p className="mt-2 text-sm text-slate-300">{alternative.dateLabel} · {alternative.timeRange}</p>
-                    <p className="mt-3 text-sm text-slate-400">{alternative.demand}</p>
-                    <p className="mt-2 text-sm text-cyan-200">{alternative.rate}</p>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ) : (
-            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-              <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
-              <p className="mt-2 text-sm text-slate-300">No matching alternatives found</p>
-              <p className="mt-1 text-sm text-slate-400">No alternatives</p>
-            </section>
-          )}
-        </>
+        </section>
       )}
 
-      {/* Live region for multi-select announcements */}
-      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+      {/* Rebooking dialog — open for the active cancelled/rescheduled token */}
+      <RebookingDialog
+        open={activeRebook !== null}
+        onClose={() => setActiveRebook(null)}
+        tokenTitle={activeRebook?.title ?? ""}
+        tokenDateLabel={activeRebook?.dateLabel ?? ""}
+        tokenTimeRange={activeRebook?.timeRange ?? ""}
+        originalPriceXlm={originalPriceXlm}
+        alternatives={suggestedAlternatives}
+        onConfirm={handleRebookConfirm}
+      />
+
+      {/* Live region for multi-select / reorder announcements */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label="Slot list announcements"
+        className="sr-only"
+      >
         {liveMessage}
       </div>
     </div>

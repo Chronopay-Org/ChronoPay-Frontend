@@ -23,6 +23,9 @@ export default defineConfig({
         "src/components/receipt/Receipt.tsx",
         "src/components/marketplace/results-per-page-selector.tsx",
         "src/components/dashboard/plan-comparison.tsx",
+        "src/components/dashboard/rebooking-utils.ts",
+        "src/components/dashboard/rebooking-dialog.tsx",
+        "src/components/dashboard/slot-list.tsx",
       ],
       thresholds: {
         lines: 95,
