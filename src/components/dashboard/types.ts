@@ -1,6 +1,6 @@
-export type Tone = "neutral" | "positive" | "warning" | "critical";
+export type Tone = "neutral" | "positive" | "warning" | "critical" | "muted";
 
-export type AvailabilityLevel = "Healthy" | "Tight" | "Busy";
+export type AvailabilityLevel = "Healthy" | "Tight" | "Busy" | "Sold Out";
 
 export type Slot = {
   id: string;
@@ -10,7 +10,13 @@ export type Slot = {
   demand: string;
   rate: string;
   status: AvailabilityLevel;
+  /** Duration in minutes for this slot (used by duration filter chips) */
+  durationMinutes?: number;
   isNextAvailable?: boolean;
+  /** ISO 8601 string of when the slot was created */
+  mintedAt?: string;
+  /** When true, row is demo/onboarding content and must show a Sample badge. */
+  isSample?: boolean;
   badges?: SocialProofBadgeEntry[];
 };
 
@@ -19,7 +25,15 @@ export type QuickAction = {
   description: string;
   href: string;
   tone: Tone;
-  icon: string; // lucide-react icon name
+  icon: string;
+};
+
+export type EarningsSegment = {
+  id: string;
+  label: string;
+  value: number;
+  formattedValue: string;
+  colorClass: string;
 };
 
 export type Metric = {
@@ -27,11 +41,42 @@ export type Metric = {
   value: string;
   detail: string;
   tone: Tone;
+  breakdown?: EarningsSegment[];
 };
+
+export type DraftStatus = "saved" | "saving" | "offline";
+export type AutosaveStatus = "saving" | "saved" | "offline" | "error";
 
 export type BookingStage = {
   label: string;
   value: number;
+};
+
+export type WalletHoldingStatus = "available" | "escrowed" | "redeemed";
+
+export type WalletHolding = {
+  id: string;
+  title: string;
+  amount: string;
+  detail: string;
+  status: WalletHoldingStatus;
+};
+
+export type WalletActivityEntry = {
+  id: string;
+  type: "mint" | "transfer" | "redemption" | "settlement";
+  title: string;
+  amount: string;
+  date: string;
+  detail: string;
+};
+
+export type WalletLifetimeStats = {
+  totalMinted: string;
+  totalTraded: string;
+  totalRedeemed: string;
+  transactionCount: number;
+  accountAge: string;
 };
 
 export type WalletSnapshot = {
@@ -49,6 +94,7 @@ export type SocialProofBadgeType =
   | "repeatBuyers"
   | "fastResponse"
   | "verified"
+  | "verifiedPayouts"
   | "earlyAdopter";
 
 export type SocialProofBadgeEntry = {
@@ -57,6 +103,14 @@ export type SocialProofBadgeEntry = {
   tone: Tone;
   icon: string;
   criterion: string;
+  explainerKey?: string;
+};
+
+export type RegionInfo = {
+  country: string;
+  countryCode?: string;
+  timezone?: string;
+  currency?: string;
 };
 
 export type Supplier = {
@@ -64,4 +118,105 @@ export type Supplier = {
   name: string;
   title: string;
   badges: SocialProofBadgeEntry[];
+  region?: RegionInfo;
+};
+
+export type CalendarSyncProvider = {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  scopes: string[];
+};
+
+export type CalendarDefinition = {
+  id: string;
+  providerId: string;
+  title: string;
+  description: string;
+  color: string;
+};
+
+export type SyncDirection = "off" | "read" | "write" | "bidirectional";
+
+export type AuthorizationState =
+  | { status: "idle" }
+  | { status: "connecting"; providerId: string }
+  | { status: "authorizing"; providerId: string }
+  | { status: "authorized"; providerId: string; calendars: CalendarDefinition[] }
+  | { status: "denied"; providerId: string; deniedScopes: string[]; error: string };
+
+export type QueuedActionStatus = "pending" | "retrying" | "completed" | "failed";
+
+export type QueuedAction = {
+  id: string;
+  label: string;
+  status: QueuedActionStatus;
+  queuedAt: string;
+  error?: string;
+};
+
+export type OfflineQueueConnectionState = "online" | "offline" | "reconnecting";
+
+export type OfflineQueueState = {
+  connection: OfflineQueueConnectionState;
+  queue: QueuedAction[];
+};
+
+export type RefundDestination = "wallet" | "card";
+
+export type RefundDestinationOption = {
+  id: RefundDestination;
+  label: string;
+  description: string;
+  eta: string;
+  fee: string;
+  icon: string;
+  recommended?: boolean;
+  badge?: string;
+};
+
+export type RefundDestinationSubmission = {
+  destination: RefundDestination;
+  option: RefundDestinationOption;
+};
+
+/** Supplier trust metric with sparkline history */
+export type TrustMetric = {
+  id: string;
+  label: string;
+  value: string;
+  unit: string;
+  trend: "up" | "down" | "stable";
+  history: { values: number[] };
+  tooltip: string;
+  tone: Tone;
+};
+
+/** A single criterion in a rating breakdown (e.g. Communication, Expertise). */
+export type RatingCriterion = {
+  id: string;
+  /** Short human-readable label such as "Communication" */
+  label: string;
+  /** Average score on a 1–5 scale */
+  average: number;
+  /** Number of reviews used to compute this average */
+  count: number;
+  /** Sequential-palette bar colour class, e.g. "bg-cyan-500" */
+  colorClass: string;
+};
+
+export type SentimentBucket = "all" | "positive" | "mixed" | "critical";
+
+export type SentimentCounts = {
+  positive: number;
+  mixed: number;
+  critical: number;
+};
+
+export type SentimentDataPoint = {
+  timestamp: string;
+  positive: number;
+  mixed: number;
+  critical: number;
 };

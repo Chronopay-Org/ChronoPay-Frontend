@@ -122,4 +122,68 @@ export const glossary = {
     learnMoreHref: "https://stellar.org",
     learnMoreLabel: "Learn about Stellar →",
   },
+
+  /**
+   * Base price — the per-session floor price suppliers set for a service.
+   * Can be combined with multipliers or discounts, but the base is the
+   * canonical rate a buyer sees first.
+   */
+  basePrice: {
+    title: "Base price",
+    body: "The base price is the starting per-session rate in XLM a buyer will see when browsing your service. You can apply discounts or multipliers later without changing the base.",
+    learnMoreHref: "/docs/onboarding#base-price",
+    learnMoreLabel: "Learn more about base pricing →",
+  },
+
+  /**
+   * Session duration — how long one booking lasts, in minutes.
+   * ChronoPay mirrors marketplace norms with 15-minute increments.
+   */
+  sessionDuration: {
+    title: "Session duration",
+    body: "The length of a single booked session in minutes. ChronoPay stores durations in 15-minute increments so buyers can stitch sessions cleanly into their calendar.",
+    learnMoreHref: "/docs/onboarding#session-duration",
+    learnMoreLabel: "Learn more about durations →",
+  },
+
+  /**
+   * Platform fee — the marketplace commission taken per booking.
+   */
+  platformFee: {
+    title: "Platform fee",
+    body: "ChronoPay takes a flat percentage on completed bookings to maintain the marketplace, scheduling infrastructure, and smart contract orchestration.",
+    learnMoreHref: "/docs/pricing#platform-fee",
+    learnMoreLabel: "Learn more about platform fees →",
+  },
+
+  /**
+   * Network fee — Stellar ledger transaction cost.
+   */
+  networkFee: {
+    title: "Network fee",
+    body: "A small fixed XLM fee paid to the Stellar network for each transaction. This covers ledger operations like token transfers and escrow settlement.",
+    learnMoreHref: "/docs/pricing#network-fee",
+    learnMoreLabel: "Learn more about network fees →",
+  },
+
+  /**
+   * Take-home — the amount settled to your wallet after all deductions.
+   */
+  takeHome: {
+    title: "Take-home earnings",
+    body: "The final amount settled directly to your wallet after all network and platform fees are deducted from the base session price.",
+    learnMoreHref: "/docs/pricing#take-home",
+    learnMoreLabel: "Learn more about take-home →",
+  },
+
+  /**
+   * Price preservation credit — account credit used to lock the original
+   * booking price when rebooking a more expensive alternative slot.
+   */
+  pricePreservationCredit: {
+    title: "Price preservation credit",
+    body: "When you rebook a slot priced higher than your original, ChronoPay can apply your account credit to cover the difference so you pay the original price. No action is taken until you confirm.",
+    learnMoreHref: "/docs/rebooking#price-preservation",
+    learnMoreLabel: "Learn more about price preservation →",
+  },
 } satisfies Record<string, GlossaryTerm>;

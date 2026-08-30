@@ -22,19 +22,42 @@ export const ALL_ROLES: UserRole[] = ["supplier", "buyer", "admin"];
 
 // ─── Nav item shape ───────────────────────────────────────────────────────────
 
+export type NavBadge =
+  | { type: "dot" }
+  | { type: "count"; value: number };
+
 export interface NavItem {
   /** Route href */
   href: string;
   /** Display label */
   label: string;
   /**
-   * Unicode/emoji icon rendered with aria-hidden="true".
+   * Unicode/emoji icon rendered with aria-hidden={true}.
    * A text label is ALWAYS shown alongside the icon so colour / shape is never
    * the only differentiator (WCAG 1.4.1).
    */
   icon: string;
   /** aria-label override for screen readers when label alone is ambiguous */
   ariaLabel?: string;
+  /** Optional badge indicator (dot or count) */
+  badge?: NavBadge;
+}
+
+/**
+ * Formats a badge count for visual display, capping at "99+".
+ */
+export function formatBadgeCount(value: number): string {
+  return value > 99 ? "99+" : value.toString();
+}
+
+/**
+ * Generates an accessible screen reader announcement for the badge.
+ */
+export function getBadgeAriaLabel(badge: NavBadge): string {
+  if (badge.type === "dot") {
+    return "New updates available";
+  }
+  return `${badge.value} new ${badge.value === 1 ? "update" : "updates"}`;
 }
 
 // ─── Shared primitives (common to every role) ─────────────────────────────────
@@ -145,4 +168,71 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
  */
 export function getNavForRole(role: UserRole): NavItem[] {
   return ROLE_NAV[role] ?? BUYER_NAV;
+}
+
+// ─── Bottom-nav overflow ──────────────────────────────────────────────────────
+
+/**
+ * Maximum number of items visible directly in the bottom bar (including the
+ * "More" trigger when overflow is active). Keep ≤ 5 so each tap target
+ * satisfies WCAG 2.5.5 (44 × 44 px minimum) on a 375 px viewport.
+ */
+export const BOTTOM_NAV_MAX_VISIBLE = 4;
+
+/** localStorage key that stores an ordered array of pinned hrefs per role. */
+export const PINNED_NAV_STORAGE_KEY = "chronopay:pinnedNav";
+
+/**
+ * Reads pinned hrefs for a given role from localStorage.
+ * Returns an empty array on error or when nothing is stored yet.
+ */
+export function readPinnedHrefs(role: UserRole): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(PINNED_NAV_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Partial<Record<UserRole, string[]>>;
+    return Array.isArray(parsed[role]) ? (parsed[role] as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Writes pinned hrefs for a given role to localStorage.
+ */
+export function writePinnedHrefs(role: UserRole, hrefs: string[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(PINNED_NAV_STORAGE_KEY);
+    const parsed: Partial<Record<UserRole, string[]>> = raw
+      ? (JSON.parse(raw) as Partial<Record<UserRole, string[]>>)
+      : {};
+    parsed[role] = hrefs;
+    window.localStorage.setItem(PINNED_NAV_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // ignore write failures
+  }
+}
+
+/**
+ * Given a full nav list and a set of pinned hrefs, returns items sorted so
+ * pinned items come first (in pin order), followed by the rest in original
+ * order.  The first `BOTTOM_NAV_MAX_VISIBLE` of the result are shown directly;
+ * the remainder appear in the overflow sheet.
+ */
+export function sortNavByPins(items: NavItem[], pinnedHrefs: string[]): NavItem[] {
+  const pinSet = new Set(pinnedHrefs);
+  const pinIndex = (href: string) => {
+    const i = pinnedHrefs.indexOf(href);
+    return i === -1 ? Infinity : i;
+  };
+  return [...items].sort((a, b) => {
+    const aPinned = pinSet.has(a.href);
+    const bPinned = pinSet.has(b.href);
+    if (aPinned && bPinned) return pinIndex(a.href) - pinIndex(b.href);
+    if (aPinned) return -1;
+    if (bPinned) return 1;
+    return 0; // preserve original relative order
+  });
 }

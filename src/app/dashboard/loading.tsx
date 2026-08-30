@@ -14,15 +14,15 @@ export default function DashboardLoading() {
           <section
             key={item}
             className="glass-panel rounded-[2rem] p-6 sm:p-8"
-            aria-hidden="true"
+            aria-hidden={true}
           >
-            <div className="h-6 w-28 rounded-full bg-white/8" />
-            <div className="mt-5 h-10 max-w-xl rounded-2xl bg-white/10" />
-            <div className="mt-3 h-5 max-w-2xl rounded-full bg-white/6" />
+            <div className="skeleton h-6 w-28 rounded-full" />
+            <div className="skeleton mt-5 h-10 max-w-xl rounded-2xl" />
+            <div className="skeleton mt-3 h-5 max-w-2xl rounded-full" />
             <div className="mt-8 grid gap-3">
-              <div className="h-12 rounded-2xl bg-white/6" />
-              <div className="h-12 rounded-2xl bg-white/6" />
-              <div className="h-12 rounded-2xl bg-white/6" />
+              <div className="skeleton h-12 rounded-2xl" />
+              <div className="skeleton h-12 rounded-2xl" />
+              <div className="skeleton h-12 rounded-2xl" />
             </div>
           </section>
         ))}
@@ -31,7 +31,7 @@ export default function DashboardLoading() {
         {[0, 1, 2].map((item) => (
           <div
             key={item}
-            className="glass-panel h-40 rounded-[1.5rem] bg-white/4"
+            className="skeleton glass-panel h-40 rounded-[1.5rem]"
             aria-hidden="true"
           />
         ))}

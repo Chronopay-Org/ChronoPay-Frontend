@@ -24,7 +24,7 @@ export function ResumedBadge(_props: ResumedBadgeProps) {
       role="status"
       aria-live="polite"
     >
-      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden={true} />
       <span>Resumed where you left off</span>
     </div>
   );

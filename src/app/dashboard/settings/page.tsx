@@ -1,0 +1,1 @@
+import { DashboardShell } from "@/app/components/dashboard-shell";export default function SettingsPage() { return <DashboardShell><h1>Settings</h1></DashboardShell>; }
