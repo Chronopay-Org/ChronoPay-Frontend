@@ -1,8 +1,14 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { SlotList } from "./slot-list";
 import type { Slot } from "./types";
 import type { AvailabilityConflict } from "./availability-conflict-detector";
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  usePathname: () => "/mock-path",
+}));
 
 const suggestedAlternatives: Slot[] = [
   {
@@ -160,5 +166,16 @@ describe("SlotList", () => {
     expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(
       /Product strategy call/i,
     );
+  });
+
+  it("can switch to calendar views", () => {
+    render(<SlotList slots={slots} />);
+    
+    // Switch to month view
+    const monthButton = screen.getByRole("button", { name: /month/i });
+    fireEvent.click(monthButton);
+    
+    // the calendar grid should be rendered
+    expect(screen.getByRole("grid", { name: /month calendar view/i })).toBeInTheDocument();
   });
 });

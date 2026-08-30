@@ -10,6 +10,8 @@ import { KeepOriginalPriceChip } from "./keep-original-price-chip";
 import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { CalendarView } from "./calendar-view";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -229,6 +231,19 @@ export const SlotList = ({
   onApplyCredit,
 }: SlotListProps) => {
   const [activeTz, setActiveTz] = useState<string>("UTC");
+  
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const viewParam = searchParams.get("view");
+  const viewMode = (viewParam === "month" || viewParam === "week" || viewParam === "day") ? viewParam : "list";
+  
+  const setViewMode = (mode: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("view", mode);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   const [{ x }, api] = useSpring(() => ({ x: 0 }));
 
   const [isDragging, setIsDragging] = useState(false);
@@ -378,6 +393,24 @@ export const SlotList = ({
         </section>
       )}
 
+      {/* ── View Toggle ───────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 mb-4" role="group" aria-label="View mode">
+        {["list", "month", "week", "day"].map((mode) => (
+          <button
+            key={mode}
+            onClick={() => setViewMode(mode)}
+            aria-pressed={viewMode === mode}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors capitalize ${
+              viewMode === mode
+                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10"
+            }`}
+          >
+            {mode}
+          </button>
+        ))}
+      </div>
+
       {/* ── Primary slot list ───────────────────────────────────────────── */}
       {slots.length === 0 ? (
         <EmptyStateCard
@@ -386,6 +419,7 @@ export const SlotList = ({
         />
       ) : (
         <>
+          {viewMode === "list" ? (
           <ul className="space-y-4" {...bind()}>
           {slots.map((slot) => {
             const slotTitleId = "slot-" + slot.id + "-title";
@@ -524,6 +558,8 @@ export const SlotList = ({
             );
             })}
           </ul>
+        ) : (
+          <CalendarView slots={slots} viewMode={viewMode as "month" | "week" | "day"} />
         )}
 
         {suggestedAlternatives.length > 0 ? (
