@@ -86,7 +86,7 @@ export function MarketplaceGrid({
       <LiveRegion ariaLive="polite">
         Found {filteredItems.length} items
         {searchParams.get("q")
-          ? ` matching "${searchParams.get("q")}"`
+          ? ` matching &quot;${searchParams.get("q")}&quot;`
           : ""}
       </LiveRegion>
 
@@ -97,7 +97,7 @@ export function MarketplaceGrid({
               No items found
             </h3>
             <p className="mt-2 text-sm text-zinc-500">
-              Try adjusting your search or filters to find what you're looking
+              Try adjusting your search or filters to find what you&apos;re looking
               for.
             </p>
           </div>
