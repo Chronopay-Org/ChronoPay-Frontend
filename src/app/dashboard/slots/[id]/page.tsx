@@ -8,6 +8,7 @@ import { StatusChip } from "@/components/dashboard/status-chip";
 import { OrderSummaryDrawer } from "@/components/dashboard/order-summary-drawer";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { ReceiptModal } from "@/components/receipt";
+import { RedeemTokenModal } from "@/components/dashboard/redeem-token-modal";
 import type { ReceiptData } from "@/components/receipt";
 import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
 import { GiftPurchaseToggle } from "@/components/dashboard/gift-purchase-toggle";
@@ -146,6 +147,7 @@ export default function SlotDetailPage({
 
   // MODAL / CHECKOUT STATE
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [purchaseStep, setPurchaseStep] = useState<"auth" | "confirm" | "loading" | "success">("auth");
   const [loadingMessage, setLoadingMessage] = useState("");
   const [txHash, setTxHash] = useState("");
@@ -1016,11 +1018,20 @@ export default function SlotDetailPage({
                   <div className="flex flex-col gap-2.5">
                     <button
                       type="button"
+                      onClick={() => setIsRedeemModalOpen(true)}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 px-4 py-2.5 text-xs border border-emerald-400/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20"
+                    >
+                      Redeem Time Token
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => alert("Simulated Calendar Link: Dynamic Google Calendar invite dispatched successfully.")}
                       className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-cyan-400/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20"
                     >
                       Add Booking to Calendar
                     </button>
+
 
                     <a
                       href="https://stellar.expert"
@@ -1051,6 +1062,13 @@ export default function SlotDetailPage({
         isOpen={isReceiptOpen}
         onClose={() => setIsReceiptOpen(false)}
         receipt={receipt}
+      />
+
+      {/* ----------------- TOKEN REDEMPTION DIALOG ----------------- */}
+      <RedeemTokenModal
+        isOpen={isRedeemModalOpen}
+        onClose={() => setIsRedeemModalOpen(false)}
+        tokenCode={`CHR-${slot.id.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`}
       />
     </DashboardShell>
   );
