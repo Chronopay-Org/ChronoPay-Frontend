@@ -1,11 +1,15 @@
 "use client";
 
+import { useCallback, useId } from "react";
 import { HelpPopover } from "@/app/components/ui/help-popover";
+import { CopyButton } from "@/app/components/ui/copy-button";
 import { glossary } from "@/lib/glossary";
 import type { AutosaveStatus, BookingStage } from "./types";
 import { AutosaveIndicator } from "./autosave-indicator";
 import { LiveRegion } from "@/components/common/LiveRegion";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { truncateHash } from "@/components/receipt/masking";
+import { ArrowLeft, ArrowRight, Check, ExternalLink } from "lucide-react";
 
 export type BookingFlowValidationSummary = {
   title?: string;
@@ -300,5 +304,267 @@ export function BookingFlowShell({
         </section>
       </div>
     </div>
+  );
+}
+
+// ─── RefundTracker ────────────────────────────────────────────────────────────
+
+/**
+ * RefundTracker — multi-stage refund progress UI with ETA and a copyable
+ * on-chain transaction hash.
+ *
+ * Refunds flow through four stages (requested → approved → broadcast →
+ * settled). The tracker renders each as a chip with an explicit text label
+ * and an sr-only state suffix ("completed" / "current" / "upcoming") so
+ * status is never conveyed by colour alone (WCAG 2.1 AA). ETA microcopy and
+ * a summary note describe the current stage, and the transaction hash row
+ * (once broadcast) offers a copy button with a success toast plus a
+ * "View on explorer" link (noopener/noreferrer).
+ *
+ * Accessibility:
+ *  - Branded section, four labelled stage chips with aria-current="step",
+ *  - a polite live region announcing the current stage, and
+ *  - focus-visible rings on all interactive elements.
+ */
+
+export const REFUND_STAGES = [
+  "requested",
+  "approved",
+  "broadcast",
+  "settled",
+] as const;
+
+export type RefundStage = (typeof REFUND_STAGES)[number];
+
+export type RefundTrackerProps = {
+  /** The stage the refund is currently at. */
+  currentStage: RefundStage;
+  /** On-chain Stellar transaction hash, present once broadcast. */
+  transactionHash?: string;
+  /** Ledger explorer base URL. Defaults to stellar.expert public explorer. */
+  explorerBaseUrl?: string;
+  /** Human-readable ETA, e.g. "by Apr 3, 12:00 UTC". */
+  estimatedCompletion?: string;
+  /** Optional amount being refunded, e.g. "150 XLM". */
+  amount?: string;
+};
+
+type RefundStageState = "complete" | "current" | "pending";
+
+const DEFAULT_EXPLORER_BASE_URL = "https://stellar.expert/explorer/public/tx";
+
+const REFUND_STAGE_COPY: Record<
+  RefundStage,
+  { label: string; note: string }
+> = {
+  requested: {
+    label: "Requested",
+    note: "Your refund request has been received and is awaiting approval.",
+  },
+  approved: {
+    label: "Approved",
+    note: "Your refund was approved and is being prepared for broadcast.",
+  },
+  broadcast: {
+    label: "Broadcast",
+    note: "The refund transaction has been broadcast to the Stellar network and is settling on-chain.",
+  },
+  settled: {
+    label: "Settled",
+    note: "Your refund has settled on-chain. The funds are on their way to your account.",
+  },
+};
+
+const stageStateLabel: Record<RefundStageState, string> = {
+  complete: "completed",
+  current: "current",
+  pending: "upcoming",
+};
+
+const chipClasses: Record<RefundStageState, string> = {
+  complete:
+    "border-emerald-400/40 bg-emerald-400/10 text-emerald-100",
+  current:
+    "border-cyan-400/70 bg-cyan-400/10 text-cyan-100",
+  pending: "border-white/10 bg-white/[0.04] text-slate-400",
+};
+
+export function RefundTracker({
+  currentStage,
+  transactionHash,
+  explorerBaseUrl = DEFAULT_EXPLORER_BASE_URL,
+  estimatedCompletion,
+  amount,
+}: RefundTrackerProps) {
+  const headingId = useId();
+  const { toast } = useToast();
+
+  const currentIndex = REFUND_STAGES.indexOf(currentStage);
+  const isValid = currentIndex !== -1;
+
+  const etaPrefix = "Estimated completion";
+  const etaText = estimatedCompletion
+    ? `${etaPrefix}: ${estimatedCompletion}.`
+    : `${etaPrefix}: typically within 2–4 hours.`;
+
+  const announcement = isValid
+    ? `Refund stage ${currentIndex + 1} of ${REFUND_STAGES.length}: ${
+        REFUND_STAGE_COPY[currentStage].label
+      }. ${REFUND_STAGE_COPY[currentStage].note}${
+        currentStage === "settled" ? "" : ` ${etaText}`
+      }`
+    : "Refund status unavailable.";
+
+  const handleCopied = useCallback(() => {
+    toast({
+      variant: "success",
+      title: "Copied",
+      description: "Transaction hash copied to clipboard.",
+      duration: 2000,
+    });
+  }, [toast]);
+
+  if (!isValid) {
+    return (
+      <div className="space-y-4">
+        <LiveRegion role="status" ariaLive="polite">
+          {`Refund stage ${REFUND_STAGES.length}. Refund status unavailable.`}
+        </LiveRegion>
+        <div
+          role="alert"
+          className="rounded-2xl border border-amber-400/25 bg-amber-500/5 p-4"
+        >
+          <p className="text-sm font-medium text-amber-100">
+            Refund status unavailable
+          </p>
+          <p className="mt-1 text-xs text-amber-50/80">
+            We couldn&apos;t determine the current refund stage. Please refresh the
+            page or contact support.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <section aria-labelledby={headingId} className="space-y-4">
+      <LiveRegion role="status" ariaLive="polite">
+        {announcement}
+      </LiveRegion>
+
+      {/* Heading row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 id={headingId} className="text-base font-semibold text-white">
+          Refund status
+        </h3>
+        <HelpPopover
+          term={glossary.refundTracking}
+          triggerLabel="Help: refund tracking"
+        />
+        {amount ? (
+          <span className="ml-auto rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2.5 py-1 text-xs font-medium text-cyan-100">
+            Refund of {amount}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Stage chips */}
+      <ol
+        aria-label="Refund stages"
+        className="flex flex-wrap items-center gap-x-2 gap-y-3"
+      >
+        {REFUND_STAGES.map((stage, index) => {
+          const state: RefundStageState =
+            index < currentIndex
+              ? "complete"
+              : index === currentIndex
+                ? "current"
+                : "pending";
+          return (
+            <li
+              key={stage}
+              className="flex items-center gap-2"
+              aria-current={state === "current" ? "step" : undefined}
+            >
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${chipClasses[state]}`}
+              >
+                {state === "complete" ? (
+                  <Check size={12} strokeWidth={3} aria-hidden="true" />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      state === "current"
+                        ? "bg-cyan-300"
+                        : "bg-slate-500"
+                    }`}
+                  />
+                )}
+                {REFUND_STAGE_COPY[stage].label}
+                <span className="sr-only">({stageStateLabel[state]})</span>
+              </span>
+              {index < REFUND_STAGES.length - 1 ? (
+                <span aria-hidden="true" className="h-px w-3 bg-white/10" />
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+
+      {/* Stage summary + ETA */}
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+          Stage summary
+        </p>
+        <p className="mt-2 text-sm text-slate-200">
+          {REFUND_STAGE_COPY[currentStage].note}
+        </p>
+        <p
+          className={`mt-2 text-sm font-medium ${
+            currentStage === "settled" ? "text-emerald-300" : "text-cyan-200"
+          }`}
+        >
+          {currentStage === "settled"
+            ? `Refund complete${amount ? ` — ${amount} returned to your account` : ""}.`
+            : etaText}
+        </p>
+      </div>
+
+      {/* Transaction hash row */}
+      {transactionHash ? (
+        <div className="rounded-xl border border-white/10 bg-slate-950/40 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Transaction hash
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-slate-200" title={transactionHash}>
+                {truncateHash(transactionHash)}
+              </span>
+              <CopyButton
+                text={transactionHash}
+                variant="icon"
+                label="Copy transaction hash"
+                onCopied={handleCopied}
+              />
+              <a
+                href={`${explorerBaseUrl}/${transactionHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-200 transition hover:border-cyan-300/30 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              >
+                View on explorer
+                <ExternalLink size={13} aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p role="status" className="text-sm text-slate-400">
+          Transaction hash will appear once the refund is broadcast.
+        </p>
+      )}
+    </section>
   );
 }

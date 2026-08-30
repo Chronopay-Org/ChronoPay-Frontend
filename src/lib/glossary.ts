@@ -186,4 +186,15 @@ export const glossary = {
     learnMoreHref: "/docs/rebooking#price-preservation",
     learnMoreLabel: "Learn more about price preservation →",
   },
+
+  /**
+   * Refund tracking — the lifecycle of a refund as it flows towards the
+   * buyer's wallet on the Stellar network.
+   */
+  refundTracking: {
+    title: "Refund tracking",
+    body: "Refunds move through four stages — requested, approved, broadcast, and settled. Use the progress chips and the on-chain transaction hash to follow the refund to your wallet.",
+    learnMoreHref: "/docs/refunds#tracking",
+    learnMoreLabel: "Learn more about refunds →",
+  },
 } satisfies Record<string, GlossaryTerm>;
