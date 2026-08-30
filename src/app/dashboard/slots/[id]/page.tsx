@@ -13,6 +13,8 @@ import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
 import { GiftPurchaseToggle } from "@/components/dashboard/gift-purchase-toggle";
 import type { GiftDetails } from "@/components/dashboard/gift-purchase-toggle";
 import { BookingAbandonmentBanner } from "@/components/dashboard/booking-abandonment-banner";
+import { DisputeFilingForm, type DisputeFormData } from "@/app/components/dispute-filing-form";
+import { DisputeTrackingPanel, type Dispute } from "@/app/components/dispute-tracking-panel";
 import {
   ArrowLeft,
   Wallet,
@@ -27,7 +29,9 @@ import {
   Check,
   Receipt,
   Users,
-  LayoutDashboard
+  LayoutDashboard,
+  Scale,
+  X
 } from "lucide-react";
 
 function FocusTrap({ children }: { children: React.ReactNode }) {
@@ -153,6 +157,52 @@ export default function SlotDetailPage({
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountedTotal, setDiscountedTotal] = useState(totalCost);
   const [giftDetails, setGiftDetails] = useState<GiftDetails | null>(null);
+
+  // DISPUTE STATE
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [disputeView, setDisputeView] = useState<"filing" | "tracking">("filing");
+  const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
+  const [currentDispute, setCurrentDispute] = useState<Dispute | null>(null);
+  
+  // Mock existing dispute for demonstration
+  const [existingDisputes, setExistingDisputes] = useState<Dispute[]>([
+    {
+      id: "disp-12345678",
+      slotId: id,
+      category: "quality_mismatch",
+      reason: "Service quality did not match expectations",
+      description: "The delivered consultation was significantly shorter than the agreed 1.5 hours and lacked the depth of technical analysis promised in the description.",
+      status: "under_review",
+      evidence: [
+        {
+          id: "ev-1",
+          fileName: "chat_transcript.pdf",
+          fileSize: 245000,
+          fileType: "application/pdf",
+          uploadStatus: "completed",
+          scanStatus: "clean",
+          uploadedAt: new Date().toISOString()
+        }
+      ],
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 3600000).toISOString(),
+      submittedAt: new Date(Date.now() - 86400000).toISOString(),
+      notes: [
+        {
+          id: "note-1",
+          author: "System",
+          authorRole: "system",
+          content: "Dispute submitted successfully. Awaiting initial review.",
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ],
+      metadata: {
+        priority: "medium",
+        escalationCount: 0,
+        lastActivityAt: new Date(Date.now() - 3600000).toISOString()
+      }
+    }
+  ]);
 
   // DRAFT ABANDONMENT STATE
   const [hasDraft, setHasDraft] = useState(false);
@@ -321,6 +371,95 @@ export default function SlotDetailPage({
   const handleSimulateConnection = () => {
     setSimWallet("connected");
     announce("Wallet connected successfully.");
+  };
+
+  // DISPUTE HANDLERS
+  const handleOpenDisputeModal = () => {
+    setDisputeView(existingDisputes.length > 0 ? "tracking" : "filing");
+    if (existingDisputes.length > 0) {
+      setCurrentDispute(existingDisputes[0]);
+    }
+    setIsDisputeModalOpen(true);
+  };
+
+  const handleCloseDisputeModal = () => {
+    setIsDisputeModalOpen(false);
+    setCurrentDispute(null);
+  };
+
+  const handleSubmitDispute = async (formData: DisputeFormData) => {
+    setIsSubmittingDispute(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const newDispute: Dispute = {
+      id: `disp-${Date.now()}`,
+      slotId: id,
+      category: formData.category,
+      reason: formData.reason,
+      description: formData.description,
+      status: "submitted",
+      evidence: formData.evidence.map((file, index) => ({
+        id: `ev-${Date.now()}-${index}`,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        uploadStatus: "completed" as const,
+        scanStatus: "clean" as const,
+        uploadedAt: new Date().toISOString()
+      })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      submittedAt: new Date().toISOString(),
+      notes: [
+        {
+          id: "note-1",
+          author: "System",
+          authorRole: "system",
+          content: "Dispute submitted successfully. Awaiting initial review.",
+          createdAt: new Date().toISOString()
+        }
+      ],
+      metadata: {
+        priority: "medium",
+        escalationCount: 0,
+        lastActivityAt: new Date().toISOString()
+      }
+    };
+
+    setExistingDisputes(prev => [...prev, newDispute]);
+    setCurrentDispute(newDispute);
+    setDisputeView("tracking");
+    setIsSubmittingDispute(false);
+    announce("Dispute submitted successfully");
+  };
+
+  const handleAddDisputeNote = async (content: string) => {
+    if (!currentDispute) return;
+    
+    const newNote = {
+      id: `note-${Date.now()}`,
+      author: "You",
+      authorRole: "buyer" as const,
+      content,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedDispute = {
+      ...currentDispute,
+      notes: [...currentDispute.notes, newNote],
+      updatedAt: new Date().toISOString(),
+      metadata: {
+        ...currentDispute.metadata,
+        lastActivityAt: new Date().toISOString()
+      }
+    };
+
+    setCurrentDispute(updatedDispute);
+    setExistingDisputes(prev => 
+      prev.map(d => d.id === updatedDispute.id ? updatedDispute : d)
+    );
   };
 
   const mapTone = (status: typeof slot.status) => {
@@ -735,6 +874,18 @@ export default function SlotDetailPage({
                       Purchase Time Token
                     </button>
                   )}
+
+                  {/* Dispute Button */}
+                  {existingDisputes.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleOpenDisputeModal}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 px-5 py-3 text-sm border border-amber-400/30 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20 mt-3"
+                    >
+                      <Scale className="h-4 w-4 mr-2" />
+                      View Dispute ({existingDisputes.length})
+                    </button>
+                  )}
                 </div>
               </section>
             </OrderSummaryDrawer>
@@ -1040,6 +1191,85 @@ export default function SlotDetailPage({
                     </Link>
                   </div>
                 </div>
+              )}
+            </div>
+          </FocusTrap>
+        </div>
+      )}
+
+      {/* ----------------- DISPUTE MODAL DIALOG ----------------- */}
+      {isDisputeModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all animate-fade-in"
+          role="presentation"
+        >
+          <FocusTrap>
+            <div
+              ref={modalRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="dispute-modal-headline"
+              className="w-full max-w-2xl rounded-3xl border border-white/12 bg-slate-900 p-6 sm:p-8 shadow-2xl relative focus:outline-none animate-scale-up max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 id="dispute-modal-headline" className="text-xl font-bold text-white">
+                  {disputeView === "filing" ? "File a Dispute" : "Dispute Tracking"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleCloseDisputeModal}
+                  className="rounded-full p-2 text-slate-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  aria-label="Close dispute modal"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* View Toggle */}
+              {existingDisputes.length > 0 && (
+                <div className="flex gap-2 mb-6 p-1 bg-white/5 rounded-full">
+                  <button
+                    type="button"
+                    onClick={() => setDisputeView("tracking")}
+                    className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      disputeView === "tracking"
+                        ? "bg-amber-400/20 text-amber-200"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Track Dispute
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDisputeView("filing")}
+                    className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      disputeView === "filing"
+                        ? "bg-amber-400/20 text-amber-200"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    File New Dispute
+                  </button>
+                </div>
+              )}
+
+              {/* Content */}
+              {disputeView === "filing" ? (
+                <DisputeFilingForm
+                  slotId={id}
+                  onSubmit={handleSubmitDispute}
+                  isSubmitting={isSubmittingDispute}
+                  onCancel={handleCloseDisputeModal}
+                />
+              ) : (
+                currentDispute && (
+                  <DisputeTrackingPanel
+                    dispute={currentDispute}
+                    onAddNote={handleAddDisputeNote}
+                  />
+                )
               )}
             </div>
           </FocusTrap>
