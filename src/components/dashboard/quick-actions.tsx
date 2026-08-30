@@ -3,7 +3,7 @@ import { StatusChip } from "./status-chip";
 import type { QuickAction, Tone } from "./types";
 import * as Icons from "lucide-react";
 import React, { useState } from "react";
-import PricingStrategyExplainer from "@/src/components/pricing/PricingStrategyExplainer";
+import PricingStrategyExplainer from "@/components/pricing/PricingStrategyExplainer";
 
 const toneLabels: Record<Tone, string> = {
   neutral: "Available",
