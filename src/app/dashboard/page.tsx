@@ -41,6 +41,7 @@ async function simulateEscrowRelease() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const { toast } = useToast();
   const loading = false;
   const error = false;
   const hasData = true;

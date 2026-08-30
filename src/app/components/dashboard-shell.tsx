@@ -3,20 +3,19 @@
 // src/app/components/dashboard-shell.tsx
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { HeaderSearch } from "@/app/components/header-search";
+import { ButtonLink } from "@/app/components/ui/button-link";
+import { useRole } from "@/app/components/navigation/RoleContext";
+import { getNavForRole, ROLE_META } from "@/app/components/navigation/role-nav";
+import { ShortcutOverlay } from "@/app/components/ui/shortcut-overlay";
 
-// ─── Bottom-bar icon map (emoji per-route) ────────────────────────────────────
-// Icons come from the NavItem definition in role-nav.ts and are displayed with
-// aria-hidden="true" alongside the text label.
-
-// ─── Inner shell (consumes RoleContext) ───────────────────────────────────────
-
-function ShellInner({ children }: { children: React.ReactNode }) {
+export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
   const [isOpen, setIsOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const liveRef = useRef<HTMLDivElement>(null);
 
   const routes = getNavForRole(role);
   const meta = ROLE_META[role];
@@ -38,14 +37,42 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("chronopay:rolechange", handleRoleChange);
   }, []);
 
-  // ── Close drawer on Escape ──────────────────────────────────────────────
+  // ── Bind ? (Shift+/) globally to open/close the shortcuts overlay ──────
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) setIsOpen(false);
+      // Never hijack ? while the user is typing in a field
+      const target = e.target as HTMLElement | null;
+      const isEditable =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable);
+      if (isEditable) return;
+
+      const isQuestionMark = e.key === "?" || (e.shiftKey && e.key === "/");
+      if (!isQuestionMark) return;
+
+      e.preventDefault();
+      setIsShortcutsOpen((prev) => !prev);
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [isOpen]);
+  }, []);
+
+  // ── Close drawer / shortcuts overlay on Escape ──────────────────────────
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (isShortcutsOpen) {
+        setIsShortcutsOpen(false);
+      } else if (isOpen) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [isOpen, isShortcutsOpen]);
 
   // ── Focus trap for mobile drawer ────────────────────────────────────────
   useEffect(() => {
@@ -73,58 +100,6 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     first?.focus();
     return () => document.removeEventListener("keydown", handleTab);
   }, [isOpen]);
-
-  // Scroll detection for inset shadow
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const routes = [
-    { href: "/", label: "Home" },
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/calendar", label: "Calendar" },
-    { href: "/history", label: "History" },
-  ];
-
-  // Animation variants for active tab indicator
-  const tabIndicatorVariants = {
-    inactive: {
-      scale: 0.8,
-      opacity: 0,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.2,
-      },
-    },
-    active: {
-      scale: 1,
-      opacity: 1,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.3,
-      },
-    },
-  };
-
-  // FAB animation variants
-  const fabVariants = {
-    idle: {
-      scale: 1,
-      y: 0,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.2,
-      },
-    },
-    pressed: {
-      scale: 0.95,
-      y: 2,
-      transition: {
-        duration: shouldReduceMotion ? 0 : 0.1,
-      },
-    },
-  };
 
   return (
     <div
@@ -161,16 +136,19 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Desktop: inline links + search */}
-          <div className="hidden md:flex items-center gap-3 text-sm text-slate-300">
-            {routes.map((r) => (
+          <div className="hidden items-center gap-3 text-sm text-slate-300 md:flex">
+            {routes.map((route) => (
               <Link
-                key={r.href}
-                href={r.href}
-                className="rounded-full px-3 py-2 hover:bg-white/6 focus-ring-white transition-colors"
+                key={route.href}
+                href={route.href}
+                className="rounded-full px-3 py-2 transition-colors hover:bg-white/6 focus-ring-white"
                 style={{ color: "var(--shell-text-muted)" }}
+                aria-label={route.ariaLabel}
               >
-                <span aria-hidden="true">{r.icon}</span>
-                <span>{r.label}</span>
+                <span aria-hidden="true" className="mr-1.5">
+                  {route.icon}
+                </span>
+                <span>{route.label}</span>
               </Link>
             ))}
             <ThemeSwitcher />
@@ -178,7 +156,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               href="https://stellar.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border px-3 py-2 hover:bg-white/6 focus-ring-white transition-colors"
+              className="rounded-full border px-3 py-2 transition-colors hover:bg-white/6 focus-ring-white"
               style={{
                 borderColor: "var(--border-subtle)",
                 color: "var(--shell-text-muted)",
@@ -223,10 +201,11 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           ref={drawerRef}
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-40"
+          aria-label="Navigation menu"
+          className="fixed inset-0 z-40 flex justify-end bg-black/50 backdrop-blur-sm"
         >
           <aside
-            className="w-64 h-full p-4"
+            className="h-full w-64 p-4"
             style={{
               background: "var(--shell-drawer-bg)",
               color: "var(--shell-text)",
@@ -254,16 +233,19 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               </svg>
             </button>
             <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
-              {routes.map((r) => (
+              {routes.map((route) => (
                 <Link
-                  key={r.href}
-                  href={r.href}
-                  className="block rounded-md px-3 py-2 hover:bg-white/10 focus-ring-white transition-colors"
+                  key={route.href}
+                  href={route.href}
+                  className="block rounded-md px-3 py-2 transition-colors hover:bg-white/10 focus-ring-white"
                   style={{ color: "var(--shell-text)" }}
                   onClick={() => setIsOpen(false)}
+                  aria-label={route.ariaLabel}
                 >
-                  <span aria-hidden="true" className="text-base">{r.icon}</span>
-                  <span>{r.label}</span>
+                  <span aria-hidden="true" className="mr-1.5">
+                    {route.icon}
+                  </span>
+                  <span>{route.label}</span>
                 </Link>
               ))}
             </nav>
@@ -281,12 +263,12 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Stellar link in drawer */}
-            <div className="mt-auto pt-6 border-t border-white/8">
+            <div className="mt-auto border-t border-white/8 pt-6">
               <a
                 href="https://stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 focus-ring-white"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white focus-ring-white"
               >
                 <span aria-hidden="true">🌐</span>
                 <span>Stellar network</span>
@@ -305,26 +287,42 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Mobile Bottom Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 text-slate-100 md:hidden flex justify-around items-center py-2 z-30">
-        {routes.map((r) => (
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around bg-slate-900 py-2 text-slate-100 md:hidden"
+        aria-label="Mobile bottom navigation"
+      >
+        {routes.map((route) => (
           <Link
-            key={r.href}
-            href={r.href}
-            className="flex flex-col items-center text-xs hover:text-white focus-ring-white"
+            key={route.href}
+            href={route.href}
+            className="flex flex-col items-center text-xs transition-colors hover:text-white focus-ring-white"
             onClick={() => setIsOpen(false)}
+            aria-label={route.ariaLabel}
           >
             <span aria-hidden="true" className="text-lg">
-              {r.label === "Home" && "🏠"}
-              {r.label === "Marketplace" && "🛒"}
-              {r.label === "Calendar" && "📅"}
-              {r.label === "History" && "🕘"}
+              {route.icon}
             </span>
-            <span>{r.label}</span>
+            <span>{route.label}</span>
           </Link>
         ))}
       </nav>
 
       {children}
+
+      {/* Screen-reader live region for role-change announcements */}
+      <div
+        ref={liveRef}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      />
+
+      {/* Keyboard shortcuts reference overlay — toggled with ? (Shift+/) */}
+      <ShortcutOverlay
+        open={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
     </div>
   );
 }

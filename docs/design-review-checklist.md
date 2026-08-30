@@ -39,6 +39,21 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Keyboard operable**: Enter/Space opens; Escape closes; Tab/Shift+Tab cycles within the open popover.
 - [ ] **Click-outside**: Clicking outside the popover closes it without disrupting other interactions.
 
+## ⌨️ Keyboard Shortcuts Overlay (`?` / Shift+/)
+
+The dashboard ships a discoverable keyboard-shortcuts reference. Pressing **`?` (Shift+/)** anywhere on the shell toggles a modal that lists every binding grouped by surface, so users never have to memorise shortcuts.
+
+- [ ] **Trigger**: `?` (Shift+/) toggles the overlay globally from the shell; the binding is ignored while focus is inside an input, textarea, select, or content-editable element.
+- [ ] **Single source of truth**: All bindings live in `src/lib/shortcuts.ts` as `SHORTCUT_GROUPS` (grouped by surface) and are rendered by `src/app/components/ui/shortcut-overlay.tsx`.
+- [ ] **ARIA correct**: Overlay uses `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` pointing at the visible heading.
+- [ ] **Focus management**: The overlay is wrapped in the shared `<FocusTrap>` so Tab/Shift+Tab stay inside; focus returns to the previously focused element on close.
+- [ ] **Keyboard operable**: Escape closes; the close button is keyboard-reachable with a visible cyan focus ring.
+- [ ] **Backdrop**: A scrim (`bg-black/50 backdrop-blur-sm`) separates the modal; clicking it closes the overlay.
+- [ ] **Bindings accessible**: Each shortcut renders as a proper `<kbd>` element next to a text label — never an icon alone — so every binding has an accessible name.
+- [ ] **Responsive**: The dialog is centered with `max-w-md`, and the list scrolls vertically (`max-h-[70vh] overflow-y-auto`) on short viewports with no horizontal overflow.
+- [ ] **Edge cases**: Empty registry shows a friendly fallback message; dark mode uses the shell's slate/cyan token palette.
+- [ ] **Adding shortcuts**: Extend `SHORTCUT_GROUPS` in `src/lib/shortcuts.ts` — no component changes needed.
+
 ---
 
 *To use this in a PR, copy and paste the relevant sections above into your PR description.*

@@ -3,6 +3,7 @@
 import { use, useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/app/components/dashboard-shell";
+import { FocusTrap } from "@/components/common/FocusTrap";
 import { StatusChip } from "@/components/dashboard/status-chip";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { ReceiptModal } from "@/components/receipt";
@@ -19,7 +20,6 @@ import {
   Loader2,
   Sparkles,
   Check,
-  Receipt,
   Users
 } from "lucide-react";
 
@@ -218,17 +218,6 @@ export default function SlotDetailPage({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isModalOpen, handleCloseModal]);
-
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isModalOpen) {
-        handleCloseModal();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isModalOpen]);
 
   // Simulated blockchain transaction workflow
   const handleProceedPurchase = () => {

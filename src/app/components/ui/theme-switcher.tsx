@@ -27,9 +27,13 @@ export function ThemeSwitcher() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Defer state updates out of the effect body (queueMicrotask) so the
+    // hydration guard never triggers a synchronous cascade render.
     const stored = (localStorage.getItem(STORAGE_KEY) ?? 'auto') as Theme;
-    setTheme(stored);
-    setMounted(true);
+    queueMicrotask(() => {
+      setTheme(stored);
+      setMounted(true);
+    });
   }, []);
 
   function handleChange(next: Theme) {

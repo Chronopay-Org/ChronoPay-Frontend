@@ -1,13 +1,12 @@
-import { ReactNode, ElementType, ComponentPropsWithoutRef } from "react";
+import { type ElementType, type HTMLAttributes, type ReactNode } from "react";
 import clsx from "clsx";
 
-export interface CardProps {
+export interface CardProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   as?: ElementType;
   children: ReactNode;
   className?: string;
   variant?: "default" | "panel" | "glass" | "accent";
   interactive?: boolean;
-  [key: string]: unknown;
 }
 
 export function Card({
@@ -17,7 +16,7 @@ export function Card({
   variant = "default",
   interactive = false,
   ...props
-}: CardProps & ComponentPropsWithoutRef<typeof Component>) {
+}: CardProps) {
   const cardClassName = clsx(
     "card",
     {
@@ -43,8 +42,7 @@ export function CardHeader({
 }: {
   children: ReactNode;
   className?: string;
-  [key: string]: unknown;
-}) {
+} & Omit<HTMLAttributes<HTMLDivElement>, "className" | "children">) {
   return (
     <div className={clsx("card-header", className)} {...props}>
       {children}
@@ -59,8 +57,7 @@ export function CardBody({
 }: {
   children: ReactNode;
   className?: string;
-  [key: string]: unknown;
-}) {
+} & Omit<HTMLAttributes<HTMLDivElement>, "className" | "children">) {
   return (
     <div className={clsx("card-body", className)} {...props}>
       {children}
@@ -75,8 +72,7 @@ export function CardFooter({
 }: {
   children: ReactNode;
   className?: string;
-  [key: string]: unknown;
-}) {
+} & Omit<HTMLAttributes<HTMLDivElement>, "className" | "children">) {
   return (
     <div className={clsx("card-footer", className)} {...props}>
       {children}
