@@ -24,6 +24,12 @@ export default defineConfig({
         "src/components/receipt/Receipt.tsx",
         "src/components/marketplace/results-per-page-selector.tsx",
         "src/components/dashboard/plan-comparison.tsx",
+        "src/components/dashboard/marketplace-grid.tsx",
+        "src/components/dashboard/marketplace-grid-skeleton.tsx",
+        "src/components/dashboard/marketplace-sort-control.tsx",
+        "src/components/dashboard/marketplace-density-toggle.tsx",
+        "src/components/dashboard/marketplace-filter-summary-bar.tsx",
+        "src/components/dashboard/saved-view-chips.tsx",
       ],
       thresholds: {
         lines: 95,
