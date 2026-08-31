@@ -34,6 +34,9 @@ import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
 import { StatusChip } from "./status-chip";
 import { SocialProofBadges } from "./social-proof-badges";
 import type { Slot } from "./types";
+import { EmptyStateCard } from "../../app/components/empty-state-card";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { CalendarView } from "./calendar-view";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -271,13 +274,48 @@ export const SlotList = ({
   onApplyCredit,
   onRebookConfirm,
 }: SlotListProps) => {
-  const [orderedSlots, setOrderedSlots] = useState<Slot[]>(slots);
-  const [prevSlots, setPrevSlots] = useState<Slot[]>(slots);
-  // Reflect external prop updates without writing state during effects.
-  if (slots !== prevSlots) {
-    setPrevSlots(slots);
-    setOrderedSlots(slots);
-  }
+  const [activeTz, setActiveTz] = useState<string>("UTC");
+  
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const viewParam = searchParams.get("view");
+  const viewMode = (viewParam === "month" || viewParam === "week" || viewParam === "day") ? viewParam : "list";
+  
+  const setViewMode = (mode: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("view", mode);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const [{ x }, api] = useSpring(() => ({ x: 0 }));
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [conflicts, setConflicts] = useState<Record<string, string>>({});
+
+  const bind = useDrag((state) => {
+    // state.first / state.last indicate drag lifecycle
+    if (state.first) setIsDragging(true);
+    if (state.last) setIsDragging(false);
+
+    // quick examples of conflict detection while dragging
+    // real app should compute based on drop target + business rules
+    if (state.active) {
+      const found: Record<string, string> = {};
+      slots.forEach((s) => {
+        // Existing booking
+        if (s.status && s.status.toLowerCase() === "booked") {
+          found[s.id] = "Existing booking";
+        }
+
+        // Blocked day flag (some slot data may include `blocked`)
+        if ((s as any).blocked) {
+          found[s.id] = "Blocked day";
+        }
+      });
+      setConflicts(found);
+    }
+  });
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDragging, setIsDragging] = useState(false);
@@ -504,6 +542,24 @@ export const SlotList = ({
         </section>
       )}
 
+      {/* ── View Toggle ───────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 mb-4" role="group" aria-label="View mode">
+        {["list", "month", "week", "day"].map((mode) => (
+          <button
+            key={mode}
+            onClick={() => setViewMode(mode)}
+            aria-pressed={viewMode === mode}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors capitalize ${
+              viewMode === mode
+                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10"
+            }`}
+          >
+            {mode}
+          </button>
+        ))}
+      </div>
+
       {/* ── Primary slot list ───────────────────────────────────────────── */}
       {orderedSlots.length === 0 ? (
         <div
@@ -524,16 +580,19 @@ export const SlotList = ({
           </p>
         </div>
       ) : (
-        <section aria-label="Availability slots" className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-slate-400">
-              Tip: drag slots to reorder, or use Alt + ↑/↓. Enter selects.
-            </p>
-            {selectedIds.size > 0 ? (
-              <button
-                type="button"
-                onClick={clearSelection}
-                className="text-xs font-semibold text-cyan-300 transition hover:text-cyan-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+        <>
+          {viewMode === "list" ? (
+          <ul className="space-y-4" {...bind()}>
+          {slots.map((slot) => {
+            const slotTitleId = "slot-" + slot.id + "-title";
+            const slotDetailsId = "slot-" + slot.id + "-details";
+            const isConflictTarget = activeConflictSlotId === slot.id || activeConflictSlotId === `slot-${slot.id}`;
+
+            return (
+              <li
+                key={slot.id}
+                className="space-y-2 relative"
+                aria-describedby={conflicts[slot.id] ? `conflict-${slot.id}` : undefined}
               >
                 Clear selection ({selectedIds.size})
               </button>
@@ -678,7 +737,50 @@ export const SlotList = ({
               );
             })}
           </ul>
-        </section>
+        ) : (
+          <CalendarView slots={slots} viewMode={viewMode as "month" | "week" | "day"} />
+        )}
+
+        {suggestedAlternatives.length > 0 ? (
+            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
+                  <p className="mt-1 text-sm text-slate-300">Suggested alternatives</p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {suggestedAlternatives.map((alternative, index) => (
+                  <button
+                    key={alternative.id}
+                    ref={(element) => {
+                      alternativeRefs.current[index] = element;
+                    }}
+                    type="button"
+                    tabIndex={0}
+                    aria-label={`Alternative slot: ${alternative.title}, ${alternative.dateLabel} ${alternative.timeRange}`}
+                    onKeyDown={(event) => handleAlternativeKeyDown(index, event)}
+                    className="rounded-[1.25rem] border border-white/10 bg-slate-900/70 p-4 text-left transition hover:border-cyan-400/40 hover:bg-slate-800/90"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-white">{alternative.title}</p>
+                      <StatusChip tone={mapTone(alternative.status)}>{alternative.status}</StatusChip>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-300">{alternative.dateLabel} · {alternative.timeRange}</p>
+                    <p className="mt-3 text-sm text-slate-400">{alternative.demand}</p>
+                    <p className="mt-2 text-sm text-cyan-200">{alternative.rate}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+              <h3 className="text-lg font-semibold text-white">Rebook a matching slot</h3>
+              <p className="mt-2 text-sm text-slate-300">No matching alternatives found</p>
+              <p className="mt-1 text-sm text-slate-400">No alternatives</p>
+            </section>
+          )}
+        </>
       )}
 
       {/* Rebooking dialog — open for the active cancelled/rescheduled token */}
