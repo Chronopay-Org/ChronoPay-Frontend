@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
 import type { AutosaveStatus, BookingStage } from "./types";
@@ -27,6 +28,44 @@ export type BookingFlowShellProps = {
   onNext?: (stepIndex: number) => void;
   unsavedChanges?: boolean;
   ariaLabel?: string;
+};
+
+/**
+ * Tone tokens mirror the `StatusChip` palette so the timeline reads
+ * consistently across booking, escrow, refund, and dispute lifecycles.
+ */
+export type StatusTimelineTone =
+  | "neutral"
+  | "info"
+  | "success"
+  | "warning"
+  | "danger";
+
+export type StatusTimelineItemStatus = "complete" | "current" | "upcoming";
+
+export type StatusTimelineItem = {
+  /** Stable identifier used for keys, expansion state, and aria wiring. */
+  id: string;
+  title: string;
+  /** Optional longer explanation revealed on expansion. */
+  description?: string;
+  /** Who performed / owns this step (buyer, seller, escrow agent, system). */
+  actor?: string;
+  /** When the step occurred. Accepts Date or ISO string; invalid values are ignored. */
+  timestamp?: Date | string;
+  tone?: StatusTimelineTone;
+  status?: StatusTimelineItemStatus;
+  /** Additional detail lines revealed on expansion. */
+  details?: string[];
+};
+
+export type StatusTimelineProps = {
+  items?: StatusTimelineItem[];
+  ariaLabel?: string;
+  isLoading?: boolean;
+  error?: string | null;
+  /** Optionally expand a step by id on first render. */
+  defaultExpandedId?: string;
 };
 
 export function BookingProgress({
@@ -90,6 +129,229 @@ export function BookingProgress({
         );
       })}
     </div>
+  );
+}
+
+const STATUS_TIMELINE_TONES: Record<
+  StatusTimelineTone,
+  { dot: string; ring: string; text: string }
+> = {
+  neutral: {
+    dot: "bg-slate-500",
+    ring: "border-slate-700",
+    text: "text-slate-200",
+  },
+  info: {
+    dot: "bg-cyan-400",
+    ring: "border-cyan-400/60",
+    text: "text-cyan-100",
+  },
+  success: {
+    dot: "bg-emerald-500",
+    ring: "border-emerald-500/60",
+    text: "text-emerald-100",
+  },
+  warning: {
+    dot: "bg-amber-400",
+    ring: "border-amber-400/60",
+    text: "text-amber-100",
+  },
+  danger: {
+    dot: "bg-rose-500",
+    ring: "border-rose-500/60",
+    text: "text-rose-100",
+  },
+};
+
+/**
+ * Safely format a timeline timestamp. Returns null for missing or invalid
+ * values so callers can omit the `<time>` element entirely.
+ */
+export function formatTimelineTimestamp(value?: Date | string): string | null {
+  if (value === undefined || value === null || value === "") return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
+  } catch {
+    return date.toISOString();
+  }
+}
+
+/**
+ * Reusable vertical status timeline for booking / escrow / refund / dispute
+ * lifecycles.
+ *
+ * Accessibility:
+ * - Renders an ordered list (`<ol>`) to convey step order.
+ * - Marks the active step with `aria-current="step"`.
+ * - Per-step detail toggles expose `aria-expanded` / `aria-controls`.
+ * - Loading and error states use `role="status"` / `role="alert"`.
+ *
+ * Invalid items (missing `id` or `title`) are filtered out defensively so a
+ * malformed entry cannot break the list or duplicate React keys.
+ */
+export function StatusTimeline({
+  items = [],
+  ariaLabel = "Status timeline",
+  isLoading = false,
+  error = null,
+  defaultExpandedId,
+}: StatusTimelineProps) {
+  const safeItems = items.filter(
+    (item): item is StatusTimelineItem =>
+      Boolean(item) && Boolean(item.id) && Boolean(item.title),
+  );
+  const seenIds = new Set<string>();
+  const uniqueItems = safeItems.filter((item) => {
+    if (seenIds.has(item.id)) return false;
+    seenIds.add(item.id);
+    return true;
+  });
+
+  const [expandedId, setExpandedId] = useState<string | null>(
+    defaultExpandedId ?? null,
+  );
+
+  if (error) {
+    return (
+      <div
+        role="alert"
+        className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-100"
+      >
+        {error}
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-xl border border-slate-700 bg-slate-950/40 p-4 text-sm text-slate-300"
+      >
+        Loading status timeline…
+      </div>
+    );
+  }
+
+  if (uniqueItems.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-300">
+        No status updates available yet.
+      </p>
+    );
+  }
+
+  return (
+    <ol
+      aria-label={ariaLabel}
+      className="relative space-y-4 border-l border-slate-700 pl-6"
+    >
+      {uniqueItems.map((item) => {
+        const tone = STATUS_TIMELINE_TONES[item.tone ?? "neutral"];
+        const isCurrent = item.status === "current";
+        const isComplete = item.status === "complete";
+        const hasDetails = Boolean(
+          item.description || (item.details && item.details.length > 0),
+        );
+        const isExpanded = hasDetails && expandedId === item.id;
+        const timestamp = formatTimelineTimestamp(item.timestamp);
+        const panelId = `timeline-panel-${item.id}`;
+        const toggleId = `timeline-toggle-${item.id}`;
+
+        return (
+          <li
+            key={item.id}
+            aria-current={isCurrent ? "step" : undefined}
+            className="relative"
+          >
+            <span
+              className={[
+                "absolute -left-[1.65rem] top-1 flex h-3.5 w-3.5 rounded-full ring-4 ring-slate-950 transition-transform",
+                tone.dot,
+                isCurrent ? "scale-110" : "",
+              ].join(" ")}
+              aria-hidden="true"
+            />
+            <div
+              className={[
+                "rounded-xl border px-3 py-2 transition-colors",
+                tone.ring,
+                isCurrent ? "bg-white/5" : "bg-slate-950/40",
+              ].join(" ")}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className={["text-sm font-medium", tone.text].join(" ")}>
+                    {item.title}
+                    {isComplete ? (
+                      <span className="ml-2 text-xs text-emerald-300">Done</span>
+                    ) : null}
+                  </p>
+                  {(item.actor || timestamp) ? (
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {item.actor ? <span>{item.actor}</span> : null}
+                      {item.actor && timestamp ? (
+                        <span aria-hidden="true"> · </span>
+                      ) : null}
+                      {timestamp ? <time>{timestamp}</time> : null}
+                    </p>
+                  ) : null}
+                </div>
+                {hasDetails ? (
+                  <button
+                    id={toggleId}
+                    type="button"
+                    onClick={() =>
+                      setExpandedId((prev) =>
+                        prev === item.id ? null : item.id,
+                      )
+                    }
+                    aria-expanded={isExpanded}
+                    aria-controls={panelId}
+                    className="shrink-0 rounded-md border border-slate-600 px-2 py-1 text-xs font-medium text-slate-200 transition hover:border-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                  >
+                    {isExpanded ? "Hide" : "Details"}
+                  </button>
+                ) : null}
+              </div>
+
+              {isExpanded ? (
+                <div
+                  id={panelId}
+                  role="region"
+                  aria-labelledby={toggleId}
+                  className="mt-2 border-t border-slate-700 pt-2 text-sm text-slate-200"
+                >
+                  {item.description ? <p>{item.description}</p> : null}
+                  {item.details && item.details.length > 0 ? (
+                    <ul className="mt-2 space-y-1">
+                      {item.details.map((detail, i) => (
+                        <li
+                          key={`${item.id}-detail-${i}`}
+                          className="flex items-start gap-2"
+                        >
+                          <span
+                            className="mt-1.5 h-1 w-1 rounded-full bg-slate-400"
+                            aria-hidden="true"
+                          />
+                          <span>{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
