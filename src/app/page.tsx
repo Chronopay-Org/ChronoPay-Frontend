@@ -18,8 +18,8 @@ export default function Home() {
             <ButtonLink href="/dashboard" variant="primary">
               Dashboard
             </ButtonLink>
-            <ButtonLink href="/status" variant="secondary">
-              Status
+            <ButtonLink href="/pricing" variant="secondary">
+              Pricing
             </ButtonLink>
             <ButtonLink href="https://stellar.org" variant="secondary" target="_blank" rel="noopener noreferrer">
               Stellar
