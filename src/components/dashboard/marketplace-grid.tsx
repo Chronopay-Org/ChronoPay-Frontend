@@ -176,7 +176,12 @@ export function MarketplaceGrid({
 
   return (
     <div>
-      <LiveRegion ariaLive="polite">{resultLabel}</LiveRegion>
+      <LiveRegion ariaLive="polite">
+        Found {filteredItems.length} items
+        {searchParams.get("q")
+          ? ` matching &quot;${searchParams.get("q")}&quot;`
+          : ""}
+      </LiveRegion>
 
       {filteredItems.length === 0 ? (
         <div className="flex min-h-64 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900/30 p-8 text-center">
