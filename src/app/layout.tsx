@@ -4,6 +4,7 @@ import { Header } from "./components/Header";
 import { ToastProvider } from "@/hooks/use-toast";
 import { ToastContainer } from "@/app/components/ui/toast-container";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
+import { I18nProvider } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   title: "ChronoPay - Time Economy",
@@ -55,10 +56,12 @@ export default function RootLayout({
         </a>
 
         <ToastProvider>
-          <RoleProvider initialRole="buyer">
-            {children}
-            <ToastContainer />
-          </RoleProvider>
+          <I18nProvider>
+            <RoleProvider initialRole="buyer">
+              {children}
+              <ToastContainer />
+            </RoleProvider>
+          </I18nProvider>
         </ToastProvider>
       </body>
     </html>
