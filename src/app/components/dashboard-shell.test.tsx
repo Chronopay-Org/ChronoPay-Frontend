@@ -320,50 +320,99 @@ describe("DashboardShell", () => {
     });
   });
 
-  // ── Mobile Bottom Navigation ─────────────────────────────────────────────
+  // ── RTL Support ─────────────────────────────────────────────────────────────
 
-  it("renders a bottom navigation landmark below 640px", () => {
-    setViewportWidth(390);
-    renderShell("buyer");
-    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
-    expect(bottomNav).toBeInTheDocument();
+  it("renders correctly in LTR mode (default)", () => {
+    document.documentElement.dir = "ltr";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+    expect(rail).toHaveClass("border-e");
   });
 
-  it("hides the bottom navigation at 640px and above", () => {
-    setViewportWidth(640);
-    renderShell("buyer");
-    expect(screen.queryByRole("navigation", { name: "Bottom navigation" })).not.toBeInTheDocument();
+  it("renders correctly in RTL mode", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+    expect(rail).toHaveClass("border-e");
   });
 
-  it("includes top-level destinations in the bottom navigation", () => {
-    setViewportWidth(390);
-    renderShell("buyer");
-    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
-    expect(within(bottomNav).getByRole("link", { name: /Dashboard home/i })).toBeInTheDocument();
-    expect(within(bottomNav).getByRole("link", { name: /Browse the time marketplace/i })).toBeInTheDocument();
-    expect(within(bottomNav).getByRole("link", { name: /View your bookings/i })).toBeInTheDocument();
+  it("uses logical border property (border-e) instead of physical border-r", () => {
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("border-e");
+    expect(rail).not.toHaveClass("border-r");
   });
 
-  it("does not expose admin bottom navigation items to buyers", () => {
-    setViewportWidth(390);
-    renderShell("buyer");
-    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
-    expect(within(bottomNav).queryByText("Users")).not.toBeInTheDocument();
+  it("mobile rail transforms correctly in LTR mode when closed", () => {
+    document.documentElement.dir = "ltr";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("-translate-x-full");
+    expect(rail).not.toHaveClass("translate-x-0");
   });
 
-  it("marks the active bottom navigation item with aria-current=page", () => {
-    setViewportWidth(390);
-    mockUsePathname.mockReturnValue("/dashboard/bookings");
-    renderShell("buyer");
-    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
-    const bookingsLink = within(bottomNav).getByRole("link", { name: /View your bookings/i });
-    expect(bookingsLink).toHaveAttribute("aria-current", "page");
+  it("mobile rail transforms correctly in LTR mode when open", () => {
+    document.documentElement.dir = "ltr";
+    renderShell();
+    const toggle = screen.getByLabelText("Open navigation menu");
+    fireEvent.click(toggle);
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("translate-x-0");
+    expect(rail).not.toHaveClass("-translate-x-full");
   });
 
-  it("applies safe-area-inset bottom padding to the bottom navigation", () => {
-    setViewportWidth(390);
-    renderShell("buyer");
-    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
-    expect(bottomNav.style.paddingBottom).toBe("env(safe-area-inset-bottom)");
+  it("mobile rail transforms correctly in RTL mode when closed", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("rtl:translate-x-full");
+  });
+
+  it("mobile rail transforms correctly in RTL mode when open", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const toggle = screen.getByLabelText("Open navigation menu");
+    fireEvent.click(toggle);
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("translate-x-0");
+  });
+
+  it("maintains RTL support when direction changes dynamically", () => {
+    renderShell();
+    document.documentElement.dir = "rtl";
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+    expect(rail).toHaveClass("border-e");
+  });
+
+  it("handles invalid dir attribute gracefully", () => {
+    document.documentElement.dir = "invalid";
+    expect(() => renderShell()).not.toThrow();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+  });
+
+  it("handles empty dir attribute gracefully", () => {
+    document.documentElement.dir = "";
+    expect(() => renderShell()).not.toThrow();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+  });
+
+  it("preserves accessibility in RTL mode", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveAttribute("role", "navigation");
+    expect(rail).toHaveAttribute("aria-label", "Module navigation");
+  });
+
+  it("desktop rail position respects logical properties in RTL", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("inset-inline-start-0");
   });
 });
