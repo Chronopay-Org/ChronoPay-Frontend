@@ -31,6 +31,7 @@ export function FilterSidebar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
+  const baseId = useId();
 
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     filters.reduce((acc, group) => ({ ...acc, [group.id]: true }), {})
@@ -142,7 +143,7 @@ export function FilterSidebar({
                 {group.options.map((option) => {
                   const isActive =
                     activeFilters[group.id]?.includes(option.id) || false;
-                  const optionId = useId();
+                  const optionId = `${baseId}-${group.id}-${option.id}`;
 
                   return (
                     <label

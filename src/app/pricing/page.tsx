@@ -258,12 +258,12 @@ export default function PricingPage() {
           <nav aria-label="Breadcrumb">
             <ol className="flex items-center gap-2 text-sm">
               <li>
-                <a
+                <Link
                   href="/"
                   className="text-slate-400 hover:text-white transition-colors"
                 >
                   Home
-                </a>
+                </Link>
               </li>
               <li className="text-slate-600">/</li>
               <li aria-current="page" className="text-white">

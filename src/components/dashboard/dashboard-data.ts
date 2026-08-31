@@ -8,6 +8,13 @@ import type {
   CalendarDefinition,
   RatingCriterion,
   ChecklistStep,
+  SentimentCounts,
+  SentimentDataPoint,
+  SyncDirection,
+  BookingStage,
+  HolidayHint,
+  RegionInfo,
+  TrustMetric,
 } from "./types";
 import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
@@ -303,6 +310,7 @@ export const upcomingHolidays: HolidayHint[] = [
 ];
 
 export const holidayRegion: RegionInfo = {
+  country: "United States",
   code: "US",
   name: "United States",
 };
@@ -430,6 +438,28 @@ export const ratingBreakdown: RatingCriterion[] = [
     count: 39,
     colorClass: "bg-indigo-400",
   },
+];
+
+
+// ─── Sample review sentiment data ─────────────────────────────────────────────
+
+/** Mock review-sentiment counts for the design-review showcase page. */
+export const reviewSentimentCounts: SentimentCounts = {
+  positive: 64,
+  mixed: 21,
+  critical: 9,
+};
+
+/** Mock weekly review-sentiment trend for the design-review showcase page. */
+export const reviewSentimentTrend: SentimentDataPoint[] = [
+  { timestamp: "2026-05-25", positive: 38, mixed: 14, critical: 6 },
+  { timestamp: "2026-06-01", positive: 42, mixed: 12, critical: 5 },
+  { timestamp: "2026-06-08", positive: 45, mixed: 15, critical: 7 },
+  { timestamp: "2026-06-15", positive: 51, mixed: 13, critical: 4 },
+  { timestamp: "2026-06-22", positive: 56, mixed: 16, critical: 6 },
+  { timestamp: "2026-06-29", positive: 61, mixed: 18, critical: 8 },
+  { timestamp: "2026-07-06", positive: 58, mixed: 17, critical: 5 },
+  { timestamp: "2026-07-13", positive: 64, mixed: 21, critical: 9 },
 ];
 
 
