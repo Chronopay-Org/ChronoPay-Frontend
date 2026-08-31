@@ -15,6 +15,7 @@ export default defineConfig({
         "src/app/components/ui/form-field.tsx",
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
+        "src/components/dashboard/booking-progress.tsx",
         "src/components/dashboard/review-reply-thread.tsx",
         "src/components/dashboard/earnings-chart.tsx",
         "src/components/dashboard/rating-breakdown-bars.tsx",
