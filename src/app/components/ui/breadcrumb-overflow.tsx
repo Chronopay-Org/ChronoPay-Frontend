@@ -85,7 +85,7 @@ export function BreadcrumbOverflow({ items, className }: BreadcrumbOverflowProps
         <ol className="flex flex-wrap items-center gap-2 text-sm">
           <li className="flex items-center gap-1.5 text-slate-200">
             {items[0].icon && <span aria-hidden="true" className="inline-flex items-center">{items[0].icon}</span>}
-            <span>{items[0].label}</span>
+            <span aria-current="page">{items[0].label}</span>
           </li>
         </ol>
       </nav>
@@ -159,7 +159,10 @@ export function BreadcrumbOverflow({ items, className }: BreadcrumbOverflowProps
                       <span>{item.label}</span>
                     </Link>
                   ) : (
-                    <span className={`inline-flex items-center gap-1.5 ${isLast ? "font-semibold text-white" : "text-slate-300"}`}>
+                    <span 
+                      className={`inline-flex items-center gap-1.5 ${isLast ? "font-semibold text-white" : "text-slate-300"}`}
+                      {...(isLast ? { "aria-current": "page" } : {})}
+                    >
                       {item.icon && <span aria-hidden="true" className="inline-flex items-center">{item.icon}</span>}
                       <span>{item.label}</span>
                     </span>

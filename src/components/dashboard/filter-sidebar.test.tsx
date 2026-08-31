@@ -111,7 +111,7 @@ describe("FilterSidebar", () => {
     );
 
     // Initially no badge
-    let badge = screen.queryByText(/^\d+$/);
+    const badge = screen.queryByText(/^\d+$/);
     expect(badge).not.toBeInTheDocument();
 
     // After selecting a filter

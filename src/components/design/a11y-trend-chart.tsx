@@ -214,7 +214,7 @@ export function A11yTrendChart({
         dotColor: cfg.dotColor,
       };
     });
-  }, [stacked, innerW, innerH]);
+  }, [stacked, innerW, innerH, domainMin, domainMax]);
 
   // Y-axis tick labels
   const yTicks = useMemo(() => {
