@@ -172,7 +172,8 @@ export type SocialProofBadgeType =
   | "fastResponse"
   | "verified"
   | "verifiedPayouts"
-  | "earlyAdopter";
+  | "earlyAdopter"
+  | "pro";
 
 export type SocialProofBadgeEntry = {
   type: SocialProofBadgeType;
