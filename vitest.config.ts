@@ -12,6 +12,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov", "html"],
       include: [
+        "src/app/components/ui/form-field.tsx",
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
         "src/components/dashboard/review-reply-thread.tsx",
@@ -23,6 +24,12 @@ export default defineConfig({
         "src/components/receipt/Receipt.tsx",
         "src/components/marketplace/results-per-page-selector.tsx",
         "src/components/dashboard/plan-comparison.tsx",
+        "src/components/dashboard/marketplace-grid.tsx",
+        "src/components/dashboard/marketplace-grid-skeleton.tsx",
+        "src/components/dashboard/marketplace-sort-control.tsx",
+        "src/components/dashboard/marketplace-density-toggle.tsx",
+        "src/components/dashboard/marketplace-filter-summary-bar.tsx",
+        "src/components/dashboard/saved-view-chips.tsx",
       ],
       thresholds: {
         lines: 95,
