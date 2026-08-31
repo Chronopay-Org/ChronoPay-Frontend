@@ -273,7 +273,7 @@ export function SearchTypeahead({
       {/* No results message */}
       {isOpen && inputValue && filteredSuggestions.length === 0 && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-3 text-sm text-zinc-400">
-          No results found for "{inputValue}"
+          No results found for &quot;{inputValue}&quot;
         </div>
       )}
     </div>

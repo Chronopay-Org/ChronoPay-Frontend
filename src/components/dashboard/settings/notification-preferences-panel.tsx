@@ -72,15 +72,14 @@ function readStoredPreferences() {
 }
 
 export function SettingsTabs() {
-  const [activeTab, setActiveTab] = useState<SettingsTabId>("notifications");
-  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  useEffect(() => {
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(() => {
+    if (typeof window === "undefined") return "notifications";
     const hash = window.location.hash.slice(1);
-    if (SETTINGS_TABS.some((tab) => tab.id === hash)) {
-      setActiveTab(hash as SettingsTabId);
-    }
-  }, []);
+    return SETTINGS_TABS.some((tab) => tab.id === hash)
+      ? (hash as SettingsTabId)
+      : "notifications";
+  });
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     const currentIndex = SETTINGS_TABS.findIndex((tab) => tab.id === activeTab);

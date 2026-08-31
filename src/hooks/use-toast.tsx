@@ -7,16 +7,31 @@
  *   const { toast } = useToast();
  *   toast({ variant: "success", title: "Wallet connected" });
  *   toast({ variant: "error",   title: "Mint failed", description: "Insufficient balance." });
+ *   toast({
+ *     variant: "error",
+ *     title: "Upload failed",
+ *     actions: [{ label: "Retry", onClick: () => retryUpload() }],
+ *   });
  *
  * Variants map to WCAG live-region roles:
  *   success | info  --> role="status"  aria-live="polite"
  *   warning | error | critical --> role="alert"   aria-live="assertive"
+ *
+ * Action affordances:
+ *   Each toast may include an `actions` array of { label, onClick } objects
+ *   rendered as buttons in the toast footer. Actions are keyboard-accessible
+ *   and visually distinct from the dismiss control.
  *
  * Grouping:
  *   Toasts with the same `category` string are merged into a single grouped
  *   entry. The group stores all individual messages and exposes a `count`.
  *   The visible stack is capped at TOAST_STACK_LIMIT entries (groups count
  *   as one entry regardless of how many messages they contain).
+ *
+ * Queue behavior:
+ *   When the stack is full, new toasts are held in a FIFO queue and released
+ *   automatically as existing toasts are dismissed. This prevents toast loss
+ *   during bursts of activity.
  */
 
 import {
@@ -31,7 +46,15 @@ import type { ReactNode } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ToastVariant = "success" | "info" | "warning" | "error";
+export type ToastVariant = "success" | "info" | "warning" | "error" | "critical";
+
+/** An action button exposed by a toast (e.g. Retry, View details). */
+export interface ToastAction {
+  /** Button label — also used as the accessible name. */
+  label: string;
+  /** Callback invoked when the action button is clicked. */
+  onClick: () => void;
+}
 
 /** A single toast message as passed by the caller. */
 export interface ToastInput {
@@ -48,6 +71,12 @@ export interface ToastInput {
   category?: string;
   /** Optional reversible action exposed by the toast's Undo control. */
   onUndo?: () => void;
+  /**
+   * Optional array of action buttons. Actions are rendered as a row of buttons
+   * below the toast content, giving users clear affordances for follow-up
+   * operations (e.g. Retry, View details, Navigate).
+   */
+  actions?: ToastAction[];
 }
 
 /** An individual message stored inside a group (or standalone entry). */
@@ -81,6 +110,8 @@ export interface ToastItem {
   messages: ToastMessage[];
   /** Optional callback for the visible Undo action. */
   onUndo?: () => void;
+  /** Optional action buttons for follow-up operations. */
+  actions?: ToastAction[];
 }
 
 /** What callers pass to `toast()` — no `id` needed. */
@@ -96,9 +127,13 @@ export const TOAST_STACK_LIMIT = 5;
 type Action =
   | { type: "ADD"; toast: ToastItem; message: ToastMessage }
   | { type: "REMOVE"; id: string }
-  | { type: "DISMISS_ALL" };
+  | { type: "DISMISS_ALL" }
+  | { type: "DEQUEUE" };
 
-function reducer(state: ToastItem[], action: Action): ToastItem[] {
+function reducer(
+  state: { visible: ToastItem[]; queued: ToastItem[] },
+  action: Action,
+): { visible: ToastItem[]; queued: ToastItem[] } {
   switch (action.type) {
     case "ADD": {
       const { toast, message } = action;
@@ -106,12 +141,12 @@ function reducer(state: ToastItem[], action: Action): ToastItem[] {
       // ── Grouped toast: merge into existing group entry ──────────────────
       if (toast.category) {
         const groupId = `group:${toast.category}`;
-        const existingIdx = state.findIndex((t) => t.id === groupId);
+        const existingIdx = state.visible.findIndex((t) => t.id === groupId);
 
         if (existingIdx !== -1) {
           // Update the existing group in-place (bubble to top)
-          const updated = state.filter((_, i) => i !== existingIdx);
-          const existing = state[existingIdx];
+          const updated = state.visible.filter((_, i) => i !== existingIdx);
+          const existing = state.visible[existingIdx];
           const merged: ToastItem = {
             ...existing,
             // Keep the most recent message as the primary title
@@ -121,36 +156,63 @@ function reducer(state: ToastItem[], action: Action): ToastItem[] {
             messages: [...existing.messages, message],
           };
           // Enforce stack limit (remove oldest non-group entry if needed)
-          const capped =
-            updated.length >= TOAST_STACK_LIMIT
-              ? updated.slice(1)
-              : updated;
-          return [...capped, merged];
+          if (updated.length >= TOAST_STACK_LIMIT) {
+            return { visible: [...updated.slice(1), merged], queued: state.queued };
+          }
+          return { visible: [...updated, merged], queued: state.queued };
         }
 
-        // New group entry
+        // New group entry — check if there's room
         const newGroup: ToastItem = {
           ...toast,
           id: groupId,
           count: 1,
           messages: [message],
         };
-        const capped =
-          state.length >= TOAST_STACK_LIMIT ? state.slice(1) : state;
-        return [...capped, newGroup];
+        if (state.visible.length >= TOAST_STACK_LIMIT) {
+          // Queue the new toast; oldest visible stays visible
+          return { visible: state.visible, queued: [...state.queued, newGroup] };
+        }
+        return {
+          visible: [...state.visible, newGroup],
+          queued: state.queued,
+        };
       }
 
-      // ── Ungrouped toast: append, cap stack ──────────────────────────────
-      const capped =
-        state.length >= TOAST_STACK_LIMIT ? state.slice(1) : state;
-      return [...capped, { ...toast, count: 1, messages: [message] }];
+      // ── Ungrouped toast: append if room, otherwise queue ────────────────
+      if (state.visible.length >= TOAST_STACK_LIMIT) {
+        return { visible: state.visible, queued: [...state.queued, toast] };
+      }
+      return {
+        visible: [...state.visible, toast],
+        queued: state.queued,
+      };
     }
 
-    case "REMOVE":
-      return state.filter((t) => t.id !== action.id);
+    case "REMOVE": {
+      const newVisible = state.visible.filter((t) => t.id !== action.id);
+      // Release the next queued toast if there's room
+      if (newVisible.length < TOAST_STACK_LIMIT && state.queued.length > 0) {
+        const [next, ...rest] = state.queued;
+        return { visible: [...newVisible, next], queued: rest };
+      }
+      return { visible: newVisible, queued: state.queued };
+    }
 
     case "DISMISS_ALL":
-      return [];
+      return { visible: [], queued: [] };
+
+    case "DEQUEUE": {
+      // Attempt to move queued toasts into visible slots
+      const available = TOAST_STACK_LIMIT - state.visible.length;
+      if (available <= 0 || state.queued.length === 0) return state;
+      const released = state.queued.slice(0, available);
+      const remaining = state.queued.slice(available);
+      return {
+        visible: [...state.visible, ...released],
+        queued: remaining,
+      };
+    }
 
     default:
       return state;
@@ -161,6 +223,7 @@ function reducer(state: ToastItem[], action: Action): ToastItem[] {
 
 interface ToastContextValue {
   toasts: ToastItem[];
+  queued: ToastItem[];
   toast: (input: ToastInput) => string;
   dismiss: (id: string) => void;
   dismissAll: () => void;
@@ -171,7 +234,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, dispatch] = useReducer(reducer, []);
+  const [state, dispatch] = useReducer(reducer, { visible: [], queued: [] });
   const prefix = useId();
   const counterRef = useRef(0);
 
@@ -194,6 +257,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         count: 1,
         messages: [message],
         onUndo: input.onUndo,
+        actions: input.actions,
       };
       dispatch({ type: "ADD", toast: item, message });
       return msgId;
@@ -210,7 +274,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ToastContext.Provider value={{ toasts, toast, dismiss, dismissAll }}>
+    <ToastContext.Provider
+      value={{ toasts: state.visible, queued: state.queued, toast, dismiss, dismissAll }}
+    >
       {children}
     </ToastContext.Provider>
   );

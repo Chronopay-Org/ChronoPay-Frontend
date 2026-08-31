@@ -179,6 +179,12 @@ export function getNavForRole(role: UserRole): NavItem[] {
  */
 export const BOTTOM_NAV_MAX_VISIBLE = 4;
 
+/** Maximum viewport width (px) below which the bottom navigation is shown. */
+export const BOTTOM_NAV_BREAKPOINT_PX = 640;
+
+/** CSS padding value that accounts for the iOS home indicator. */
+export const BOTTOM_NAV_SAFE_AREA_PADDING = "env(safe-area-inset-bottom)";
+
 /** localStorage key that stores an ordered array of pinned hrefs per role. */
 export const PINNED_NAV_STORAGE_KEY = "chronopay:pinnedNav";
 
@@ -235,4 +241,58 @@ export function sortNavByPins(items: NavItem[], pinnedHrefs: string[]): NavItem[
     if (bPinned) return 1;
     return 0; // preserve original relative order
   });
+}
+
+export interface BottomNavPartition {
+  visible: NavItem[];
+  overflow: NavItem[];
+}
+
+/**
+ * Partitions sorted nav items into the items shown directly in the bottom bar
+ * and the items that belong in the overflow sheet. When overflow is active,
+ * one slot is reserved for the "More" trigger.
+ */
+export function partitionBottomNavItems(
+  items: NavItem[],
+  pinnedHrefs: string[] = [],
+): BottomNavPartition {
+  const sorted = sortNavByPins(items, pinnedHrefs);
+  const hasOverflow = sorted.length > BOTTOM_NAV_MAX_VISIBLE;
+  const visibleCount = hasOverflow
+    ? BOTTOM_NAV_MAX_VISIBLE - 1
+    : BOTTOM_NAV_MAX_VISIBLE;
+
+  return {
+    visible: sorted.slice(0, visibleCount),
+    overflow: sorted.slice(visibleCount),
+  };
+}
+
+/**
+ * Returns the partitioned bottom navigation for a role.
+ */
+export function getBottomNavPartition(
+  role: UserRole,
+  pinnedHrefs: string[] = [],
+): BottomNavPartition {
+  return partitionBottomNavItems(getNavForRole(role), pinnedHrefs);
+}
+
+/**
+ * Determines whether a nav item should be marked active for a given pathname.
+ * The dashboard home item is only active on the exact dashboard route so it
+ * does not stay highlighted while browsing child destinations.
+ */
+export function isNavItemActive(item: NavItem, pathname: string): boolean {
+  const normalize = (value: string) =>
+    value.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+  const itemPath = normalize(item.href);
+  const currentPath = normalize(pathname);
+
+  if (itemPath === "/dashboard") {
+    return currentPath === itemPath;
+  }
+
+  return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
 }

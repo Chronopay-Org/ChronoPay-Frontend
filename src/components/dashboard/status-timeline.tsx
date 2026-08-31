@@ -67,8 +67,10 @@ function filterMilestoneNodes(nodes: TimelineNode[]): TimelineNode[] {
 export function StatusTimeline({ items }: StatusTimelineProps) {
   const [milestonesOnly, setMilestonesOnly] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  const statusId = useId();
   const listRef = useRef<HTMLOListElement>(null);
   const scrollTopRef = useRef(0);
+  const statusId = useId();
 
   // Determine which items to display
   const displayedNodes = milestonesOnly
