@@ -202,7 +202,14 @@ const branchWithMilestones: TimelineNode[] = [
 
 describe("StatusTimeline", () => {
   it("renders the mediator-assigned timeline block with SLA and direct message action", () => {
-    render(<StatusTimeline items={items} />);
+    render(<StatusTimeline items={allItems} />);
+
+    expect(screen.getByText("Amina Yusuf")).toBeInTheDocument();
+    expect(screen.getByText("Responds within 24 hours")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /message/i }),
+    ).toHaveAttribute("href", "/dashboard/messages/amina-yusuf");
+  });
 
     it("renders all items when milestones mode is off", () => {
       render(<StatusTimeline items={allItems} />);
@@ -224,7 +231,7 @@ describe("StatusTimeline", () => {
     });
 
     it("announces a mediator assignment for assistive tech", () => {
-      render(<StatusTimeline items={items} />);
+      render(<StatusTimeline items={allItems} />);
 
       expect(screen.getByRole("status")).toHaveTextContent(
         "Mediator Amina Yusuf assigned. Response SLA Responds within 24 hours.",
@@ -534,5 +541,4 @@ describe("StatusTimeline", () => {
       render(<StatusTimeline items={emptyBranch} />);
       expect(screen.getByText("Empty Branch")).toBeInTheDocument();
     });
-  });
 });

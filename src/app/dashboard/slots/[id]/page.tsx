@@ -13,6 +13,8 @@ import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
 import { GiftPurchaseToggle } from "@/components/dashboard/gift-purchase-toggle";
 import type { GiftDetails } from "@/components/dashboard/gift-purchase-toggle";
 import { BookingAbandonmentBanner } from "@/components/dashboard/booking-abandonment-banner";
+import { DisputeFilingForm, type DisputeFormData } from "@/app/components/dispute-filing-form";
+import { DisputeTrackingPanel, type Dispute } from "@/app/components/dispute-tracking-panel";
 import {
   ArrowLeft,
   Wallet,
@@ -27,7 +29,9 @@ import {
   Check,
   Receipt,
   Users,
-  LayoutDashboard
+  LayoutDashboard,
+  Scale,
+  X
 } from "lucide-react";
 
 function FocusTrap({ children }: { children: React.ReactNode }) {
@@ -41,6 +45,7 @@ const slotDetailsMap: Record<
     durationHours: number;
     description: string;
     seller: {
+      id: string;
       name: string;
       role: string;
       avatarInitials: string;
@@ -55,6 +60,7 @@ const slotDetailsMap: Record<
     description:
       "Deep dive into your product roadmap, tech stack architecture, and launch strategy. We will review your current product design, identify potential technical bottlenecks on the Stellar network integration, and map out a concrete step-by-step roadmap for your engineering team.",
     seller: {
+      id: "sarah-jenkins",
       name: "Dr. Sarah Jenkins",
       role: "Lead Product Architect",
       avatarInitials: "SJ",
@@ -72,6 +78,7 @@ const slotDetailsMap: Record<
     description:
       "A comprehensive heuristic evaluation of your web or mobile application interface. We will analyze your layout, user onboarding flow, and transactional friction points to improve conversion and ensure alignment with modern web design guidelines.",
     seller: {
+      id: "marcus-vance",
       name: "Marcus Vance",
       role: "Principal UX Designer",
       avatarInitials: "MV",
@@ -89,6 +96,7 @@ const slotDetailsMap: Record<
     description:
       "Open office hours for early-stage web3 founders. Bring your hardest questions about fundraising, go-to-market strategies, community building, and structuring secure, compliant token economies.",
     seller: {
+      id: "elena-rostova",
       name: "Elena Rostova",
       role: "Managing Partner, Zenith Capital",
       avatarInitials: "ER",
@@ -133,9 +141,16 @@ export default function SlotDetailPage({
   const stellarFee = 0.0001;
   const totalCost = subtotal + escrowFee + stellarFee;
 
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountedTotal, setDiscountedTotal] = useState(totalCost);
+
   useEffect(() => {
-    setDiscountPercent(0);
-    setDiscountedTotal(totalCost);
+    // Reset discount state when the slot or total price changes. Deferred so
+    // the writes don't run synchronously inside the effect body.
+    window.setTimeout(() => {
+      setDiscountPercent(0);
+      setDiscountedTotal(totalCost);
+    }, 0);
   }, [id, totalCost]);
 
   const effectiveTotalCost = discountPercent > 0 ? discountedTotal : totalCost;
@@ -150,9 +165,53 @@ export default function SlotDetailPage({
   const [loadingMessage, setLoadingMessage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [announcement, setAnnouncement] = useState(""); // Screen reader announcer
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [discountedTotal, setDiscountedTotal] = useState(totalCost);
   const [giftDetails, setGiftDetails] = useState<GiftDetails | null>(null);
+
+  // DISPUTE STATE
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [disputeView, setDisputeView] = useState<"filing" | "tracking">("filing");
+  const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
+  const [currentDispute, setCurrentDispute] = useState<Dispute | null>(null);
+  
+  // Mock existing dispute for demonstration
+  const [existingDisputes, setExistingDisputes] = useState<Dispute[]>([
+    {
+      id: "disp-12345678",
+      slotId: id,
+      category: "quality_mismatch",
+      reason: "Service quality did not match expectations",
+      description: "The delivered consultation was significantly shorter than the agreed 1.5 hours and lacked the depth of technical analysis promised in the description.",
+      status: "under_review",
+      evidence: [
+        {
+          id: "ev-1",
+          fileName: "chat_transcript.pdf",
+          fileSize: 245000,
+          fileType: "application/pdf",
+          uploadStatus: "completed",
+          scanStatus: "clean",
+          uploadedAt: new Date().toISOString()
+        }
+      ],
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 3600000).toISOString(),
+      submittedAt: new Date(Date.now() - 86400000).toISOString(),
+      notes: [
+        {
+          id: "note-1",
+          author: "System",
+          authorRole: "system",
+          content: "Dispute submitted successfully. Awaiting initial review.",
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ],
+      metadata: {
+        priority: "medium",
+        escalationCount: 0,
+        lastActivityAt: new Date(Date.now() - 3600000).toISOString()
+      }
+    }
+  ]);
 
   // DRAFT ABANDONMENT STATE
   const [hasDraft, setHasDraft] = useState(false);
@@ -161,7 +220,11 @@ export default function SlotDetailPage({
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(draftKey);
-      if (saved) setHasDraft(true);
+      if (saved) {
+        // Deferred so the live-region state write doesn't run synchronously
+        // inside the effect body.
+        window.setTimeout(() => setHasDraft(true), 0);
+      }
     }
   }, [draftKey]);
 
@@ -312,6 +375,95 @@ export default function SlotDetailPage({
     announce("Wallet connected successfully.");
   };
 
+  // DISPUTE HANDLERS
+  const handleOpenDisputeModal = () => {
+    setDisputeView(existingDisputes.length > 0 ? "tracking" : "filing");
+    if (existingDisputes.length > 0) {
+      setCurrentDispute(existingDisputes[0]);
+    }
+    setIsDisputeModalOpen(true);
+  };
+
+  const handleCloseDisputeModal = () => {
+    setIsDisputeModalOpen(false);
+    setCurrentDispute(null);
+  };
+
+  const handleSubmitDispute = async (formData: DisputeFormData) => {
+    setIsSubmittingDispute(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const newDispute: Dispute = {
+      id: `disp-${Date.now()}`,
+      slotId: id,
+      category: formData.category,
+      reason: formData.reason,
+      description: formData.description,
+      status: "submitted",
+      evidence: formData.evidence.map((file, index) => ({
+        id: `ev-${Date.now()}-${index}`,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        uploadStatus: "completed" as const,
+        scanStatus: "clean" as const,
+        uploadedAt: new Date().toISOString()
+      })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      submittedAt: new Date().toISOString(),
+      notes: [
+        {
+          id: "note-1",
+          author: "System",
+          authorRole: "system",
+          content: "Dispute submitted successfully. Awaiting initial review.",
+          createdAt: new Date().toISOString()
+        }
+      ],
+      metadata: {
+        priority: "medium",
+        escalationCount: 0,
+        lastActivityAt: new Date().toISOString()
+      }
+    };
+
+    setExistingDisputes(prev => [...prev, newDispute]);
+    setCurrentDispute(newDispute);
+    setDisputeView("tracking");
+    setIsSubmittingDispute(false);
+    announce("Dispute submitted successfully");
+  };
+
+  const handleAddDisputeNote = async (content: string) => {
+    if (!currentDispute) return;
+    
+    const newNote = {
+      id: `note-${Date.now()}`,
+      author: "You",
+      authorRole: "buyer" as const,
+      content,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedDispute = {
+      ...currentDispute,
+      notes: [...currentDispute.notes, newNote],
+      updatedAt: new Date().toISOString(),
+      metadata: {
+        ...currentDispute.metadata,
+        lastActivityAt: new Date().toISOString()
+      }
+    };
+
+    setCurrentDispute(updatedDispute);
+    setExistingDisputes(prev => 
+      prev.map(d => d.id === updatedDispute.id ? updatedDispute : d)
+    );
+  };
+
   const mapTone = (status: typeof slot.status) => {
     if (status === "Healthy") return "positive" as const;
     if (status === "Tight") return "warning" as const;
@@ -348,7 +500,7 @@ export default function SlotDetailPage({
             items={[
               { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
               { label: "Slots", href: "/dashboard/slots" },
-              { label: "Booking", href: "/dashboard/slots/123" },
+              { label: "Booking", href: `/dashboard/slots/${id}` },
               { label: "Details" },
             ]}
           />
@@ -512,6 +664,19 @@ export default function SlotDetailPage({
                     <p className="text-lg font-bold text-white mt-1">{stat.value}</p>
                   </div>
                 ))}
+              </div>
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-slate-400">
+                  Availability, reviews, and policies are maintained on the supplier profile.
+                </p>
+                <Link
+                  href={`/dashboard/suppliers/${details.seller.id}`}
+                  aria-label={`View ${details.seller.name}'s profile with availability, reviews, and policies`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-xs font-bold text-cyan-200 transition-all hover:border-cyan-400/50 hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                >
+                  View supplier profile
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
               </div>
             </article>
           </div>
@@ -722,6 +887,18 @@ export default function SlotDetailPage({
                       className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 hover:scale-[1.01] hover:shadow-[0_16px_34px_rgba(34,211,238,0.22)] active:scale-[0.99]"
                     >
                       Purchase Time Token
+                    </button>
+                  )}
+
+                  {/* Dispute Button */}
+                  {existingDisputes.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleOpenDisputeModal}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 px-5 py-3 text-sm border border-amber-400/30 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20 mt-3"
+                    >
+                      <Scale className="h-4 w-4 mr-2" />
+                      View Dispute ({existingDisputes.length})
                     </button>
                   )}
                 </div>
@@ -1029,6 +1206,85 @@ export default function SlotDetailPage({
                     </Link>
                   </div>
                 </div>
+              )}
+            </div>
+          </FocusTrap>
+        </div>
+      )}
+
+      {/* ----------------- DISPUTE MODAL DIALOG ----------------- */}
+      {isDisputeModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all animate-fade-in"
+          role="presentation"
+        >
+          <FocusTrap>
+            <div
+              ref={modalRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="dispute-modal-headline"
+              className="w-full max-w-2xl rounded-3xl border border-white/12 bg-slate-900 p-6 sm:p-8 shadow-2xl relative focus:outline-none animate-scale-up max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 id="dispute-modal-headline" className="text-xl font-bold text-white">
+                  {disputeView === "filing" ? "File a Dispute" : "Dispute Tracking"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleCloseDisputeModal}
+                  className="rounded-full p-2 text-slate-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  aria-label="Close dispute modal"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* View Toggle */}
+              {existingDisputes.length > 0 && (
+                <div className="flex gap-2 mb-6 p-1 bg-white/5 rounded-full">
+                  <button
+                    type="button"
+                    onClick={() => setDisputeView("tracking")}
+                    className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      disputeView === "tracking"
+                        ? "bg-amber-400/20 text-amber-200"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Track Dispute
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDisputeView("filing")}
+                    className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      disputeView === "filing"
+                        ? "bg-amber-400/20 text-amber-200"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    File New Dispute
+                  </button>
+                </div>
+              )}
+
+              {/* Content */}
+              {disputeView === "filing" ? (
+                <DisputeFilingForm
+                  slotId={id}
+                  onSubmit={handleSubmitDispute}
+                  isSubmitting={isSubmittingDispute}
+                  onCancel={handleCloseDisputeModal}
+                />
+              ) : (
+                currentDispute && (
+                  <DisputeTrackingPanel
+                    dispute={currentDispute}
+                    onAddNote={handleAddDisputeNote}
+                  />
+                )
               )}
             </div>
           </FocusTrap>

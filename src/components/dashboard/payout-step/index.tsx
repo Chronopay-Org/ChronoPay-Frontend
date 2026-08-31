@@ -404,7 +404,7 @@ export function PayoutStep({
               href="#"
               variant="primary"
               size="sm"
-              loading={status === "pending"}
+              loading={false}
               onClick={(e) => {
                 e.preventDefault();
                 handleRetry();

@@ -42,7 +42,7 @@ function IssueCard({
   issue: AccessibilityIssue;
   isSelected: boolean;
   onClick: () => void;
-  triggerRef: React.RefObject<HTMLButtonElement>;
+  triggerRef: React.Ref<HTMLButtonElement>;
 }) {
   const severityColors = {
     critical: "border-rose-400/30 hover:bg-rose-400/5 hover:border-rose-400/50",
