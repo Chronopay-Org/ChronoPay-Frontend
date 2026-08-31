@@ -30,6 +30,28 @@ describe("BookingProgress", () => {
     expect(screen.getByText("Reserved")).toBeInTheDocument();
     expect(screen.getByText("5 bookings")).toBeInTheDocument();
   });
+
+  it("progress bar fill includes motion-reduce:transition-none for prefers-reduced-motion", () => {
+    const { container } = render(
+      <BookingProgress
+        stages={[
+          { label: "Reserved", value: 5 },
+          { label: "Confirmed", value: 3 },
+        ]}
+      />,
+    );
+
+    // The fill divs are nested inside the bar track divs (h-2.5 rounded-full)
+    const fills = Array.from(container.querySelectorAll("div")).filter((el) =>
+      el.className.includes("transition-[width]") &&
+      el.className.includes("motion-reduce:transition-none"),
+    );
+    expect(fills.length).toBe(2);
+    for (const fill of fills) {
+      expect(fill.className).toContain("transition-[width]");
+      expect(fill.className).toContain("motion-reduce:transition-none");
+    }
+  });
 });
 
 describe("BookingFlowShell", () => {

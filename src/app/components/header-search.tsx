@@ -147,7 +147,7 @@ export function HeaderSearch() {
     }
 
     return items;
-  }, [query, recentSearches, suggestions]);
+  }, [query, recentSearches, suggestions, now]);
 
   const isPanelVisible =
     isOpen && (recentSearches.length > 0 || suggestions.length > 0 || didYouMeanSuggestion !== null);

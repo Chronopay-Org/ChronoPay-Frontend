@@ -74,7 +74,7 @@ describe('OnboardingTour', () => {
       <OnboardingTour open={true} onComplete={() => {}} key="1" />
     );
     
-    let nextButton = screen.getByText('Next');
+    const nextButton = screen.getByText('Next');
     await user.click(nextButton);
     
     // Rerender to show new step

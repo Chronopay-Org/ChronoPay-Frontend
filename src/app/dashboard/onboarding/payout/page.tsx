@@ -1,3 +1,5 @@
+"use client";
+
 import { PayoutStep } from "@/components/dashboard/payout-step";
 import type { PayoutCurrency, PayoutConsent } from "@/components/dashboard/payout-step";
 

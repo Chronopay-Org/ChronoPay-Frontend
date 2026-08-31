@@ -1,7 +1,7 @@
 import DesignChecklist from "@/components/design/DesignChecklist";
 import { StatusMatrix, statusMatrixData } from "@/components/design/status-matrix";
 import { A11yTrendChart, a11yTrendSampleData } from "@/components/design/a11y-trend-chart";
-import { UptimeChart, DayData, Incident } from "@/components/uptime";
+import { UptimeChart, DayData, Incident } from "@/app/components/uptime";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SentimentChipFilter } from "@/components/dashboard/sentiment-chip-filter";
@@ -223,7 +223,7 @@ export default function DesignReviewPage() {
                   <div className="space-y-1">
                     <p className="text-xs text-slate-400">Single data point</p>
                     <SentimentSparkline
-                      data={[{ period: "2026-07-20", positive: 48, mixed: 17, critical: 9 }]}
+                      data={[{ timestamp: "2026-07-20", positive: 48, mixed: 17, critical: 9 }]}
                       width={88}
                       height={28}
                     />
