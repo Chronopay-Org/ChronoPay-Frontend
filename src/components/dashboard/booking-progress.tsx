@@ -121,7 +121,7 @@ export function BookingProgress({
             </div>
             <div className="h-2.5 rounded-full bg-white/10" aria-hidden={true}>
               <div
-                className="h-2.5 rounded-full bg-[linear-gradient(90deg,#67e8f9,#22c55e)]"
+                className="h-2.5 rounded-full bg-[linear-gradient(90deg,#67e8f9,#22c55e)] transition-[width] duration-500 ease-out motion-reduce:transition-none"
                 style={{ width: `${(stage.value / maxValue) * 100}%` }}
               />
             </div>
@@ -442,7 +442,7 @@ export function BookingFlowShell({
                   <li key={step.id ?? `${step.title}-${index}`}>
                     <div
                       className={[
-                        "flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors",
+                        "flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors motion-reduce:transition-none",
                         isCurrent
                           ? "border-cyan-400/80 bg-cyan-500/10 text-white"
                           : isComplete
@@ -536,7 +536,7 @@ export function BookingFlowShell({
                   type="button"
                   onClick={handleBack}
                   disabled={boundedIndex === 0}
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3.5 py-2 text-sm font-medium text-slate-100 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3.5 py-2 text-sm font-medium text-slate-100 transition motion-reduce:transition-none hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Back"
                 >
                   <ArrowLeft size={16} aria-hidden="true" />
@@ -546,7 +546,7 @@ export function BookingFlowShell({
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-3.5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                  className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-3.5 py-2 text-sm font-semibold text-slate-950 transition motion-reduce:transition-none hover:bg-cyan-300"
                   aria-label={isLastStep ? "Complete booking" : "Next"}
                 >
                   {isLastStep ? "Complete" : "Next"}
