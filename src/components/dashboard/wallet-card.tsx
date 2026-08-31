@@ -256,10 +256,36 @@ export function WalletCard({
   const { network } = useNetwork();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] =
-    useState<WalletPanelTabId>("holdings-available");
+    useState<WalletPanelTabId>(() => {
+      if (typeof window === "undefined") return "holdings-available";
+      const savedTab = window.localStorage.getItem(HOLDINGS_STORAGE_KEY);
+      return savedTab && HOLDINGS_TAB_IDS.some((tabId) => tabId === savedTab)
+        ? (savedTab as WalletPanelTabId)
+        : "holdings-available";
+    });
   const [panelScrollPositions, setpanelScrollPositions] = useState<
     Record<WalletPanelTabId, number>
-  >({ "holdings-available": 0, "holdings-escrowed": 0, "holdings-redeemed": 0, activity: 0, lifetime: 0 });
+  >(() => {
+    const defaults: Record<WalletPanelTabId, number> = {
+      "holdings-available": 0,
+      "holdings-escrowed": 0,
+      "holdings-redeemed": 0,
+      activity: 0,
+      lifetime: 0,
+    };
+    if (typeof window === "undefined") return defaults;
+    const savedScrolls = window.localStorage.getItem(HOLDINGS_SCROLL_STORAGE_KEY);
+    if (!savedScrolls) return defaults;
+    try {
+      const parsed = JSON.parse(savedScrolls) as Partial<Record<WalletPanelTabId, number>>;
+      if (parsed && typeof parsed === "object") {
+        return { ...defaults, ...parsed };
+      }
+    } catch {
+      // ignore malformed saved scroll positions
+    }
+    return defaults;
+  });
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   const handleClose = useCallback(() => {
@@ -268,35 +294,6 @@ export function WalletCard({
 
   const showZeroBalanceNudge =
     wallet.connection === "connected" && isZeroBalance(wallet.balance);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const savedTab = window.localStorage.getItem(HOLDINGS_STORAGE_KEY);
-    if (
-      savedTab &&
-      HOLDINGS_TAB_IDS.some((tabId) => tabId === savedTab)
-    ) {
-      setActiveTab(savedTab as WalletPanelTabId);
-    }
-
-    const savedScrolls = window.localStorage.getItem(HOLDINGS_SCROLL_STORAGE_KEY);
-    if (savedScrolls) {
-      try {
-        const parsed = JSON.parse(savedScrolls) as Partial<Record<WalletPanelTabId, number>>;
-        if (parsed && typeof parsed === "object") {
-          setpanelScrollPositions((current) => ({
-            ...current,
-            ...parsed,
-          }));
-        }
-      } catch {
-        window.localStorage.removeItem(HOLDINGS_SCROLL_STORAGE_KEY);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -665,7 +662,6 @@ export function WalletCard({
         providers={[]}
         status="idle"
         onConnect={() => setIsModalOpen(false)}
-        onEmailSubmit={() => {}}
       />
     </>
   );

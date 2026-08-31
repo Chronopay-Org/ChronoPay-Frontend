@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, SlidersHorizontal, WifiOff } from "lucide-react";
-
-export type EmptyStateVariant = "default" | "no-results" | "tight-filters" | "offline";
 
 type EmptyStateIllustrationProps = {
   accentLabel: string;
@@ -25,7 +22,6 @@ export function EmptyStateIllustration({
 }: EmptyStateIllustrationProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
-  const colors = VARIANT_COLORS[variant];
 
   useEffect(() => {
     const el = rootRef.current;
@@ -168,48 +164,3 @@ export function EmptyStateIllustration({
   );
 }
 
-/* ── No results variant ── */
-function NoResultsVariant({} /* unused */: { variant: EmptyStateVariant }) {
-  return (
-    <div className="flex h-full items-center justify-center gap-4">
-      <div className="es-drift-slow flex h-20 w-20 items-center justify-center rounded-2xl border border-dashed border-amber-200/20 bg-slate-950/40">
-        <Search className="h-8 w-8" style={{ color: "rgba(251,146,60,0.4)" }} aria-hidden="true" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="h-2 w-16 rounded-full bg-amber-200/20" />
-        <div className="h-2 w-12 rounded-full bg-white/10" />
-      </div>
-    </div>
-  );
-}
-
-/* ── Tight filters variant ── */
-function TightFiltersVariant({} /* unused */: { variant: EmptyStateVariant }) {
-  return (
-    <div className="flex h-full items-center justify-center gap-3">
-      <div className="es-drift-slow flex h-14 w-14 items-center justify-center rounded-xl border border-dashed border-violet-200/20 bg-slate-950/40">
-        <SlidersHorizontal className="h-6 w-6" style={{ color: "rgba(167,139,250,0.4)" }} aria-hidden="true" />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <div className="h-1.5 w-20 rounded-full bg-violet-200/15" />
-        <div className="h-1.5 w-14 rounded-full bg-white/8" />
-        <div className="h-1.5 w-10 rounded-full bg-violet-200/10" />
-      </div>
-    </div>
-  );
-}
-
-/* ── Offline variant ── */
-function OfflineVariant({} /* unused */: { variant: EmptyStateVariant }) {
-  return (
-    <div className="flex h-full items-center justify-center gap-3">
-      <div className="es-drift-slow flex h-14 w-14 items-center justify-center rounded-xl border border-dashed border-red-200/20 bg-slate-950/40">
-        <WifiOff className="h-6 w-6" style={{ color: "rgba(248,113,113,0.4)" }} aria-hidden="true" />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <div className="h-1.5 w-16 rounded-full bg-red-200/15" />
-        <div className="h-1.5 w-10 rounded-full bg-white/8" />
-      </div>
-    </div>
-  );
-}

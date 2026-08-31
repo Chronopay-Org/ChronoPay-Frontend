@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { SlotList } from "./slot-list";
+import type { AlternativeSlot } from "./rebooking-utils";
 import type { Slot } from "./types";
-import type { AvailabilityConflict } from "./availability-conflict-detector";
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
@@ -43,22 +43,36 @@ const slots: Slot[] = [
   },
 ];
 
-const testConflicts: AvailabilityConflict[] = [
-  {
-    id: "test-conflict-1",
-    incomingBlockTitle: "Overlap Block Alpha",
-    incomingTimeRange: "Tue, 10:15 - 11:15 UTC",
-    collidingSlotId: "slot-main-1",
-    collidingTitle: "Product strategy call",
-    collidingTimeRange: "Tue, 10:00 - 11:30 UTC",
-    conflictType: "booking_overlap",
-    severity: "critical",
-    description: "Overlaps with Product strategy call.",
-    suggestedShiftTimeRange: "Tue, 11:30 - 12:30 UTC",
-    suggestedSplitRanges: [],
-    affectedSlotId: "slot-main-1",
-  },
-];
+function reorderableSlots(): Slot[] {
+  return [
+    {
+      id: "slot-main-1",
+      title: "Product strategy call",
+      dateLabel: "Tue, Apr 1",
+      timeRange: "10:00-11:30",
+      demand: "6 interested buyers",
+      rate: "120 XLM / hr",
+      status: "Healthy",
+    },
+    {
+      id: "slot-main-2",
+      title: "Code Review & Optimization",
+      dateLabel: "Wed, Apr 2",
+      timeRange: "14:00-15:00",
+      demand: "2 interested buyers",
+      rate: "90 XLM / hr",
+      status: "Tight",
+    },
+  ];
+}
+
+const dataTransfer = () =>
+  ({
+    setData: vi.fn(),
+    getData: vi.fn().mockReturnValue("slot-main-1"),
+    dropEffect: "",
+    effectAllowed: "move",
+  }) as unknown as DataTransfer;
 
 describe("SlotList", () => {
   beforeEach(() => {
@@ -117,35 +131,7 @@ describe("SlotList", () => {
   });
 
   it("supports keyboard nudging and drag-and-drop reordering", () => {
-    const reorderableSlots: Slot[] = [
-      {
-        id: "slot-main-1",
-        title: "Product strategy call",
-        dateLabel: "Tue, Apr 1",
-        timeRange: "10:00-11:30",
-        demand: "6 interested buyers",
-        rate: "120 XLM / hr",
-        status: "Healthy",
-      },
-      {
-        id: "slot-main-2",
-        title: "Code Review & Optimization",
-        dateLabel: "Wed, Apr 2",
-        timeRange: "14:00-15:00",
-        demand: "2 interested buyers",
-        rate: "90 XLM / hr",
-        status: "Tight",
-      },
-    ];
-
-    const dataTransfer = {
-      setData: vi.fn(),
-      getData: vi.fn().mockReturnValue("slot-main-1"),
-      dropEffect: "",
-      effectAllowed: "move",
-    } as unknown as DataTransfer;
-
-    const { container } = render(<SlotList slots={reorderableSlots} />);
+    const { container } = render(<SlotList slots={reorderableSlots()} />);
 
     const items = screen.getAllByRole("listitem");
     expect(items[0]).toHaveTextContent(/Product strategy call/i);
@@ -156,12 +142,16 @@ describe("SlotList", () => {
       /Code Review & Optimization/i,
     );
 
-    const source = container.querySelector("li[aria-label*='availability slot']") as HTMLElement;
-    const target = container.querySelectorAll("li[aria-label*='availability slot']")[1] as HTMLElement;
+    const source = container.querySelector(
+      "li[aria-label*='availability slot']",
+    ) as HTMLElement;
+    const target = container.querySelectorAll(
+      "li[aria-label*='availability slot']",
+    )[1] as HTMLElement;
 
-    fireEvent.dragStart(source, { dataTransfer });
-    fireEvent.dragOver(target, { dataTransfer, clientY: 20 });
-    fireEvent.drop(target, { dataTransfer });
+    fireEvent.dragStart(source, { dataTransfer: dataTransfer() });
+    fireEvent.dragOver(target, { dataTransfer: dataTransfer(), clientY: 20 });
+    fireEvent.drop(target, { dataTransfer: dataTransfer() });
 
     expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(
       /Product strategy call/i,
