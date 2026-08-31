@@ -109,6 +109,8 @@
   --shell-bottom-bar-bg: #0f172a;
   --shell-text: #f4f7fb;
   --shell-text-muted: #9fb0c7;
+  /* Mobile bottom navigation height includes iOS home-indicator safe area. */
+  --bottom-nav-height: calc(4rem + env(safe-area-inset-bottom, 0px));
 
   /* Shell left rail */
   --shell-rail-bg: rgba(7, 17, 31, 0.55);
@@ -548,6 +550,85 @@ body {
 .card--interactive:active {
   border-color: rgba(103, 232, 249, 0.6); /* active:border-cyan-300/60 */
   background-color: rgb(30, 41, 59); /* active:bg-slate-800 */
+}
+
+/* Mobile bottom navigation — shown below 640px only. */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  min-height: var(--bottom-nav-height, calc(4rem + env(safe-area-inset-bottom, 0px)));
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  background: var(--shell-bottom-bar-bg, #0f172a);
+  border-top: 1px solid var(--shell-header-border, rgba(148, 163, 184, 0.08));
+  box-shadow: var(--elevation-3);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.bottom-nav__item {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  min-width: 0;
+  padding: 0.5rem 0.25rem;
+  color: var(--shell-text-muted, #9fb0c7);
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: var(--line-height-tight, 1.25);
+  text-decoration: none;
+  border-radius: var(--radius-sm, 12px);
+}
+
+.bottom-nav__item:hover {
+  color: var(--shell-text, #f4f7fb);
+  background: var(--shell-rail-hover, rgba(148, 163, 184, 0.08));
+}
+
+.bottom-nav__item[aria-current="page"] {
+  color: var(--shell-rail-text-active, #f4f7fb);
+  background: var(--shell-rail-active, rgba(103, 232, 249, 0.1));
+}
+
+.bottom-nav__item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2rem;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--accent-strong, #22d3ee);
+  transform: translateX(-50%);
+}
+
+.bottom-nav-spacer {
+  display: block;
+  height: var(--bottom-nav-height, calc(4rem + env(safe-area-inset-bottom, 0px)));
+}
+
+@media (max-width: 639px) {
+  .fab,
+  .toast,
+  .toast-container {
+    bottom: calc(var(--bottom-nav-height, calc(4rem + env(safe-area-inset-bottom, 0px))) + var(--space-4, 1rem));
+  }
+}
+
+@media (min-width: 640px) {
+  .bottom-nav,
+  .bottom-nav-spacer {
+    display: none;
+  }
 }
 
 /*

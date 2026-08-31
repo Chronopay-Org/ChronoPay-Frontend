@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DashboardShell } from "./dashboard-shell";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
@@ -35,6 +35,30 @@ vi.mock("next/link", () => ({
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
+let currentViewportWidth = 1024;
+
+function getMediaMatches(query: string) {
+  const maxWidth = query.match(/\(max-width:\s*(\d+)px\)/);
+  if (maxWidth) return currentViewportWidth <= Number(maxWidth[1]);
+  const minWidth = query.match(/\(min-width:\s*(\d+)px\)/);
+  if (minWidth) return currentViewportWidth >= Number(minWidth[1]);
+  return false;
+}
+
+function setViewportWidth(width: number) {
+  currentViewportWidth = width;
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: getMediaMatches(query),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
 function renderShell(initialRole: "buyer" | "supplier" | "admin" = "buyer") {
   window.localStorage.setItem("chronopay:role:selected", "true");
   window.localStorage.setItem("chronopay:role", initialRole);
@@ -52,6 +76,7 @@ function renderShell(initialRole: "buyer" | "supplier" | "admin" = "buyer") {
 describe("DashboardShell", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    setViewportWidth(1024);
     mockUsePathname.mockReturnValue("/dashboard");
   });
 
@@ -293,5 +318,52 @@ describe("DashboardShell", () => {
     usersLinks.forEach((link) => {
       expect(link).toHaveAttribute("aria-current", "page");
     });
+  });
+
+  // ── Mobile Bottom Navigation ─────────────────────────────────────────────
+
+  it("renders a bottom navigation landmark below 640px", () => {
+    setViewportWidth(390);
+    renderShell("buyer");
+    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
+    expect(bottomNav).toBeInTheDocument();
+  });
+
+  it("hides the bottom navigation at 640px and above", () => {
+    setViewportWidth(640);
+    renderShell("buyer");
+    expect(screen.queryByRole("navigation", { name: "Bottom navigation" })).not.toBeInTheDocument();
+  });
+
+  it("includes top-level destinations in the bottom navigation", () => {
+    setViewportWidth(390);
+    renderShell("buyer");
+    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
+    expect(within(bottomNav).getByRole("link", { name: /Dashboard home/i })).toBeInTheDocument();
+    expect(within(bottomNav).getByRole("link", { name: /Browse the time marketplace/i })).toBeInTheDocument();
+    expect(within(bottomNav).getByRole("link", { name: /View your bookings/i })).toBeInTheDocument();
+  });
+
+  it("does not expose admin bottom navigation items to buyers", () => {
+    setViewportWidth(390);
+    renderShell("buyer");
+    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
+    expect(within(bottomNav).queryByText("Users")).not.toBeInTheDocument();
+  });
+
+  it("marks the active bottom navigation item with aria-current=page", () => {
+    setViewportWidth(390);
+    mockUsePathname.mockReturnValue("/dashboard/bookings");
+    renderShell("buyer");
+    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
+    const bookingsLink = within(bottomNav).getByRole("link", { name: /View your bookings/i });
+    expect(bookingsLink).toHaveAttribute("aria-current", "page");
+  });
+
+  it("applies safe-area-inset bottom padding to the bottom navigation", () => {
+    setViewportWidth(390);
+    renderShell("buyer");
+    const bottomNav = screen.getByRole("navigation", { name: "Bottom navigation" });
+    expect(bottomNav.style.paddingBottom).toBe("env(safe-area-inset-bottom)");
   });
 });
