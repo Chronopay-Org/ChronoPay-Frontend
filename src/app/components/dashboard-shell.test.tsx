@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DashboardShell } from "./dashboard-shell";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
@@ -35,6 +35,30 @@ vi.mock("next/link", () => ({
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
+let currentViewportWidth = 1024;
+
+function getMediaMatches(query: string) {
+  const maxWidth = query.match(/\(max-width:\s*(\d+)px\)/);
+  if (maxWidth) return currentViewportWidth <= Number(maxWidth[1]);
+  const minWidth = query.match(/\(min-width:\s*(\d+)px\)/);
+  if (minWidth) return currentViewportWidth >= Number(minWidth[1]);
+  return false;
+}
+
+function setViewportWidth(width: number) {
+  currentViewportWidth = width;
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: getMediaMatches(query),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
 function renderShell(initialRole: "buyer" | "supplier" | "admin" = "buyer") {
   window.localStorage.setItem("chronopay:role:selected", "true");
   window.localStorage.setItem("chronopay:role", initialRole);
@@ -52,6 +76,7 @@ function renderShell(initialRole: "buyer" | "supplier" | "admin" = "buyer") {
 describe("DashboardShell", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    setViewportWidth(1024);
     mockUsePathname.mockReturnValue("/dashboard");
   });
 
@@ -293,5 +318,101 @@ describe("DashboardShell", () => {
     usersLinks.forEach((link) => {
       expect(link).toHaveAttribute("aria-current", "page");
     });
+  });
+
+  // ── RTL Support ─────────────────────────────────────────────────────────────
+
+  it("renders correctly in LTR mode (default)", () => {
+    document.documentElement.dir = "ltr";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+    expect(rail).toHaveClass("border-e");
+  });
+
+  it("renders correctly in RTL mode", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+    expect(rail).toHaveClass("border-e");
+  });
+
+  it("uses logical border property (border-e) instead of physical border-r", () => {
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("border-e");
+    expect(rail).not.toHaveClass("border-r");
+  });
+
+  it("mobile rail transforms correctly in LTR mode when closed", () => {
+    document.documentElement.dir = "ltr";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("-translate-x-full");
+    expect(rail).not.toHaveClass("translate-x-0");
+  });
+
+  it("mobile rail transforms correctly in LTR mode when open", () => {
+    document.documentElement.dir = "ltr";
+    renderShell();
+    const toggle = screen.getByLabelText("Open navigation menu");
+    fireEvent.click(toggle);
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("translate-x-0");
+    expect(rail).not.toHaveClass("-translate-x-full");
+  });
+
+  it("mobile rail transforms correctly in RTL mode when closed", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("rtl:translate-x-full");
+  });
+
+  it("mobile rail transforms correctly in RTL mode when open", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const toggle = screen.getByLabelText("Open navigation menu");
+    fireEvent.click(toggle);
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("translate-x-0");
+  });
+
+  it("maintains RTL support when direction changes dynamically", () => {
+    renderShell();
+    document.documentElement.dir = "rtl";
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+    expect(rail).toHaveClass("border-e");
+  });
+
+  it("handles invalid dir attribute gracefully", () => {
+    document.documentElement.dir = "invalid";
+    expect(() => renderShell()).not.toThrow();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+  });
+
+  it("handles empty dir attribute gracefully", () => {
+    document.documentElement.dir = "";
+    expect(() => renderShell()).not.toThrow();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toBeInTheDocument();
+  });
+
+  it("preserves accessibility in RTL mode", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveAttribute("role", "navigation");
+    expect(rail).toHaveAttribute("aria-label", "Module navigation");
+  });
+
+  it("desktop rail position respects logical properties in RTL", () => {
+    document.documentElement.dir = "rtl";
+    renderShell();
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveClass("inset-inline-start-0");
   });
 });

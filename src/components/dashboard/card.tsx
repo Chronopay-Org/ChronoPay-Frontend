@@ -1,4 +1,9 @@
-import { type ElementType, type HTMLAttributes, type ReactNode } from "react";
+import {
+  type ComponentPropsWithoutRef,
+  type ElementType,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 import clsx from "clsx";
 import { SocialProofBadges } from "./social-proof-badges";
 import type { SocialProofBadgeEntry } from "./types";
@@ -9,6 +14,8 @@ export interface CardProps extends Omit<HTMLAttributes<HTMLElement>, "children">
   className?: string;
   variant?: "default" | "panel" | "glass" | "accent" | "compact-list";
   interactive?: boolean;
+  /** href for when `as="a"` is used. */
+  href?: string;
 }
 
 export function Card<T extends ElementType = "article">({
