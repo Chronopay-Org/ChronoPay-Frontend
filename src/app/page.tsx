@@ -14,9 +14,12 @@ export default function Home() {
           Tokenize your future time slots as tradable digital assets on the Stellar network.
           Buy, sell, reserve, and redeem time globally.
         </p>
-        <div className="mt-12 flex gap-4">
+        <div className="mt-12 flex flex-wrap gap-4">
             <ButtonLink href="/dashboard" variant="primary">
               Dashboard
+            </ButtonLink>
+            <ButtonLink href="/pricing" variant="secondary">
+              Pricing
             </ButtonLink>
             <ButtonLink href="https://stellar.org" variant="secondary" target="_blank" rel="noopener noreferrer">
               Stellar

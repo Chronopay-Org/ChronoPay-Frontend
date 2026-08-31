@@ -10,6 +10,8 @@ export interface CardProps extends Omit<HTMLAttributes<HTMLElement>, "children">
   className?: string;
   variant?: "default" | "panel" | "glass" | "accent" | "compact-list";
   interactive?: boolean;
+  /** href for when `as="a"` is used. */
+  href?: string;
 }
 
 export function Card<T extends ElementType = "article">({
@@ -47,8 +49,7 @@ export function CardHeader({
 }: {
   children: ReactNode;
   className?: string;
-  [key: string]: unknown;
-}) {
+} & Omit<HTMLAttributes<HTMLDivElement>, "className" | "children">) {
   return (
     <div className={clsx("card-header", className)} {...props}>
       {children}
@@ -63,8 +64,7 @@ export function CardBody({
 }: {
   children: ReactNode;
   className?: string;
-  [key: string]: unknown;
-}) {
+} & Omit<HTMLAttributes<HTMLDivElement>, "className" | "children">) {
   return (
     <div className={clsx("card-body", className)} {...props}>
       {children}
@@ -79,8 +79,7 @@ export function CardFooter({
 }: {
   children: ReactNode;
   className?: string;
-  [key: string]: unknown;
-}) {
+} & Omit<HTMLAttributes<HTMLDivElement>, "className" | "children">) {
   return (
     <div className={clsx("card-footer", className)} {...props}>
       {children}

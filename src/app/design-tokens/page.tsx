@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CopyButton } from "@/app/components/ui/copy-button";
-import ThemeSwitcher from "@/app/components/ui/theme-switcher";
+import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 
 const tokens = [
   { name: "Primary 500", value: "#06B6D4", category: "Colors" },

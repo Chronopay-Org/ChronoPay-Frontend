@@ -750,7 +750,7 @@ export const AvailabilityTemplatePicker: React.FC<AvailabilityTemplatePickerProp
   }
 
   return (
-    <PanelShell className={className}>
+    <PanelShell title={title} description={description} className={className}>
       {content}
     </PanelShell>
   );
