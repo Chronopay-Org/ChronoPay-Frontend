@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { maskRecoveryCode } from '../receipt/masking';
+import { FormField } from '@/app/components/ui/form-field';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -140,22 +141,23 @@ export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => voi
 
       {step === 'verify' && (
         <div>
-          <label htmlFor="auth-code" className="block text-sm mb-3 font-medium text-slate-200">Enter the 6-digit code from your authenticator app</label>
-          <input
+          <FormField
             id="auth-code"
-            ref={inputRef}
+            inputRef={inputRef}
+            label="Enter the 6-digit code from your authenticator app"
+            autoComplete="one-time-code"
+            inputMode="numeric"
+            name="auth-code"
             type="text"
             maxLength={6}
             value={code}
             onChange={handleChange}
-            onPaste={handlePaste}
             onKeyDown={handleKeyDown}
-            aria-invalid={!!errorMsg}
-            aria-describedby={errorMsg ? "error-msg" : undefined}
-            className={`w-full text-center text-4xl font-mono tracking-[0.5em] bg-slate-950 border ${errorMsg ? 'border-red-500' : 'border-slate-700'} rounded-xl py-6 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400`}
+            onPaste={handlePaste}
+            error={errorMsg || undefined}
             placeholder="000000"
+            inputClassName={`w-full text-center text-4xl font-mono tracking-[0.5em] bg-slate-950 border rounded-xl py-6 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 ${errorMsg ? 'border-red-500' : 'border-slate-700'}`}
           />
-          {errorMsg && <p id="error-msg" className="mt-2 text-red-400 text-sm" role="alert">{errorMsg}</p>}
           <Button onClick={handleVerify} disabled={code.length !== 6} className="mt-6 bg-cyan-500 hover:bg-cyan-400 text-black">
             Verify Code
           </Button>
