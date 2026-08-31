@@ -603,8 +603,8 @@ const overlayEntries: OverlayEntry[] = [
       description: "Coach-mark tour dialog with step navigation, step dots, and back/skip/next buttons.",
       sourcePath: "src/components/dashboard/onboarding-walkthrough.tsx",
       hasFocusTrap: true,
-      focusTrapType: "Inline trap",
-      note: "Uses inline handleKeyDown instead of FocusTrap component.",
+      focusTrapType: "FocusTrap component",
+      note: "Standardized on the shared FocusTrap (was inline handleKeyDown).",
     },
     renderModal: (onClose) => <OnboardingTestModal onClose={onClose} />,
   },
@@ -858,8 +858,8 @@ export function FocusTrapTester() {
 
       <p className="text-sm leading-relaxed text-slate-400">
         This harness enumerates every modal and overlay in the app and runs an automated
-        tab-cycle check. Press <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-xs text-slate-300">Open + Test focus trap</kbd>{" "}
-        to open the overlay and verify that focus cycling works correctly.
+        tab-cycle check. Press the <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-xs text-slate-300">Open + Test</kbd>{" "}
+        button on any overlay card to open it and verify that focus cycling works correctly.
       </p>
 
       <TestSummary results={results} />
