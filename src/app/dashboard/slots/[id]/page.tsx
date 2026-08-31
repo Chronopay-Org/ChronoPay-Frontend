@@ -41,6 +41,7 @@ const slotDetailsMap: Record<
     durationHours: number;
     description: string;
     seller: {
+      id: string;
       name: string;
       role: string;
       avatarInitials: string;
@@ -55,6 +56,7 @@ const slotDetailsMap: Record<
     description:
       "Deep dive into your product roadmap, tech stack architecture, and launch strategy. We will review your current product design, identify potential technical bottlenecks on the Stellar network integration, and map out a concrete step-by-step roadmap for your engineering team.",
     seller: {
+      id: "sarah-jenkins",
       name: "Dr. Sarah Jenkins",
       role: "Lead Product Architect",
       avatarInitials: "SJ",
@@ -72,6 +74,7 @@ const slotDetailsMap: Record<
     description:
       "A comprehensive heuristic evaluation of your web or mobile application interface. We will analyze your layout, user onboarding flow, and transactional friction points to improve conversion and ensure alignment with modern web design guidelines.",
     seller: {
+      id: "marcus-vance",
       name: "Marcus Vance",
       role: "Principal UX Designer",
       avatarInitials: "MV",
@@ -89,6 +92,7 @@ const slotDetailsMap: Record<
     description:
       "Open office hours for early-stage web3 founders. Bring your hardest questions about fundraising, go-to-market strategies, community building, and structuring secure, compliant token economies.",
     seller: {
+      id: "elena-rostova",
       name: "Elena Rostova",
       role: "Managing Partner, Zenith Capital",
       avatarInitials: "ER",
@@ -532,6 +536,19 @@ export default function SlotDetailPage({
                     <p className="text-lg font-bold text-white mt-1">{stat.value}</p>
                   </div>
                 ))}
+              </div>
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-slate-400">
+                  Availability, reviews, and policies are maintained on the supplier profile.
+                </p>
+                <Link
+                  href={`/dashboard/suppliers/${details.seller.id}`}
+                  aria-label={`View ${details.seller.name}'s profile with availability, reviews, and policies`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-xs font-bold text-cyan-200 transition-all hover:border-cyan-400/50 hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                >
+                  View supplier profile
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
               </div>
             </article>
           </div>

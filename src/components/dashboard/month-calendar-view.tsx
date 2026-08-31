@@ -125,7 +125,6 @@ export function MonthCalendarView({
   // Find the index of the selected date in the grid
   useEffect(() => {
     const idx = days.findIndex((d) => d && isSameDay(d, selectedDate));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (idx >= 0) setFocusedDayIndex(idx);
   }, [selectedDate, days]);
 
@@ -354,28 +353,13 @@ export function MonthCalendarView({
               "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-ring-cyan",
               heatmapEnabled
                 ? "bg-cyan-500/20 text-cyan-100 shadow-sm"
-                : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                : "bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
             )}
-            aria-pressed={heatmapEnabled}
-            aria-label={heatmapEnabled ? "Hide availability heatmap" : "Show availability heatmap"}
           >
-            <span className="text-cyan-400" aria-hidden="true">🔥</span>
-            <span>{heatmapEnabled ? "Heatmap On" : "Heatmap Off"}</span>
+            {heatmapEnabled ? "Hide heatmap" : "Show heatmap"}
           </button>
         </div>
-
-        {heatmapEnabled && (
-          <CalendarHeatmapLegend
-            variant="horizontal"
-            ranges={{
-              none: "0 slots",
-              low: "1–2 slots",
-              medium: "3–5 slots",
-              high: "6–9 slots",
-              peak: "10+ slots",
-            }}
-          />
-        )}
+        <CalendarHeatmapLegend />
       </div>
     </div>
   );
