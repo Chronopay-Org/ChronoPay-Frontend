@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { clsx } from "clsx";
-import { Menu, X, Shield, Keyboard, Settings } from "lucide-react";
+import { Menu, X, Shield, Keyboard, Settings, Search } from "lucide-react";
 import { useRole } from "@/app/components/navigation/RoleContext";
 import { RoleOnboardingDialog } from "@/app/components/navigation/role-onboarding-dialog";
 import { getNavForRole, ROLE_META, type NavItem } from "@/app/components/navigation/role-nav";
@@ -15,6 +15,7 @@ import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 import { ContextualKeysPanel } from "@/app/components/ui/contextual-keys-panel";
+import { CommandPalette } from "@/app/components/command-palette";
 
 function getOnlineStatus() {
   if (typeof navigator === "undefined") return true;
@@ -315,6 +316,31 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <RoleChip />
               <AccountSwitcher />
               <HeaderSearch />
+              <button
+                type="button"
+                aria-label="Open command palette"
+                title="Command palette (Ctrl+K / ⌘K)"
+                onClick={() => {
+                  document.dispatchEvent(new KeyboardEvent("keydown", {
+                    key: "k",
+                    metaKey: true,
+                    bubbles: true,
+                    cancelable: true,
+                  }));
+                }}
+                className={clsx(
+                  "hidden items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors sm:flex",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
+                  "focus-visible:ring-offset-slate-950",
+                  "hover:bg-white/6 border-white/10 text-slate-400 hover:text-white"
+                )}
+              >
+                <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>Search…</span>
+                <kbd className="ml-1 hidden rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[10px] leading-none text-slate-500 sm:inline">
+                  ⌘K
+                </kbd>
+              </button>
               <ThemeSwitcher />
               <OfflineQueueIndicator />
               <button
@@ -460,6 +486,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         onClose={() => setIsShortcutsOpen(false)}
       />
       <RoleOnboardingDialog />
+      {/* ── Command Palette — global Cmd+K / Ctrl+K navigation ────────────── */}
+      <CommandPalette />
     </div>
   );
 }

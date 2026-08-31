@@ -417,9 +417,9 @@ export const SlotList = ({
                 />
               </li>
             );
-            })}
+          })}
           </ul>
-        )}
+
 
         {suggestedAlternatives.length > 0 ? (
             <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
