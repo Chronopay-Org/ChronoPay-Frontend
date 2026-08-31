@@ -22,9 +22,26 @@
  *  - Persists across sessions
  */
 
-import { useState, useEffect, useCallback, useId } from "react";
+import { useState, useEffect, useCallback, useId, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { CheckCircle2, Copy, Download } from "lucide-react";
 import { WarningBanner } from "@/app/components/ui/warning-banner";
+
+type SettingsTabId = "account" | "security" | "notifications" | "appearance" | "wallets" | "developer";
+
+interface SettingsTab {
+  id: SettingsTabId;
+  label: string;
+  description: string;
+}
+
+const SETTINGS_TABS: SettingsTab[] = [
+  { id: "account", label: "Account", description: "Manage your profile details and account preferences." },
+  { id: "security", label: "Security", description: "Update your password and secure your account." },
+  { id: "notifications", label: "Notifications", description: "Control which alerts and updates you receive." },
+  { id: "appearance", label: "Appearance", description: "Customize the ChronoPay look and feel." },
+  { id: "wallets", label: "Wallets", description: "Manage connected wallets and payout methods." },
+  { id: "developer", label: "Developer", description: "Access experimental features, debug info, and logs." },
+];
 
 interface ExperimentalFeature {
   id: string;
@@ -204,6 +221,7 @@ export function DeveloperSettings() {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -361,6 +379,91 @@ export function DeveloperSettings() {
           <span>{isExporting ? "Exporting..." : "Export Logs"}</span>
         </button>
       </div>
+    </div>
+  );
+}
+
+export function SettingsTabs() {
+  const [activeTab, setActiveTab] = useState<SettingsTabId>("account");
+  const baseId = useId();
+
+  const handleTabKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+      const currentIndex = SETTINGS_TABS.findIndex((tab) => tab.id === activeTab);
+      if (currentIndex === -1) return;
+      let nextIndex = currentIndex;
+
+      if (event.key === "ArrowRight") {
+        nextIndex = (currentIndex + 1) % SETTINGS_TABS.length;
+      } else if (event.key === "ArrowLeft") {
+        nextIndex = (currentIndex - 1 + SETTINGS_TABS.length) % SETTINGS_TABS.length;
+      } else if (event.key === "Home") {
+        nextIndex = 0;
+      } else if (event.key === "End") {
+        nextIndex = SETTINGS_TABS.length - 1;
+      } else {
+        return;
+      }
+
+      event.preventDefault();
+      const nextTab = SETTINGS_TABS[nextIndex];
+      setActiveTab(nextTab.id);
+      document.getElementById(`${baseId}-tab-${nextTab.id}`)?.focus();
+    },
+    [activeTab, baseId],
+  );
+
+  return (
+    <div className="space-y-6">
+      <div
+        role="tablist"
+        aria-label="Settings sections"
+        className="flex flex-wrap gap-1 border-b border-white/10 pb-px"
+      >
+        {SETTINGS_TABS.map((tab) => {
+          const selected = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              id={`${baseId}-tab-${tab.id}`}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={`${baseId}-panel-${tab.id}`}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => setActiveTab(tab.id)}
+              onKeyDown={handleTabKeyDown}
+              className={`-mb-px inline-flex items-center rounded-t-lg border-b-2 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+                selected
+                  ? "border-cyan-300/50 bg-white/4 text-white"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {SETTINGS_TABS.map((tab) => (
+        <div
+          key={tab.id}
+          id={`${baseId}-panel-${tab.id}`}
+          role="tabpanel"
+          aria-labelledby={`${baseId}-tab-${tab.id}`}
+          hidden={activeTab !== tab.id}
+          className="space-y-6"
+        >
+          {tab.id === "developer" ? (
+            <DeveloperSettings />
+          ) : (
+            <div className="rounded-lg border border-white/6 bg-white/4 p-4 sm:p-5">
+              <h3 className="text-lg font-semibold text-white">{tab.label} Settings</h3>
+              <p className="mt-1 text-sm text-slate-400">{tab.description}</p>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

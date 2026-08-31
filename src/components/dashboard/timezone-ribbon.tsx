@@ -40,6 +40,7 @@ export function TimezoneRibbon({
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const detectedViewerTz = getViewerTimezone();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setViewerTimeZone(detectedViewerTz);
 
     const savedMode = getStoredTimezoneMode(supplierId);

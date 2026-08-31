@@ -26,35 +26,13 @@ export function UptimeChart({
   const containerRef = useRef<HTMLDivElement>(null);
   const cellsRef = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  if (!days || days.length === 0) {
-    return (
-      <div className="text-slate-400 text-sm">
-        No uptime data available
-      </div>
-    );
-  }
-
   // Ensure we have exactly 90 days
-  const displayDays = days.slice(-90); // Take last 90 days (newest last)
-
-  // Format dates for labels
-  const oldestDate = new Date(`${displayDays[0].date}T00:00:00Z`);
-  const newestDate = new Date(
-    `${displayDays[displayDays.length - 1].date}T00:00:00Z`
-  );
-
-  const oldestLabel = oldestDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-  const newestLabel = newestDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+  const displayDays = days?.slice(-90) || []; // Take last 90 days (newest last)
 
   // Keyboard navigation: arrow keys move focus between cells
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!displayDays || displayDays.length === 0) return;
       if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
         e.preventDefault();
 
@@ -71,8 +49,32 @@ export function UptimeChart({
         }
       }
     },
-    []
+    [displayDays]
   );
+
+  if (!days || days.length === 0) {
+    return (
+      <div className="text-slate-400 text-sm">
+        No uptime data available
+      </div>
+    );
+  }
+
+  // Format dates for labels
+  const oldestDate = new Date(`${displayDays[0].date}T00:00:00Z`);
+  const newestDate = new Date(
+    `${displayDays[displayDays.length - 1].date}T00:00:00Z`
+  );
+
+  const oldestLabel = oldestDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+  const newestLabel = newestDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
 
   // Determine text direction (RTL)
   const dir = typeof window !== "undefined" && 

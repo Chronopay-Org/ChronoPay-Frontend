@@ -16,14 +16,14 @@ export default function DesignSystemComponentsPage() {
       const date = new Date();
       date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
-      return [dateStr, Math.floor(Math.random() * 10)];
+      return [dateStr, (i * 7) % 10];
     })
   );
 
   const sampleDays = Array.from({ length: 14 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
-    const slotCount = Math.floor(Math.random() * 10);
+    const slotCount = (i * 3) % 10;
     let status: "available" | "limited" | "full" | "none" = "available";
     if (slotCount === 0) status = "none";
     else if (slotCount <= 3) status = "limited";

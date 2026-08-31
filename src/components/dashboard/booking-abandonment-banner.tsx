@@ -41,7 +41,7 @@ export function BookingAbandonmentBanner({
             Incomplete Booking Draft
           </h2>
           <p className="text-xs text-indigo-300/80 mt-0.5">
-            You started booking a slot but didn't finish. Drafts expire in 24 hours.
+            You started booking a slot but didn&apos;t finish. Drafts expire in 24 hours.
           </p>
         </div>
       </div>

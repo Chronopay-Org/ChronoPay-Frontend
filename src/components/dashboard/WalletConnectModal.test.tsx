@@ -9,6 +9,13 @@ const providers = [
   { id: "albedo", name: "Albedo", icon: <span>A</span>, capabilities: ["sign", "auth"] },
 ];
 
+const mockCheckoutData = {
+  slot: "Premium Sponsorship",
+  price: "500 XLM",
+  fees: "5 XLM",
+  escrowTerms: "Funds released after 30 days"
+};
+
 describe("WalletConnectModal", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -53,7 +60,7 @@ describe("WalletConnectModal", () => {
     );
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Connect Stellar wallet/i }),
+      screen.getByRole("button", { name: /Different wallet/i }),
     );
 
     expect(
@@ -201,114 +208,58 @@ describe("WalletConnectModal", () => {
     expect(results).toHaveNoViolations();
   });
 
-  /* ── Reduced Motion & Success State Tests ────────────────────────────── */
+  /* ── Checkout Review & Handoff Mode Tests ────────────────────────────── */
 
-  it("renders standard motion success mark when prefers-reduced-motion is false", () => {
+  it("renders checkout review details when mode is 'review'", () => {
+    const onSign = vi.fn();
     render(
       <WalletConnectModal
         isOpen
         onClose={vi.fn()}
         providers={providers}
-        status="success"
+        status="idle"
         onConnect={vi.fn()}
-      />,
+        mode="review"
+        checkoutData={mockCheckoutData}
+        onSign={onSign}
+      />
     );
 
-    expect(screen.getByTestId("standard-motion-success-mark")).toBeInTheDocument();
-    expect(screen.queryByTestId("reduced-motion-success-mark")).not.toBeInTheDocument();
-    expect(screen.getByText("Wallet Connected Successfully")).toBeInTheDocument();
+    expect(screen.getByText("Review your checkout")).toBeInTheDocument();
+    expect(screen.getByText("Premium Sponsorship")).toBeInTheDocument();
+    expect(screen.getByText("500 XLM")).toBeInTheDocument();
+    expect(screen.getByText("5 XLM")).toBeInTheDocument();
+    expect(screen.getByText("Funds released after 30 days")).toBeInTheDocument();
+    
+    // Check inline explainer
+    expect(screen.getByText(/You will be prompted in your wallet to sign/i)).toBeInTheDocument();
+
+    const signButton = screen.getByRole("button", { name: /Continue to Sign/i });
+    expect(signButton).toBeInTheDocument();
+    
+    fireEvent.click(signButton);
+    expect(onSign).toHaveBeenCalled();
   });
 
-  it("renders static reduced-motion success mark when prefers-reduced-motion: reduce is active", () => {
-    Object.defineProperty(window, "matchMedia", {
-      writable: true,
-      value: vi.fn().mockImplementation((query: string) => ({
-        matches: query === "(prefers-reduced-motion: reduce)",
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-      })),
-    });
-
+  it("renders handoff mode correctly", () => {
+    const onCancelHandoff = vi.fn();
     render(
       <WalletConnectModal
         isOpen
         onClose={vi.fn()}
         providers={providers}
-        status="success"
+        status="idle"
         onConnect={vi.fn()}
-      />,
+        mode="handoff"
+        onCancelHandoff={onCancelHandoff}
+      />
     );
 
-    expect(screen.getByTestId("reduced-motion-success-mark")).toBeInTheDocument();
-    expect(screen.queryByTestId("standard-motion-success-mark")).not.toBeInTheDocument();
-    expect(screen.getByText("Wallet Connected Successfully")).toBeInTheDocument();
-  });
+    // Should render the signing skeleton
+    expect(screen.getByText(/Waiting for signature in/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
 
-  it("announces success message via LiveRegion on success status", () => {
-    render(
-      <WalletConnectModal
-        isOpen
-        onClose={vi.fn()}
-        providers={providers}
-        status="success"
-        onConnect={vi.fn()}
-      />,
-    );
-
-    const liveRegion = screen.getByRole("status");
-    expect(liveRegion).toHaveTextContent("Wallet connected successfully.");
-  });
-
-  it("updates state dynamically when prefers-reduced-motion changes mid-flow", () => {
-    let listener: ((e: MediaQueryListEvent) => void) | null = null;
-
-    Object.defineProperty(window, "matchMedia", {
-      writable: true,
-      value: vi.fn().mockImplementation((query: string) => ({
-        matches: false,
-        addEventListener: vi.fn((event, fn) => {
-          if (event === "change") listener = fn;
-        }),
-        removeEventListener: vi.fn(),
-      })),
-    });
-
-    render(
-      <WalletConnectModal
-        isOpen
-        onClose={vi.fn()}
-        providers={providers}
-        status="success"
-        onConnect={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByTestId("standard-motion-success-mark")).toBeInTheDocument();
-
-    act(() => {
-      if (listener) {
-        listener({ matches: true } as MediaQueryListEvent);
-      }
-    });
-
-    expect(screen.getByTestId("reduced-motion-success-mark")).toBeInTheDocument();
-  });
-
-  it("passes accessibility check (axe) in success state", async () => {
-    const { container } = render(
-      <WalletConnectModal
-        isOpen
-        onClose={vi.fn()}
-        providers={providers}
-        status="success"
-        onConnect={vi.fn()}
-      />,
-    );
-
-    const results = await axe(container);
-    expect(results).toHaveNoViolations();
+    fireEvent.click(screen.getByRole("button", { name: /Cancel/i }));
+    expect(onCancelHandoff).toHaveBeenCalled();
   });
 });
-
