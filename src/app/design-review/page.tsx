@@ -11,6 +11,8 @@ import {
   reviewSentimentTrend,
 } from "@/components/dashboard/dashboard-data";
 
+import { A11yAuditDashboard } from "@/components/design/a11y-audit-dashboard";
+
 // Helper function to generate 90 days of mock uptime data
 function generate90DaysMockData(): DayData[] {
   const days: DayData[] = [];
@@ -375,6 +377,11 @@ export default function DesignReviewPage() {
                   scrolls horizontally on small screens. RTL support reverses cell order.
                 </p>
               </div>
+            </div>
+
+            {/* ── A11y Audit Dashboard ── */}
+            <div className="space-y-6">
+              <A11yAuditDashboard />
             </div>
 
             {/* ── A11y Audit Historical Trend Chart ── */}

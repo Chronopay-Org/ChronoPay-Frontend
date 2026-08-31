@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useMessages } from "@/lib/i18n";
 import { DashboardShell } from "../components/dashboard-shell";
 import {
   BookingChecklist,
@@ -196,6 +197,7 @@ const TYPEAHEAD_SUGGESTIONS = [
 ];
 
 export default function Dashboard() {
+  const t = useMessages();
   const searchParams = useSearchParams();
   const loading = false;
   const error = false;
@@ -252,7 +254,7 @@ export default function Dashboard() {
         role="status"
         aria-live="polite"
       >
-        Loading dashboard…
+        {t("dashboard.loadingMessage")}
       </div>
     );
   }
@@ -263,7 +265,7 @@ export default function Dashboard() {
         className="flex min-h-screen items-center justify-center text-zinc-400"
         role="alert"
       >
-        An error occurred. Please refresh the page.
+        {t("dashboard.errorMessage")}
       </div>
     );
   }
@@ -274,7 +276,7 @@ export default function Dashboard() {
         className="flex min-h-screen items-center justify-center text-zinc-400"
         role="status"
       >
-        No data available.
+        {t("dashboard.emptyMessage")}
       </div>
     );
   }
@@ -286,7 +288,7 @@ export default function Dashboard() {
       <NetworkProvider>
       <div className="space-y-6 sm:space-y-8 md:space-y-10">
         <div>
-          <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">{t("dashboard.title")}</h1>
           <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-400 sm:text-base">
             Connect your Stellar wallet to{" "}
             <span className="inline-flex items-center gap-1">
@@ -332,8 +334,8 @@ export default function Dashboard() {
         {/* Supplier Trust Stats */}
         {showSamples && (
           <PanelShell
-            title="Trust Metrics"
-            description="Response time and booking acceptance rate based on the last 30 days."
+            title={t("trust.title")}
+            description={t("trust.description")}
           >
             <SupplierTrustStats
               responseTime={sampleResponseTime}
@@ -343,8 +345,8 @@ export default function Dashboard() {
         )}
         {!showSamples && (
           <PanelShell
-            title="Trust Metrics"
-            description="Response time and booking acceptance rate based on the last 30 days."
+            title={t("trust.title")}
+            description={t("trust.description")}
           >
             <SupplierTrustStats
               responseTime={emptyResponseTime}
@@ -355,7 +357,7 @@ export default function Dashboard() {
 
         {/* Wallet and Booking Progress */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <PanelShell title="Wallet" data-tour-target="wallet-card">
+          <PanelShell title={t("wallet.title")} data-tour-target="wallet-card">
             <WalletCard
               wallet={
                 showSamples
@@ -367,7 +369,7 @@ export default function Dashboard() {
               }
             />
           </PanelShell>
-          <PanelShell title="Booking Progress">
+          <PanelShell title={t("bookings.title")}>
             <BookingProgress
               stages={showSamples ? bookingStages : []}
             />
@@ -380,10 +382,9 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Security Status */}
-        <PanelShell
-          title="Security Status"
-          description="Review your account security settings."
+        {/* Security Status */}          <PanelShell
+          title={t("security.title")}
+          description={t("security.description")}
         >
           {isEnrolling2FA ? (
             <TwoFactorEnroll onComplete={() => {
@@ -404,8 +405,8 @@ export default function Dashboard() {
         {/* Rating Breakdown */}
         {showSamples && (
           <PanelShell
-            title="Rating Breakdown"
-            description="Per-criterion average ratings across your recent reviews."
+            title={t("ratings.title")}
+            description={t("ratings.description")}
           >
             <RatingBreakdownBars
               criteria={ratingBreakdown}
@@ -417,17 +418,17 @@ export default function Dashboard() {
 
         {/* Pricing Fee Calculator */}
         <PanelShell
-          title="Fee Calculator"
-          description="Estimate your take-home earnings after platform and network fees."
+          title={t("pricing.title")}
+          description={t("pricing.description")}
         >
           <PricingCalculator />
         </PanelShell>
 
-        <PanelShell id="quick-actions" title="Quick Actions" data-tour-target="quick-actions">
+        <PanelShell id="quick-actions" title={t("quickActions.title")} data-tour-target="quick-actions">
           <QuickActions actions={quickActions} />
         </PanelShell>
 
-        <PanelShell id="available-time-slots" title="Available Time Slots" data-tour-target="available-time-slots">
+        <PanelShell id="available-time-slots" title={t("slots.title")} data-tour-target="available-time-slots">
           <SlotList
             slots={slots}
             suggestedAlternatives={suggestedAlternatives}
@@ -437,7 +438,7 @@ export default function Dashboard() {
         {/* Marketplace Search and Filters */}
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl font-bold sm:text-2xl">Marketplace Discovery</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">{t("dashboard.marketplaceTitle")}</h2>
             <p className="mt-2 text-sm text-zinc-400 sm:text-base">
               Search and filter to find exactly what you need in our marketplace.
             </p>
@@ -448,8 +449,7 @@ export default function Dashboard() {
 
           {/* Search Bar */}
           <SearchTypeahead
-            suggestions={TYPEAHEAD_SUGGESTIONS}
-            placeholder="Search marketplace (UI, Components, Accessibility…)"
+            suggestions={TYPEAHEAD_SUGGESTIONS}              placeholder={t("dashboard.searchPlaceholder")}
           />
 
           {/* Active Filters Display */}

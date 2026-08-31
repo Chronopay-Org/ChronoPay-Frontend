@@ -2,6 +2,9 @@ export type Tone = "neutral" | "positive" | "warning" | "critical" | "muted";
 
 export type AvailabilityLevel = "Healthy" | "Tight" | "Busy" | "Sold Out";
 
+/** Booking lifecycle of a time-token. `active` (or omitted) is the default. */
+export type LifecycleStatus = "active" | "cancelled" | "rescheduled";
+
 export type Slot = {
   id: string;
   title: string;
@@ -10,6 +13,11 @@ export type Slot = {
   demand: string;
   rate: string;
   status: AvailabilityLevel;
+  /**
+   * Booking lifecycle of the time-token. Cancelled / rescheduled tokens can
+   * be rebooked through the rebooking flow; when omitted the token is active.
+   */
+  lifecycleStatus?: LifecycleStatus;
   /** Duration in minutes for this slot (used by duration filter chips) */
   durationMinutes?: number;
   isNextAvailable?: boolean;
@@ -164,7 +172,8 @@ export type SocialProofBadgeType =
   | "fastResponse"
   | "verified"
   | "verifiedPayouts"
-  | "earlyAdopter";
+  | "earlyAdopter"
+  | "pro";
 
 export type SocialProofBadgeEntry = {
   type: SocialProofBadgeType;

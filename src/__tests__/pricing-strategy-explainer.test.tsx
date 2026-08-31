@@ -1,9 +1,10 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import PricingStrategyPreview from "@/src/components/pricing/PricingStrategyPreview";
-import PricingStrategyExplainer from "@/src/components/pricing/PricingStrategyExplainer";
-import { QuickActions } from "@/src/components/dashboard/quick-actions";
+import PricingStrategyPreview from "@/components/pricing/PricingStrategyPreview";
+import PricingStrategyExplainer from "@/components/pricing/PricingStrategyExplainer";
+import { QuickActions } from "@/components/dashboard/quick-actions";
+import type { QuickAction } from "@/components/dashboard/types";
 
 describe("PricingStrategyPreview", () => {
   it("renders fixed strategy prices", () => {
@@ -23,10 +24,8 @@ describe("PricingStrategyExplainer", () => {
     const onClose = vi.fn();
     render(<PricingStrategyExplainer open={true} onClose={onClose} />);
 
-    // default fixed
     expect(screen.getByText(/Strategy: fixed/i)).toBeTruthy();
 
-    // switch to dynamic
     const dynamic = screen.getByDisplayValue("dynamic") as HTMLInputElement;
     fireEvent.click(dynamic);
     expect(dynamic.checked).toBe(true);
@@ -34,14 +33,13 @@ describe("PricingStrategyExplainer", () => {
 
   it("shows loading and retry path", async () => {
     render(<PricingStrategyExplainer open={true} onClose={() => {}} />);
-    // loading is simulated; we can assert that preview appears after timeout
     expect(await screen.findByText(/Preview/i)).toBeTruthy();
   });
 });
 
 describe("QuickActions integration", () => {
   it("renders explainer toggle for mint actions", () => {
-    const actions = [
+    const actions: QuickAction[] = [
       {
         title: "Mint time-token",
         description: "Create a time-token",
@@ -51,7 +49,7 @@ describe("QuickActions integration", () => {
       },
     ];
 
-    render(<QuickActions actions={actions as never[]} />);
+    render(<QuickActions actions={actions} />);
     expect(screen.getByRole("button", { name: /Pricing explainer/i })).toBeTruthy();
   });
 });
