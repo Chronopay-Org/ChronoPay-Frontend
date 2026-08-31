@@ -89,9 +89,9 @@ export default function SettingsPage() {
     [selectTab],
   );
 
-  const handleSyncWithConflicts = useCallback(() => {
+  const handleSyncWithConflicts = () => {
     setConflicts(sampleConflicts);
-  }, []);
+  };
 
   const handleClearConflicts = useCallback(() => {
     setConflicts([]);

@@ -10,6 +10,7 @@ const toneLabels: Record<Tone, string> = {
   positive: "Ready",
   warning: "Needs review",
   critical: "Needs attention",
+  muted: "No signal",
 };
 
 // Icon background colors based on tone
@@ -18,6 +19,7 @@ const toneIconClasses: Record<Tone, string> = {
   positive: "bg-emerald-400/10 text-emerald-300 border-emerald-400/20",
   warning: "bg-amber-400/10 text-amber-300 border-amber-400/20",
   critical: "bg-rose-400/10 text-rose-300 border-rose-400/20",
+  muted: "bg-slate-400/10 text-slate-300 border-slate-400/20",
 };
 
 export function QuickActions({ actions }: { actions: QuickAction[] }) {

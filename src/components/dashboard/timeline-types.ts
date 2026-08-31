@@ -60,7 +60,7 @@ export const statusToneMap = {
   completed: "positive",
   failed: "critical",
   warning: "warning",
-} as const satisfies Record<TimelineItemStatus, "info" | "warning" | "success" | "danger" | "neutral">;
+} as const satisfies Record<TimelineItemStatus, "neutral" | "positive" | "warning" | "critical" | "muted">;
 
 // ─── KYC-specific types ──────────────────────────────────────────────────────
 
