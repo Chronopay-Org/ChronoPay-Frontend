@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { clsx } from "clsx";
-import { Menu, X, Shield, Keyboard } from "lucide-react";
+import { Menu, X, Shield, Keyboard, Settings } from "lucide-react";
 import { useRole } from "@/app/components/navigation/RoleContext";
+import { RoleOnboardingDialog } from "@/app/components/navigation/role-onboarding-dialog";
 import { getNavForRole, ROLE_META, type NavItem } from "@/app/components/navigation/role-nav";
 import { HeaderSearch } from "@/app/components/header-search";
+import { KeyboardShortcutsOverlay } from "@/app/components/keyboard-shortcuts-overlay";
 import { AccountSwitcher } from "@/app/components/account-switcher";
 import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { RoleChip } from "@/app/components/ui/RoleChip";
@@ -59,7 +61,7 @@ function SystemStatus() {
   );
 }
 
-function NavRailItem({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
+function NavLink({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
   return (
@@ -94,6 +96,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
   const [isRailOpen, setIsRailOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [liveAnnouncement, setLiveAnnouncement] = useState("");
   const railToggleRef = useRef<HTMLButtonElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const liveId = useId();
@@ -155,9 +158,29 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("keydown", handleKey);
   }, []);
 
+  useEffect(() => {
+    const handleRoleChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ role?: string }>).detail;
+      if (!detail?.role) return;
+      const nextMeta = ROLE_META[detail.role as keyof typeof ROLE_META];
+      if (!nextMeta) return;
+      setLiveAnnouncement(`Role changed to ${nextMeta.label}`);
+    };
+
+    window.addEventListener("chronopay:rolechange", handleRoleChange as EventListener);
+    return () => {
+      window.removeEventListener(
+        "chronopay:rolechange",
+        handleRoleChange as EventListener,
+      );
+    };
+  }, []);
+
   return (
     <div className="app-shell flex min-h-screen flex-col">
-      <div id={liveId} role="status" aria-live="polite" aria-atomic="true" className="sr-only" />
+      <div id={liveId} role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {liveAnnouncement}
+      </div>
 
       {/* ── Command Bar ──────────────────────────────────────────────────── */}
       <header
@@ -250,6 +273,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 <Keyboard className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
+            <Link
+              href="/dashboard/settings"
+              aria-label="Settings"
+              aria-current={pathname.startsWith("/dashboard/settings") ? "page" : undefined}
+              title="Settings"
+              className={clsx(
+                "rounded-full p-2 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
+                "focus-visible:ring-offset-slate-950",
+                "hover:bg-white/6 text-slate-400 hover:text-white"
+              )}
+            >
+              <Settings className="h-4 w-4" aria-hidden="true" />
+            </Link>
 
             {/* System Status — visible on medium+ screens */}
             <SystemStatus />
@@ -321,7 +358,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* Nav items */}
           <nav aria-label="Role modules" className="flex flex-col gap-1 px-3 pb-4">
             {navItems.map((item) => (
-              <NavRailItem key={item.href} item={item} pathname={pathname} onClick={closeRail} />
+              <NavLink key={item.href} item={item} pathname={pathname} onClick={closeRail} />
             ))}
           </nav>
 
@@ -354,6 +391,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
       />
+      <RoleOnboardingDialog />
     </div>
   );
 }

@@ -90,7 +90,7 @@ describe("RatingBreakdownBars", () => {
     render(<RatingBreakdownBars criteria={mockCriteria} />);
 
     const bar = screen.getByRole("progressbar", { name: /Expertise/i });
-    bar.focus();
+    fireEvent.focus(bar);
 
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toBeInTheDocument();

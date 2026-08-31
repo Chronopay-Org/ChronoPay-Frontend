@@ -40,9 +40,13 @@ export function useReceiptNotes(receiptId: string): UseReceiptNotesReturn {
   const latestRef = useRef(text);
   const receiptIdRef = useRef(receiptId);
 
+  // Syncing external (localStorage) state into React when receiptId changes
+  // is a legitimate synchronization pattern. eslint rule is too strict here.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     receiptIdRef.current = receiptId;
     const saved = loadNotes(receiptId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTextRaw(saved);
     latestRef.current = saved;
     setSaveStatus("saved");

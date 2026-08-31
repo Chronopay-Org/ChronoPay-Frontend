@@ -362,29 +362,4 @@ export function MonthCalendarView({
       </div>
     </div>
   );
-}"text-slate-400 hover:bg-white/5 hover:text-slate-200"
-            )}
-            aria-pressed={heatmapEnabled}
-            aria-label={heatmapEnabled ? "Hide availability heatmap" : "Show availability heatmap"}
-          >
-            <span className="text-cyan-400" aria-hidden="true">🔥</span>
-            <span>{heatmapEnabled ? "Heatmap On" : "Heatmap Off"}</span>
-          </button>
-        </div>
-
-        {heatmapEnabled && (
-          <CalendarHeatmapLegend
-            variant="horizontal"
-            ranges={{
-              none: "0 slots",
-              low: "1–2 slots",
-              medium: "3–5 slots",
-              high: "6–9 slots",
-              peak: "10+ slots",
-            }}
-          />
-        )}
-      </div>
-    </div>
-  );
 }
