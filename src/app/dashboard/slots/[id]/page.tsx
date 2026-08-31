@@ -372,7 +372,7 @@ export default function SlotDetailPage({
             items={[
               { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
               { label: "Slots", href: "/dashboard/slots" },
-              { label: "Booking", href: "/dashboard/slots/123" },
+              { label: "Booking", href: `/dashboard/slots/${id}` },
               { label: "Details" },
             ]}
           />
