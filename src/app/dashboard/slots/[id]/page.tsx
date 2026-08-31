@@ -341,17 +341,6 @@ export default function SlotDetailPage({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isModalOpen, handleCloseModal]);
 
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isModalOpen) {
-        handleCloseModal();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isModalOpen]);
-
   // Simulated blockchain transaction workflow
   const handleProceedPurchase = () => {
     setPurchaseStep("loading");

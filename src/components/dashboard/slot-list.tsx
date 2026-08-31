@@ -30,11 +30,10 @@ import { TimezoneRibbon } from "./timezone-ribbon";
 import { KeepOriginalPriceChip } from "./keep-original-price-chip";
 import { RebookingDialog } from "./rebooking-dialog";
 import { glossary } from "@/lib/glossary";
+import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
+import { StatusChip } from "./status-chip";
+import { SocialProofBadges } from "./social-proof-badges";
 import type { Slot } from "./types";
-import type {
-  AlternativeSlot,
-  RebookingChoice,
-} from "./rebooking-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
