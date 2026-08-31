@@ -19,6 +19,28 @@ describe("BookingProgress", () => {
     expect(screen.getByText("Reserved")).toBeInTheDocument();
     expect(screen.getByText("5 bookings")).toBeInTheDocument();
   });
+
+  it("progress bar fill includes motion-reduce:transition-none for prefers-reduced-motion", () => {
+    const { container } = render(
+      <BookingProgress
+        stages={[
+          { label: "Reserved", value: 5 },
+          { label: "Confirmed", value: 3 },
+        ]}
+      />,
+    );
+
+    // The fill divs are nested inside the bar track divs (h-2.5 rounded-full)
+    const fills = Array.from(container.querySelectorAll("div")).filter((el) =>
+      el.className.includes("transition-[width]") &&
+      el.className.includes("motion-reduce:transition-none"),
+    );
+    expect(fills.length).toBe(2);
+    for (const fill of fills) {
+      expect(fill.className).toContain("transition-[width]");
+      expect(fill.className).toContain("motion-reduce:transition-none");
+    }
+  });
 });
 
 describe("BookingFlowShell", () => {
@@ -94,5 +116,30 @@ describe("BookingFlowShell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /back/i }));
     expect(onBack).toHaveBeenCalledWith(1);
+  });
+
+  it("step items include motion-reduce:transition-none for prefers-reduced-motion", () => {
+    const { container } = render(<BookingFlowShell steps={steps} currentStep={0} />);
+
+    const stepDivs = Array.from(container.querySelectorAll("li > div")).filter((el) =>
+      el.className.includes("transition-colors"),
+    );
+    expect(stepDivs.length).toBeGreaterThan(0);
+    for (const div of stepDivs) {
+      expect(div.className).toContain("transition-colors");
+      expect(div.className).toContain("motion-reduce:transition-none");
+    }
+  });
+
+  it("navigation buttons include motion-reduce:transition-none for prefers-reduced-motion", () => {
+    render(<BookingFlowShell steps={steps} currentStep={0} />);
+
+    const backButton = screen.getByRole("button", { name: /back/i });
+    const nextButton = screen.getByRole("button", { name: /next/i });
+
+    expect(backButton.className).toContain("transition");
+    expect(backButton.className).toContain("motion-reduce:transition-none");
+    expect(nextButton.className).toContain("transition");
+    expect(nextButton.className).toContain("motion-reduce:transition-none");
   });
 });

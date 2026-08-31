@@ -288,7 +288,7 @@ export function usePageSize({
         );
       });
     },
-    [options, value, searchParams, storageKey, paramKey, router, pathname],
+    [options, value, searchParams, storageKey, paramKey, router, pathname, startTransition],
   );
 
   return { value, setValue, options };

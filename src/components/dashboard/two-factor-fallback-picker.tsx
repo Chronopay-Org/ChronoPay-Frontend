@@ -128,9 +128,10 @@ export function TwoFactorFallbackPicker({
     if (!initialAnnounced.current && methods.length > 0) {
       initialAnnounced.current = true;
       const first = methods[0];
-      announce(
-        `Default method: ${first.label}. ${first.eta ?? ""} Navigate with arrow keys.`,
-      );
+      const message =
+        `Default method: ${first.label}. ${first.eta ?? ""} Navigate with arrow keys.`;
+      // Deferred so the live-region write doesn't run synchronously in the effect.
+      window.setTimeout(() => announce(message), 0);
     }
   }, [announce, methods]);
 

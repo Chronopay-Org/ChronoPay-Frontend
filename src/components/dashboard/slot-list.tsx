@@ -1,15 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { useSpring } from "@react-spring/web";
-import { useDrag } from "@use-gesture/react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { StatusChip } from "./status-chip";
-import { HelpPopover } from "@/app/components/ui/help-popover";
-import { TimezoneRibbon } from "./timezone-ribbon";
-import { KeepOriginalPriceChip } from "./keep-original-price-chip";
-import { glossary } from "@/lib/glossary";
 import type { Slot } from "./types";
-import { EmptyStateCard } from "../../app/components/empty-state-card";
+import { EmptyStateCard } from "@/app/components/empty-state-card";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,7 +57,7 @@ const localDefaultSlots: Slot[] = [
     title: "1-on-1 Architecture Consultation",
     dateLabel: "Today",
     timeRange: "14:00 - 15:00 UTC",
-    status: "Available",
+    status: "Healthy",
     demand: "High Demand",
     rate: "50 XLM / hr",
     isNextAvailable: true,
@@ -73,7 +67,7 @@ const localDefaultSlots: Slot[] = [
     title: "Code Review & Optimization",
     dateLabel: "Tomorrow",
     timeRange: "10:00 - 11:30 UTC",
-    status: "Booked",
+    status: "Busy",
     demand: "Medium Demand",
     rate: "75 XLM / hr",
     isNextAvailable: false,
@@ -386,8 +380,8 @@ export const SlotList = ({
         />
       ) : (
         <>
-          <ul className="space-y-4" {...bind()}>
-          {slots.map((slot) => {
+          <ul className="space-y-4">
+          {slots.map((slot, index) => {
             const slotTitleId = "slot-" + slot.id + "-title";
             const slotDetailsId = "slot-" + slot.id + "-details";
             const isConflictTarget = activeConflictSlotId === slot.id || activeConflictSlotId === `slot-${slot.id}`;
@@ -395,131 +389,32 @@ export const SlotList = ({
             return (
               <li
                 key={slot.id}
-                className="space-y-2 relative"
-                aria-describedby={conflicts[slot.id] ? `conflict-${slot.id}` : undefined}
+                aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
+                onKeyDown={(event) => handleListKeyDown(event, index)}
+                className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4"
               >
-                {/* conflict overlay */}
-                {conflicts[slot.id] ? (
-                  <div
-                    className="pointer-events-none absolute inset-0 z-10 rounded-[1.5rem]"
-                    style={{
-                      backgroundColor: 'rgba(220,38,38,0.12)',
-                      backgroundImage:
-                        'repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 6px, transparent 6px 12px)',
-                    }}
-                    aria-hidden={false}
-                    role="img"
-                    aria-label={`Conflict: ${conflicts[slot.id]}`}
-                  >
-                    <span
-                      id={`conflict-${slot.id}`}
-                      className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
-                      style={{ backdropFilter: 'saturate(120%) blur(2px)' }}
-                    >
-                      {conflicts[slot.id]}
-                    </span>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">{slot.title}</h3>
+                    <p className="text-sm text-slate-300">{slot.dateLabel} · {slot.timeRange}</p>
                   </div>
-                ) : null}
-                
-                {isDropTarget && dropPosition === "before" ? (
-                  <div className="h-1 rounded-full bg-cyan-400/80" />
-                ) : null}
-                
+                  <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
+                  <span>{slot.demand}</span>
+                  <span>{slot.rate}</span>
+                </div>
                 <div
-                  data-slot-id={slot.id}
+                  className="mt-3 h-2 w-full rounded-full bg-slate-800"
                   draggable
-                  tabIndex={0}
-                  aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
-                  aria-pressed={isSelected}
-                  onDragStart={(event) => {
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData("text/plain", slot.id);
-                    setDraggingId(slot.id);
-                    setDragOverId(slot.id);
-                    setGhostPosition({ x: event.clientX, y: event.clientY });
-                  }}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    const rect = event.currentTarget.getBoundingClientRect();
-                    const position = event.clientY < rect.top + rect.height / 2 ? "before" : "after";
-                    setDragOverId(slot.id);
-                    setDropPosition(position);
-                    event.dataTransfer.dropEffect = "move";
-                  }}
+                  onDragStart={() => handleDragStart(slot.id)}
+                  onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => {
                     event.preventDefault();
-                    const sourceId = event.dataTransfer.getData("text/plain") || draggingId;
-                    if (sourceId) {
-                      reorderSlots(sourceId, slot.id, dropPosition);
-                    }
-                    clearDragState();
+                    handleDrop(slot.id);
                   }}
-                  onDragEnd={() => clearDragState()}
-                  onKeyDown={(event) => handleListKeyDown(slot.id, event)}
-                  className={`rounded-[1.5rem] border p-4 transition-all duration-200 sm:p-5 ${isDragging ? "border-cyan-400/80 bg-cyan-400/10 opacity-70 shadow-[0_0_0_1px_rgba(34,211,238,0.3)]" : isSelected ? "border-cyan-400/40 bg-cyan-400/10" : "border-white/10 bg-white/[0.03] hover:border-cyan-400/30 hover:bg-cyan-400/[0.06]"}`}
-                >
-                  <article aria-labelledby={slotTitleId} aria-describedby={slotDetailsId}>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 id={slotTitleId} className="text-lg font-semibold text-white">
-                            {slot.title}
-                          </h3>
-                          {isJustAdded(slot.mintedAt) && (
-                            <Tooltip
-                              content="This slot was added within the last 24 hours."
-                              trigger={
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[0.65rem] font-bold tracking-wider text-cyan-300 hover:bg-cyan-400/20 transition-colors cursor-help">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" aria-hidden="true" />
-                                  NEW
-                                </span>
-                              }
-                              triggerClassName="inline-flex"
-                              ariaLabel="New slot: added within the last 24 hours"
-                            />
-                          )}
-                          {isDragging ? (
-                            <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100">
-                              Moving
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="text-sm text-slate-300">
-                          <BidiIsolate locale={locale}>{slot.dateLabel}</BidiIsolate>
-                          <span aria-hidden="true"> · </span>
-                          <BidiIsolate locale={locale}>{slot.timeRange}</BidiIsolate>
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-300">
-                          Drag to move
-                        </span>
-                        <StatusChip tone={mapTone(slot.status)}>{slot.status}</StatusChip>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-medium text-slate-400" id={slotDetailsId}>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5">
-                        {slot.rate}
-                        <HelpPopover
-                          term={glossary.rate}
-                          triggerLabel="Help: slot rate and XLM pricing"
-                        />
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        Rate details
-                        <HelpPopover
-                          term={glossary.xlm}
-                          triggerLabel="Help: XLM and Stellar network fees"
-                        />
-                      </span>
-                    </div>
-                  </article>
-                </div>
-                
-                {isDropTarget && dropPosition === "after" ? (
-                  <div className="h-1 rounded-full bg-cyan-400/80" />
-                ) : null}
+                  aria-hidden="true"
+                />
               </li>
             );
           })}
@@ -575,3 +470,5 @@ export const SlotList = ({
     </div>
   );
 };
+
+export default SlotList;
