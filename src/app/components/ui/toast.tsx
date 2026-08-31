@@ -13,6 +13,8 @@ import {
   Undo2,
   X,
   XCircle,
+  Check,
+  CheckCheck,
 } from "lucide-react";
 import clsx from "clsx";
 import type { ToastItem, ToastVariant } from "@/hooks/use-toast";
@@ -63,11 +65,19 @@ function CountdownRing({ progress, color, reducedMotion }: { progress: number; c
 
 interface ToastProps { toast: ToastItem; onDismiss: (id: string) => void; }
 
+const NOTIFICATION_CATEGORIES = ["bookings", "payments", "disputes", "system"];
+
 export function Toast({ toast, onDismiss }: ToastProps) {
   const { id, variant, title, description, count, messages, category, onUndo } = toast;
-  const isCritical = variant === "error";
-  const duration = isCritical ? 0 : (toast.duration ?? 5000);
-  const config = variantConfig[variant];
+  
+  // A variant could be passed as "critical" but type doesn't support it strictly in some parts.
+  const isCritical = (variant as string) === "critical";
+  const isPersistentCategory = category ? NOTIFICATION_CATEGORIES.includes(category) : false;
+  
+  // Persistent notifications have duration 0
+  const duration = (isCritical || isPersistentCategory) ? 0 : (toast.duration ?? 5000);
+  
+  const config = variantConfig[variant] || variantConfig.info;
   const Icon = config.icon;
   const isGrouped = count > 1;
   const panelId = `toast-panel-${id}`;
@@ -81,6 +91,25 @@ export function Toast({ toast, onDismiss }: ToastProps) {
   const [undone, setUndone] = useState(false);
   const [remaining, setRemaining] = useState(duration);
   const [announcement, setAnnouncement] = useState("");
+
+  const [readMessageIds, setReadMessageIds] = useState<Set<string>>(new Set());
+
+  const unreadCount = messages.filter((m) => !readMessageIds.has(m.id)).length;
+  const hasUnread = unreadCount > 0;
+
+  const handleMarkAllAsRead = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setReadMessageIds(new Set(messages.map((m) => m.id)));
+  }, [messages]);
+
+  const handleMarkAsRead = useCallback((msgId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setReadMessageIds((prev) => {
+      const next = new Set(prev);
+      next.add(msgId);
+      return next;
+    });
+  }, []);
 
   const pause = paused || expanded;
   const clearTimer = useCallback(() => {
@@ -133,24 +162,83 @@ export function Toast({ toast, onDismiss }: ToastProps) {
     if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false);
   };
 
+  const containerAriaLabel = isGrouped 
+    ? (isPersistentCategory ? `${unreadCount} unread ${category} notifications out of ${count} total: ${title}` : `${count} ${category ?? variant} notifications: ${title}`)
+    : undefined;
+
   return (
     <motion.div layout variants={motionVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.22 }} className="motion-reduce:translate-y-0 motion-reduce:scale-100" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={onBlur} onKeyDown={onKeyDown}>
       {onUndo && <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>}
-      <div role={config.role} aria-live={config.ariaLive} aria-atomic="true" aria-label={isGrouped ? `${count} ${category ?? variant} notifications: ${title}` : undefined} className={clsx("relative flex w-full max-w-sm flex-col rounded-[20px] border backdrop-blur-md", config.containerClass)}>
+      <div role={config.role} aria-live={config.ariaLive} aria-atomic="true" aria-label={containerAriaLabel} className={clsx("relative flex w-full max-w-sm flex-col rounded-[20px] border backdrop-blur-md", config.containerClass)}>
         <div className="flex items-start gap-3 px-4 py-3">
           <Icon className={clsx("mt-0.5 h-5 w-5 shrink-0", config.iconClass)} aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2"><p className={clsx("text-sm font-semibold leading-5", config.titleClass)}>{title}</p>{isGrouped && <span aria-label={`${count} notifications in this group`} className={clsx("inline-flex rounded-full px-1.5 py-0.5 text-xs font-bold", config.badgeClass)}>{count}</span>}</div>
+            <div className="flex items-center gap-2">
+              <p className={clsx("text-sm font-semibold leading-5", config.titleClass)}>{title}</p>
+              {isGrouped && (
+                <span 
+                  aria-label={`${unreadCount} unread notifications in this group`} 
+                  className={clsx("inline-flex rounded-full px-1.5 py-0.5 text-xs font-bold", isPersistentCategory ? (hasUnread ? config.badgeClass : "bg-slate-800 text-slate-400") : config.badgeClass)}
+                >
+                  {count}
+                </span>
+              )}
+              {!isGrouped && isPersistentCategory && hasUnread && (
+                <span className={clsx("h-2 w-2 rounded-full", config.badgeClass.split(' ')[0])} aria-label="1 unread notification" />
+              )}
+            </div>
             {description && !expanded && <p className="mt-1 text-sm leading-5 text-slate-300">{description}</p>}
           </div>
           {onUndo && !undone && <div className="flex shrink-0 items-center gap-1.5">
             {duration > 0 && <span role="img" aria-label={`${Math.ceil(remaining / 1000)} seconds remaining`}><CountdownRing progress={Math.max(0, Math.min(1, remaining / duration))} color={config.ringColor} reducedMotion={reducedMotion} /></span>}
             <button type="button" onClick={handleUndo} aria-label="Undo (Ctrl+Z)" className={clsx("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent", config.actionClass)}><Undo2 className="h-3 w-3" aria-hidden="true" />Undo</button>
           </div>}
-          {isGrouped && <button type="button" aria-expanded={expanded} aria-controls={panelId} aria-label={expanded ? "Collapse notifications" : "Expand notifications"} onClick={() => setExpanded((value) => !value)} className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">{expanded ? <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />}</button>}
-          <button type="button" onClick={() => onDismiss(id)} aria-label={`Dismiss: ${title}`} className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"><X className="h-3.5 w-3.5" aria-hidden="true" /></button>
+          
+          <div className="flex shrink-0 items-center gap-1">
+            {!isGrouped && isPersistentCategory && hasUnread && (
+              <button type="button" onClick={(e) => handleMarkAsRead(messages[0].id, e)} aria-label="Mark as read" className="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            )}
+            {isGrouped && <button type="button" aria-expanded={expanded} aria-controls={panelId} aria-label={expanded ? "Collapse notifications" : "Expand notifications"} onClick={() => setExpanded((value) => !value)} className="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">{expanded ? <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />}</button>}
+            <button type="button" onClick={() => onDismiss(id)} aria-label={`Dismiss: ${title}`} className="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"><X className="h-3.5 w-3.5" aria-hidden="true" /></button>
+          </div>
         </div>
-        <AnimatePresence initial={false}>{isGrouped && expanded && <motion.div id={panelId} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden"><ul role="list" aria-label={`${count} ${category ?? variant} notifications`} className="px-4 pb-3">{messages.map((message) => <li key={message.id} className="flex justify-between gap-2 border-t border-white/5 py-2"><span className="text-sm text-slate-200">{message.title}</span><time className="shrink-0 text-xs text-slate-500" dateTime={new Date(message.timestamp).toISOString()}>{relativeTime(message.timestamp)}</time></li>)}</ul></motion.div>}</AnimatePresence>
+        
+        <AnimatePresence initial={false}>
+          {isGrouped && expanded && (
+            <motion.div id={panelId} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              {isPersistentCategory && hasUnread && (
+                <div className="flex justify-end px-4 py-1">
+                  <button type="button" onClick={handleMarkAllAsRead} className="inline-flex items-center gap-1 text-xs font-medium text-cyan-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 rounded px-2 py-1">
+                    <CheckCheck className="h-3.5 w-3.5" /> Mark all as read
+                  </button>
+                </div>
+              )}
+              <ul role="list" aria-label={`${count} ${category ?? variant} notifications`} className="px-4 pb-3">
+                {messages.map((message) => {
+                  const isRead = isPersistentCategory ? readMessageIds.has(message.id) : true;
+                  return (
+                    <li key={message.id} className="flex flex-col gap-1 border-t border-white/5 py-2">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className={clsx("text-sm", isRead ? "text-slate-400" : "text-slate-200 font-semibold")}>{message.title}</span>
+                        <time className="shrink-0 text-xs text-slate-500" dateTime={new Date(message.timestamp).toISOString()}>{relativeTime(message.timestamp)}</time>
+                      </div>
+                      {message.description && <p className="text-xs text-slate-400">{message.description}</p>}
+                      {isPersistentCategory && !isRead && (
+                        <div className="flex justify-start mt-1">
+                          <button type="button" onClick={(e) => handleMarkAsRead(message.id, e)} className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 rounded px-1 py-0.5">
+                            <Check className="h-3 w-3" /> Mark as read
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );
