@@ -82,9 +82,13 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const stored = typeof window !== 'undefined' ? window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null : null;
-    setSelectedMethod(stored ?? undefined);
-    setEmail('');
-    setShowAlternativeWallets(false);
+    // Reset per-open state (stored method may have changed while closed). The
+    // writes are deferred so they don't run synchronously inside the effect.
+    window.setTimeout(() => {
+      setSelectedMethod(stored ?? undefined);
+      setEmail('');
+      setShowAlternativeWallets(false);
+    }, 0);
   }, [isOpen]);
 
   const allCaps = useMemo(() => {

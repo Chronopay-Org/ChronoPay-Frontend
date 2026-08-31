@@ -79,7 +79,7 @@ function buildCatalogue(): (typeof seedItems)[number][] {
       id: `svc-${i + 1}`,
       title: SERVICE_TITLES[i % SERVICE_TITLES.length],
       price: PRICE_BAND[i % PRICE_BAND.length],
-      image: undefined,
+      image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=300&fit=crop",
       href: `/marketplace/svc-${i + 1}`,
     });
   }
