@@ -37,43 +37,25 @@ import { SearchTypeahead } from "@/components/dashboard/search-typeahead";
 import { FilterSidebar, FilterGroup } from "@/components/dashboard/filter-sidebar";
 import { ActiveFiltersChips, ChipFilter } from "@/components/dashboard/active-filters-chips";
 import { MarketplaceGrid, MarketplaceItem } from "@/components/dashboard/marketplace-grid";
+import { MarketplaceSortControl } from "@/components/dashboard/marketplace-sort-control";
+import { MarketplaceDensityToggle } from "@/components/dashboard/marketplace-density-toggle";
+import { SavedViewChips } from "@/components/dashboard/saved-view-chips";
+import { MarketplaceFilterSummaryBar } from "@/components/dashboard/marketplace-filter-summary-bar";
 import { useOnboardingSamples } from "@/hooks/use-onboarding-samples";
 import { useOnboardingTour } from "@/hooks/use-onboarding-tour";
 import { OnboardingTour } from "@/components/dashboard/onboarding-tour";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
-import {
-  NetworkProvider,
-  NetworkSelector,
-} from "@/components/checkout/NetworkSelector";
+import { NetworkProvider } from "@/components/checkout/NetworkSelector";
 import { useSearchParams } from "next/navigation";
-
-// ─── Simulated async time-token actions ───────────────────────────────────────
-
-function delay(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
-async function simulateMint() {
-  await delay(2000);
-}
-
-async function simulateBuy() {
-  await delay(1800);
-}
-
-async function simulateEscrowRelease() {
-  await delay(2200);
-  // Simulate a failure ~30% of the time for demo
-  if (Math.random() < 0.3)
-    throw new Error("Escrow release rejected by contract");
-}
 
 // ─── Sample marketplace data ───────────────────────────────────────
 
 const MARKETPLACE_ITEMS: MarketplaceItem[] = [
   {
     id: "1",
+    createdAt: "2026-08-10T09:00:00.000Z",
+    availableAt: "2026-08-12T09:00:00.000Z",
     title: "UI Component Library",
     description: "Comprehensive collection of accessible React components with Tailwind CSS styling.",
     category: "Components",
@@ -84,6 +66,8 @@ const MARKETPLACE_ITEMS: MarketplaceItem[] = [
   },
   {
     id: "2",
+    createdAt: "2026-08-20T09:00:00.000Z",
+    availableAt: "2026-08-15T09:00:00.000Z",
     title: "Design Token System",
     description: "Complete design system with semantic tokens, color scales, and typography presets.",
     category: "Design",
@@ -94,6 +78,8 @@ const MARKETPLACE_ITEMS: MarketplaceItem[] = [
   },
   {
     id: "3",
+    createdAt: "2026-08-05T09:00:00.000Z",
+    availableAt: "2026-08-11T09:00:00.000Z",
     title: "Accessibility Audit Template",
     description: "Detailed WCAG 2.1 AA compliance checklist with test procedures and tools.",
     category: "Testing",
@@ -104,6 +90,8 @@ const MARKETPLACE_ITEMS: MarketplaceItem[] = [
   },
   {
     id: "4",
+    createdAt: "2026-08-14T09:00:00.000Z",
+    availableAt: "2026-08-18T09:00:00.000Z",
     title: "Responsive Grid System",
     description: "Flexible CSS grid framework with mobile-first breakpoints and utilities.",
     category: "Components",
@@ -114,6 +102,8 @@ const MARKETPLACE_ITEMS: MarketplaceItem[] = [
   },
   {
     id: "5",
+    createdAt: "2026-08-22T09:00:00.000Z",
+    availableAt: "2026-08-13T09:00:00.000Z",
     title: "Animation Library",
     description: "Smooth motion utilities with prefers-reduced-motion support built-in.",
     category: "Design",
@@ -124,6 +114,8 @@ const MARKETPLACE_ITEMS: MarketplaceItem[] = [
   },
   {
     id: "6",
+    createdAt: "2026-08-01T09:00:00.000Z",
+    availableAt: "2026-08-24T09:00:00.000Z",
     title: "Form Validation Kit",
     description: "Client and server-side validation patterns with error messaging best practices.",
     category: "Components",
@@ -134,6 +126,8 @@ const MARKETPLACE_ITEMS: MarketplaceItem[] = [
   },
   {
     id: "7",
+    createdAt: "2026-08-17T09:00:00.000Z",
+    availableAt: "2026-08-21T09:00:00.000Z",
     title: "Color Contrast Checker",
     description: "Browser extension for real-time WCAG contrast ratio analysis on any website.",
     category: "Testing",
@@ -144,6 +138,8 @@ const MARKETPLACE_ITEMS: MarketplaceItem[] = [
   },
   {
     id: "8",
+    createdAt: "2026-08-25T09:00:00.000Z",
+    availableAt: "2026-08-09T09:00:00.000Z",
     title: "Keyboard Navigation Guide",
     description: "Comprehensive guide to implementing keyboard shortcuts and focus management.",
     category: "Testing",
@@ -154,6 +150,8 @@ const MARKETPLACE_ITEMS: MarketplaceItem[] = [
   },
   {
     id: "9",
+    createdAt: "2026-08-08T09:00:00.000Z",
+    availableAt: "2026-08-30T09:00:00.000Z",
     title: "Dark Mode Theme Kit",
     description: "Complete dark mode implementation with automatic theme detection and persistence.",
     category: "Design",
@@ -205,11 +203,13 @@ export default function Dashboard() {
   const error = false;
   const hasData = true;
   const [activeFilters, setActiveFilters] = useState<ChipFilter[]>([]);
+  const [isEnrolling2FA, setIsEnrolling2FA] = useState(false);
+  const [twoFactorStatus, setTwoFactorStatus] =
+    useState<"enabled" | "disabled">("disabled");
 
   const {
     showSamples,
     showTour,
-    showClearBanner,
     clearSamples,
     dismissTour,
   } = useOnboardingSamples();
@@ -218,11 +218,6 @@ export default function Dashboard() {
     tourOpen,
     completeTour,
   } = useOnboardingTour();
-
-  // Suppress lint warnings for demo simulation functions
-  void simulateMint;
-  void simulateBuy;
-  void simulateEscrowRelease;
 
   // Update active filters from URL params
   const updateActiveFilters = useCallback(() => {
@@ -449,6 +444,9 @@ export default function Dashboard() {
             </p>
           </div>
 
+          {/* Sticky filter summary */}
+          <MarketplaceFilterSummaryBar activeFilterCount={activeFilters.length} />
+
           {/* Search Bar */}
           <SearchTypeahead
             suggestions={TYPEAHEAD_SUGGESTIONS}              placeholder={t("dashboard.searchPlaceholder")}
@@ -468,8 +466,16 @@ export default function Dashboard() {
             </aside>
 
             {/* Marketplace Grid */}
-            <div className="lg:col-span-3">
-              <MarketplaceGrid items={MARKETPLACE_ITEMS} columns={3} />
+            <div className="lg:col-span-3 space-y-4">
+              <SavedViewChips />
+
+              {/* Browse controls: sort + density */}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                <MarketplaceSortControl />
+                <MarketplaceDensityToggle />
+              </div>
+
+              <MarketplaceGrid items={MARKETPLACE_ITEMS} columns={3} isLoading={loading} />
             </div>
           </div>
         </div>

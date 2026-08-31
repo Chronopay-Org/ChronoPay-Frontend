@@ -11,6 +11,13 @@ import {
 } from "lucide-react";
 import { LiveRegion } from "@/components/common/LiveRegion";
 
+const SUPPLIER_TABS: ReadonlyArray<{ id: string; label: string }> = [
+  { id: "overview", label: "Overview" },
+  { id: "availability", label: "Availability" },
+  { id: "reviews", label: "Reviews" },
+  { id: "policies", label: "Policies" },
+];
+
 export interface SupplierProfileHeroProps {
   name: string;
   title: string;
@@ -22,6 +29,7 @@ export interface SupplierProfileHeroProps {
   isVerified?: boolean;
   initialFollowing?: boolean;
   onFollowToggle?: (following: boolean) => Promise<void> | void;
+  tabs?: ReadonlyArray<{ id: string; label: string }>;
   onShare?: () => void;
   className?: string;
 }
@@ -37,6 +45,7 @@ export function SupplierProfileHero({
   isVerified = false,
   initialFollowing = false,
   onFollowToggle,
+  tabs = SUPPLIER_TABS,
   onShare,
   className = "",
 }: SupplierProfileHeroProps) {
@@ -216,6 +225,23 @@ export function SupplierProfileHero({
         </div>
       </div>
 
+      {/* ── Sticky Section Tabs ──────────────────────────────────────── */}
+      <nav
+        aria-label="Supplier profile sections"
+        className="sticky top-0 z-30 mt-4 border-y border-white/10 bg-slate-950/95 px-1 py-2 backdrop-blur-sm sm:top-2 sm:rounded-full sm:border sm:px-2"
+      >
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {tabs.map((tab) => (
+            <a
+              key={tab.id}
+              href={`#${tab.id}`}
+              className="inline-flex shrink-0 items-center rounded-full px-3 py-1.5 text-sm font-semibold uppercase tracking-[0.14em] text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            >
+              {tab.label}
+            </a>
+          ))}
+        </div>
+      </nav>
       {/* ── Mobile Sticky CTA ────────────────────────────────────────── */}
       <div className="sticky bottom-0 z-40 mt-4 border-t border-white/10 bg-slate-950/90 px-4 py-3 backdrop-blur-sm sm:hidden">
         <button

@@ -146,10 +146,11 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
       <nav
         aria-label="Mobile bottom navigation"
         className={[
-          "fixed bottom-0 left-0 right-0 z-30 md:hidden",
+          "fixed bottom-0 left-0 right-0 z-30 sm:hidden",
           "bg-slate-900 text-slate-100",
           "flex items-stretch justify-around",
           "shadow-[0_-1px_0_rgba(255,255,255,0.08)]",
+          "pb-[env(safe-area-inset-bottom)]",
           className,
         ].join(" ")}
       >
@@ -215,7 +216,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
       {/* ── Overflow sheet backdrop + panel ────────────────────────────── */}
       {sheetOpen && (
         <div
-          className="fixed inset-0 z-40 md:hidden"
+          className="fixed inset-0 z-40 sm:hidden"
           aria-hidden="false"
         >
           {/* Scrim */}
@@ -240,7 +241,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
                 "absolute bottom-0 left-0 right-0",
                 "bg-slate-900 text-slate-100",
                 "rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.4)]",
-                "pb-safe",
+                "pb-[env(safe-area-inset-bottom)]",
                 sheetTransition,
               ].join(" ")}
             >

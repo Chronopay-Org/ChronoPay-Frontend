@@ -21,6 +21,15 @@ import { FocusTrapTester } from "@/components/design/focus-trap-tester";
 let rafId = 0;
 beforeEach(() => {
   rafId = 0;
+  // jsdom (this environment) may not define requestAnimationFrame; provide a
+  // polyfill first so the spy below has something to wrap.
+  if (typeof window.requestAnimationFrame !== "function") {
+    window.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      rafId++;
+      setTimeout(() => cb(Date.now()), 0);
+      return rafId;
+    }) as typeof window.requestAnimationFrame;
+  }
   vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb: FrameRequestCallback) => {
     rafId++;
     setTimeout(() => cb(Date.now()), 0);
@@ -95,9 +104,9 @@ describe("FocusTrapTester", () => {
   it("renders a 'What is being tested?' info section", () => {
     render(<FocusTrapTester />);
     expect(screen.getByText("What is being tested?")).toBeInTheDocument();
-    expect(screen.getByText(/Tab cycle/)).toBeInTheDocument();
-    expect(screen.getByText(/Shift\+Tab cycle/)).toBeInTheDocument();
-    expect(screen.getByText(/Focus on mount/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Tab cycle/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Shift\+Tab cycle/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Focus on mount/).length).toBeGreaterThan(0);
   });
 
   it("opens a modal when 'Open + Test focus trap' is clicked", () => {
@@ -169,10 +178,10 @@ describe("FocusTrapTester", () => {
     expect(screen.queryByText("Close modal")).not.toBeInTheDocument();
   });
 
-  it("displays a note for the OnboardingWalkthrough card", () => {
+  it("notes that the OnboardingWalkthrough was standardized on FocusTrap", () => {
     render(<FocusTrapTester />);
     expect(
-      screen.getByText("Uses inline handleKeyDown instead of FocusTrap component."),
+      screen.getByText(/Standardized on the shared FocusTrap/),
     ).toBeInTheDocument();
   });
 
@@ -242,11 +251,10 @@ describe("FocusTrapTester", () => {
 
   it("show focus trap type for each card", () => {
     render(<FocusTrapTester />);
-    // All cards show their focus trap type
+    // Every enumerated overlay now uses the shared FocusTrap component.
     const focusTrapLabels = screen.getAllByText("FocusTrap component");
-    // 5 components use FocusTrap, plus "Inline trap" for onboarding
-    expect(focusTrapLabels.length).toBe(5);
-    expect(screen.getByText("Inline trap")).toBeInTheDocument();
+    expect(focusTrapLabels.length).toBe(6);
+    expect(screen.queryByText("Inline trap")).not.toBeInTheDocument();
   });
 
   it("disables the test button while testing", () => {

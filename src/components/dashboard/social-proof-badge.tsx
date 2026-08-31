@@ -9,6 +9,7 @@ const toneClasses: Record<Tone, string> = {
   positive: "border-emerald-400/30 bg-emerald-400/10 text-emerald-100",
   warning: "border-amber-400/30 bg-amber-400/10 text-amber-100",
   critical: "border-rose-400/30 bg-rose-400/10 text-rose-100",
+  muted: "border-slate-400/30 bg-slate-400/10 text-slate-100",
 };
 
 export function SocialProofBadge({
@@ -103,5 +104,11 @@ export const BADGE_PRESETS: Record<
     icon: "Award",
     criterion:
       "One of the first 100 sellers to join the ChronoPay platform.",
+  },
+  pro: {
+    label: "Pro",
+    tone: "neutral",
+    icon: "Briefcase",
+    criterion: "Professional seller with verified business credentials.",
   },
 };

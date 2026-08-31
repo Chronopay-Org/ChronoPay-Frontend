@@ -1,38 +1,15 @@
 "use client";
 
-/**
- * A11yAuditDashboard — Interactive accessibility audit dashboard
- *
- * Displays a list of audit issues with:
- * - Severity-based filtering
- * - Issue list with summary cards
- * - Drill-down panel on the right (mobile: overlay)
- * - Issue counts by severity
- *
- * Accessibility (WCAG 2.1 AA):
- * ─────────────────────────────
- * • Semantic HTML with proper landmarks
- * • Filter buttons with aria-pressed state
- * • Live region for issue counts
- * • Keyboard navigation through issue cards
- * • Focus restoration after panel closes
- * • Proper heading hierarchy
- */
-
 import { useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Filter } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Play } from "lucide-react";
 import { A11yIssuePanel } from "./a11y-issue-panel";
 import {
   SAMPLE_AUDIT_ISSUES,
-  getIssueCounts,
   type AccessibilityIssue,
 } from "@/lib/wcag-references";
 
 type SeverityFilter = "all" | "critical" | "major" | "minor" | "warning";
 
-/**
- * Issue card for the dashboard list
- */
 function IssueCard({
   issue,
   isSelected,
@@ -42,7 +19,7 @@ function IssueCard({
   issue: AccessibilityIssue;
   isSelected: boolean;
   onClick: () => void;
-  triggerRef: React.RefObject<HTMLButtonElement>;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
 }) {
   const severityColors = {
     critical: "border-rose-400/30 hover:bg-rose-400/5 hover:border-rose-400/50",
@@ -70,7 +47,7 @@ function IssueCard({
       ref={triggerRef}
       onClick={onClick}
       aria-pressed={isSelected}
-      aria-label={`${issue.title}, severity: ${issue.severity}, WCAG ${issue.wcagCriterion.id}`}
+      aria-label={`${issue.title}, severity: ${issue.severity}`}
       className={`w-full text-left rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 p-4 ${severityColors[issue.severity]} ${
         isSelected ? "bg-white/10 border-cyan-400/50" : "bg-slate-900/50"
       }`}
@@ -92,12 +69,11 @@ function IssueCard({
             {issue.description}
           </p>
           <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs font-mono text-slate-500">
-              WCAG {issue.wcagCriterion.id}
-            </span>
-            <span className="text-xs font-mono text-slate-500">
-              {issue.wcagCriterion.level}
-            </span>
+            {issue.wcagCriterion?.id && (
+              <span className="text-xs font-mono text-slate-500">
+                WCAG {issue.wcagCriterion.id}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -109,46 +85,116 @@ export function A11yAuditDashboard() {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
   const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  
+  const [issues, setIssues] = useState<AccessibilityIssue[]>(SAMPLE_AUDIT_ISSUES);
+  const [isAuditing, setIsAuditing] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const selectedIssue = SAMPLE_AUDIT_ISSUES.find(
+  const selectedIssue = issues.find(
     (issue) => issue.id === selectedIssueId
   ) ?? null;
 
-  // Filter issues by severity
   const filteredIssues =
     severityFilter === "all"
-      ? SAMPLE_AUDIT_ISSUES
-      : SAMPLE_AUDIT_ISSUES.filter((issue) => issue.severity === severityFilter);
+      ? issues
+      : issues.filter((issue) => issue.severity === severityFilter);
 
-  const issueCounts = getIssueCounts();
+  const issueCounts = {
+    critical: issues.filter((i) => i.severity === "critical").length,
+    major: issues.filter((i) => i.severity === "major").length,
+    minor: issues.filter((i) => i.severity === "minor").length,
+    warning: issues.filter((i) => i.severity === "warning").length,
+  };
 
   const filterOptions: Array<{
     id: SeverityFilter;
     label: string;
     count: number;
   }> = [
-    { id: "all", label: "All Issues", count: SAMPLE_AUDIT_ISSUES.length },
+    { id: "all", label: "All Issues", count: issues.length },
     { id: "critical", label: "Critical", count: issueCounts.critical },
     { id: "major", label: "Major", count: issueCounts.major },
     { id: "minor", label: "Minor", count: issueCounts.minor },
     { id: "warning", label: "Warning", count: issueCounts.warning },
   ];
 
+  const runAudit = async () => {
+    setIsAuditing(true);
+    try {
+      const axe = (await import('axe-core')).default;
+      const context = iframeRef.current?.contentWindow?.document || document;
+      
+      const results = await axe.run(context as unknown as Element);
+      
+      const newIssues: AccessibilityIssue[] = [];
+      let idCounter = 1;
+      
+      results.violations.forEach(violation => {
+        violation.nodes.forEach(node => {
+          let severity: AccessibilityIssue['severity'] = 'minor';
+          if (violation.impact === 'critical') severity = 'critical';
+          if (violation.impact === 'serious') severity = 'major';
+          if (violation.impact === 'moderate') severity = 'warning';
+          
+          newIssues.push({
+            id: `live-issue-${idCounter++}`,
+            title: violation.help,
+            description: violation.description,
+            severity,
+            snippet: node.html,
+            wcagCriterion: {
+              id: 'Live',
+              title: violation.id,
+              description: '',
+              level: '',
+              specUrl: violation.helpUrl,
+              techniques: violation.tags
+            },
+            recommendedFix: {
+              description: node.failureSummary || 'Review Axe documentation',
+              codeExample: '',
+              explanation: ''
+            },
+            impact: violation.help || 'minor',
+            elementType: Array.isArray(node.target) ? node.target[0] : 'unknown',
+            location: 'Staged Route'
+          });
+        });
+      });
+      
+      setIssues(newIssues.length > 0 ? newIssues : []);
+    } catch(e) {
+      console.error(e);
+    } finally {
+      setIsAuditing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-amber-400" aria-hidden="true" />
-          Accessibility Audit Issues
-        </h2>
-        <p className="text-sm text-slate-400">
-          Review and fix accessibility issues found during the audit. Click on an issue to see
-          details and recommended fixes.
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-slate-200 flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-amber-400" aria-hidden="true" />
+            Live Accessibility Audit
+          </h2>
+          <p className="text-sm text-slate-400">
+            Run an axe-core audit on the staged route to surface live violations.
+          </p>
+        </div>
+        <button
+          onClick={runAudit}
+          disabled={isAuditing}
+          className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+        >
+          {isAuditing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          Run Axe Audit
+        </button>
       </div>
+      
+      {/* Hidden iframe for staged routes */}
+      <iframe ref={iframeRef} src="/" className="hidden" title="Staged Route" />
 
-      {/* Issue Summary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {filterOptions.map((option) => (
           <button
@@ -169,9 +215,7 @@ export function A11yAuditDashboard() {
         ))}
       </div>
 
-      {/* Main Layout */}
       <div className="flex gap-4 relative min-h-[600px]">
-        {/* Issues List */}
         <div className="flex-1 min-w-0">
           <div className="space-y-3">
             {filteredIssues.length > 0 ? (
@@ -182,7 +226,7 @@ export function A11yAuditDashboard() {
                   isSelected={selectedIssueId === issue.id}
                   onClick={() => setSelectedIssueId(issue.id)}
                   triggerRef={(el) => {
-                    if (el) triggerRefs.current[issue.id] = el;
+                    triggerRefs.current[issue.id] = el;
                   }}
                 />
               ))
@@ -197,25 +241,20 @@ export function A11yAuditDashboard() {
           </div>
         </div>
 
-        {/* Drill-down Panel */}
-        <A11yIssuePanel
-          issue={selectedIssue}
-          onClose={() => setSelectedIssueId(null)}
-          // eslint-disable-next-line react-hooks/refs
-          triggerRef={triggerRefs.current[selectedIssueId || ""] ? undefined : undefined}
-        />
+        {selectedIssue && (
+          <A11yIssuePanel
+            issue={selectedIssue}
+            onClose={() => setSelectedIssueId(null)}
+            triggerRef={undefined}
+          />
+        )}
       </div>
-
-      {/* Footer Info */}
       <div className="rounded-lg border border-white/10 bg-slate-900/50 p-4 space-y-2">
         <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-          About this audit
+          Remediation Guidance
         </p>
         <p className="text-xs text-slate-400 leading-relaxed">
-          These issues were detected by automated accessibility scanning and manual review.
-          Each issue is mapped to a specific WCAG 2.1 success criterion with recommended fixes
-          and links to the official specification. Address critical issues first, then work
-          through major and minor issues to improve overall accessibility compliance.
+          For full remediation guidance, consult the <a href="/docs/remediation.md" className="text-cyan-400 hover:underline">Accessibility Remediation Docs</a>.
         </p>
       </div>
     </div>

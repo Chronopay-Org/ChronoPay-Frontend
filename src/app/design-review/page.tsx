@@ -1,7 +1,7 @@
 import DesignChecklist from "@/components/design/DesignChecklist";
 import { StatusMatrix, statusMatrixData } from "@/components/design/status-matrix";
 import { A11yTrendChart, a11yTrendSampleData } from "@/components/design/a11y-trend-chart";
-import { UptimeChart, DayData, Incident } from "@/components/uptime";
+import { UptimeChart, DayData, Incident } from "@/app/components/uptime";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SentimentChipFilter } from "@/components/dashboard/sentiment-chip-filter";
@@ -10,6 +10,8 @@ import {
   reviewSentimentCounts,
   reviewSentimentTrend,
 } from "@/components/dashboard/dashboard-data";
+
+import { A11yAuditDashboard } from "@/components/design/a11y-audit-dashboard";
 
 // Helper function to generate 90 days of mock uptime data
 function generate90DaysMockData(): DayData[] {
@@ -223,7 +225,7 @@ export default function DesignReviewPage() {
                   <div className="space-y-1">
                     <p className="text-xs text-slate-400">Single data point</p>
                     <SentimentSparkline
-                      data={[{ period: "2026-07-20", positive: 48, mixed: 17, critical: 9 }]}
+                      data={[{ timestamp: "2026-07-20", positive: 48, mixed: 17, critical: 9 }]}
                       width={88}
                       height={28}
                     />
@@ -375,6 +377,11 @@ export default function DesignReviewPage() {
                   scrolls horizontally on small screens. RTL support reverses cell order.
                 </p>
               </div>
+            </div>
+
+            {/* ── A11y Audit Dashboard ── */}
+            <div className="space-y-6">
+              <A11yAuditDashboard />
             </div>
 
             {/* ── A11y Audit Historical Trend Chart ── */}

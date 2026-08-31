@@ -11,13 +11,36 @@ export const metadata: Metadata = {
   description: "Tokenize and trade human time on the Stellar network.",
 };
 
+/** Runs before React hydrates to set the theme and avoid FOUC. */
+const themeInitScript = `
+;(function () {
+  try {
+    var KEY = "chronopay:theme";
+    var stored = null;
+    try {
+      stored = window.localStorage.getItem(KEY);
+    } catch (e) { /* ignore storage errors */ }
+    var mode = (stored === "light" || stored === "dark" || stored === "auto") ? stored : "auto";
+    var resolved = mode;
+    if (mode === "auto") {
+      resolved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    document.documentElement.setAttribute("data-theme", resolved);
+  } catch (e) { /* fail safe to default theme in globals.css */ }
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Determine text direction from locale (defaults to LTR)
+  const dir = "ltr"; // TODO: Make dynamic based on locale cookie/header
+  const lang = "en"; // TODO: Make dynamic based on locale selection
+  
   return (
-<html lang="en" dir="ltr" suppressHydrationWarning>
+<html lang={lang} dir={dir} suppressHydrationWarning>
       <body className="min-h-screen flex flex-col antialiased">
         <script
           dangerouslySetInnerHTML={{
@@ -27,7 +50,7 @@ export default function RootLayout({
 
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-cyan-500 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+          className="sr-only focus:not-sr-only focus:fixed focus:inset-inline-start-4 focus:top-4 focus:z-50 focus:rounded focus:bg-cyan-500 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-300"
         >
           Skip to content
         </a>

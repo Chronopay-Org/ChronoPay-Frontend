@@ -228,4 +228,4 @@ export default function TwoFactorEnroll({ onComplete }: { onComplete?: () => voi
       )}
     </div>
   );
-}
+}
