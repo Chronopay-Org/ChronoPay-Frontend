@@ -6,6 +6,9 @@ import { CalendarViewToggle } from "@/components/dashboard/calendar-view-toggle"
 import { CalendarAgendaView } from "@/components/dashboard/calendar-agenda-view";
 import { AvailabilityLegend } from "@/components/dashboard/availability-legend";
 import { ReviewComposer } from "@/components/dashboard/review-composer";
+import { RatingHistogram } from "@/components/dashboard/rating-histogram";
+import { ReviewFilters } from "@/components/dashboard/review-filters";
+import { ReviewCard } from "@/components/dashboard/review-card";
 import { useState } from "react";
 
 export default function DesignSystemComponentsPage() {
@@ -233,6 +236,65 @@ export default function DesignSystemComponentsPage() {
               <li>• Form validation before submit</li>
               <li>• Full keyboard navigation</li>
             </ul>
+          </div>
+        </section>
+
+        {/* Reviews and Ratings UI */}
+        <section className="space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-white">Reviews and Ratings UI</h2>
+            <p className="text-slate-400">
+              Components for displaying review distribution, individual reviews, and filtering capabilities.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-medium">Accessible</span>
+              <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-medium">Star Half-fill</span>
+            </div>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-slate-900/50 p-6 space-y-8">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">Rating Histogram & Star Half-Fill Rendering</h3>
+              <p className="text-sm text-slate-400 mb-4">
+                Star half-fills are rendered via an SVG <code>linearGradient</code>. It ensures smooth rendering across 
+                devices without duplicating half-star icons, and relies on strict numeric <code>aria-label</code> constraints 
+                on a single parent element instead of each individual decorative star SVG.
+              </p>
+              <RatingHistogram
+                overallRating={4.7}
+                totalCount={128}
+                distribution={[
+                  { stars: 5, count: 95, percentage: 74 },
+                  { stars: 4, count: 20, percentage: 16 },
+                  { stars: 3, count: 8, percentage: 6 },
+                  { stars: 2, count: 3, percentage: 2 },
+                  { stars: 1, count: 2, percentage: 2 },
+                ]}
+              />
+            </div>
+            
+            <div className="border-t border-white/10 pt-8">
+              <h3 className="text-lg font-semibold text-white mb-4">Review Filters</h3>
+              <ReviewFilters
+                selectedStars={null}
+                onStarChange={() => {}}
+                sortBy="recent"
+                onSortChange={() => {}}
+              />
+            </div>
+
+            <div className="border-t border-white/10 pt-8">
+              <h3 className="text-lg font-semibold text-white mb-4">Review Card</h3>
+              <ReviewCard
+                id="review-1"
+                authorName="Sarah Jenkins"
+                isVerified={true}
+                rating={4}
+                date="Oct 24, 2023"
+                content="The final result exceeded my expectations. Communication was prompt and professional throughout the process. Highly recommend for any complex frontend work."
+                helpfulCount={12}
+                isHelpful={true}
+              />
+            </div>
           </div>
         </section>
 

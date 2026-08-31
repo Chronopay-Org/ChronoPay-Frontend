@@ -40,3 +40,7 @@ export * from "./receive-token-panel";
 export * from "./security-status-card";
 export * from "./review-vote-buttons";
 export * from "./supplier-onboarding-wizard";
+export * from "./star-rating";
+export * from "./rating-histogram";
+export * from "./review-filters";
+export * from "./review-card";
