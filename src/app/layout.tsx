@@ -10,6 +10,25 @@ export const metadata: Metadata = {
   description: "Tokenize and trade human time on the Stellar network.",
 };
 
+/** Runs before React hydrates to set the theme and avoid FOUC. */
+const themeInitScript = `
+;(function () {
+  try {
+    var KEY = "chronopay:theme";
+    var stored = null;
+    try {
+      stored = window.localStorage.getItem(KEY);
+    } catch (e) { /* ignore storage errors */ }
+    var mode = (stored === "light" || stored === "dark" || stored === "auto") ? stored : "auto";
+    var resolved = mode;
+    if (mode === "auto") {
+      resolved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    }
+    document.documentElement.setAttribute("data-theme", resolved);
+  } catch (e) { /* fail safe to default theme in globals.css */ }
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{

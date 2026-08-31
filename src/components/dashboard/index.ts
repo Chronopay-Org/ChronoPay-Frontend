@@ -26,6 +26,7 @@ export * from "./DurationChips";
 export * from "./state-card";
 export * from "./supplier-trust-stats";
 export * from "./status-chip";
+export * from "./theme-switcher";
 export * from "./wallet-card";
 export * from "./meet-checklist-card";
 export * from "./card";

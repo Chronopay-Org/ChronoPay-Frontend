@@ -347,6 +347,7 @@
 }
 
 html {
+  color-scheme: dark;
   background:
     radial-gradient(circle at top, rgba(34, 211, 238, 0.18), transparent 34%),
     linear-gradient(180deg, #09111e 0%, #050b14 100%);

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { MiniCalendarNavigator } from "@/components/dashboard/mini-calendar-navigator";
 import { CalendarViewToggle } from "@/components/dashboard/calendar-view-toggle";
