@@ -171,4 +171,30 @@ describe("OnboardingWalkthrough", () => {
     fireEvent.click(screen.getByRole("button", { name: "Skip walkthrough" }));
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
+
+  it("renders the dialog contract: role, aria-modal and a labelled heading", () => {
+    setup();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    const labelledBy = dialog.getAttribute("aria-labelledby");
+    expect(labelledBy).toBeTruthy();
+    const title = document.getElementById(labelledBy as string);
+    expect(title).toBeTruthy();
+    expect(title?.tagName.toLowerCase()).toBe("h2");
+  });
+
+  it("keeps focus inside the dialog and reclaims an escaped focus (shared FocusTrap)", () => {
+    setup();
+    const dialog = screen.getByRole("dialog");
+    // Focus enters the dialog when it opens.
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    // A focus attempt on an element outside the trap is reclaimed.
+    const outside = document.createElement("button");
+    outside.setAttribute("data-testid", "outside-focus");
+    document.body.appendChild(outside);
+    outside.focus();
+    expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(true);
+    outside.remove();
+  });
 });

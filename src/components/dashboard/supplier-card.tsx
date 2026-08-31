@@ -1,5 +1,4 @@
-import { ReactNode } from "react";
-import { Card, CardHeader, CardBody, CardFooter } from "./card";
+import { Card, CardHeader, CardBody } from "./card";
 
 export interface Supplier {
   id: string;
