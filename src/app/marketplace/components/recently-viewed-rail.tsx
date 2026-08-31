@@ -21,7 +21,6 @@ const MAX_ITEMS = 10;
 // ─── Component ───────────────────────────────────────────────────────────────────
 
 export function RecentlyViewedRail() {
-  const [items, setItems] = useState<RecentlyViewedItem[]>([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,6 +28,7 @@ export function RecentlyViewedRail() {
 
   // Load items from localStorage via lazy initializer
   const [items, setItems] = useState<RecentlyViewedItem[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
@@ -41,7 +41,6 @@ export function RecentlyViewedRail() {
   });
 
   // Subscribe to external custom events — legitimate side effect pattern.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const handleUpdate = (e: Event) => {
       const updated = (e as CustomEvent<RecentlyViewedItem[]>).detail;
@@ -53,7 +52,6 @@ export function RecentlyViewedRail() {
   }, []);
 
   // Synchronize React state to localStorage — valid side effect.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));

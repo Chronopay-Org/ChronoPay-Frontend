@@ -79,7 +79,9 @@ export function UptimeTooltip({
     year: "numeric",
   });
 
-  // Update tooltip position when visible
+  // Update tooltip position when visible. The measurement must run after the
+  // tooltip has painted, so the state write is deferred to a rAF callback
+  // instead of running synchronously inside the effect body.
   useEffect(() => {
     if (!triggerElement || !tooltipRef.current) return;
 
@@ -93,11 +95,14 @@ export function UptimeTooltip({
       Math.min(placement.left - tooltipWidth / 2, viewport - tooltipWidth - 8)
     );
 
-    setPosition({
-      top: placement.top,
-      left: safeLeft,
-      pos: placement.position,
+    const frame = requestAnimationFrame(() => {
+      setPosition({
+        top: placement.top,
+        left: safeLeft,
+        pos: placement.position,
+      });
     });
+    return () => cancelAnimationFrame(frame);
   }, [triggerElement]);
 
   // Close on Escape key
