@@ -12,8 +12,10 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov", "html"],
       include: [
+        "src/app/components/ui/form-field.tsx",
         "src/app/components/ui/help-popover.tsx",
         "src/lib/glossary.ts",
+        "src/components/dashboard/booking-progress.tsx",
         "src/components/dashboard/review-reply-thread.tsx",
         "src/components/dashboard/earnings-chart.tsx",
         "src/components/dashboard/rating-breakdown-bars.tsx",
@@ -23,6 +25,9 @@ export default defineConfig({
         "src/components/receipt/Receipt.tsx",
         "src/components/marketplace/results-per-page-selector.tsx",
         "src/components/dashboard/plan-comparison.tsx",
+        "src/components/dashboard/rebooking-utils.ts",
+        "src/components/dashboard/rebooking-dialog.tsx",
+        "src/components/dashboard/slot-list.tsx",
       ],
       thresholds: {
         lines: 95,

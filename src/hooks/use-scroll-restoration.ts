@@ -28,7 +28,7 @@ export function useScrollRestoration(listId: string) {
             const element = document.getElementById(`list-item-${data.itemId}`);
             if (element) {
               element.scrollIntoView({ behavior: "instant", block: "center" });
-              
+
               // Clear badge after 3 seconds
               scrollTimeoutRef.current = setTimeout(() => {
                 setRestoredItemId(null);

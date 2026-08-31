@@ -176,6 +176,15 @@ Badges integrate naturally into existing card components. Slot cards display opt
 
 Badges inherit tone colors from the `StatusChip` palette, which is designed for the dark dashboard theme. No additional dark-mode overrides are needed.
 
+## Keyboard shortcuts overlay (`?` / Shift+/)
+
+Press **`?`** (Shift+/) anywhere on the dashboard shell to open a modal reference of every keyboard binding, grouped by surface (Global, Navigation, Search, …). It is fully accessible (WCAG 2.1 AA): `role="dialog"`, `aria-modal`, labelled by its heading, wrapped in the shared `FocusTrap`, closed with Escape / close button / backdrop click, and every binding renders as a proper `<kbd>` element with a text label.
+
+- **Single source of truth**: all bindings live in `src/lib/shortcuts.ts` (`SHORTCUT_GROUPS`); the overlay is `src/app/components/ui/shortcut-overlay.tsx`.
+- **Global trigger**: `?` toggles the overlay from the shell and is ignored while typing in inputs/textarea/content-editable elements.
+- **Extending**: add a group to `SHORTCUT_GROUPS` and it appears in the overlay automatically.
+- **Validation**: covered by unit tests in `src/__tests__/shortcut-overlay.test.tsx` (100% stmt/branch/func coverage for the component and registry) and the [Design Review Checklist](docs/design-review-checklist.md).
+
 ## Card interaction affordances
 
 Clickable cards and panels use consistent hover and press (active) styles to clarify interactivity and provide visual feedback:
