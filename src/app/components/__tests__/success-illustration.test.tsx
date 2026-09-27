@@ -1,20 +1,30 @@
-import { render, screen } from "@testing-library/react";
-import { SuccessIllustration } from "../success-illustration";
+import { render, screen, act } from "@testing-library/react";
+import { SuccessIllustration, SuccessVariant } from "../success-illustration";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 describe("SuccessIllustration", () => {
+  let triggerIntersection: IntersectionObserverCallback;
+  let observeMock: ReturnType<typeof vi.fn>;
+  let disconnectMock: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
-    // Mock IntersectionObserver
-    const mockIntersectionObserver = vi.fn();
-    mockIntersectionObserver.mockReturnValue({
-      observe: () => null,
-      unobserve: () => null,
-      disconnect: () => null,
-    });
-    window.IntersectionObserver = mockIntersectionObserver;
+    observeMock = vi.fn();
+    disconnectMock = vi.fn();
+    
+    class MockIntersectionObserver {
+      constructor(callback: IntersectionObserverCallback) {
+        triggerIntersection = callback;
+      }
+      observe = observeMock;
+      unobserve = vi.fn();
+      disconnect = disconnectMock;
+    }
+    
+    vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -54,5 +64,37 @@ describe("SuccessIllustration", () => {
     render(<SuccessIllustration variant="mint" alt="Custom Alt Text" />);
     const img = screen.getByRole("img");
     expect(img).toHaveAttribute("aria-label", "Custom Alt Text");
+  });
+
+  it("handles state transitions based on intersection observer", () => {
+    render(<SuccessIllustration variant="mint" />);
+    const img = screen.getByRole("img");
+    
+    // Initial state is unpaused
+    expect(img).not.toHaveClass("es-paused");
+    
+    // Simulate leaving viewport
+    act(() => {
+      triggerIntersection([{ isIntersecting: false }] as IntersectionObserverEntry[], {} as IntersectionObserver);
+    });
+    
+    expect(img).toHaveClass("es-paused");
+    
+    // Simulate re-entering viewport
+    act(() => {
+      triggerIntersection([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver);
+    });
+    
+    expect(img).not.toHaveClass("es-paused");
+  });
+
+  it("fails deterministically for invalid variants (boundary behavior)", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    
+    expect(() => {
+      render(<SuccessIllustration variant={"invalid-variant" as SuccessVariant} />);
+    }).toThrow();
+    
+    consoleSpy.mockRestore();
   });
 });
