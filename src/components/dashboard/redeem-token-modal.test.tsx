@@ -23,6 +23,48 @@ describe("RedeemTokenModal", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it("does not expose modal content or controls when closed", () => {
+    render(<RedeemTokenModal isOpen={false} onClose={() => {}} tokenCode="HIDDEN42" />);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByText("Redeem Time Token")).not.toBeInTheDocument();
+    expect(screen.queryByText("HIDDEN42")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Copy short code" })).not.toBeInTheDocument();
+  });
+
+  it("renders the normal QR path after reopening from the closed state", () => {
+    const { container, rerender } = render(
+      <RedeemTokenModal isOpen={false} onClose={() => {}} tokenCode="ZX90YY" />,
+    );
+    expect(container).toBeEmptyDOMElement();
+
+    rerender(<RedeemTokenModal isOpen={true} onClose={() => {}} tokenCode="ZX90YY" />);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Redeem Time Token")).toBeInTheDocument();
+    expect(screen.getByText("ZX90YY")).toBeInTheDocument();
+    expect(screen.getByText("Code expires in 5:00")).toBeInTheDocument();
+  });
+
+  it("handles an empty token code boundary without changing the open-state contract", () => {
+    render(<RedeemTokenModal isOpen={true} onClose={() => {}} tokenCode="" />);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Redeem Time Token")).toBeInTheDocument();
+    expect(screen.getByText("Short Code")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy short code" })).toBeInTheDocument();
+    expect(screen.getByLabelText("QR Code for redemption")).toBeInTheDocument();
+  });
+
+  it("ignores ESC while closed", () => {
+    const onClose = vi.fn();
+    render(<RedeemTokenModal isOpen={false} onClose={onClose} tokenCode="AB12CD" />);
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("closes when close button is clicked", () => {
     const onClose = vi.fn();
     render(<RedeemTokenModal isOpen={true} onClose={onClose} tokenCode="AB12CD" />);
