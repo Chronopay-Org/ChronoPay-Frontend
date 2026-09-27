@@ -93,7 +93,7 @@ function NavLink({ item, pathname, onClick }: { item: NavItem; pathname: string;
   );
 }
 
-function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) {
+export function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) {
   if (items.length === 0) return null;
 
   return (
