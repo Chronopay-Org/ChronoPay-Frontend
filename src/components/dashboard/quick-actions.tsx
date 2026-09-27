@@ -27,8 +27,8 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {actions.map((action) => {
-        // Dynamically get the icon component
-        const IconComponent = Icons[action.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
+        // Dynamically get the icon component, fallback to AlertCircle if missing
+        const IconComponent = (Icons[action.icon as keyof typeof Icons] || Icons.AlertCircle) as React.ComponentType<{ className?: string }>;
         
         return (
           <div
