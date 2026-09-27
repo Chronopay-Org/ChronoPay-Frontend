@@ -15,6 +15,16 @@ function notifySubscribers() {
   subscribers.forEach((callback) => callback());
 }
 
+export function __test_setWalletState(next: WalletState) {
+  walletState = next;
+  notifySubscribers();
+}
+
+export function __test_resetWalletState() {
+  walletState = { status: "disconnected" };
+  subscribers.clear();
+}
+
 function setWalletState(next: WalletState) {
   walletState = next;
   notifySubscribers();
