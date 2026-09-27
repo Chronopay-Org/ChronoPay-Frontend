@@ -114,6 +114,10 @@ export function KeepOriginalPriceChip({
     window.setTimeout(() => setAnnouncement(message), 0);
   }, []);
 
+  if (originalPrice < 0 || alternativePrice < 0 || availableCredit < 0) {
+    throw new RangeError("Prices and credit must be positive numbers");
+  }
+
   // ── Derived values ────────────────────────────────────────────────────────
   const priceDiff = alternativePrice - originalPrice;
 
