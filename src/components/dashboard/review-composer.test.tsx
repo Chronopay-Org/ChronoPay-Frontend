@@ -5,7 +5,7 @@ import {
   ReviewComposer,
   type ReviewCriterion,
   type ReviewSubmissionData,
-} from "../review-composer";
+} from "./review-composer";
 
 const CRITERIA: ReviewCriterion[] = [
   { id: "quality", label: "Quality" },
