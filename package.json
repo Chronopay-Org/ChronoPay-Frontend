@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@exodus/bytes": "1.15.0",
     "@react-spring/web": "^10.1.2",
     "@use-gesture/react": "^10.3.1",
     "canvas-confetti": "^1.9.4",
@@ -26,6 +27,7 @@
     "rrule": "^2.8.1"
   },
   "devDependencies": {
+    "@rolldown/binding-win32-x64-msvc": "^1.2.11",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -41,6 +43,7 @@
     "axe-core": "^4.13.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "happy-dom": "^20.14.5",
     "jest-axe": "^11.0.0",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
