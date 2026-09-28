@@ -7,6 +7,7 @@ import { axe, toHaveNoViolations } from "jest-axe";
 import {
   BookingFlowShell,
   BookingProgress,
+  formatTimelineTimestamp,
   type BookingFlowStep,
   REFUND_STAGES,
   RefundTracker,
@@ -50,6 +51,40 @@ describe("BookingProgress", () => {
     for (const fill of fills) {
       expect(fill.className).toContain("transition-[width]");
       expect(fill.className).toContain("motion-reduce:transition-none");
+    }
+  });
+});
+
+describe("formatTimelineTimestamp", () => {
+  it("returns null for missing and invalid values", () => {
+    expect(formatTimelineTimestamp(undefined)).toBeNull();
+    expect(formatTimelineTimestamp(null)).toBeNull();
+    expect(formatTimelineTimestamp("")).toBeNull();
+    expect(formatTimelineTimestamp("not-a-date")).toBeNull();
+  });
+
+  it("formats valid Date and ISO string values deterministically", () => {
+    const date = new Date("2025-02-03T15:45:00Z");
+    const expected = new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
+
+    expect(formatTimelineTimestamp(date)).toBe(expected);
+    expect(formatTimelineTimestamp("2025-02-03T15:45:00Z")).toBe(expected);
+  });
+
+  it("falls back to ISO output if the runtime formatter throws", () => {
+    const original = Intl.DateTimeFormat;
+    Intl.DateTimeFormat = (() => {
+      throw new Error("formatter unavailable");
+    }) as typeof Intl.DateTimeFormat;
+
+    try {
+      const date = new Date("2025-02-03T15:45:00Z");
+      expect(formatTimelineTimestamp(date)).toBe(date.toISOString());
+    } finally {
+      Intl.DateTimeFormat = original;
     }
   });
 });
