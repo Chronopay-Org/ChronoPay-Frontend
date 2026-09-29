@@ -31,7 +31,7 @@ import { KeepOriginalPriceChip } from "./keep-original-price-chip";
 import { RebookingDialog } from "./rebooking-dialog";
 import { glossary } from "@/lib/glossary";
 import { useScrollRestoration } from "@/hooks/use-scroll-restoration";
-import { StatusChip } from "./status-chip";
+
 import { SocialProofBadges } from "./social-proof-badges";
 import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
@@ -318,13 +318,13 @@ export const SlotList = ({
   });
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [isDragging, setIsDragging] = useState(false);
+  // const [isDragging, setIsDragging] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{
     id: string;
     position: DropPosition;
   } | null>(null);
-  const [conflicts, setConflicts] = useState<Record<string, string>>({});
+  // const [conflicts, setConflicts] = useState<Record<string, string>>({});
   const [activeRebook, setActiveRebook] = useState<Slot | null>(null);
   const [liveMessage, setLiveMessage] = useState("");
   const liveMessageTimer = useRef<number | null>(null);
@@ -582,23 +582,15 @@ export const SlotList = ({
       ) : (
         <>
           {viewMode === "list" ? (
-          <ul className="space-y-4" {...bind()}>
-          {slots.map((slot) => {
-            const slotTitleId = "slot-" + slot.id + "-title";
-            const slotDetailsId = "slot-" + slot.id + "-details";
-            const isConflictTarget = activeConflictSlotId === slot.id || activeConflictSlotId === `slot-${slot.id}`;
-
-            return (
-              <li
-                key={slot.id}
-                className="space-y-2 relative"
-                aria-describedby={conflicts[slot.id] ? `conflict-${slot.id}` : undefined}
-              >
-                Clear selection ({selectedIds.size})
-              </button>
-            ) : null}
-          </div>
-          <ul className="space-y-4">
+            <>
+              <div className="flex justify-end mb-4">
+                {selectedIds.size > 0 ? (
+                  <button type="button" onClick={() => setSelectedIds(new Set())}>
+                    Clear selection ({selectedIds.size})
+                  </button>
+                ) : null}
+              </div>
+              <ul className="space-y-4">
             {orderedSlots.map((slot) => {
               const slotTitleId = `slot-${slot.id}-title`;
               const slotDetailsId = `slot-${slot.id}-details`;
@@ -737,6 +729,7 @@ export const SlotList = ({
               );
             })}
           </ul>
+          </>
         ) : (
           <CalendarView slots={slots} viewMode={viewMode as "month" | "week" | "day"} />
         )}
