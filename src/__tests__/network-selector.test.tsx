@@ -189,9 +189,18 @@ describe("TestnetRibbon", () => {
     expect(screen.getByText(/Testnet/i)).toBeInTheDocument();
   });
 
-  it("does not render when network is mainnet", () => {
-    render(<TestnetRibbon network="mainnet" />);
+  it("does not render when network is mainnet (failure/empty-result path)", () => {
+    const { container } = render(<TestnetRibbon network="mainnet" />);
 
     expect(screen.queryByText(/Testnet/i)).not.toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("does not render and handles boundary/invalid network input gracefully", () => {
+    // Boundary/invalid inputs cast to StellarNetwork
+    const { container } = render(<TestnetRibbon network={"invalid" as StellarNetwork} />);
+
+    expect(screen.queryByText(/Testnet/i)).not.toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
   });
 });
