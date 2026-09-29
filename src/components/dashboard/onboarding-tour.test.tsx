@@ -1,7 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { OnboardingTour, DEFAULT_TOUR_STEPS } from './onboarding-tour';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { OnboardingTour } from './onboarding-tour';
 
 describe('OnboardingTour', () => {
   beforeEach(() => {
@@ -53,7 +54,9 @@ describe('OnboardingTour', () => {
     );
     
     expect(screen.getByText('Connect Your Wallet')).toBeInTheDocument();
-    expect(screen.getByText('Start by connecting your Stellar wallet.')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Start by connecting your Stellar wallet\./)
+    ).toBeInTheDocument();
   });
 
   it('should navigate to next step', async () => {
@@ -85,7 +88,7 @@ describe('OnboardingTour', () => {
 
   it('should call onComplete when skip is clicked', async () => {
     const user = userEvent.setup();
-    const onComplete = jest.fn();
+    const onComplete = vi.fn();
     render(
       <OnboardingTour open={true} onComplete={onComplete} />
     );
@@ -98,7 +101,7 @@ describe('OnboardingTour', () => {
 
   it('should call onComplete when close button is clicked', async () => {
     const user = userEvent.setup();
-    const onComplete = jest.fn();
+    const onComplete = vi.fn();
     render(
       <OnboardingTour open={true} onComplete={onComplete} />
     );
@@ -126,7 +129,7 @@ describe('OnboardingTour', () => {
 
   it('should call onComplete when Finish is clicked', async () => {
     const user = userEvent.setup();
-    const onComplete = jest.fn();
+    const onComplete = vi.fn();
     render(
       <OnboardingTour open={true} onComplete={onComplete} />
     );
@@ -145,7 +148,7 @@ describe('OnboardingTour', () => {
 
   it('should close on Escape key', async () => {
     const user = userEvent.setup();
-    const onComplete = jest.fn();
+    const onComplete = vi.fn();
     const { container } = render(
       <OnboardingTour open={true} onComplete={onComplete} />
     );

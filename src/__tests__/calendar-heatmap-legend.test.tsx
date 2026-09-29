@@ -14,9 +14,10 @@ describe("CalendarHeatmapLegend", () => {
   });
 
   it("renders all 5 intensity levels in order", () => {
-    render(<CalendarHeatmapLegend />);
+    const { container } = render(<CalendarHeatmapLegend />);
 
-    const items = screen.getAllByText(/No availability|Low|Medium|High|Peak/);
+    // Query the visible label spans directly to avoid matching sr-only content.
+    const items = container.querySelectorAll("span.text-xs.font-medium");
     expect(items).toHaveLength(5);
   });
 

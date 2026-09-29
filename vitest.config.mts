@@ -4,8 +4,16 @@ import { resolve } from "path";
 
 export default defineConfig({
   plugins: [react()],
+  ssr: {
+    noExternal: ["html-encoding-sniffer", "@exodus/bytes"],
+  },
   test: {
-    environment: "jsdom",
+    server: {
+      deps: {
+        inline: ["html-encoding-sniffer", "@exodus/bytes"],
+      },
+    },
+    environment: "happy-dom",
     globals: true,
     setupFiles: ["./src/__tests__/setup.ts"],
     coverage: {
@@ -39,7 +47,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": resolve(__dirname, "./src"),
+      "@": resolve(import.meta.dirname, "./src"),
     },
   },
 });

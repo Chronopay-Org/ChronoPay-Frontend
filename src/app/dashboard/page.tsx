@@ -199,9 +199,9 @@ const TYPEAHEAD_SUGGESTIONS = [
 export default function Dashboard() {
   const t = useMessages();
   const searchParams = useSearchParams();
-  const loading = false;
-  const error = false;
-  const hasData = true;
+  const loading = searchParams.has("loading");
+  const error = searchParams.has("error");
+  const hasData = !searchParams.has("empty");
   const [activeFilters, setActiveFilters] = useState<ChipFilter[]>([]);
   const [isEnrolling2FA, setIsEnrolling2FA] = useState(false);
   const [twoFactorStatus, setTwoFactorStatus] =

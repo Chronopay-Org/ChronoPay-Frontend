@@ -1,4 +1,4 @@
-use client";
+"use client";
 
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
@@ -159,12 +159,12 @@ export function AvailabilityStrip({
               key={dayId}
               className="rounded-xl border border-white/8 bg-white/4 p-4 transition-colors hover:border-white/12"
               role="listitem"
-              aria-labelledby={`${dayId}-label}`
-              aria-describedby={`${dayId}-status}`
+              aria-labelledby={`${dayId}-label`}
+              aria-describedby={`${dayId}-status`}
             >
               <div className="mb-3">
                 <p
-                  id={`${dayId}-label}
+                  id={`${dayId}-label`}
                   className="text-xs font-semibold uppercase tracking-wider text-slate-400"
                 >
                   <BidiIsolate locale={locale}>{day.dayName}</BidiIsolate>
@@ -181,7 +181,7 @@ export function AvailabilityStrip({
                   </span>
                 </div>
                 <StatusChip
-                  id={`${dayId}-status}
+                  id={`${dayId}-status`}
                   tone={day.status === "available" ? "positive" : day.status === "limited" ? "warning" : day.status === "full" ? "critical" : "neutral"}
                   aria-label={`Status: ${statusLabels[day.status]}`}
                 >

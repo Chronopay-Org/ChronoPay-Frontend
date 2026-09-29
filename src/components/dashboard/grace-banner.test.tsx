@@ -1,6 +1,6 @@
 import { render, screen, act, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { GraceBanner } from "../components/dashboard/grace-banner";
+import { GraceBanner, type GraceBannerProps } from "./grace-banner";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -10,6 +10,11 @@ import { GraceBanner } from "../components/dashboard/grace-banner";
 function fixedNow(ms: number) {
   return () => ms;
 }
+
+const validProps: GraceBannerProps = {
+  graceExpiresAt: 60_000,
+  now: fixedNow(0),
+};
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -26,6 +31,12 @@ describe("GraceBanner", () => {
   });
 
   // ── Rendering ─────────────────────────────────────────────────────────────
+
+  it("accepts the public GraceBannerProps shape", () => {
+    render(<GraceBanner {...validProps} />);
+
+    expect(screen.getByTestId("grace-countdown")).toHaveTextContent("1:00");
+  });
 
   it("renders the banner with correct countdown when time remains", () => {
     const base = Date.now();
