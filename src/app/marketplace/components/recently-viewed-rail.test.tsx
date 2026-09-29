@@ -85,6 +85,69 @@ describe("RecentlyViewedRail", () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it("should handle corrupted localStorage gracefully and return null", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    localStorage.setItem("chronopay-recently-viewed", "{invalid json}");
+    
+    const { container } = render(<RecentlyViewedRail />);
+    
+    // Assert error contract
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Failed to load recently viewed items:",
+      expect.any(Error)
+    );
+    // Assert returned value is null due to empty items
+    expect(container.firstChild).toBeNull();
+    
+    consoleSpy.mockRestore();
+  });
+
+  it("should return null when history is cleared (boundary transition)", () => {
+    const { container } = render(<RecentlyViewedRail />);
+    
+    // initially renders
+    expect(screen.getByText("Recently viewed")).toBeInTheDocument();
+    
+    // trigger clear
+    const clearButton = screen.getByText("Clear history");
+    fireEvent.click(clearButton);
+    
+    // confirm clear
+    const confirmButton = screen.getByText("Confirm?");
+    fireEvent.click(confirmButton);
+    
+    // assert boundary: component should now render null
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("should handle localStorage setItem error gracefully on update", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    
+    render(<RecentlyViewedRail />);
+    
+    // Mock setItem to throw to test effect error boundary
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = () => { throw new Error("Quota exceeded"); };
+    
+    // dispatch an update event
+    const updatedItems: RecentlyViewedItem[] = [{
+      id: "3", title: "New Item", price: "10 XLM", href: "/3", viewedAt: Date.now()
+    }];
+    window.dispatchEvent(new CustomEvent("chronopay:recently-viewed-updated", {
+      detail: updatedItems
+    }));
+    
+    // Assert error was caught and logged
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Failed to save recently viewed items:",
+      expect.any(Error)
+    );
+    
+    // Restore
+    localStorage.setItem = originalSetItem;
+    consoleSpy.mockRestore();
+  });
+
   it("should render items from localStorage", () => {
     render(<RecentlyViewedRail />);
     
@@ -308,6 +371,46 @@ describe("useRecentlyViewed hook", () => {
     
     expect(items[0].id).toBe("2");
     expect(items).toHaveLength(2);
+  });
+
+  it("should handle error gracefully when adding item with corrupted storage", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    
+    // Mock get/set to throw error
+    const originalGetItem = localStorage.getItem;
+    localStorage.getItem = () => { throw new Error("Storage unavailable"); };
+    
+    const TestComponent = () => {
+      const { addItem } = useRecentlyViewed();
+      
+      return (
+        <button
+          onClick={() =>
+            addItem({
+              id: "test-err",
+              title: "Error Item",
+              price: "10 XLM",
+              href: "/error",
+            })
+          }
+        >
+          Add Item Error
+        </button>
+      );
+    };
+    
+    render(<TestComponent />);
+    
+    const button = screen.getByText("Add Item Error");
+    fireEvent.click(button);
+    
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Failed to add recently viewed item:",
+      expect.any(Error)
+    );
+    
+    localStorage.getItem = originalGetItem;
+    consoleSpy.mockRestore();
   });
 
   it("should dispatch custom event on update", () => {

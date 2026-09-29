@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { DashboardShell } from "./dashboard-shell";
+import { DashboardShell, BottomNav } from "./dashboard-shell";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
@@ -385,5 +385,29 @@ describe("DashboardShell", () => {
     const liveRegions = screen.getAllByRole("status");
     // At least one live region exists for command palette announcements
     expect(liveRegions.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("BottomNav", () => {
+  it("returns null (renders nothing) when items array is empty", () => {
+    const { container } = render(<BottomNav items={[]} pathname="/dashboard" />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("renders the bottom nav when items are provided", () => {
+    const items = [{ href: "/test", label: "Test Item", icon: "T" }];
+    render(<BottomNav items={items} pathname="/dashboard" />);
+    expect(screen.getByLabelText("Bottom navigation")).toBeInTheDocument();
+    expect(screen.getByText("Test Item")).toBeInTheDocument();
+  });
+
+  it("marks the active item based on pathname", () => {
+    const items = [
+      { href: "/test", label: "Test Item", icon: "T" },
+      { href: "/other", label: "Other Item", icon: "O" },
+    ];
+    render(<BottomNav items={items} pathname="/test" />);
+    const link = screen.getByRole("link", { name: "Test Item" });
+    expect(link).toHaveAttribute("aria-current", "page");
   });
 });
