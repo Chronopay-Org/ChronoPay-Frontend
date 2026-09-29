@@ -25,6 +25,10 @@
 import { useState, useEffect, useCallback, useId, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { CheckCircle2, Copy, Download } from "lucide-react";
 import { WarningBanner } from "@/app/components/ui/warning-banner";
+import {
+  EXPERIMENTAL_FEATURE_STORAGE_KEY,
+  loadExperimentalFeatureConfig,
+} from "./experimental-feature-config";
 
 type SettingsTabId = "account" | "security" | "notifications" | "appearance" | "wallets" | "developer";
 
@@ -73,8 +77,22 @@ const EXPERIMENTAL_FEATURES: Omit<ExperimentalFeature, "enabled">[] = [
   },
 ];
 
-const STORAGE_KEY = "chronopay-experiments";
+const STORAGE_KEY = EXPERIMENTAL_FEATURE_STORAGE_KEY;
 const BANNER_DISMISS_KEY = "chronopay-dev-banner-dismissed";
+
+function getInitialFeatures(): ExperimentalFeature[] {
+  const featureIds = EXPERIMENTAL_FEATURES.map((feature) => feature.id);
+  const result = loadExperimentalFeatureConfig(featureIds);
+
+  if ((result.status === "invalid" || result.status === "unavailable") && result.error) {
+    console.warn(`Failed to load experimental feature configuration: ${result.error}`);
+  }
+
+  return EXPERIMENTAL_FEATURES.map((feature) => ({
+    ...feature,
+    enabled: result.states[feature.id] ?? false,
+  }));
+}
 
 interface DebugInfo {
   version: string;
@@ -191,21 +209,7 @@ function ExperimentToggle({ feature, onChange }: ExperimentToggleProps) {
 }
 
 export function DeveloperSettings() {
-  const [features, setFeatures] = useState<ExperimentalFeature[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const savedStates = JSON.parse(stored) as Record<string, boolean>;
-        return EXPERIMENTAL_FEATURES.map((f) => ({
-          ...f,
-          enabled: savedStates[f.id] ?? false,
-        }));
-      }
-    } catch {
-      // Fallback if localStorage fails
-    }
-    return EXPERIMENTAL_FEATURES.map((f) => ({ ...f, enabled: false }));
-  });
+  const [features, setFeatures] = useState<ExperimentalFeature[]>(getInitialFeatures);
   const [mounted, setMounted] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(
     () => {
