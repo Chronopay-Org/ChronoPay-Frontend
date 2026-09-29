@@ -56,8 +56,31 @@ function renderDialog(overrides: DialogOverrides = {}) {
 
 describe("RebookingDialog", () => {
   it("renders nothing when closed", () => {
-    render(<RebookingDialog {...baseProps} open={false} />);
+    const onClose = vi.fn();
+    const onConfirm = vi.fn();
+    const { container, rerender } = render(
+      <RebookingDialog
+        {...baseProps}
+        open={false}
+        onClose={onClose}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(onConfirm).not.toHaveBeenCalled();
+
+    rerender(
+      <RebookingDialog
+        {...baseProps}
+        open
+        onClose={onClose}
+        onConfirm={onConfirm}
+      />,
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("exposes an accessible labelled modal dialog", () => {
