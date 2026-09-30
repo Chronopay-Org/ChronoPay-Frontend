@@ -6,10 +6,11 @@ interface Props {
 }
 
 export const ThemePreviewStrip = ({ lightTime, darkTime }: Props) => {
-  // Simple visual calculation: 24h as 100%
   const timeToPct = (time: string) => {
+    if (!time || typeof time !== 'string' || !time.includes(':')) return 0;
     const [h, m] = time.split(':').map(Number);
-    return ((h * 60 + m) / 1440) * 100;
+    if (isNaN(h) || isNaN(m)) return 0;
+    return Math.max(0, Math.min(100, ((h * 60 + m) / 1440) * 100));
   };
 
   const start = timeToPct(lightTime);
