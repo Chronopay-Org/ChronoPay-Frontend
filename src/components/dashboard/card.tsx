@@ -198,7 +198,7 @@ export function SupplierCard({
       {(rating !== undefined || responseTime || nextSlot) ? (
         <div className={clsx("flex flex-wrap text-sm text-slate-300 gap-y-2 gap-x-4", isCompact ? "mt-1" : "mt-2")}>
           {rating !== undefined ? (
-            <div className="flex items-center gap-1" aria-label={`Rating: ${rating.toFixed(1)} out of 5 stars`}>
+<div className="flex items-center gap-1" aria-label={`Rating: ${rating.toFixed(1)} out of 5 stars`}>
               <Star className="h-4 w-4 text-amber-400 fill-amber-400" aria-hidden="true" />
               <span className="font-medium text-white">{rating.toFixed(1)}</span>
               {reviewCount !== undefined ? <span className="text-slate-500" aria-label={`${reviewCount} reviews`}>({reviewCount})</span> : null}
