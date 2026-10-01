@@ -44,6 +44,105 @@ describe("ShortcutOverlay", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       expect(screen.queryByText("Keyboard shortcuts")).not.toBeInTheDocument();
     });
+
+    // Regression coverage for the `if (!open) return null;` branch
+    // (src/app/components/ui/shortcut-overlay.tsx:36): the closed state must
+    // stay a hard null return — no empty shell, no stray attributes — so any
+    // silent change to that contract fails here.
+    it("returns a hard null value when open=false (regression)", () => {
+      const { container } = render(
+        <ShortcutOverlay open={false} onClose={vi.fn()} />
+      );
+      expect(container).toBeEmptyDOMElement();
+      expect(container.firstChild).toBeNull();
+      expect(container.outerHTML).toBe("<div></div>");
+    });
+
+    it("emits no warnings when open=false (regression)", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      render(<ShortcutOverlay open={false} onClose={vi.fn()} />);
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    it("renders null for every close/open cycle boundary and is deterministic (regression)", () => {
+      // Deterministic: repeated renders of the same closed props always yield
+      // the identical null-output contract.
+      for (let i = 0; i < 3; i += 1) {
+        const { container, unmount } = render(
+          <ShortcutOverlay open={false} onClose={vi.fn()} />
+        );
+        expect(container.firstChild).toBeNull();
+        expect(container.outerHTML).toBe("<div></div>");
+        unmount();
+        expect(container.firstChild).toBeNull();
+      }
+    });
+
+    it("stays null across an open→closed→open boundary cycle (regression)", () => {
+      const { rerender, container } = render(
+        <ShortcutOverlay open={false} onClose={vi.fn()} />
+      );
+      expect(container.firstChild).toBeNull();
+
+      rerender(<ShortcutOverlay open={true} onClose={vi.fn()} />);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+      rerender(<ShortcutOverlay open={false} onClose={vi.fn()} />);
+      expect(container.firstChild).toBeNull();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      rerender(<ShortcutOverlay open={true} onClose={vi.fn()} />);
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    it("restores focus to the trigger when closing via rerender (regression)", () => {
+      const trigger = document.createElement("button");
+      document.body.appendChild(trigger);
+      trigger.focus();
+      expect(document.activeElement).toBe(trigger);
+
+      // Note: render into the default container — mounting into document.body
+      // directly resets activeElement in jsdom and would defeat the trap's
+      // "previously focused" capture.
+      const { rerender } = render(
+        <ShortcutOverlay open={true} onClose={vi.fn()} />
+      );
+      // FocusTrap moved focus into the dialog's first focusable element.
+      expect(document.activeElement).not.toBe(trigger);
+
+      rerender(<ShortcutOverlay open={false} onClose={vi.fn()} />);
+      // Closing unmounts the trap; focus returns to the trigger.
+      expect(document.activeElement).toBe(trigger);
+
+      trigger.remove();
+    });
+
+    it("moves focus to the [data-focus-fallback] anchor when the trigger is gone (regression)", () => {
+      const fallback = document.createElement("button");
+      fallback.setAttribute("data-focus-fallback", "");
+      document.body.appendChild(fallback);
+
+      const trigger = document.createElement("button");
+      document.body.appendChild(trigger);
+      trigger.focus();
+
+      const { rerender } = render(
+        <ShortcutOverlay open={true} onClose={vi.fn()} />
+      );
+      expect(document.activeElement).not.toBe(trigger);
+
+      // The trigger is removed while the overlay is open…
+      trigger.remove();
+
+      rerender(<ShortcutOverlay open={false} onClose={vi.fn()} />);
+      // …so on close focus falls back to the [data-focus-fallback] anchor
+      // instead of being dropped to <body>.
+      expect(document.activeElement).toBe(fallback);
+
+      fallback.remove();
+    });
   });
 
   // ── Open state / ARIA ────────────────────────────────────────────────────

@@ -419,4 +419,85 @@ describe("Lightbox", () => {
       expect(ariaHiddenThumbs.length).toBeGreaterThan(0);
     });
   });
+
+  // ── !image branch: currentIndex resolves to no image ─────────────────────
+  //
+  // `isOpen` (currentIndex !== null) can be true while `images[currentIndex]`
+  // is still undefined — e.g. a stale index after the gallery shrinks, or an
+  // index handed in out of range. `if (!isOpen || !image) return null;`
+  // must render nothing in that case too, not just when currentIndex is null.
+
+  describe("open with no resolvable image (!image branch)", () => {
+    it("renders nothing when currentIndex is open but the images array is empty", () => {
+      setup({ images: [], currentIndex: 0 });
+      expect(screen.queryByTestId("lightbox-dialog")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("lightbox-backdrop")).not.toBeInTheDocument();
+    });
+
+    it("renders nothing when currentIndex is one past the end of the array", () => {
+      setup({ currentIndex: IMAGES.length });
+      expect(screen.queryByTestId("lightbox-dialog")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("lightbox-backdrop")).not.toBeInTheDocument();
+    });
+
+    it("renders nothing when currentIndex is far out of range", () => {
+      setup({ currentIndex: 999 });
+      expect(screen.queryByTestId("lightbox-dialog")).not.toBeInTheDocument();
+    });
+
+    it("renders nothing when currentIndex is negative", () => {
+      setup({ currentIndex: -1 });
+      expect(screen.queryByTestId("lightbox-dialog")).not.toBeInTheDocument();
+    });
+
+    // Scroll-lock and the Escape handler key off `isOpen` (currentIndex !==
+    // null) rather than off a resolved `image`, so both still activate here
+    // even though nothing is rendered. This pins that existing contract down
+    // so a future refactor can't change it silently.
+    it("still locks body scroll when isOpen but no image resolves", () => {
+      setup({ images: [], currentIndex: 0 });
+      expect(document.body.style.overflow).toBe("hidden");
+    });
+
+    it("still closes on Escape when isOpen but no image resolves", () => {
+      const { onClose } = setup({ images: [], currentIndex: 0 });
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignores arrow-key navigation when isOpen but no image resolves", () => {
+      const { onNavigate } = setup({ images: [], currentIndex: 0 });
+      fireEvent.keyDown(document, { key: "ArrowRight" });
+      fireEvent.keyDown(document, { key: "ArrowLeft" });
+      expect(onNavigate).not.toHaveBeenCalled();
+    });
+
+    it("recovers and renders the dialog once currentIndex moves back in range", () => {
+      const onClose = vi.fn();
+      const onNavigate = vi.fn();
+      const { rerender } = render(
+        <Lightbox
+          images={IMAGES}
+          currentIndex={IMAGES.length}
+          onClose={onClose}
+          onNavigate={onNavigate}
+        />,
+      );
+      expect(screen.queryByTestId("lightbox-dialog")).not.toBeInTheDocument();
+
+      rerender(
+        <Lightbox
+          images={IMAGES}
+          currentIndex={0}
+          onClose={onClose}
+          onNavigate={onNavigate}
+        />,
+      );
+      expect(screen.getByTestId("lightbox-dialog")).toBeInTheDocument();
+      expect(screen.getByTestId("lightbox-image")).toHaveAttribute(
+        "alt",
+        "Red barn at sunset",
+      );
+    });
+  });
 });

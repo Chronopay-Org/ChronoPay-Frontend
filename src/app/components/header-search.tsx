@@ -46,14 +46,24 @@ interface ListItem {
  * Placeholder analytics tracker for the did-you-mean suggestion click-through.
  * Replace with real analytics instrumentation when available.
  */
-function trackDidYouMeanClick(original: string, suggested: string): void {
-  if (process.env.NODE_ENV === "production") {
-    // Stub: dispatch to real analytics pipeline
-    // e.g. analytics.track("did_you_mean_click", { original, suggested });
-  } else {
-    // eslint-disable-next-line no-console
-    console.log("[analytics] did_you_mean_click", { original, suggested });
+export function trackDidYouMeanClick(original: string, suggested: string): Promise<boolean> {
+  if (!original || !suggested) {
+    return Promise.reject(
+      new Error("Both original and suggested terms are required for analytics tracking.")
+    );
   }
+
+  return new Promise((resolve) => {
+    if (process.env.NODE_ENV === "production") {
+      // Stub: dispatch to real analytics pipeline
+      // e.g. analytics.track("did_you_mean_click", { original, suggested });
+      resolve(true);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log("[analytics] did_you_mean_click", { original, suggested });
+      resolve(true);
+    }
+  });
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -200,7 +210,10 @@ export function HeaderSearch() {
     (suggestion: string) => {
       const original = query.trim();
       if (!original || !suggestion) return;
-      trackDidYouMeanClick(original, suggestion);
+      trackDidYouMeanClick(original, suggestion).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error("Failed to track did-you-mean click:", err);
+      });
       setCorrectedQuery(suggestion);
       setRevertQuery(original);
       updateQuery(suggestion);

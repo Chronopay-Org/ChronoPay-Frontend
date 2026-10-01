@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen, act } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import {
   NetworkSelector,
   NetworkProvider,
   TestnetRibbon,
   readPersistedNetwork,
+  type StellarNetwork,
 } from "@/components/checkout/NetworkSelector";
 
 // Mock localStorage
@@ -189,9 +190,73 @@ describe("TestnetRibbon", () => {
     expect(screen.getByText(/Testnet/i)).toBeInTheDocument();
   });
 
-  it("does not render when network is mainnet", () => {
-    render(<TestnetRibbon network="mainnet" />);
+  it("does not render when network is mainnet (failure/empty-result path)", () => {
+    const { container } = render(<TestnetRibbon network="mainnet" />);
 
     expect(screen.queryByText(/Testnet/i)).not.toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("does not render and handles boundary/invalid network input gracefully", () => {
+    // Boundary/invalid inputs cast to StellarNetwork
+    const { container } = render(<TestnetRibbon network={"invalid" as StellarNetwork} />);
+
+    expect(screen.queryByText(/Testnet/i)).not.toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
+  });
+});
+
+describe("TestnetRibbon — StellarNetwork failure handling regression", () => {
+  // Regression coverage for the branch at NetworkSelector.tsx:
+  //   if (network !== "testnet") return null;
+  // The failure/empty-result path must stay deterministic: any network value
+  // other than "testnet" produces *no* DOM output at all.
+
+  it("returns an empty result (null branch) for the mainnet failure path", () => {
+    const { container } = render(<TestnetRibbon network="mainnet" />);
+
+    // The component's contract is a bare `null` — not an empty shell — so the
+    // container must contain no DOM nodes whatsoever.
+    expect(container.firstChild).toBeNull();
+    expect(container.innerHTML).toBe("");
+  });
+
+  it("renders the accessible ribbon for the normal testnet path", () => {
+    render(<TestnetRibbon network="testnet" />);
+
+    const ribbon = screen.getByLabelText("Testnet network — play XLM");
+    expect(ribbon).toBeInTheDocument();
+    expect(screen.getByText("Testnet")).toBeInTheDocument();
+    // The decorative icon must stay hidden from the accessibility tree.
+    expect(ribbon.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it.each([
+    ["undefined value", undefined],
+    ["null value", null],
+    ["empty string", ""],
+    ["unknown network", "staging"],
+  ])("renders nothing for boundary input: %s", (_label, boundaryValue) => {
+    // StellarNetwork is a closed union at compile time, but runtime inputs
+    // (storage reads, query params) can be anything — all non-"testnet"
+    // values must hit the same empty-result path without crashing.
+    const { container } = render(
+      <TestnetRibbon network={boundaryValue as unknown as StellarNetwork} />,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("flips deterministically between the failure and normal paths across remounts", () => {
+    const first = render(<TestnetRibbon network="testnet" />);
+    expect(screen.getByLabelText("Testnet network — play XLM")).toBeInTheDocument();
+    first.unmount();
+
+    const second = render(<TestnetRibbon network="mainnet" />);
+    expect(second.container.firstChild).toBeNull();
+    second.unmount();
+
+    render(<TestnetRibbon network="testnet" />);
+    expect(screen.getByLabelText("Testnet network — play XLM")).toBeInTheDocument();
   });
 });
