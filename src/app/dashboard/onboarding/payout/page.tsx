@@ -1,4 +1,4 @@
-"use client";
+"suse client";
 
 import { PayoutStep } from "@/components/dashboard/payout-step";
 import type { PayoutCurrency, PayoutConsent } from "@/components/dashboard/payout-step";
@@ -25,7 +25,7 @@ function DemoShell({ children }: { children: React.ReactNode }) {
 }
 
 const demoPreview = {
-  walletAddress: "GBS43E6X4Q3K7Z5N2F6T8H9J0K1L2M3N4P5Q6R7S8T9U0V1W2X3Y4Z5A6B7",
+  walletAddress: "GBS43E6XQQQK7Z5N2F6T8H9J0K1L2M3N4P5Q6R7S8T9U0V1W2X3Y4Z5A6B7",
   walletLabel: "Freighter Wallet",
   network: "Stellar",
 };
