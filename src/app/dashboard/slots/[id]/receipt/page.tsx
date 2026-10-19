@@ -9,6 +9,7 @@
 
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, ShieldCheck, LayoutDashboard, RefreshCw, AlertTriangle, Info } from "lucide-react";
 import { DashboardShell } from "@/app/components/dashboard-shell";
 import { BreadcrumbOverflow } from "@/app/components/ui/breadcrumb-overflow";
@@ -23,9 +24,13 @@ type SharedReceiptPageProps = {
 const first = (value: string | string[] | undefined) =>
   (Array.isArray(value) ? value[0] : value) ?? "";
 
+import { mockSlots } from "@/components/dashboard/dashboard-data";
+
 export default function SharedReceiptPage({ params, searchParams }: SharedReceiptPageProps) {
-  use(params);
+  const { id } = use(params);
   const query = use(searchParams);
+
+  if (!mockSlots.some((slot) => slot.id === id)) notFound();
 
   const asset = first(query.asset);
   const tx = first(query.tx);
