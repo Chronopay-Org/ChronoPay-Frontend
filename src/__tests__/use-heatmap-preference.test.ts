@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useHeatmapPreference } from "@/hooks/use-heatmap-preference";
+import { useHeatmapPreference } from "@hooks/use-heatmap-preference";
+
+const dispatchStorageEvent = (key: string, newValue: string | null) => {
+  window.dispatchEvent(
+    new StorageEvent("storage", {
+      key,
+      newValue,
+      storageArea: localStorage,
+    }),
+  );
+};
 
 describe("useHeatmapPreference", () => {
   const storageKey = "test-calendar-heatmap-enabled";
@@ -62,19 +72,21 @@ describe("useHeatmapPreference", () => {
   it("handles localStorage unavailable gracefully", () => {
     const originalLocalStorage = global.localStorage;
     // @ts-expect-error - deliberately removing localStorage
-    delete global.localStorage;
+    delete (global as { readonly localStorage?: Storage }).localStorage;
 
-    const { result } = renderHook(() => useHeatmapPreference(storageKey));
+    try {
+      const { result } = renderHook(() => useHeatmapPreference(storageKey));
 
-    expect(result.current.enabled).toBe(false);
+      expect(result.current.enabled).toBe(false);
 
-    act(() => {
-      result.current.toggle(true);
-    });
+      act(() => {
+        result.current.toggle(true);
+      });
 
-    expect(result.current.enabled).toBe(true);
-
-    global.localStorage = originalLocalStorage;
+      expect(result.current.enabled).toBe(true);
+    } finally {
+      global.localStorage = originalLocalStorage;
+    }
   });
 
   it("uses custom storage key", () => {
@@ -84,5 +96,35 @@ describe("useHeatmapPreference", () => {
     const { result } = renderHook(() => useHeatmapPreference(customKey));
 
     expect(result.current.enabled).toBe(true);
+  });
+
+  it("updates when another tab changes the stored value", () => {
+    const { result } = renderHook(() => useHeatmapPreference(storageKey));
+
+    expect(result.current.enabled).toBe(false);
+
+    act(() => {
+      localStorage.setItem(storageKey, "true");
+      dispatchStorageEvent(storageKey, "true");
+    });
+
+    expect(result.current.enabled).toBe(true);
+
+    act(() => {
+      localStorage.setItem(storageKey, "false");
+      dispatchStorageEvent(storageKey, "false");
+    });
+
+    expect(result.current.enabled).toBe(false);
+  });
+
+  it("ignores storage events for other keys", () => {
+    const { result } = renderHook(() => useHeatmapPreference(storageKey));
+
+    act(() => {
+      dispatchStorageEvent("some-other-key", "true");
+    });
+
+    expect(result.current.enabled).toBe(false);
   });
 });
