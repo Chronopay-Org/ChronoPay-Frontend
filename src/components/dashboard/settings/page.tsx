@@ -9,6 +9,7 @@ import { DeveloperSettings } from "@/components/dashboard/settings/developer-set
 import { DangerZone } from "@/components/dashboard/settings/danger-zone";
 import { NotificationPreferencesPanel } from "@/components/dashboard/settings/notification-preferences-panel";
 import { DensitySwitcher } from "@/app/components/ui/density-switcher";
+import { ThemeSwitcher } from "@/components/dashboard/theme-switcher";
 import { PasswordStrengthMeter } from "@/app/components/password-strength-meter";
 import { sampleConflicts } from "@/components/dashboard/settings/conflict-mock-data";
 
@@ -224,6 +225,15 @@ export default function SettingsPage() {
           className="focus:outline-none"
         >
           <div className="space-y-8">
+            <section className={sectionClass} aria-label="Theme preference">
+              <h2 className="mb-4 text-2xl font-semibold text-white">
+                Theme
+              </h2>
+              <p className="mb-6 text-sm text-slate-400">
+                Choose between Light, Dark, or follow your System settings. Your preference is saved across sessions.
+              </p>
+              <ThemeSwitcher />
+            </section>
             <section className={sectionClass} aria-label="Display density">
               <h2 className="mb-4 text-2xl font-semibold text-white">
                 Display density

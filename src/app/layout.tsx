@@ -13,12 +13,19 @@ export const metadata: Metadata = {
 };
 
 /** Runs before React hydrates to set the theme and avoid FOUC. */
-const themeInitScript = `
+export const themeInitScript = `
 ;(function () {
   try {
     var KEY = "chronopay:theme";
     var stored = null;
     try {
+      var legacy = window.localStorage.getItem("chronopay-theme");
+      if (legacy) {
+        if (!window.localStorage.getItem(KEY)) {
+          window.localStorage.setItem(KEY, legacy);
+        }
+        window.localStorage.removeItem("chronopay-theme");
+      }
       stored = window.localStorage.getItem(KEY);
     } catch (e) { /* ignore storage errors */ }
     var mode = (stored === "light" || stored === "dark" || stored === "auto") ? stored : "auto";
@@ -41,7 +48,14 @@ export default function RootLayout({
   const lang = "en"; // TODO: Make dynamic based on locale selection
   
   return (
-<html lang={lang} dir={dir} data-theme="dark" suppressHydrationWarning>
+    <html lang={lang} dir={dir} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: themeInitScript,
+          }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col antialiased">
         <script
           dangerouslySetInnerHTML={{
@@ -59,6 +73,7 @@ export default function RootLayout({
         <ToastProvider>
           <I18nProvider>
             <RoleProvider initialRole="buyer">
+              <Header />
               {children}
               <SiteFooter />
               <ToastContainer />

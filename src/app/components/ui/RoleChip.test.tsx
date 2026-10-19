@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { RoleChip } from "./RoleChip";
-import { RoleProvider, useRole } from "../navigation/RoleContext";
+import { RoleProvider } from "../navigation/RoleContext";
 import { ALL_ROLES } from "../navigation/role-nav";
 
 // Mock matchMedia for motion-safe queries if necessary, though testing-library might not need it for basic class checks.
@@ -27,16 +27,13 @@ describe("RoleChip", () => {
   });
 
   it("renders a hydrating skeleton initially", () => {
-    // We need to render the component and immediately check its state
-    // because RoleProvider sets isHydrating to false in a queueMicrotask.
-    // By not wrapping in act() initially for the sync render, we can catch it.
     vi.useFakeTimers();
     const { container } = renderWithRoleProvider(<RoleChip />);
     
-    // Skeleton should have aria-hidden
+    // Skeleton should have aria-hidden and contain elements with skeleton class
     const skeleton = container.querySelector('[aria-hidden="true"]');
     expect(skeleton).toBeInTheDocument();
-    expect(skeleton?.className).toContain("skeleton");
+    expect(skeleton?.querySelector(".skeleton")).toBeInTheDocument();
     
     vi.useRealTimers();
   });
@@ -128,7 +125,7 @@ describe("RoleChip", () => {
     const compactDensityBtn = screen.getByRole("button", { name: /Compact/i });
     
     fireEvent.click(lightThemeBtn);
-    expect(window.localStorage.getItem("chronopay-theme")).toBe("light");
+    expect(window.localStorage.getItem("chronopay:theme")).toBe("light");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
     
     fireEvent.click(compactDensityBtn);
