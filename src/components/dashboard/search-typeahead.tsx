@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useTransition } from "react";
 import { Search, X } from "lucide-react";
@@ -31,7 +37,10 @@ export function SearchTypeahead({
   const [, startTransition] = useTransition();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [activeOption, setActiveOption] = useState<{
+    options: TypeaheadSuggestion[];
+    index: number;
+  } | null>(null);
   const [inputValue, setInputValue] = useState(
     searchParams.get("q") || ""
   );
@@ -40,10 +49,41 @@ export function SearchTypeahead({
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const filteredSuggestions = useMemo(
+    () =>
+      suggestions.filter((suggestion) =>
+        suggestion.label.toLowerCase().includes(inputValue.toLowerCase())
+      ),
+    [suggestions, inputValue]
+  );
+
+  // Group suggestions by category if available
+  const groupedSuggestions = useMemo(
+    () =>
+      filteredSuggestions.reduce(
+        (acc, suggestion) => {
+          const category = suggestion.category || "Other";
+          if (!acc[category]) {
+            acc[category] = [];
+          }
+          acc[category].push(suggestion);
+          return acc;
+        },
+        {} as Record<string, TypeaheadSuggestion[]>
+      ),
+    [filteredSuggestions]
+  );
+  const visibleOptions = useMemo(
+    () => Object.values(groupedSuggestions).flat(),
+    [groupedSuggestions]
+  );
+  const activeIndex =
+    activeOption?.options === visibleOptions ? activeOption.index : -1;
+
   const handleInputChange = useCallback(
     (value: string) => {
       setInputValue(value);
-      setActiveIndex(-1);
+      setActiveOption(null);
       if (value.length > 0) {
         setIsOpen(true);
         onSearch?.(value);
@@ -58,7 +98,7 @@ export function SearchTypeahead({
     (suggestion: TypeaheadSuggestion) => {
       setInputValue(suggestion.label);
       setIsOpen(false);
-      setActiveIndex(-1);
+      setActiveOption(null);
 
       startTransition(() => {
         const params = new URLSearchParams(searchParams.toString());
@@ -72,7 +112,7 @@ export function SearchTypeahead({
   const handleClear = useCallback(() => {
     setInputValue("");
     setIsOpen(false);
-    setActiveIndex(-1);
+    setActiveOption(null);
     inputRef.current?.focus();
 
     startTransition(() => {
@@ -88,27 +128,44 @@ export function SearchTypeahead({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (!isOpen || suggestions.length === 0) return;
-
       switch (e.key) {
         case "ArrowDown":
+          if (!isOpen || visibleOptions.length === 0) return;
           e.preventDefault();
-          setActiveIndex((prev) =>
-            prev < suggestions.length - 1 ? prev + 1 : 0
-          );
+          setActiveOption((prev) => {
+            const prevIndex =
+              prev?.options === visibleOptions ? prev.index : -1;
+            return {
+              options: visibleOptions,
+              index: prevIndex < visibleOptions.length - 1 ? prevIndex + 1 : 0,
+            };
+          });
           break;
         case "ArrowUp":
+          if (!isOpen || visibleOptions.length === 0) return;
           e.preventDefault();
-          setActiveIndex((prev) =>
-            prev > 0 ? prev - 1 : suggestions.length - 1
-          );
+          setActiveOption((prev) => {
+            const prevIndex =
+              prev?.options === visibleOptions ? prev.index : -1;
+            return {
+              options: visibleOptions,
+              index:
+                prevIndex > 0 ? prevIndex - 1 : visibleOptions.length - 1,
+            };
+          });
           break;
         case "Enter":
-          e.preventDefault();
-          if (activeIndex >= 0 && activeIndex < suggestions.length) {
-            handleSelect(suggestions[activeIndex]);
+          if (
+            isOpen &&
+            activeIndex >= 0 &&
+            activeIndex < visibleOptions.length
+          ) {
+            e.preventDefault();
+            handleSelect(visibleOptions[activeIndex]);
           } else if (inputValue.trim()) {
+            e.preventDefault();
             setIsOpen(false);
+            setActiveOption(null);
             startTransition(() => {
               const params = new URLSearchParams(searchParams.toString());
               params.set("q", inputValue);
@@ -119,12 +176,12 @@ export function SearchTypeahead({
         case "Escape":
           e.preventDefault();
           setIsOpen(false);
-          setActiveIndex(-1);
+          setActiveOption(null);
           break;
       }
     },
     [
-      suggestions,
+      visibleOptions,
       activeIndex,
       handleSelect,
       inputValue,
@@ -133,23 +190,6 @@ export function SearchTypeahead({
       router,
       isOpen,
     ]
-  );
-
-  const filteredSuggestions = suggestions.filter((s) =>
-    s.label.toLowerCase().includes(inputValue.toLowerCase())
-  );
-
-  // Group suggestions by category if available
-  const groupedSuggestions = filteredSuggestions.reduce(
-    (acc, suggestion) => {
-      const category = suggestion.category || "Other";
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(suggestion);
-      return acc;
-    },
-    {} as Record<string, TypeaheadSuggestion[]>
   );
 
   return (
@@ -174,7 +214,7 @@ export function SearchTypeahead({
           aria-controls={isOpen ? listId : undefined}
           aria-expanded={isOpen}
           aria-activedescendant={
-            isOpen && activeIndex >= 0
+            isOpen && activeIndex >= 0 && activeIndex < visibleOptions.length
               ? `search-suggestion-${activeIndex}`
               : undefined
           }
@@ -225,46 +265,34 @@ export function SearchTypeahead({
                   {category}
                 </div>
               )}
-              {items.map((suggestion, index) => (
-                <button
-                  key={suggestion.id}
-                  type="button"
-                  id={`search-suggestion-${
-                    Object.keys(groupedSuggestions)
-                      .slice(0, Object.keys(groupedSuggestions).indexOf(category))
-                      .reduce((sum, cat) => sum + groupedSuggestions[cat].length, 0) + index
-                  }`}
-                  role="option"
-                  aria-selected={
-                    activeIndex ===
-                    Object.keys(groupedSuggestions)
-                      .slice(0, Object.keys(groupedSuggestions).indexOf(category))
-                      .reduce((sum, cat) => sum + groupedSuggestions[cat].length, 0) +
-                      index
-                  }
-                  onClick={() => handleSelect(suggestion)}
-                  onMouseEnter={() => {
-                    setActiveIndex(
-                      Object.keys(groupedSuggestions)
-                        .slice(0, Object.keys(groupedSuggestions).indexOf(category))
-                        .reduce((sum, cat) => sum + groupedSuggestions[cat].length, 0) + index
-                    );
-                  }}
-                  className={clsx(
-                    "flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors",
-                    activeIndex ===
-                      Object.keys(groupedSuggestions)
-                        .slice(0, Object.keys(groupedSuggestions).indexOf(category))
-                        .reduce((sum, cat) => sum + groupedSuggestions[cat].length, 0) +
-                        index
-                      ? "bg-zinc-800 text-cyan-300"
-                      : "text-zinc-300 hover:bg-zinc-800/50"
-                  )}
-                >
-                  <Search className="h-4 w-4 flex-shrink-0 text-zinc-500" aria-hidden="true" />
-                  <span className="flex-1 text-left">{suggestion.label}</span>
-                </button>
-              ))}
+              {items.map((suggestion) => {
+                const optionIndex = visibleOptions.indexOf(suggestion);
+                return (
+                  <button
+                    key={suggestion.id}
+                    type="button"
+                    id={`search-suggestion-${optionIndex}`}
+                    role="option"
+                    aria-selected={activeIndex === optionIndex}
+                    onClick={() => handleSelect(suggestion)}
+                    onMouseEnter={() =>
+                      setActiveOption({
+                        options: visibleOptions,
+                        index: optionIndex,
+                      })
+                    }
+                    className={clsx(
+                      "flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors",
+                      activeIndex === optionIndex
+                        ? "bg-zinc-800 text-cyan-300"
+                        : "text-zinc-300 hover:bg-zinc-800/50"
+                    )}
+                  >
+                    <Search className="h-4 w-4 flex-shrink-0 text-zinc-500" aria-hidden="true" />
+                    <span className="flex-1 text-left">{suggestion.label}</span>
+                  </button>
+                );
+              })}
             </div>
           ))}
         </div>
