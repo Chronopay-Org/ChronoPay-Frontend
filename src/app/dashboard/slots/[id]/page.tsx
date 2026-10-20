@@ -7,7 +7,7 @@ import { BreadcrumbOverflow } from "@/app/components/ui/breadcrumb-overflow";
 import { StatusChip } from "@/components/dashboard/status-chip";
 import { OrderSummaryDrawer } from "@/components/dashboard/order-summary-drawer";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
-import { ReceiptModal } from "@/components/receipt";
+import { ReceiptModal, buildReceipt } from "@/components/receipt";
 import { RedeemTokenModal } from "@/components/dashboard/redeem-token-modal";
 import type { ReceiptData } from "@/components/receipt";
 import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
@@ -144,6 +144,18 @@ export default function SlotDetailPage({
 
   const [discountPercent, setDiscountPercent] = useState(0);
   const [discountedTotal, setDiscountedTotal] = useState(totalCost);
+  const [promoCode, setPromoCode] = useState("");
+
+  // Snapshot charged amounts at purchase time so subsequent edits cannot alter settled receipts
+  const [chargedSnapshot, setChargedSnapshot] = useState<{
+    subtotal: number;
+    escrowFee: number;
+    stellarFee: number;
+    totalCost: number;
+    effectiveTotalCost: number;
+    discountPercent: number;
+    promoCode: string;
+  } | null>(null);
 
   useEffect(() => {
     // Reset discount state when the slot or total price changes. Deferred so
@@ -151,6 +163,7 @@ export default function SlotDetailPage({
     window.setTimeout(() => {
       setDiscountPercent(0);
       setDiscountedTotal(totalCost);
+      setPromoCode("");
     }, 0);
   }, [id, totalCost]);
 
@@ -262,31 +275,29 @@ export default function SlotDetailPage({
   const isSettled = purchaseStep === "success" && txHash !== "";
 
   const receipt: ReceiptData | null = isSettled
-    ? {
-        id: slot.id,
-        assetCode: `CHRONO-${slot.id.toUpperCase()}`,
-        title: slot.title,
-        status: "settled",
-        settledAt: `${slot.dateLabel} · ${slot.timeRange}`,
-        buyer: { name: "You", role: "Buyer", address: mockAddress },
-        seller: { name: details.seller.name, role: details.seller.role },
-        lineItems: [
-          { label: "Token subtotal", value: `${subtotal.toFixed(2)} XLM`, note: `${slot.rate} × ${details.durationHours} hrs` },
-          { label: "Smart escrow fee", value: `${escrowFee.toFixed(4)} XLM`, note: "1.5% held in contract" },
-          { label: "Stellar network fee", value: `${stellarFee.toFixed(4)} XLM`, note: "Paid to validators" },
-        ],
-        net: `${subtotal.toFixed(2)} XLM`,
-        total: `${totalCost.toFixed(4)} XLM`,
+    ? buildReceipt({
+        slot: {
+          id: slot.id,
+          title: slot.title,
+          rate: slot.rate,
+          dateLabel: slot.dateLabel,
+          timeRange: slot.timeRange,
+        },
+        seller: {
+          name: details.seller.name,
+          role: details.seller.role,
+        },
+        durationHours: details.durationHours,
+        subtotal: chargedSnapshot?.subtotal ?? subtotal,
+        escrowFee: chargedSnapshot?.escrowFee ?? escrowFee,
+        stellarFee: chargedSnapshot?.stellarFee ?? stellarFee,
+        totalCost: chargedSnapshot?.totalCost ?? totalCost,
+        effectiveTotalCost: chargedSnapshot?.effectiveTotalCost ?? effectiveTotalCost,
+        discountPercent: chargedSnapshot?.discountPercent ?? discountPercent,
+        promoCode: chargedSnapshot?.promoCode ?? promoCode,
         txHash,
-        escrowContract: "GCSW67F2Y3MQK4N8Q5RLP9TZB3YH4W8F1S7N6U0X2A5V8T9H3K2",
-        trace: [
-          { label: "Stellar transaction initiated", status: "complete" },
-          { label: "Trustline established for asset", status: "complete" },
-          { label: "Funds locked in multi-sig escrow", status: "complete" },
-          { label: "Token minted and funds released", status: "complete" },
-        ],
-        explorerBaseUrl: "https://stellar.expert/explorer/public/tx",
-      }
+        mockAddress,
+      })
     : null;
   
   // Refs for accessibility / focus trap
@@ -361,6 +372,15 @@ export default function SlotDetailPage({
   // Simulated blockchain transaction workflow
   const handleProceedPurchase = () => {
     clearPurchaseTimeouts();
+    setChargedSnapshot({
+      subtotal,
+      escrowFee,
+      stellarFee,
+      totalCost,
+      effectiveTotalCost,
+      discountPercent,
+      promoCode,
+    });
     setPurchaseStep("loading");
     
     const steps = [
@@ -849,7 +869,8 @@ export default function SlotDetailPage({
 
               <PromoCodeEntry
                 baseTotal={totalCost}
-                onDiscountApplied={({ percent, discountedTotal: nextTotal }) => {
+                onDiscountApplied={({ code, percent, discountedTotal: nextTotal }) => {
+                  setPromoCode(code);
                   setDiscountPercent(percent);
                   setDiscountedTotal(nextTotal);
                 }}
@@ -1194,7 +1215,7 @@ export default function SlotDetailPage({
 
                     <div className="flex justify-between border-t border-white/5 pt-3.5">
                       <span className="text-slate-400">Total Locked</span>
-                      <span className="font-bold text-white">{effectiveTotalCost.toFixed(4)} XLM</span>
+                      <span className="font-bold text-white">{(chargedSnapshot?.effectiveTotalCost ?? effectiveTotalCost).toFixed(4)} XLM</span>
                     </div>
                   </div>
 
