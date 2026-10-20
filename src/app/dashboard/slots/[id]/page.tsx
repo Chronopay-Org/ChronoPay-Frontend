@@ -305,10 +305,25 @@ export default function SlotDetailPage({
     setIsModalOpen(true);
   };
 
+  const purchaseTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
+
+  const clearPurchaseTimeouts = useCallback(() => {
+    purchaseTimeoutsRef.current.forEach((t) => clearTimeout(t));
+    purchaseTimeoutsRef.current = [];
+  }, []);
+
   const handleCloseModal = useCallback(() => {
+    clearPurchaseTimeouts();
     setIsModalOpen(false);
     setPurchaseStep("auth");
-  }, []);
+  }, [clearPurchaseTimeouts]);
+
+  // Clean up any pending purchase timeouts on unmount
+  useEffect(() => {
+    return () => {
+      clearPurchaseTimeouts();
+    };
+  }, [clearPurchaseTimeouts]);
 
   // Keyboard navigation & focus management inside checkout modal
   useEffect(() => {
@@ -345,6 +360,7 @@ export default function SlotDetailPage({
 
   // Simulated blockchain transaction workflow
   const handleProceedPurchase = () => {
+    clearPurchaseTimeouts();
     setPurchaseStep("loading");
     
     const steps = [
@@ -355,13 +371,14 @@ export default function SlotDetailPage({
     ];
 
     steps.forEach((step) => {
-      setTimeout(() => {
+      const id = setTimeout(() => {
         setLoadingMessage(step.text);
         announce(step.text);
       }, step.time);
+      purchaseTimeoutsRef.current.push(id);
     });
 
-    setTimeout(() => {
+    const completionId = setTimeout(() => {
       // Generate randomized Stellar-like txn hash for realism
       const randomHash = Array.from({ length: 16 }, () =>
         Math.floor(Math.random() * 16).toString(16)
@@ -370,6 +387,7 @@ export default function SlotDetailPage({
       setPurchaseStep("success");
       announce("Time token purchased successfully. Receipt ready.");
     }, 4000);
+    purchaseTimeoutsRef.current.push(completionId);
   };
 
   const handleSimulateConnection = () => {

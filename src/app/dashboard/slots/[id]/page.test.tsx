@@ -105,4 +105,64 @@ describe("SlotDetailPage", () => {
     // It should fallback to the first slot and render properly
     expect(await screen.findByText(/Deep dive into your product roadmap/i)).toBeInTheDocument();
   });
+
+  it("does not complete purchase or set success state when cancelled during loading via Escape", async () => {
+    vi.useFakeTimers();
+    render(<SlotDetailPage params={defaultParams} />);
+
+    // Wait for slot to load and click purchase
+    const purchaseButton = await screen.findByRole("button", { name: /Purchase Time Token/i });
+    fireEvent.click(purchaseButton);
+
+    const guestButton = await screen.findByRole("button", { name: /Continue as Guest/i });
+    fireEvent.click(guestButton);
+
+    const confirmButton = await screen.findByRole("button", { name: /Confirm & Lock Funds/i });
+    fireEvent.click(confirmButton);
+
+    // Verify loading state is active
+    expect(screen.getByText(/Stellar Blockchain Syncing/i)).toBeInTheDocument();
+
+    // User presses Escape during loading
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    // Modal dialog should close immediately
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    // Fast-forward past the 4000ms transaction duration
+    vi.advanceTimersByTime(5000);
+
+    // Ensure success modal and receipt are NOT displayed
+    expect(screen.queryByText(/Time Token Purchased/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /View Receipt/i })).not.toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
+  it("does not perform state updates or set success state when unmounted during loading", async () => {
+    vi.useFakeTimers();
+    const { unmount } = render(<SlotDetailPage params={defaultParams} />);
+
+    const purchaseButton = await screen.findByRole("button", { name: /Purchase Time Token/i });
+    fireEvent.click(purchaseButton);
+
+    const guestButton = await screen.findByRole("button", { name: /Continue as Guest/i });
+    fireEvent.click(guestButton);
+
+    const confirmButton = await screen.findByRole("button", { name: /Confirm & Lock Funds/i });
+    fireEvent.click(confirmButton);
+
+    expect(screen.getByText(/Stellar Blockchain Syncing/i)).toBeInTheDocument();
+
+    // Unmount the component while transaction is pending
+    unmount();
+
+    // Fast forward past the completion timer
+    vi.advanceTimersByTime(5000);
+
+    // No errors thrown, and nothing rendered
+    expect(screen.queryByText(/Time Token Purchased/i)).not.toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
 });
