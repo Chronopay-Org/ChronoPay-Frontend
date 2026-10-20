@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
+import { addMonths } from "@/utils/date";
 import { CalendarHeatmapLegend, type HeatmapIntensity } from "./calendar-heatmap-legend";
 
 export interface MonthCalendarViewProps {
@@ -89,7 +90,8 @@ export function MonthCalendarView({
   maxDate,
 }: MonthCalendarViewProps) {
   const [viewDate, setViewDate] = useState(new Date(selectedDate));
-  const [focusedDayIndex, setFocusedDayIndex] = useState<number>(-1);
+  const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState<number | null>(null);
+  const dayRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Compute days for the current view month
   const days = useMemo(() => {
@@ -122,18 +124,15 @@ export function MonthCalendarView({
     return result;
   }, [viewDate]);
 
-  // Find the index of the selected date in the grid
-  useEffect(() => {
-    const idx = days.findIndex((d) => d && isSameDay(d, selectedDate));
-    if (idx >= 0) setFocusedDayIndex(idx);
-  }, [selectedDate, days]);
+  const selectedIndex = useMemo(() => {
+    return days.findIndex((d) => d && isSameDay(d, selectedDate));
+  }, [days, selectedDate]);
+
+  const focusedDayIndex = keyboardFocusedIndex ?? selectedIndex;
 
   const navigateMonth = useCallback((direction: number) => {
-    setViewDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setMonth(newDate.getMonth() + direction);
-      return newDate;
-    });
+    setViewDate((prev) => addMonths(prev, direction));
+    setKeyboardFocusedIndex(null);
   }, []);
 
   const handleDayClick = useCallback(
@@ -141,7 +140,7 @@ export function MonthCalendarView({
       if (!date) return;
       if (!isDateInRange(date, minDate, maxDate)) return;
       onDateSelect(date);
-      setFocusedDayIndex(index);
+      setKeyboardFocusedIndex(index);
     },
     [onDateSelect, minDate, maxDate]
   );
@@ -203,9 +202,8 @@ export function MonthCalendarView({
       }
 
       if (newIndex >= 0 && newIndex < days.length) {
-        // The day-button ref callback focuses the element when its index
-        // matches focusedDayIndex, so no direct DOM focus is needed here.
-        setFocusedDayIndex(newIndex);
+        setKeyboardFocusedIndex(newIndex);
+        dayRefs.current[newIndex]?.focus();
       }
     },
     [days, handleDayClick, navigateMonth]
@@ -278,9 +276,7 @@ export function MonthCalendarView({
             <button
               key={dateKey}
               ref={(el) => {
-                if (el && index === focusedDayIndex) {
-                  el.focus();
-                }
+                dayRefs.current[index] = el;
               }}
               onClick={() => handleDayClick(date, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
