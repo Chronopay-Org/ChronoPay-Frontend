@@ -13,6 +13,44 @@ import { ThemeSwitcher } from "@/app/components/ui/theme-switcher";
 import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 import { ContextualKeysPanel } from "@/app/components/ui/contextual-keys-panel";
+import { KeyboardShortcutsOverlay } from "@/app/components/keyboard-shortcuts-overlay";
+import { isNavItemActive } from "@/app/components/navigation/is-nav-item-active";
+
+const LG_MEDIA_QUERY = "(min-width: 1024px)";
+
+function subscribeLgMediaQuery(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  if (typeof window.matchMedia === "function") {
+    const mq = window.matchMedia(LG_MEDIA_QUERY);
+    mq.addEventListener?.("change", callback);
+    return () => mq.removeEventListener?.("change", callback);
+  }
+  window.addEventListener("resize", callback);
+  return () => window.removeEventListener("resize", callback);
+}
+
+function getLgSnapshot(): boolean {
+  if (typeof window === "undefined") return true;
+  if (typeof window.matchMedia === "function") {
+    return window.matchMedia(LG_MEDIA_QUERY).matches;
+  }
+  if (typeof window.innerWidth === "number") {
+    return window.innerWidth >= 1024;
+  }
+  return true;
+}
+
+function getLgServerSnapshot(): boolean {
+  return false;
+}
+
+function useIsDesktop() {
+  return useSyncExternalStore(
+    subscribeLgMediaQuery,
+    getLgSnapshot,
+    getLgServerSnapshot,
+  );
+}
 
 function getOnlineStatus() {
   if (typeof navigator === "undefined") return true;
@@ -59,8 +97,18 @@ function SystemStatus() {
   );
 }
 
-function NavRailItem({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
-  const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+function NavRailItem({
+  item,
+  pathname,
+  allHrefs,
+  onClick,
+}: {
+  item: NavItem;
+  pathname: string;
+  allHrefs?: string[];
+  onClick?: () => void;
+}) {
+  const isActive = isNavItemActive(pathname, item.href, allHrefs);
 
   return (
     <Link
@@ -97,8 +145,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const railToggleRef = useRef<HTMLButtonElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const liveId = useId();
+  const isDesktop = useIsDesktop();
+  const isRailInert = !isDesktop && !isRailOpen;
 
   const navItems = getNavForRole(role);
+  const allHrefs = navItems.map((item) => item.href);
   const roleMeta = ROLE_META[role];
 
   useEffect(() => {
@@ -203,7 +254,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* Desktop nav links inline in command bar — visible only on large screens */}
           <nav aria-label="Quick navigation" className="hidden lg:flex lg:items-center lg:gap-1">
             {navItems.slice(0, 3).map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              const isActive = isNavItemActive(pathname, item.href, allHrefs);
               return (
                 <Link
                   key={item.href}
@@ -265,13 +316,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           ref={railRef}
           role="navigation"
           aria-label="Module navigation"
+          aria-hidden={isRailInert ? true : undefined}
+          inert={isRailInert ? true : undefined}
           className={clsx(
             "flex flex-col border-r shrink-0 overflow-y-auto",
             "transition-transform duration-200 ease-out motion-reduce:transition-none",
             "lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:w-[var(--shell-rail-width)]",
             "fixed inset-y-0 left-0 z-40 w-64",
-            "lg:translate-x-0",
-            isRailOpen ? "translate-x-0" : "-translate-x-full"
+            "lg:translate-x-0 lg:visible",
+            isRailOpen
+              ? "translate-x-0 visible"
+              : "-translate-x-full rtl:translate-x-full invisible lg:visible"
           )}
           style={{
             background: "var(--shell-rail-bg)",
@@ -321,7 +376,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* Nav items */}
           <nav aria-label="Role modules" className="flex flex-col gap-1 px-3 pb-4">
             {navItems.map((item) => (
-              <NavRailItem key={item.href} item={item} pathname={pathname} onClick={closeRail} />
+              <NavRailItem
+                key={item.href}
+                item={item}
+                pathname={pathname}
+                allHrefs={allHrefs}
+                onClick={closeRail}
+              />
             ))}
           </nav>
 
@@ -357,3 +418,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+export { isNavItemActive };
+

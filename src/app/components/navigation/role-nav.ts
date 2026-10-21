@@ -79,7 +79,7 @@ const ADMIN_NAV: NavItem[] = [
   ...SHARED_NAV_ITEMS,
   { href: "/admin/users",      label: "Users",      icon: "👥", ariaLabel: "Manage users" },
   { href: "/admin/analytics",  label: "Analytics",  icon: "📊", ariaLabel: "Platform analytics" },
-  { href: "/admin/settings",   label: "Settings",   icon: "⚙️",  ariaLabel: "System settings" },
+  { href: "/dashboard/settings", label: "Settings", icon: "⚙️",  ariaLabel: "System settings" },
 ];
 
 // ─── Role metadata (label, icon, tone) ────────────────────────────────────────
@@ -213,3 +213,5 @@ export function sortNavByPins(items: NavItem[], pinnedHrefs: string[]): NavItem[
     return 0; // preserve original relative order
   });
 }
+
+export { isNavItemActive } from "./is-nav-item-active";

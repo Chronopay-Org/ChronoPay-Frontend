@@ -37,6 +37,7 @@ import {
   BOTTOM_NAV_MAX_VISIBLE,
   type NavItem,
   type UserRole,
+  isNavItemActive,
   readPinnedHrefs,
   sortNavByPins,
   writePinnedHrefs,
@@ -57,6 +58,7 @@ interface BottomNavOverflowProps {
 
 export function BottomNavOverflow({ items, role, className = "" }: BottomNavOverflowProps) {
   const pathname = usePathname();
+  const allHrefs = items.map((i) => i.href);
 
   // Pin state — initialised from localStorage after mount (SSR safe)
   const [pinnedHrefs, setPinnedHrefs] = useState<string[]>([]);
@@ -157,7 +159,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
         ].join(" ")}
       >
         {visibleItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive = isNavItemActive(pathname, item.href, allHrefs);
           return (
             <Link
               key={item.href}
@@ -296,8 +298,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
               <ul role="list" className="px-2 pb-4">
                 {overflowItems.map((item) => {
                   const isPinned = pinnedHrefs.includes(item.href);
-                  const isActive =
-                    pathname === item.href || pathname.startsWith(item.href + "/");
+                  const isActive = isNavItemActive(pathname, item.href, allHrefs);
 
                   return (
                     <li

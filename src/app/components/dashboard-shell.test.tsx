@@ -1,6 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DashboardShell } from "./dashboard-shell";
+import { isNavItemActive } from "@/app/components/navigation/is-nav-item-active";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
@@ -291,4 +293,173 @@ describe("DashboardShell", () => {
       expect(link).toHaveAttribute("aria-current", "page");
     });
   });
+
+  // ── Closed Mobile Nav Rail Accessibility & Active Route Criteria ─────────
+
+  it("at mobile width with the rail closed, Tab from the skip link reaches the rail toggle and then the main content without entering rail links", async () => {
+    // Mock mobile viewport (< 1024px)
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+
+    const user = userEvent.setup();
+
+    render(
+      <RoleProvider initialRole="buyer">
+        <a href="#main-content">Skip to content</a>
+        <DashboardShell>
+          <button data-testid="main-action">Action inside main</button>
+        </DashboardShell>
+      </RoleProvider>,
+    );
+
+    const rail = screen.getByLabelText("Module navigation");
+    // Verify inert and aria-hidden attributes when closed on mobile
+    expect(rail).toHaveAttribute("inert");
+    expect(rail).toHaveAttribute("aria-hidden", "true");
+
+    // Start focus at the skip link
+    const skipLink = screen.getByRole("link", { name: "Skip to content" });
+    skipLink.focus();
+    expect(document.activeElement).toBe(skipLink);
+
+    // Tab 1: Moves to the hamburger rail toggle button
+    await user.tab();
+    const toggle = screen.getByLabelText("Open navigation menu");
+    expect(document.activeElement).toBe(toggle);
+
+    // Tab until main content action button is focused
+    const tabTrail: HTMLElement[] = [];
+    const mainAction = screen.getByTestId("main-action");
+
+    while (document.activeElement && document.activeElement !== mainAction) {
+      await user.tab();
+      if (document.activeElement) {
+        tabTrail.push(document.activeElement as HTMLElement);
+      }
+    }
+
+    expect(document.activeElement).toBe(mainAction);
+
+    // Ensure NO links/buttons within the rail were ever focused
+    const railInteractive = rail.querySelectorAll("a, button");
+    railInteractive.forEach((el) => {
+      expect(tabTrail).not.toContain(el);
+    });
+
+    // Cleanup
+    window.matchMedia = originalMatchMedia;
+  });
+
+  it("on /dashboard/settings, only Settings has aria-current=page", () => {
+    mockUsePathname.mockReturnValue("/dashboard/settings");
+    renderShell("admin");
+
+    const settingsLinks = screen.getAllByRole("link", { name: /System settings|Settings/i });
+    expect(settingsLinks.length).toBeGreaterThanOrEqual(1);
+    settingsLinks.forEach((link) => {
+      expect(link).toHaveAttribute("aria-current", "page");
+    });
+
+    const homeLinks = screen.getAllByRole("link", { name: /Dashboard home|Home/i });
+    expect(homeLinks.length).toBeGreaterThanOrEqual(1);
+    homeLinks.forEach((link) => {
+      expect(link).not.toHaveAttribute("aria-current");
+    });
+  });
+
+  it("on /dashboard/bookings, only My Bookings has aria-current=page and Home does not", () => {
+    mockUsePathname.mockReturnValue("/dashboard/bookings");
+    renderShell("buyer");
+
+    const bookingsLinks = screen.getAllByRole("link", { name: /View your bookings/i });
+    expect(bookingsLinks.length).toBeGreaterThanOrEqual(1);
+    bookingsLinks.forEach((link) => {
+      expect(link).toHaveAttribute("aria-current", "page");
+    });
+
+    const homeLinks = screen.getAllByRole("link", { name: /Dashboard home/i });
+    expect(homeLinks.length).toBeGreaterThanOrEqual(1);
+    homeLinks.forEach((link) => {
+      expect(link).not.toHaveAttribute("aria-current");
+    });
+  });
 });
+
+// ─── Unit tests for isNavItemActive ──────────────────────────────────────────
+
+describe("isNavItemActive", () => {
+  const allHrefs = [
+    "/dashboard",
+    "/dashboard/bookings",
+    "/dashboard/bookings/create",
+    "/dashboard/calendar",
+    "/dashboard/settings",
+    "/marketplace",
+  ];
+
+  it("returns true on exact pathname match", () => {
+    expect(isNavItemActive("/dashboard", "/dashboard", allHrefs)).toBe(true);
+    expect(isNavItemActive("/marketplace", "/marketplace", allHrefs)).toBe(true);
+    expect(isNavItemActive("/dashboard/settings", "/dashboard/settings", allHrefs)).toBe(true);
+  });
+
+  it("returns false for section root (/dashboard) when pathname is a sub-route", () => {
+    expect(isNavItemActive("/dashboard/settings", "/dashboard", allHrefs)).toBe(false);
+    expect(isNavItemActive("/dashboard/bookings", "/dashboard", allHrefs)).toBe(false);
+    expect(isNavItemActive("/dashboard/calendar", "/dashboard", allHrefs)).toBe(false);
+  });
+
+  it("returns false for root (/) when pathname is a sub-route", () => {
+    expect(isNavItemActive("/dashboard", "/", ["/", "/dashboard"])).toBe(false);
+  });
+
+  it("returns false for admin root (/admin) when pathname is a sub-route", () => {
+    expect(isNavItemActive("/admin/users", "/admin", ["/admin", "/admin/users"])).toBe(false);
+  });
+
+  it("activates child route on exact match and not the root", () => {
+    expect(isNavItemActive("/dashboard/settings", "/dashboard/settings", allHrefs)).toBe(true);
+    expect(isNavItemActive("/dashboard/settings", "/dashboard", allHrefs)).toBe(false);
+  });
+
+  it("picks the longest matching href for nested routes", () => {
+    expect(isNavItemActive("/dashboard/bookings/create", "/dashboard/bookings/create", allHrefs)).toBe(true);
+    expect(isNavItemActive("/dashboard/bookings/create", "/dashboard/bookings", allHrefs)).toBe(false);
+    expect(isNavItemActive("/dashboard/bookings/create", "/dashboard", allHrefs)).toBe(false);
+  });
+
+  it("activates the longest matching parent when deep route has no exact nav item", () => {
+    expect(isNavItemActive("/dashboard/bookings/123/edit", "/dashboard/bookings", allHrefs)).toBe(true);
+    expect(isNavItemActive("/dashboard/bookings/123/edit", "/dashboard", allHrefs)).toBe(false);
+  });
+
+  it("returns false when pathname does not start with href", () => {
+    expect(isNavItemActive("/dashboard", "/marketplace", allHrefs)).toBe(false);
+    expect(isNavItemActive("/marketplace", "/dashboard", allHrefs)).toBe(false);
+  });
+
+  it("handles empty or falsy arguments gracefully", () => {
+    expect(isNavItemActive("", "/dashboard", allHrefs)).toBe(false);
+    expect(isNavItemActive("/dashboard", "", allHrefs)).toBe(false);
+    expect(isNavItemActive("", "")).toBe(false);
+  });
+
+  it("works when allHrefs is not provided or empty", () => {
+    // Section roots still require exact match
+    expect(isNavItemActive("/dashboard/settings", "/dashboard")).toBe(false);
+    expect(isNavItemActive("/dashboard", "/dashboard")).toBe(true);
+
+    // Non-root items match prefix if no other candidates
+    expect(isNavItemActive("/marketplace/item/1", "/marketplace")).toBe(true);
+  });
+});
+
