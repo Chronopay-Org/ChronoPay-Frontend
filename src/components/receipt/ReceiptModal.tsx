@@ -10,13 +10,13 @@
  */
 
 import { useEffect, useId, useState } from "react";
-import { Printer, Share2, X, Check, Calendar, Twitter, Linkedin, MessageCircle } from "lucide-react";
+import { Printer, Share2, X, Check } from "lucide-react";
 import { FocusTrap } from "@/components/common/FocusTrap";
 import { LiveRegion } from "@/components/common/LiveRegion";
 import { Receipt } from "./Receipt";
+import { SharePreview } from "./SharePreview";
 import { buildShareLink } from "./masking";
 import type { ReceiptData } from "./types";
-import confetti from "canvas-confetti";
 
 type ReceiptModalProps = {
   isOpen: boolean;
@@ -24,26 +24,6 @@ type ReceiptModalProps = {
   receipt?: ReceiptData | null;
   loading?: boolean;
   error?: string | null;
-};
-
-const generateICS = (receipt: ReceiptData | null | undefined) => {
-  if (!receipt) return "";
-  // Create a naive start time (current date/time for demo purposes)
-  // since the receipt only has a pre-formatted settledAt string.
-  const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//ChronoPay//EN
-BEGIN:VEVENT
-UID:${receipt.id}@chronopay.app
-DTSTAMP:${now}
-DTSTART:${now}
-DTEND:${now}
-SUMMARY:${receipt.title}
-DESCRIPTION:Booking ID: ${receipt.id}\\nTx Hash: ${receipt.txHash}
-END:VEVENT
-END:VCALENDAR`;
-  return icsContent;
 };
 
 export function ReceiptModal({
@@ -80,8 +60,12 @@ export function ReceiptModal({
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, onClose]);
 
+  // Reset tip state when dialog opens. This is a state initialisation
+  // pattern triggered by props, not cascading renders.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!isOpen) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedTipAmount(null);
     setCustomTipValue("");
     setTipPromptCompleted(false);
@@ -101,7 +85,7 @@ export function ReceiptModal({
     try {
       await navigator.clipboard.writeText(link);
       setShareStatus("copied");
-      setLiveMessage("Masked share link copied to clipboard.");
+      setTipMessage("Masked share link copied to clipboard.");
       window.setTimeout(() => setShareStatus("idle"), 2000);
     } catch {
       setShareStatus("idle");
@@ -313,6 +297,10 @@ export function ReceiptModal({
             <div className="receipt-no-print mb-6 rounded-3xl border border-cyan-300/20 bg-cyan-950/20 p-4 text-sm text-cyan-100">
               {tipMessage}
             </div>
+          )}
+
+          {tipPromptCompleted && receipt && (
+            <SharePreview receipt={receipt} />
           )}
 
           <Receipt receipt={enhancedReceipt} loading={loading} error={error} />

@@ -192,7 +192,9 @@ export function ReviewReplyThread({
       (!previous || previous.id !== current.id || previous.deleted);
 
     if (isNewLiveReply && current) {
-      setAnnouncement(`New reply from ${current.authorName} posted.`);
+      const message = `New reply from ${current.authorName} posted.`;
+      // Deferred so the live-region write doesn't run synchronously in the effect.
+      window.setTimeout(() => setAnnouncement(message), 0);
       if (justSubmittedRef.current) {
         replyHeadingRef.current?.focus();
       }

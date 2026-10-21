@@ -8,8 +8,14 @@ import { StatusChip } from "@/components/dashboard/status-chip";
 import { OrderSummaryDrawer } from "@/components/dashboard/order-summary-drawer";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { ReceiptModal } from "@/components/receipt";
+import { RedeemTokenModal } from "@/components/dashboard/redeem-token-modal";
 import type { ReceiptData } from "@/components/receipt";
 import { PromoCodeEntry } from "@/app/components/ui/promo-code-entry";
+import { GiftPurchaseToggle } from "@/components/dashboard/gift-purchase-toggle";
+import type { GiftDetails } from "@/components/dashboard/gift-purchase-toggle";
+import { BookingAbandonmentBanner } from "@/components/dashboard/booking-abandonment-banner";
+import { DisputeFilingForm, type DisputeFormData } from "@/app/components/dispute-filing-form";
+import { DisputeTrackingPanel, type Dispute } from "@/app/components/dispute-tracking-panel";
 import {
   ArrowLeft,
   Wallet,
@@ -24,7 +30,9 @@ import {
   Check,
   Receipt,
   Users,
-  LayoutDashboard
+  LayoutDashboard,
+  Scale,
+  X
 } from "lucide-react";
 
 function FocusTrap({ children }: { children: React.ReactNode }) {
@@ -38,6 +46,7 @@ const slotDetailsMap: Record<
     durationHours: number;
     description: string;
     seller: {
+      id: string;
       name: string;
       role: string;
       avatarInitials: string;
@@ -52,6 +61,7 @@ const slotDetailsMap: Record<
     description:
       "Deep dive into your product roadmap, tech stack architecture, and launch strategy. We will review your current product design, identify potential technical bottlenecks on the Stellar network integration, and map out a concrete step-by-step roadmap for your engineering team.",
     seller: {
+      id: "sarah-jenkins",
       name: "Dr. Sarah Jenkins",
       role: "Lead Product Architect",
       avatarInitials: "SJ",
@@ -69,6 +79,7 @@ const slotDetailsMap: Record<
     description:
       "A comprehensive heuristic evaluation of your web or mobile application interface. We will analyze your layout, user onboarding flow, and transactional friction points to improve conversion and ensure alignment with modern web design guidelines.",
     seller: {
+      id: "marcus-vance",
       name: "Marcus Vance",
       role: "Principal UX Designer",
       avatarInitials: "MV",
@@ -86,6 +97,7 @@ const slotDetailsMap: Record<
     description:
       "Open office hours for early-stage web3 founders. Bring your hardest questions about fundraising, go-to-market strategies, community building, and structuring secure, compliant token economies.",
     seller: {
+      id: "elena-rostova",
       name: "Elena Rostova",
       role: "Managing Partner, Zenith Capital",
       avatarInitials: "ER",
@@ -130,9 +142,16 @@ export default function SlotDetailPage({
   const stellarFee = 0.0001;
   const totalCost = subtotal + escrowFee + stellarFee;
 
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountedTotal, setDiscountedTotal] = useState(totalCost);
+
   useEffect(() => {
-    setDiscountPercent(0);
-    setDiscountedTotal(totalCost);
+    // Reset discount state when the slot or total price changes. Deferred so
+    // the writes don't run synchronously inside the effect body.
+    window.setTimeout(() => {
+      setDiscountPercent(0);
+      setDiscountedTotal(totalCost);
+    }, 0);
   }, [id, totalCost]);
 
   const effectiveTotalCost = discountPercent > 0 ? discountedTotal : totalCost;
@@ -143,12 +162,100 @@ export default function SlotDetailPage({
 
   // MODAL / CHECKOUT STATE
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [purchaseStep, setPurchaseStep] = useState<"confirm" | "loading" | "success">("confirm");
+  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
+  const [purchaseStep, setPurchaseStep] = useState<"auth" | "confirm" | "loading" | "success">("auth");
   const [loadingMessage, setLoadingMessage] = useState("");
   const [txHash, setTxHash] = useState("");
   const [announcement, setAnnouncement] = useState(""); // Screen reader announcer
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [discountedTotal, setDiscountedTotal] = useState(totalCost);
+  const [giftDetails, setGiftDetails] = useState<GiftDetails | null>(null);
+
+  // DISPUTE STATE
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [disputeView, setDisputeView] = useState<"filing" | "tracking">("filing");
+  const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
+  const [currentDispute, setCurrentDispute] = useState<Dispute | null>(null);
+  
+  // Mock existing dispute for demonstration
+  const [existingDisputes, setExistingDisputes] = useState<Dispute[]>([
+    {
+      id: "disp-12345678",
+      slotId: id,
+      category: "quality_mismatch",
+      reason: "Service quality did not match expectations",
+      description: "The delivered consultation was significantly shorter than the agreed 1.5 hours and lacked the depth of technical analysis promised in the description.",
+      status: "under_review",
+      evidence: [
+        {
+          id: "ev-1",
+          fileName: "chat_transcript.pdf",
+          fileSize: 245000,
+          fileType: "application/pdf",
+          uploadStatus: "completed",
+          scanStatus: "clean",
+          uploadedAt: new Date().toISOString()
+        }
+      ],
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 3600000).toISOString(),
+      submittedAt: new Date(Date.now() - 86400000).toISOString(),
+      notes: [
+        {
+          id: "note-1",
+          author: "System",
+          authorRole: "system",
+          content: "Dispute submitted successfully. Awaiting initial review.",
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        }
+      ],
+      metadata: {
+        priority: "medium",
+        escalationCount: 0,
+        lastActivityAt: new Date(Date.now() - 3600000).toISOString()
+      }
+    }
+  ]);
+
+  // DRAFT ABANDONMENT STATE
+  const [hasDraft, setHasDraft] = useState(false);
+  const draftKey = `draft-booking-${id}`;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        // Deferred so the live-region state write doesn't run synchronously
+        // inside the effect body.
+        window.setTimeout(() => setHasDraft(true), 0);
+      }
+    }
+  }, [draftKey]);
+
+  // Handle saving draft automatically when modal is open
+  useEffect(() => {
+    if (isModalOpen && typeof window !== "undefined") {
+      localStorage.setItem(draftKey, "true");
+    }
+  }, [isModalOpen, draftKey]);
+
+  const handleResumeDraft = () => {
+    setHasDraft(false);
+    if (!isWalletReady || !hasFunds) return;
+    setPurchaseStep("auth");
+    setIsModalOpen(true);
+  };
+
+  const handleDiscardDraft = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(draftKey);
+    }
+    setHasDraft(false);
+  };
+
+  const handleViewDetails = () => {
+    if (!isWalletReady || !hasFunds) return;
+    setPurchaseStep("auth");
+    setIsModalOpen(true);
+  };
 
   // RECEIPT STATE (only meaningful once the transaction has settled)
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -194,13 +301,13 @@ export default function SlotDetailPage({
 
   const handleOpenModal = () => {
     if (!isWalletReady || !hasFunds) return;
-    setPurchaseStep("confirm");
+    setPurchaseStep("auth");
     setIsModalOpen(true);
   };
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
-    setPurchaseStep("confirm");
+    setPurchaseStep("auth");
   }, []);
 
   // Keyboard navigation & focus management inside checkout modal
@@ -236,17 +343,6 @@ export default function SlotDetailPage({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isModalOpen, handleCloseModal]);
 
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isModalOpen) {
-        handleCloseModal();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isModalOpen]);
-
   // Simulated blockchain transaction workflow
   const handleProceedPurchase = () => {
     setPurchaseStep("loading");
@@ -281,6 +377,95 @@ export default function SlotDetailPage({
     announce("Wallet connected successfully.");
   };
 
+  // DISPUTE HANDLERS
+  const handleOpenDisputeModal = () => {
+    setDisputeView(existingDisputes.length > 0 ? "tracking" : "filing");
+    if (existingDisputes.length > 0) {
+      setCurrentDispute(existingDisputes[0]);
+    }
+    setIsDisputeModalOpen(true);
+  };
+
+  const handleCloseDisputeModal = () => {
+    setIsDisputeModalOpen(false);
+    setCurrentDispute(null);
+  };
+
+  const handleSubmitDispute = async (formData: DisputeFormData) => {
+    setIsSubmittingDispute(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const newDispute: Dispute = {
+      id: `disp-${Date.now()}`,
+      slotId: id,
+      category: formData.category,
+      reason: formData.reason,
+      description: formData.description,
+      status: "submitted",
+      evidence: formData.evidence.map((file, index) => ({
+        id: `ev-${Date.now()}-${index}`,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        uploadStatus: "completed" as const,
+        scanStatus: "clean" as const,
+        uploadedAt: new Date().toISOString()
+      })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      submittedAt: new Date().toISOString(),
+      notes: [
+        {
+          id: "note-1",
+          author: "System",
+          authorRole: "system",
+          content: "Dispute submitted successfully. Awaiting initial review.",
+          createdAt: new Date().toISOString()
+        }
+      ],
+      metadata: {
+        priority: "medium",
+        escalationCount: 0,
+        lastActivityAt: new Date().toISOString()
+      }
+    };
+
+    setExistingDisputes(prev => [...prev, newDispute]);
+    setCurrentDispute(newDispute);
+    setDisputeView("tracking");
+    setIsSubmittingDispute(false);
+    announce("Dispute submitted successfully");
+  };
+
+  const handleAddDisputeNote = async (content: string) => {
+    if (!currentDispute) return;
+    
+    const newNote = {
+      id: `note-${Date.now()}`,
+      author: "You",
+      authorRole: "buyer" as const,
+      content,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedDispute = {
+      ...currentDispute,
+      notes: [...currentDispute.notes, newNote],
+      updatedAt: new Date().toISOString(),
+      metadata: {
+        ...currentDispute.metadata,
+        lastActivityAt: new Date().toISOString()
+      }
+    };
+
+    setCurrentDispute(updatedDispute);
+    setExistingDisputes(prev => 
+      prev.map(d => d.id === updatedDispute.id ? updatedDispute : d)
+    );
+  };
+
   const mapTone = (status: typeof slot.status) => {
     if (status === "Healthy") return "positive" as const;
     if (status === "Tight") return "warning" as const;
@@ -295,6 +480,13 @@ export default function SlotDetailPage({
       </div>
 
       <div className="space-y-6">
+        {hasDraft && (
+          <BookingAbandonmentBanner
+            onResume={handleResumeDraft}
+            onDiscard={handleDiscardDraft}
+            onViewDetails={handleViewDetails}
+          />
+        )}
         {/* Breadcrumb Navigation & Back Button */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
@@ -310,7 +502,7 @@ export default function SlotDetailPage({
             items={[
               { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
               { label: "Slots", href: "/dashboard/slots" },
-              { label: "Booking", href: "/dashboard/slots/123" },
+              { label: "Booking", href: `/dashboard/slots/${id}` },
               { label: "Details" },
             ]}
           />
@@ -475,6 +667,19 @@ export default function SlotDetailPage({
                   </div>
                 ))}
               </div>
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-slate-400">
+                  Availability, reviews, and policies are maintained on the supplier profile.
+                </p>
+                <Link
+                  href={`/dashboard/suppliers/${details.seller.id}`}
+                  aria-label={`View ${details.seller.name}'s profile with availability, reviews, and policies`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-xs font-bold text-cyan-200 transition-all hover:border-cyan-400/50 hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                >
+                  View supplier profile
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
+              </div>
             </article>
           </div>
 
@@ -622,6 +827,8 @@ export default function SlotDetailPage({
                 </dl>
               </div>
 
+              <GiftPurchaseToggle onChange={setGiftDetails} />
+
               <PromoCodeEntry
                 baseTotal={totalCost}
                 onDiscountApplied={({ percent, discountedTotal: nextTotal }) => {
@@ -684,6 +891,18 @@ export default function SlotDetailPage({
                       Purchase Time Token
                     </button>
                   )}
+
+                  {/* Dispute Button */}
+                  {existingDisputes.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleOpenDisputeModal}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 px-5 py-3 text-sm border border-amber-400/30 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20 mt-3"
+                    >
+                      <Scale className="h-4 w-4 mr-2" />
+                      View Dispute ({existingDisputes.length})
+                    </button>
+                  )}
                 </div>
               </section>
             </OrderSummaryDrawer>
@@ -712,11 +931,107 @@ export default function SlotDetailPage({
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                  className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 z-10"
                   aria-label="Close modal dialog"
                 >
                   ✕
                 </button>
+              )}
+
+              {/* STEP 0: AUTHENTICATION / PATH SELECTION */}
+              {purchaseStep === "auth" && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <h3 id="modal-headline" className="text-xl font-bold text-white">
+                      How would you like to continue?
+                    </h3>
+                    <p className="text-xs leading-relaxed text-slate-400 max-w-sm mx-auto">
+                      Choose your checkout path to secure this booking.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Guest Card */}
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all hover:border-cyan-400/30">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-bold text-white">Guest (Wallet Only)</h4>
+                      </div>
+                      <ul className="space-y-2 mb-4 text-xs text-slate-300">
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Fast checkout</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                          <span>No booking history or preferences saved</span>
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => setPurchaseStep("confirm")}
+                        className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-white/10 text-slate-300 hover:bg-white/5"
+                      >
+                        Continue as Guest
+                      </button>
+                    </div>
+
+                    {/* Sign In Card */}
+                    <div className="rounded-2xl border border-cyan-400/30 bg-cyan-400/5 p-4 transition-all hover:border-cyan-400/50 relative">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-bold text-cyan-300 flex items-center gap-1.5">
+                          Sign In
+                          <span className="group relative ml-1">
+                            <Info className="h-3.5 w-3.5 text-cyan-400/60 cursor-pointer hover:text-cyan-300" aria-label="Why sign in?" />
+                            <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-900 border border-white/10 p-2 text-[10px] text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-xl z-20">
+                              Signing in syncs your wallet with your profile, giving you access to purchase history, saved settings, and priority support.
+                            </span>
+                          </span>
+                        </h4>
+                        <span className="inline-flex rounded bg-cyan-400/10 px-1.5 py-0.5 text-[10px] font-bold text-cyan-400 uppercase border border-cyan-400/20">
+                          Recommended
+                        </span>
+                      </div>
+                      <ul className="space-y-2 mb-4 text-xs text-slate-300">
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Full booking history & receipts</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Saved preferences & notifications</span>
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => setPurchaseStep("confirm")}
+                        className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs bg-cyan-400/20 text-cyan-100 hover:bg-cyan-400/30 border border-cyan-400/30"
+                      >
+                        Sign In to Continue
+                      </button>
+                    </div>
+
+                    {/* Create Account Card */}
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all hover:border-cyan-400/30">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-sm font-bold text-white">Create Account</h4>
+                      </div>
+                      <ul className="space-y-2 mb-4 text-xs text-slate-300">
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Unlock all platform features</span>
+                        </li>
+                        <li className="flex gap-2 items-start">
+                          <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <span>Setup takes &lt; 1 minute</span>
+                        </li>
+                      </ul>
+                      <button
+                        onClick={() => setPurchaseStep("confirm")}
+                        className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-white/10 text-slate-300 hover:bg-white/5"
+                      >
+                        Create Account
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* STEP 1: INITIAL CONFIRMATION DETAILS */}
@@ -751,6 +1066,15 @@ export default function SlotDetailPage({
                       <span className="text-slate-400">Seller</span>
                       <span className="font-semibold text-white">{details.seller.name}</span>
                     </div>
+
+                    {giftDetails?.isGift && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Gift for</span>
+                        <span className="font-semibold text-white max-w-[180px] truncate text-right">
+                          {giftDetails.recipientName || giftDetails.recipientEmail || "Recipient"}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex justify-between border-t border-white/5 pt-3.5">
                       <span className="text-slate-400">Network + Escrow Fee</span>
@@ -860,10 +1184,27 @@ export default function SlotDetailPage({
                   <div className="flex flex-col gap-2.5">
                     <button
                       type="button"
+                      onClick={() => setIsRedeemModalOpen(true)}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 px-4 py-2.5 text-xs border border-emerald-400/30 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/20"
+                    >
+                      Redeem Time Token
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => alert("Simulated Calendar Link: Dynamic Google Calendar invite dispatched successfully.")}
                       className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-cyan-400/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20"
                     >
                       Add Booking to Calendar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsReceiptOpen(true)}
+                      className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-cyan-400/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20"
+                    >
+                      View Receipt
+                      <Receipt className="h-3 w-3 ml-1.5" />
                     </button>
 
                     <a
@@ -890,11 +1231,97 @@ export default function SlotDetailPage({
         </div>
       )}
 
+      {/* ----------------- DISPUTE MODAL DIALOG ----------------- */}
+      {isDisputeModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all animate-fade-in"
+          role="presentation"
+        >
+          <FocusTrap>
+            <div
+              ref={modalRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="dispute-modal-headline"
+              className="w-full max-w-2xl rounded-3xl border border-white/12 bg-slate-900 p-6 sm:p-8 shadow-2xl relative focus:outline-none animate-scale-up max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 id="dispute-modal-headline" className="text-xl font-bold text-white">
+                  {disputeView === "filing" ? "File a Dispute" : "Dispute Tracking"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleCloseDisputeModal}
+                  className="rounded-full p-2 text-slate-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  aria-label="Close dispute modal"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* View Toggle */}
+              {existingDisputes.length > 0 && (
+                <div className="flex gap-2 mb-6 p-1 bg-white/5 rounded-full">
+                  <button
+                    type="button"
+                    onClick={() => setDisputeView("tracking")}
+                    className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      disputeView === "tracking"
+                        ? "bg-amber-400/20 text-amber-200"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Track Dispute
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDisputeView("filing")}
+                    className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                      disputeView === "filing"
+                        ? "bg-amber-400/20 text-amber-200"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    File New Dispute
+                  </button>
+                </div>
+              )}
+
+              {/* Content */}
+              {disputeView === "filing" ? (
+                <DisputeFilingForm
+                  slotId={id}
+                  onSubmit={handleSubmitDispute}
+                  isSubmitting={isSubmittingDispute}
+                  onCancel={handleCloseDisputeModal}
+                />
+              ) : (
+                currentDispute && (
+                  <DisputeTrackingPanel
+                    dispute={currentDispute}
+                    onAddNote={handleAddDisputeNote}
+                  />
+                )
+              )}
+            </div>
+          </FocusTrap>
+        </div>
+      )}
+
       {/* ----------------- ON-CHAIN RECEIPT DIALOG ----------------- */}
       <ReceiptModal
         isOpen={isReceiptOpen}
         onClose={() => setIsReceiptOpen(false)}
         receipt={receipt}
+      />
+
+      {/* ----------------- TOKEN REDEMPTION DIALOG ----------------- */}
+      <RedeemTokenModal
+        isOpen={isRedeemModalOpen}
+        onClose={() => setIsRedeemModalOpen(false)}
+        tokenCode={`CHR-${slot.id.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`}
       />
     </DashboardShell>
   );

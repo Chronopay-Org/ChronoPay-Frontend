@@ -2,12 +2,15 @@ import { ButtonLink } from "@/app/components/ui/button-link";
 import { StatusChip } from "./status-chip";
 import type { QuickAction, Tone } from "./types";
 import * as Icons from "lucide-react";
+import React, { useState } from "react";
+import PricingStrategyExplainer from "@/components/pricing/PricingStrategyExplainer";
 
 const toneLabels: Record<Tone, string> = {
   neutral: "Available",
   positive: "Ready",
   warning: "Needs review",
   critical: "Needs attention",
+  muted: "No signal",
 };
 
 // Icon background colors based on tone
@@ -16,14 +19,16 @@ const toneIconClasses: Record<Tone, string> = {
   positive: "bg-emerald-400/10 text-emerald-300 border-emerald-400/20",
   warning: "bg-amber-400/10 text-amber-300 border-amber-400/20",
   critical: "bg-rose-400/10 text-rose-300 border-rose-400/20",
+  muted: "bg-slate-400/10 text-slate-300 border-slate-400/20",
 };
 
 export function QuickActions({ actions }: { actions: QuickAction[] }) {
+  const [explainerOpen, setExplainerOpen] = useState(false);
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {actions.map((action) => {
-        // Dynamically get the icon component
-        const IconComponent = Icons[action.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
+        // Dynamically get the icon component, fallback to AlertCircle if missing
+        const IconComponent = (Icons[action.icon as keyof typeof Icons] || Icons.AlertCircle) as React.ComponentType<{ className?: string }>;
         
         return (
           <div
@@ -55,18 +60,33 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
             
             {/* Primary Action */}
             <div className="mt-6 flex justify-end">
-              <ButtonLink 
-                href={action.href} 
-                variant="secondary" 
-                size="md"
-                className="group-hover:border-cyan-200/50 group-hover:bg-white/15 transition-all"
-              >
-                View {action.title}
-              </ButtonLink>
+              <div className="flex gap-2">
+                <ButtonLink 
+                  href={action.href} 
+                  variant="secondary" 
+                  size="md"
+                  className="group-hover:border-cyan-200/50 group-hover:bg-white/15 transition-all"
+                >
+                  View {action.title}
+                </ButtonLink>
+
+                {/* Show explainer toggle when this is the mint flow */}
+                {/mint/i.test(action.title) || /mint/i.test(action.href) ? (
+                  <button
+                    onClick={() => setExplainerOpen(true)}
+                    className="px-3 py-2 rounded-md bg-white/6 text-sm text-white hover:bg-white/10"
+                    aria-label="Open pricing explainer"
+                  >
+                    Pricing explainer
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         );
       })}
+
+      <PricingStrategyExplainer open={explainerOpen} onClose={() => setExplainerOpen(false)} />
     </div>
   );
 }

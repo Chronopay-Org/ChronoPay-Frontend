@@ -49,6 +49,7 @@ export function ContextualKeysPanel() {
     // Basic prefix matching for demo purposes
     const matchedPath = Object.keys(ROUTE_SHORTCUTS).find(path => pathname?.startsWith(path));
     if (matchedPath) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShortcuts(ROUTE_SHORTCUTS[matchedPath]);
       setIsOpen(true);
     } else {

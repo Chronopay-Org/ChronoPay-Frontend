@@ -35,7 +35,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { ChevronDown, Plus, Search, X, Clock } from "lucide-react";
+import { ChevronDown, Plus, Search, X, Clock, Copy } from "lucide-react";
 import {
   useAccounts,
   truncateAddress,
@@ -43,6 +43,7 @@ import {
   avatarInitials,
   type Account,
 } from "@/hooks/use-accounts";
+import { WalletConnectModal } from "@/components/dashboard/WalletConnectModal";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -65,6 +66,7 @@ export function AccountSwitcher({ className = "" }: AccountSwitcherProps) {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
   const [announcement, setAnnouncement] = useState("");
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -165,20 +167,9 @@ export function AccountSwitcher({ className = "" }: AccountSwitcherProps) {
   // ── Handle "Add account" ─────────────────────────────────────────────────
 
   const handleAddAccount = useCallback(() => {
-    // In a real implementation this would open WalletConnectModal.
-    // For demo, add a mock account.
-    const newAccount: Account = {
-      address: `G${Array.from({ length: 55 }, () =>
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".charAt(
-          Math.floor(Math.random() * 32),
-        ),
-      ).join("")}`,
-      label: `Account ${accounts.length + 1}`,
-    };
-    addAccount(newAccount);
-    setAnnouncement(`Added account ${newAccount.label}`);
+    setIsWalletModalOpen(true);
     close();
-  }, [accounts.length, addAccount, close]);
+  }, [close]);
 
   // ── Click-outside to close ───────────────────────────────────────────────
 
@@ -325,9 +316,25 @@ export function AccountSwitcher({ className = "" }: AccountSwitcherProps) {
               </span>
             )}
           </div>
-          <p className="truncate text-xs text-slate-500 font-mono" data-testid="account-address">
-            {truncateAddress(account.address)}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="truncate text-xs text-slate-500 font-mono" aria-label={account.address} data-testid="account-address">
+              {truncateAddress(account.address)}
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  navigator.clipboard.writeText(account.address).catch(() => {});
+                  setAnnouncement("Address copied to clipboard");
+                }
+              }}
+              className="ml-2 rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
+              aria-label={`Copy address ${account.address}`}
+            >
+              <Copy className="h-3 w-3" />
+            </button>
+          </div>
         </div>
 
         {/* Provider badge */}
@@ -578,6 +585,14 @@ export function AccountSwitcher({ className = "" }: AccountSwitcherProps) {
       >
         {announcement}
       </div>
+
+      <WalletConnectModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        providers={[]}
+        status="idle"
+        onConnect={() => setIsWalletModalOpen(false)}
+      />
     </div>
   );
 }

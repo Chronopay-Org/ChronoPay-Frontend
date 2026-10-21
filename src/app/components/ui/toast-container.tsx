@@ -6,17 +6,21 @@
  * Placement: bottom-right on md+, bottom-center on mobile.
  * Stacking:  newest on top (flex-col-reverse), capped at TOAST_STACK_LIMIT.
  * Grouping:  same-category toasts are collapsed by the reducer into one entry.
+ * Queue:     when the stack is full, overflow toasts are held in a FIFO queue
+ *            and released automatically as slots free up. A small indicator
+ *            shows how many toasts are waiting.
  *
  * A "Clear all" button appears when 2+ entries are visible so users can
  * dismiss the entire stack in one action — useful after a burst.
  */
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Toast } from "./toast";
 
 export function ToastContainer() {
   const { toasts, dismiss, dismissAll } = useToast();
+  const reducedMotion = useReducedMotion();
 
   return (
     <div
@@ -24,6 +28,7 @@ export function ToastContainer() {
       aria-live="off"
       className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col-reverse gap-2 sm:bottom-6 sm:right-6"
     >
+
       {/* "Clear all" — shown only when 2+ entries are present */}
       <AnimatePresence>
         {toasts.length >= 2 && (
@@ -32,7 +37,7 @@ export function ToastContainer() {
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.15 }}
+            transition={reducedMotion ? false : { duration: 0.15 }}
             className="pointer-events-auto flex justify-end"
           >
             <button

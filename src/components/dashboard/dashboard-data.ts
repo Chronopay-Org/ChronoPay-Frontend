@@ -7,6 +7,14 @@ import type {
   CalendarSyncProvider,
   CalendarDefinition,
   RatingCriterion,
+  ChecklistStep,
+  SentimentCounts,
+  SentimentDataPoint,
+  SyncDirection,
+  BookingStage,
+  HolidayHint,
+  RegionInfo,
+  TrustMetric,
 } from "./types";
 import type { TimelineItem } from "./timeline-types";
 import { BADGE_PRESETS } from "./social-proof-badge";
@@ -130,6 +138,7 @@ export const slots: Slot[] = [
     rate: "120 XLM / hr",
     status: "Healthy",
     isNextAvailable: true,
+    mintedAt: new Date().toISOString(),
     isSample: true,
     badges: [
       { type: "topRated", ...BADGE_PRESETS.topRated },
@@ -301,6 +310,7 @@ export const upcomingHolidays: HolidayHint[] = [
 ];
 
 export const holidayRegion: RegionInfo = {
+  country: "United States",
   code: "US",
   name: "United States",
 };
@@ -339,6 +349,59 @@ export const suppliers: Supplier[] = [
 ];
 
 /** Sample per-criterion rating breakdown for supplier profiles. */
+// ─── Supplier Trust Metrics ──────────────────────────────────────────────────
+
+/** Sample response-time history (minutes, last 30 days) */
+export const sampleResponseTime: TrustMetric = {
+  id: "response-time",
+  label: "Response time",
+  value: "2.4",
+  unit: "min",
+  trend: "up",
+  tooltip: "Median time between receiving a booking request and responding. Lower is better.",
+  tone: "positive",
+  history: {
+    values: [4.1, 3.8, 3.2, 2.9, 2.7, 2.5, 2.4, 2.6, 2.3, 2.1, 2.0, 2.4],
+  },
+};
+
+/** Sample acceptance-rate history (%, last 30 days) */
+export const sampleAcceptanceRate: TrustMetric = {
+  id: "acceptance-rate",
+  label: "Acceptance rate",
+  value: "94",
+  unit: "%",
+  trend: "stable",
+  tooltip: "Percentage of booking requests you accepted over the last 30 days.",
+  tone: "positive",
+  history: {
+    values: [88, 91, 90, 93, 92, 94, 95, 94, 93, 94, 95, 94],
+  },
+};
+
+/** Empty trust metric for no-data state */
+export const emptyResponseTime: TrustMetric = {
+  id: "response-time",
+  label: "Response time",
+  value: "—",
+  unit: "min",
+  trend: "stable",
+  tooltip: "Median time between receiving a booking request and responding. Lower is better.",
+  tone: "neutral",
+  history: { values: [] },
+};
+
+export const emptyAcceptanceRate: TrustMetric = {
+  id: "acceptance-rate",
+  label: "Acceptance rate",
+  value: "—",
+  unit: "%",
+  trend: "stable",
+  tooltip: "Percentage of booking requests you accepted over the last 30 days.",
+  tone: "neutral",
+  history: { values: [] },
+};
+
 export const ratingBreakdown: RatingCriterion[] = [
   {
     id: "communication",
@@ -377,3 +440,71 @@ export const ratingBreakdown: RatingCriterion[] = [
   },
 ];
 
+
+// ─── Sample review sentiment data ─────────────────────────────────────────────
+
+/** Mock review-sentiment counts for the design-review showcase page. */
+export const reviewSentimentCounts: SentimentCounts = {
+  positive: 64,
+  mixed: 21,
+  critical: 9,
+};
+
+/** Mock weekly review-sentiment trend for the design-review showcase page. */
+export const reviewSentimentTrend: SentimentDataPoint[] = [
+  { timestamp: "2026-05-25", positive: 38, mixed: 14, critical: 6 },
+  { timestamp: "2026-06-01", positive: 42, mixed: 12, critical: 5 },
+  { timestamp: "2026-06-08", positive: 45, mixed: 15, critical: 7 },
+  { timestamp: "2026-06-15", positive: 51, mixed: 13, critical: 4 },
+  { timestamp: "2026-06-22", positive: 56, mixed: 16, critical: 6 },
+  { timestamp: "2026-06-29", positive: 61, mixed: 18, critical: 8 },
+  { timestamp: "2026-07-06", positive: 58, mixed: 17, critical: 5 },
+  { timestamp: "2026-07-13", positive: 64, mixed: 21, critical: 9 },
+];
+
+
+// ─── Sample booking checklist steps ──────────────────────────────────────────
+
+/**
+ * Sample steps for the BookingChecklist component.
+ * Represents a booking mid-flow: reserved and confirmed are done, escrow is
+ * active, service delivery is blocked, and the final two steps are pending.
+ */
+export const bookingChecklistSteps: ChecklistStep[] = [
+  {
+    id: "reserve",
+    label: "Reserve slot",
+    status: "done",
+    description: "Completed Jun 30, 9:00 AM",
+  },
+  {
+    id: "confirm",
+    label: "Confirm booking",
+    status: "done",
+    description: "Both parties confirmed.",
+  },
+  {
+    id: "escrow",
+    label: "Escrow payment",
+    status: "active",
+    description: "Funds are being held in escrow.",
+  },
+  {
+    id: "deliver",
+    label: "Deliver service",
+    status: "blocked",
+    description: "Waiting for escrow confirmation.",
+  },
+  {
+    id: "rate",
+    label: "Rate experience",
+    status: "pending",
+    optional: true,
+  },
+  {
+    id: "release",
+    label: "Release escrow",
+    status: "pending",
+    description: "Funds released after both parties confirm.",
+  },
+];

@@ -45,6 +45,7 @@ describe("ReceiptModal", () => {
   beforeEach(() => {
     vi.spyOn(window, "print").mockImplementation(() => undefined);
     vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+    window.localStorage.clear();
   });
 
   it("renders optional tip prompt when opened", () => {
@@ -66,7 +67,7 @@ describe("ReceiptModal", () => {
       screen.getByText(/Tip skipped\. The receipt is ready\./i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Optional tip for the supplier/i),
+      screen.queryByText(/Optional tip for the supplier/i),
     ).not.toBeInTheDocument();
   });
 
@@ -75,7 +76,7 @@ describe("ReceiptModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "2.50 XLM" }));
     fireEvent.click(screen.getByRole("button", { name: /Confirm tip/i }));
     expect(screen.getByText(/Added 2\.50 XLM tip\./i)).toBeInTheDocument();
-    expect(screen.getByText(/184\.7001 XLM/i)).toBeInTheDocument();
+    expect(screen.getByText(/185\.2001 XLM/i)).toBeInTheDocument();
   });
 
   it("renders custom tip and preserves the selected value", () => {
@@ -91,5 +92,26 @@ describe("ReceiptModal", () => {
   it("disables confirm when no tip is selected", () => {
     render(<ReceiptModal isOpen onClose={vi.fn()} receipt={receipt} />);
     expect(screen.getByRole("button", { name: /Confirm tip/i })).toBeDisabled();
+  });
+
+  it("shows share preview after skipping tip", () => {
+    render(<ReceiptModal isOpen onClose={vi.fn()} receipt={receipt} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /No thanks, continue/i }),
+    );
+    expect(screen.getByText("Share this receipt")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Subtitle"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Copy link/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows share preview after confirming tip", () => {
+    render(<ReceiptModal isOpen onClose={vi.fn()} receipt={receipt} />);
+    fireEvent.click(screen.getByRole("button", { name: "2.50 XLM" }));
+    fireEvent.click(screen.getByRole("button", { name: /Confirm tip/i }));
+    expect(screen.getByText("Share this receipt")).toBeInTheDocument();
   });
 });

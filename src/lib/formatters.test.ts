@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatNumber, formatCurrency, formatDate } from './formatters';
+import { formatNumber, formatCurrency, formatDate, formatDateLabel, formatTimeRange, getDir } from './formatters';
 
 describe('formatters', () => {
   describe('formatNumber', () => {
@@ -45,6 +45,72 @@ describe('formatters', () => {
       const result = formatDate(testDate, 'ar-EG', { timeZone: 'UTC', year: 'numeric', month: 'numeric', day: 'numeric' });
       // Depending on runtime, it will be in arabic format
       expect(result).toBeTruthy();
+    });
+  });
+
+  describe('formatDateLabel', () => {
+    it('formats English date label', () => {
+      const result = formatDateLabel(new Date('2026-04-01T12:00:00Z'), 'en-US');
+      expect(result).toContain('Apr');
+      expect(result).toContain('1');
+    });
+
+    it('formats Arabic date label with locale ordering', () => {
+      const result = formatDateLabel(new Date('2026-04-01T12:00:00Z'), 'ar');
+      expect(result).toBeTruthy();
+    });
+
+    it('formats Hebrew date label', () => {
+      const result = formatDateLabel(new Date('2026-04-01T12:00:00Z'), 'he');
+      expect(result).toBeTruthy();
+    });
+  });
+
+  describe('formatTimeRange', () => {
+    it('formats English time range with en-dash', () => {
+      const start = new Date('2026-04-01T10:00:00Z');
+      const end = new Date('2026-04-01T11:30:00Z');
+      const result = formatTimeRange(start, end, 'en-US');
+      expect(result).toContain('–');
+    });
+
+    it('formats Arabic time range', () => {
+      const start = new Date('2026-04-01T10:00:00Z');
+      const end = new Date('2026-04-01T11:30:00Z');
+      const result = formatTimeRange(start, end, 'ar');
+      expect(result).toContain('–');
+    });
+  });
+
+  describe('getDir', () => {
+    it('returns rtl for Arabic', () => {
+      expect(getDir('ar')).toBe('rtl');
+      expect(getDir('ar-SA')).toBe('rtl');
+    });
+
+    it('returns rtl for Hebrew', () => {
+      expect(getDir('he')).toBe('rtl');
+      expect(getDir('he-IL')).toBe('rtl');
+    });
+
+    it('returns rtl for Farsi', () => {
+      expect(getDir('fa')).toBe('rtl');
+    });
+
+    it('returns rtl for Urdu', () => {
+      expect(getDir('ur')).toBe('rtl');
+    });
+
+    it('returns ltr for English', () => {
+      expect(getDir('en')).toBe('ltr');
+      expect(getDir('en-US')).toBe('ltr');
+    });
+
+    it('returns ltr for other LTR locales', () => {
+      expect(getDir('es')).toBe('ltr');
+      expect(getDir('fr')).toBe('ltr');
+      expect(getDir('de')).toBe('ltr');
+      expect(getDir('hi')).toBe('ltr');
     });
   });
 });

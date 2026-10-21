@@ -26,7 +26,9 @@ import { StatusChip } from "@/components/dashboard/status-chip";
 import type { Tone } from "@/components/dashboard/types";
 import { truncateHash } from "./masking";
 import { NotesEditor } from "./NotesEditor";
+import { QrBadge } from "./QrBadge";
 import type { ReceiptData, ReceiptStatus } from "./types";
+import { RefundConversionNote } from "./RefundConversionNote";
 
 const statusTone: Record<ReceiptStatus, Tone> = {
   settled: "positive",
@@ -149,6 +151,11 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
             <dt className="text-cyan-300">Total settled</dt>
             <dd className="shrink-0 font-extrabold text-cyan-300">{receipt.total}</dd>
           </div>
+          {receipt.refundConversion && (
+            <div className="col-span-full">
+              <RefundConversionNote conversion={receipt.refundConversion} />
+            </div>
+          )}
         </dl>
       </section>
 
@@ -227,17 +234,69 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
             </dd>
           </div>
         </dl>
+
+        {/* QR verification badge — tap to verify on-chain */}
+        <div className="mt-5 flex justify-center receipt-no-print">
+          <QrBadge explorerUrl={explorerUrl} label={receipt.title} />
+        </div>
+
+        {/* Print-friendly verification text */}
+        <p className="receipt-print-only mt-4 text-[10px] text-center text-slate-500 leading-relaxed">
+          Verify this receipt: {explorerUrl}
+        </p>
       </section>
 
       <NotesEditor receiptId={receipt.id} />
 
-      <footer className="flex items-start gap-2 border-t border-white/10 pt-5 text-xs text-slate-400">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" aria-hidden={true} />
-        <p className="leading-relaxed">
-          Funds were released from the Stellar Smart Escrow lockbox after slot completion.
-          Verify this receipt against the ledger using the explorer link above.
+      {/* Signature block — visible on print only */}
+      <section aria-label="Signature" className="receipt-signature-block">
+        <div className="receipt-signature-grid">
+          <div className="receipt-signature-field">
+            <span className="receipt-signature-label">Signed by</span>
+            <span className="receipt-signature-value">{receipt.buyer.name}</span>
+          </div>
+          <div className="receipt-signature-field">
+            <span className="receipt-signature-label">Date</span>
+            <span className="receipt-signature-value">{receipt.settledAt}</span>
+          </div>
+          <div className="receipt-signature-field">
+            <span className="receipt-signature-label">Verification code</span>
+            <span className="receipt-signature-value font-mono text-xs">
+              {truncateHash(receipt.txHash)}-{receipt.id.slice(0, 8)}
+            </span>
+          </div>
+        </div>
+        <div className="receipt-signature-line" />
+      </section>
+
+      {/* Tamper-evident footer */}
+      <footer aria-label="Tamper-evident verification" className="receipt-tamper-footer">
+        <p className="receipt-tamper-label">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden={true} />
+          Document integrity hash
+        </p>
+        <p className="receipt-tamper-hash">{receipt.txHash}</p>
+        <p className="receipt-tamper-meta">
+          Verified on Stellar ledger · {receipt.settledAt}
+        </p>
+        <p className="receipt-tamper-verify">
+          Verify this receipt at <span className="receipt-tamper-url">{receipt.explorerBaseUrl}/{receipt.txHash}</span>
         </p>
       </footer>
+
+      {/* Print / save PDF button */}
+      <div className="receipt-no-print mt-6 flex justify-center">
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="receipt-no-print inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-200 transition-colors hover:border-cyan-300/30 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+        >
+          <svg className="h-4 w-4" aria-hidden={true} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Print / Save PDF
+        </button>
+      </div>
 
       <p aria-live="polite" className="sr-only">
         {copied ? "Transaction hash copied to clipboard." : ""}

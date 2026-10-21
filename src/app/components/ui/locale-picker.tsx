@@ -8,37 +8,44 @@ const locales = [
   { code: "fr", label: "Français", dir: "ltr" },
   { code: "de", label: "Deutsch", dir: "ltr" },
   { code: "ar", label: "العربية", dir: "rtl" },
+  { code: "he", label: "עברית", dir: "rtl" },
   { code: "hi", label: "हिन्दी", dir: "ltr" },
 ];
 
 export default function LocalePicker() {
-  const [locale, setLocale] = useState("en");
+  const [locale, setLocale] = useState(() => {
+    try {
+      const saved = document.cookie
+        .split("; ")
+        .find((c) => c.startsWith("locale="));
+      if (saved) {
+        const value = saved.split("=")[1];
+        const current = locales.find((l) => l.code === value);
+        if (current) {
+          document.documentElement.lang = current.code;
+          document.documentElement.dir = current.dir;
+          return current.code;
+        }
+      }
 
-  useEffect(() => {
-    const saved = document.cookie
-      .split("; ")
-      .find((c) => c.startsWith("locale="));
-
-    if (saved) {
-      const value = saved.split("=")[1];
-      setLocale(value);
-
-      const current = locales.find((l) => l.code === value);
-
-      document.documentElement.lang = value;
-      document.documentElement.dir = current?.dir ?? "ltr";
+      document.documentElement.lang = "en";
+      document.documentElement.dir = "ltr";
+    } catch {
+      // cookie may be unavailable
     }
-  }, []);
+    return "en";
+  });
 
   function changeLocale(value: string) {
-    setLocale(value);
-
     const current = locales.find((l) => l.code === value);
+    if (!current) return;
 
-    document.documentElement.lang = value;
-    document.documentElement.dir = current?.dir ?? "ltr";
+    setLocale(current.code);
 
-    document.cookie = `locale=${value}; path=/; max-age=31536000`;
+    document.documentElement.lang = current.code;
+    document.documentElement.dir = current.dir;
+
+    document.cookie = `locale=${current.code}; path=/; max-age=31536000`;
   }
 
   return (

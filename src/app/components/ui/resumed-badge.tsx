@@ -5,7 +5,8 @@ interface ResumedBadgeProps {
   itemId: string;
 }
 
-export function ResumedBadge({ itemId }: ResumedBadgeProps) {
+export function ResumedBadge(_props: ResumedBadgeProps) {
+  void _props; // itemId is accepted for API symmetry; badge state is timer-driven
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {

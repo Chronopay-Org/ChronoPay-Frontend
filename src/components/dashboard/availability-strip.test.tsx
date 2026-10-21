@@ -80,7 +80,7 @@ describe("AvailabilityStrip", () => {
       
       expect(screen.getByText("4 slots")).toBeInTheDocument();
       expect(screen.getByText("2 slots")).toBeInTheDocument();
-      expect(screen.getByText("0 slots')).toBeInTheDocument();
+      expect(screen.getByText("0 slots")).toBeInTheDocument();
       expect(screen.getByText("3 slots")).toBeInTheDocument();
       expect(screen.getByText("1 slot")).toBeInTheDocument();
       expect(screen.getByText("5 slots")).toBeInTheDocument();

@@ -31,6 +31,43 @@ export type EscrowTraceStep = {
   status: "complete" | "pending" | "failed";
 };
 
+/**
+ * Conversion note shown when a refund crosses currencies (e.g. XLM → USD).
+ * Provides the pegged rate, its authoritative source, and a freshness timestamp
+ * so the buyer can detect stale or outdated rate data.
+ */
+export type RefundConversionRate = {
+  /** The source currency code, e.g. "XLM". */
+  fromCurrency: string;
+  /** The destination (refund) currency code, e.g. "USD". */
+  toCurrency: string;
+  /**
+   * Exchange rate expressed as "1 {fromCurrency} = {rate} {toCurrency}".
+   * Pre-formatted string, e.g. "0.1042".
+   */
+  rate: string;
+  /**
+   * Authoritative rate source name, e.g. "Stellar DEX USDC/XLM".
+   * Used in the tooltip.
+   */
+  source: string;
+  /**
+   * ISO-8601 timestamp of when the rate was captured, e.g. "2026-04-01T10:04:00Z".
+   * Used to calculate staleness and displayed in the tooltip.
+   */
+  fetchedAt: string;
+  /**
+   * Optional opaque reference ID for this rate snapshot (e.g. oracle tx hash).
+   * Shown in the copy-to-clipboard affordance.
+   */
+  referenceId?: string;
+  /**
+   * When true, a stale-rate warning is surfaced. The component also auto-derives
+   * staleness from `fetchedAt` when this flag is omitted.
+   */
+  isStale?: boolean;
+};
+
 export type ReceiptData = {
   /** Stable id for the receipt / underlying booking. */
   id: string;
@@ -56,4 +93,9 @@ export type ReceiptData = {
   trace: EscrowTraceStep[];
   /** Base URL of the ledger explorer, e.g. "https://stellar.expert/explorer/public/tx". */
   explorerBaseUrl: string;
+  /**
+   * Present only when the refund crosses currency boundaries.
+   * Drives the RefundConversionNote beneath the total.
+   */
+  refundConversion?: RefundConversionRate;
 };

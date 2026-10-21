@@ -13,7 +13,7 @@
  *   - removeRecentSearch: remove a single entry from the recents list
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 export interface RecentSearchItem {
   term: string;
@@ -46,6 +46,80 @@ export const SEARCH_SUGGESTIONS: string[] = [
   "Token Balance",
   "Booking Progress",
 ];
+
+// ─── Fuzzy matching helpers (did-you-mean) ────────────────────────────────────
+
+/**
+ * Computes the Levenshtein distance between two strings.
+ * Used to find typo-tolerant suggestions for the did-you-mean feature.
+ */
+export function levenshteinDistance(a: string, b: string): number {
+  const alen = a.length;
+  const blen = b.length;
+  if (alen === 0) return blen;
+  if (blen === 0) return alen;
+
+  // Use two-row optimisation for O(n) space
+  let prev = new Array<number>(blen + 1);
+  let curr = new Array<number>(blen + 1);
+
+  for (let j = 0; j <= blen; j++) prev[j] = j;
+
+  for (let i = 1; i <= alen; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= blen; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(
+        prev[j] + 1,        // deletion
+        curr[j - 1] + 1,    // insertion
+        prev[j - 1] + cost, // substitution
+      );
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[blen];
+}
+
+/**
+ * Returns the maximum allowed Levenshtein distance for a "close match"
+ * given the length of the query. Shorter strings get a tighter threshold.
+ */
+function didYouMeanThreshold(queryLength: number): number {
+  if (queryLength <= 3) return 1;
+  if (queryLength <= 6) return 2;
+  return Math.min(3, Math.floor(queryLength / 4));
+}
+
+/**
+ * Finds the closest suggestion from the known catalogue that is within
+ * a typo-tolerant threshold of the given query. Returns `null` when no
+ * suggestion is close enough, or when the query already has exact matches.
+ */
+export function findDidYouMean(
+  query: string,
+  suggestions: string[],
+  catalogue: string[],
+): string | null {
+  const trimmed = query.trim().toLowerCase();
+  if (!trimmed || trimmed.length < 2) return null;
+
+  // If there are already exact/prefix matches, no need for a correction
+  if (suggestions.length > 0) return null;
+
+  const threshold = didYouMeanThreshold(trimmed.length);
+  let best: string | null = null;
+  let bestDistance = Infinity;
+
+  for (const term of catalogue) {
+    const d = levenshteinDistance(trimmed, term.toLowerCase());
+    if (d < bestDistance && d <= threshold) {
+      bestDistance = d;
+      best = term;
+    }
+  }
+
+  return best;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -85,6 +159,8 @@ export interface UseSearchReturn {
   setQuery: (q: string) => void;
   recentSearches: RecentSearchItem[];
   suggestions: string[];
+  /** The closest typo-tolerant suggestion, or null when the query already matches or nothing is close enough. */
+  didYouMeanSuggestion: string | null;
   addRecentSearch: (term: string) => void;
   clearRecentSearches: () => void;
   removeRecentSearch: (term: string) => void;
@@ -102,6 +178,12 @@ export function useSearch(): UseSearchReturn {
       : SEARCH_SUGGESTIONS.filter((s) =>
           s.toLowerCase().includes(query.trim().toLowerCase()),
         );
+
+  // Derive did-you-mean suggestion (only when exact suggestions are empty)
+  const didYouMeanSuggestion = useMemo(
+    () => findDidYouMean(query, suggestions, SEARCH_SUGGESTIONS),
+    [query, suggestions],
+  );
 
   const addRecentSearch = useCallback((term: string) => {
     const trimmed = term.trim();
@@ -137,6 +219,7 @@ export function useSearch(): UseSearchReturn {
     setQuery,
     recentSearches,
     suggestions,
+    didYouMeanSuggestion,
     addRecentSearch,
     clearRecentSearches,
     removeRecentSearch,

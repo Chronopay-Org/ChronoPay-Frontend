@@ -268,7 +268,6 @@ export function HelpPopover({
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // ── Viewport-aware placement ──────────────────────────────────────────────

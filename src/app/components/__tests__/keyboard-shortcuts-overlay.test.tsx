@@ -18,18 +18,25 @@ function getSearchInput() {
 describe("KeyboardShortcutsOverlay", () => {
   // ── Rendering ──────────────────────────────────────────────────────────
 
-  it("renders nothing when isOpen is false", () => {
-    render(<KeyboardShortcutsOverlay isOpen={false} onClose={vi.fn()} />);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
+  describe("isOpen branch", () => {
+    it("returns null and renders an empty DOM when isOpen is false (explicit failure path)", () => {
+      const { container } = render(<KeyboardShortcutsOverlay isOpen={false} onClose={vi.fn()} />);
+      expect(container.firstChild).toBeNull();
+    });
 
-  it("renders the dialog with a title and search input when open", () => {
-    renderOverlay();
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /keyboard shortcuts/i }),
-    ).toBeInTheDocument();
-    expect(getSearchInput()).toBeInTheDocument();
+    it("renders the dialog component tree when isOpen is true (normal path)", () => {
+      const { container } = render(<KeyboardShortcutsOverlay isOpen={true} onClose={vi.fn()} />);
+      expect(container.firstChild).not.toBeNull();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /keyboard shortcuts/i })).toBeInTheDocument();
+      expect(getSearchInput()).toBeInTheDocument();
+    });
+
+    it("handles boundary inputs by safely rendering null when isOpen is undefined", () => {
+      // @ts-expect-error Testing boundary runtime conditions
+      const { container } = render(<KeyboardShortcutsOverlay isOpen={undefined} onClose={vi.fn()} />);
+      expect(container.firstChild).toBeNull();
+    });
   });
 
   it("lists all shortcuts by default", () => {

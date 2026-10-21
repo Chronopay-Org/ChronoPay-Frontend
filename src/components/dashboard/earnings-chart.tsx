@@ -27,7 +27,10 @@ export function EarningsChart({ segments, className }: EarningsChartProps) {
       aria-describedby={`legend-${chartId}`}
     >
       {/* Chart Bar */}
-      <div className="flex h-4 w-full overflow-hidden rounded-full bg-slate-800/50 dark:bg-slate-800/50 bg-slate-200">
+      <div
+        className="flex h-4 w-full overflow-hidden rounded-full"
+        style={{ backgroundColor: "var(--chart-gridline-color)" }}
+      >
         {segments.map((seg) => {
           const width = (seg.value / total) * 100;
           if (width === 0) return null;
@@ -55,14 +58,22 @@ export function EarningsChart({ segments, className }: EarningsChartProps) {
               onFocus={() => setHoveredId(seg.id)}
               onBlur={() => setHoveredId(null)}
             >
-              {/* Tooltip */}
+      {/* Tooltip */}
               {isHovered && (
                 <div
-                  className="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 rounded bg-slate-900 px-2.5 py-1.5 text-xs text-white shadow-lg z-10 animate-in fade-in zoom-in-95 duration-200 rtl:translate-x-1/2"
+                  className="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 rounded border px-2.5 py-1.5 text-xs shadow-lg z-10 animate-in fade-in zoom-in-95 duration-200 rtl:translate-x-1/2"
+                  style={{
+                    backgroundColor: "var(--chart-tooltip-bg)",
+                    borderColor: "var(--chart-tooltip-border)",
+                    color: "var(--chart-tooltip-text)",
+                  }}
                   role="tooltip"
                 >
                   <span className="font-medium">{seg.label}</span>: {seg.formattedValue}
-                  <div className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <div
+                    className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-4 border-transparent"
+                    style={{ borderTopColor: "var(--chart-tooltip-bg)" }}
+                  />
                 </div>
               )}
             </div>

@@ -9,6 +9,7 @@ const toneLabels: Record<Tone, string> = {
   positive: "On track",
   warning: "Needs review",
   critical: "Needs attention",
+  muted: "No signal",
 };
 
 function toElementId(value: string) {

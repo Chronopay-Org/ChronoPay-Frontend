@@ -122,16 +122,17 @@ export function RefundDestinationSelector({
     }, 0);
   }, []);
 
-  // Announce the default choice on mount (once)
+  // Announce the default choice on mount (once). Deferred to a timeout so the
+  // live-region write doesn't run synchronously inside the effect body.
   useEffect(() => {
     if (!initialAnnounced.current && defaultDestination) {
       initialAnnounced.current = true;
       const recLabel = defaultDestination.recommended
         ? " (recommended)"
         : "";
-      announce(
-        `Default refund destination: ${defaultDestination.label}${recLabel}. ${defaultDestination.eta}, ${defaultDestination.fee}.`,
-      );
+      const message =
+        `Default refund destination: ${defaultDestination.label}${recLabel}. ${defaultDestination.eta}, ${defaultDestination.fee}.`;
+      window.setTimeout(() => announce(message), 0);
     }
   }, [announce, defaultDestination]);
 

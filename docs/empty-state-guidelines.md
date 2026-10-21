@@ -55,3 +55,16 @@ import { EmptyStateCard } from "@/app/components/empty-state-card";
 - Keep the illustration decorative only; it should stay `aria-hidden`.
 - Make the primary action a real focusable control, not static text.
 - If the state appears inside a dashboard panel, add a matching target id on the next relevant section.
+
+## Success Illustrations
+
+Use `SuccessIllustration` to render celebration or success states across the application. Available variants include `mint`, `purchase`, `escrow-release`, and `dispute-resolution`.
+
+`	sx
+import { SuccessIllustration } from "@/app/components/success-illustration";
+
+<SuccessIllustration variant="mint" />
+``n
+- **Tokens**: Uses standard `var(--success)` and `var(--surface)` semantic tokens instead of hard-coded colors.
+- **Accessibility**: Includes `role="img"` and `aria-label` for screen reader compatibility.
+- **Responsiveness**: Adapts using flexbox and scales relative to `var(--space)` definitions.

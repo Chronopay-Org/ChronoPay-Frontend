@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { CardBody } from "./card";
+import { Card, CardHeader, CardBody } from "./card";
 
 export function PanelShell({
   title,
@@ -7,6 +7,7 @@ export function PanelShell({
   description,
   action,
   id,
+  className = "",
   children,
 }: {
   title: string;
@@ -14,6 +15,7 @@ export function PanelShell({
   description?: string;
   action?: ReactNode;
   id?: string;
+  className?: string;
   children: ReactNode;
 }) {
   const shellId = useId();
@@ -21,13 +23,14 @@ export function PanelShell({
   const descriptionId = description ? `${shellId}-description` : undefined;
 
   return (
-    <section
+    <Card
+      as="section"
       id={id}
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
-      className="rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6"
+      className={`rounded-[28px] border border-white/10 bg-slate-950/70 p-4 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur sm:p-5 xl:p-6 ${className}`}
     >
-      <div className="flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-end sm:justify-between">
+      <CardHeader className="flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
           {eyebrow ? (
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/70">
@@ -49,8 +52,8 @@ export function PanelShell({
           </div>
         </div>
         {action}
-      </div>
+      </CardHeader>
       <CardBody className="pt-5">{children}</CardBody>
-    </section>
+    </Card>
   );
 }

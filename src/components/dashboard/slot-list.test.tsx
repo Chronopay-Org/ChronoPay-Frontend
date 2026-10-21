@@ -1,7 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { SlotList } from "./slot-list";
+import type { AlternativeSlot } from "./rebooking-utils";
 import type { Slot } from "./types";
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  usePathname: () => "/mock-path",
+}));
 
 const suggestedAlternatives: Slot[] = [
   {
@@ -36,7 +43,47 @@ const slots: Slot[] = [
   },
 ];
 
+function reorderableSlots(): Slot[] {
+  return [
+    {
+      id: "slot-main-1",
+      title: "Product strategy call",
+      dateLabel: "Tue, Apr 1",
+      timeRange: "10:00-11:30",
+      demand: "6 interested buyers",
+      rate: "120 XLM / hr",
+      status: "Healthy",
+    },
+    {
+      id: "slot-main-2",
+      title: "Code Review & Optimization",
+      dateLabel: "Wed, Apr 2",
+      timeRange: "14:00-15:00",
+      demand: "2 interested buyers",
+      rate: "90 XLM / hr",
+      status: "Tight",
+    },
+  ];
+}
+
+const dataTransfer = () =>
+  ({
+    setData: vi.fn(),
+    getData: vi.fn().mockReturnValue("slot-main-1"),
+    dropEffect: "",
+    effectAllowed: "move",
+  }) as unknown as DataTransfer;
+
 describe("SlotList", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
   it("renders a suggested alternatives carousel when alternatives exist", () => {
     render(
       <SlotList slots={slots} suggestedAlternatives={suggestedAlternatives} />,
@@ -81,5 +128,44 @@ describe("SlotList", () => {
       screen.getByText(/No matching alternatives found/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/No alternatives/i)).toBeInTheDocument();
+  });
+
+  it("supports keyboard nudging and drag-and-drop reordering", () => {
+    const { container } = render(<SlotList slots={reorderableSlots()} />);
+
+    const items = screen.getAllByRole("listitem");
+    expect(items[0]).toHaveTextContent(/Product strategy call/i);
+
+    fireEvent.keyDown(items[0], { key: "ArrowDown", altKey: true });
+
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(
+      /Code Review & Optimization/i,
+    );
+
+    const source = container.querySelector(
+      "li[aria-label*='availability slot']",
+    ) as HTMLElement;
+    const target = container.querySelectorAll(
+      "li[aria-label*='availability slot']",
+    )[1] as HTMLElement;
+
+    fireEvent.dragStart(source, { dataTransfer: dataTransfer() });
+    fireEvent.dragOver(target, { dataTransfer: dataTransfer(), clientY: 20 });
+    fireEvent.drop(target, { dataTransfer: dataTransfer() });
+
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(
+      /Product strategy call/i,
+    );
+  });
+
+  it("can switch to calendar views", () => {
+    render(<SlotList slots={slots} />);
+    
+    // Switch to month view
+    const monthButton = screen.getByRole("button", { name: /month/i });
+    fireEvent.click(monthButton);
+    
+    // the calendar grid should be rendered
+    expect(screen.getByRole("grid", { name: /month calendar view/i })).toBeInTheDocument();
   });
 });

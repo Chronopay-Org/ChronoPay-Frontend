@@ -110,7 +110,7 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
         <div className="text-center py-8">
           <div className="text-4xl mb-4">📸</div>
           <p className="text-slate-300 mb-6 text-base">
-            We need to verify you're a real person. We'll ask you to perform a few simple actions.
+            We need to verify you&apos;re a real person. We&apos;ll ask you to perform a few simple actions.
           </p>
           <button
             onClick={startCapture}
