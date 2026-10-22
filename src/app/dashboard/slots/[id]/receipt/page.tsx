@@ -1,7 +1,23 @@
 import { use } from 'react';
 import { validateAndNormalizeReceiptParams, verifyReceiptSignature } from '@/components/receipt/masking';
 
-interface PageProps {
+/**
+ * Shared receipt view. Renders the masked fields carried by buildShareLink
+ * (truncated tx hash, masked counterparty initials, no full hash or escrow
+ * contract). This is the public-facing destination of the "Copy share link"
+ * action, so it intentionally shows less than the owner's in-app receipt.
+ */
+
+import { use, useState, useEffect } from "react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, ShieldCheck, LayoutDashboard, RefreshCw, AlertTriangle, Info } from "lucide-react";
+import { DashboardShell } from "@/app/components/dashboard-shell";
+import { BreadcrumbOverflow } from "@/app/components/ui/breadcrumb-overflow";
+import { StatusChip } from "@/components/dashboard/status-chip";
+import { Tooltip } from "@/app/components/ui/tooltip";
+
+type SharedReceiptPageProps = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
@@ -10,15 +26,20 @@ export default async function SharedReceiptPage({ params, searchParams }: PagePr
   const resolvedParams = await params;
   const resolvedSearch = await searchParams;
 
-  // Convert searchParams into URLSearchParams
-  const queryParams = new URLSearchParams();
-  Object.entries(resolvedSearch).forEach(([key, value]) => {
-    if (typeof value === 'string') {
-      queryParams.set(key, value);
-    }
-  });
+import { mockSlots } from "@/components/dashboard/dashboard-data";
 
-  const data = validateAndNormalizeReceiptParams(queryParams);
+export default function SharedReceiptPage({ params, searchParams }: SharedReceiptPageProps) {
+  const { id } = use(params);
+  const query = use(searchParams);
+
+  if (!mockSlots.some((slot) => slot.id === id)) notFound();
+
+  const asset = first(query.asset);
+  const tx = first(query.tx);
+  const buyer = first(query.buyer);
+  const seller = first(query.seller);
+  const total = first(query.total);
+  const settled = first(query.settled);
 
   // Fail closed: verify signature before asserting settlement
   const isValidSignature = await verifyReceiptSignature(

@@ -175,6 +175,7 @@ export const slots: Slot[] = [
     rate: "150 XLM / hr",
     status: "Sold Out",
     nextAvailableHint: "Mon 10am",
+    isSample: true,
   },
 ];
 
@@ -186,6 +187,8 @@ export const wallet: WalletSnapshot = {
   nextPayout: "Friday, April 4",
   status: "Synced 2 minutes ago",
 };
+
+export const mockSlots: Slot[] = slots;
 
 export const bookingStages: BookingStage[] = [
   { label: "Reserved", value: 8 },
