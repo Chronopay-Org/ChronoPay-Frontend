@@ -1,22 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { CommandPalette } from "../command-palette";
+import { useCommandPalette, type UseCommandPaletteReturn } from "@/hooks/use-command-palette";
 import { rankCommands, matchRoute, COMMANDS } from "@/lib/commands";
-
-
 
 // ─── Next.js navigation mock ──────────────────────────────────────────────────
 
 const mockPathname = vi.fn();
+const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname(),
+  useRouter: () => ({
+    push: mockPush,
+  }),
 }));
 
 // ─── Polyfill scrollIntoView in jsdom ─────────────────────────────────────────
 
 beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
+  mockPush.mockClear();
 });
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -30,35 +35,37 @@ function openPalette() {
 describe("CommandPalette", () => {
   beforeEach(() => {
     mockPathname.mockReturnValue("/dashboard");
+    mockPush.mockClear();
   });
 
-  describe('Command Palette Pinning', () => {
-  it('should move an action to Pinned section when pin is clicked', async () => {
-    render(<CommandPalette />);
-    openPalette();
-    // Pin buttons only appear if the component supports pinning; skip if not rendered
-    const pinButtons = screen.queryAllByLabelText(/Pin/i);
-    if (pinButtons.length > 0) {
-      fireEvent.click(pinButtons[0]);
-      const pinnedSection = screen.queryByText(/Pinned/i);
-      expect(pinnedSection).toBeInTheDocument();
-    } else {
-      // Palette opened successfully — feature not yet exposed in UI
-      expect(screen.getByPlaceholderText("Search commands…")).toBeInTheDocument();
-    }
-  });
+  describe("Command Palette Pinning", () => {
+    it("should move an action to Pinned section when pin is clicked", async () => {
+      render(<CommandPalette />);
+      openPalette();
+      // Pin buttons only appear if the component supports pinning; skip if not rendered
+      const pinButtons = screen.queryAllByLabelText(/Pin/i);
+      if (pinButtons.length > 0) {
+        fireEvent.click(pinButtons[0]);
+        const pinnedSection = screen.queryByText(/Pinned/i);
+        expect(pinnedSection).toBeInTheDocument();
+      } else {
+        // Palette opened successfully — feature not yet exposed in UI
+        expect(screen.getByPlaceholderText("Search commands…")).toBeInTheDocument();
+      }
+    });
 
-  it('should track usage in Recent section', async () => {
-    render(<CommandPalette />);
-    openPalette();
-    const items = screen.getAllByRole("option");
-    expect(items.length).toBeGreaterThan(0);
-    // Click first item (navigation happens via window.location, not DOM change in test)
-    fireEvent.click(items[0]);
-    // Palette closes after execution — check it's gone
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    it("should track usage in Recent section", async () => {
+      render(<CommandPalette />);
+      openPalette();
+      const items = screen.getAllByRole("option");
+      expect(items.length).toBeGreaterThan(0);
+      // Click first item (navigation happens via router.push)
+      fireEvent.click(items[0]);
+      // Palette closes after execution — check it's gone
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(mockPush).toHaveBeenCalledWith(COMMANDS[0].href);
+    });
   });
-});
 
   // ── Basic rendering ──────────────────────────────────────────────────────
 
@@ -102,18 +109,18 @@ describe("CommandPalette", () => {
     render(<CommandPalette />);
     openPalette();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, { target: { value: "Wallet" } });
+    fireEvent.change(input, { target: { value: "Settings" } });
     const options = screen.getAllByRole("option");
     expect(options.length).toBe(1);
-    expect(options[0].textContent).toContain("Wallet");
+    expect(options[0].textContent).toContain("Settings");
   });
 
   it("filters results by keyword", () => {
     render(<CommandPalette />);
     openPalette();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, { target: { value: "send" } });
-    expect(screen.getByText("Transfer")).toBeInTheDocument();
+    fireEvent.change(input, { target: { value: "slot" } });
+    expect(screen.getByText("Create Availability")).toBeInTheDocument();
   });
 
   it("shows empty state when no results match", () => {
@@ -128,7 +135,7 @@ describe("CommandPalette", () => {
     render(<CommandPalette />);
     openPalette();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, { target: { value: "Wallet" } });
+    fireEvent.change(input, { target: { value: "Settings" } });
     const clearBtn = screen.getByLabelText("Clear search");
     fireEvent.click(clearBtn);
     const options = screen.getAllByRole("option");
@@ -139,7 +146,7 @@ describe("CommandPalette", () => {
     render(<CommandPalette />);
     openPalette();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, { target: { value: "Wallet" } });
+    fireEvent.change(input, { target: { value: "Settings" } });
     fireEvent.keyDown(input, { key: "Escape" });
     const options = screen.getAllByRole("option");
     expect(options.length).toBe(COMMANDS.length);
@@ -179,14 +186,6 @@ describe("CommandPalette", () => {
 
   // ── Route-aware ranking ─────────────────────────────────────────────────
 
-  it("boosts Transfer command on wallet route", () => {
-    mockPathname.mockReturnValue("/dashboard/wallet");
-    render(<CommandPalette />);
-    openPalette();
-    const options = screen.getAllByRole("option");
-    expect(options[0].textContent).toContain("Transfer");
-  });
-
   it("boosts Create Availability on calendar route", () => {
     mockPathname.mockReturnValue("/dashboard/calendar");
     render(<CommandPalette />);
@@ -196,7 +195,7 @@ describe("CommandPalette", () => {
   });
 
   it("shows Top pick badge on boosted items", () => {
-    mockPathname.mockReturnValue("/dashboard/wallet");
+    mockPathname.mockReturnValue("/dashboard/calendar");
     render(<CommandPalette />);
     openPalette();
     const badges = screen.getAllByText("Top pick");
@@ -206,7 +205,7 @@ describe("CommandPalette", () => {
   // ── Global toggle ───────────────────────────────────────────────────────
 
   it("toggles between Contextual and Global modes", () => {
-    mockPathname.mockReturnValue("/dashboard/wallet");
+    mockPathname.mockReturnValue("/dashboard/calendar");
     render(<CommandPalette />);
     openPalette();
 
@@ -225,7 +224,7 @@ describe("CommandPalette", () => {
   // ── "Why this?" tooltip ─────────────────────────────────────────────────
 
   it("shows Why This tooltip on click of info button", async () => {
-    mockPathname.mockReturnValue("/dashboard/wallet");
+    mockPathname.mockReturnValue("/dashboard/calendar");
     render(<CommandPalette />);
     openPalette();
 
@@ -234,7 +233,7 @@ describe("CommandPalette", () => {
 
     // Verify the button aria-label contains the boost reason
     expect(infoBtns[0]).toHaveAttribute("aria-label");
-    expect(infoBtns[0].getAttribute("aria-label")).toContain("Quick action from Wallet");
+    expect(infoBtns[0].getAttribute("aria-label")).toContain("Quick action from Calendar");
 
     // Click to toggle tooltip visibility
     fireEvent.click(infoBtns[0]);
@@ -311,7 +310,165 @@ describe("CommandPalette", () => {
     const badges = screen.queryAllByText("Top pick");
     expect(badges.length).toBe(0);
   });
+
+  // ── Focus trap and Keyboard navigation acceptance tests ──────────────────
+
+  it("Tab moves focus input -> clear -> toggle -> ... and wraps, never leaving the dialog", async () => {
+    const user = userEvent.setup();
+    render(<CommandPalette />);
+    openPalette();
+
+    const input = screen.getByRole("combobox");
+    await user.type(input, "Settings");
+
+    const clearBtn = screen.getByLabelText("Clear search");
+    const toggleBtn = screen.getByRole("switch");
+
+    expect(document.activeElement).toBe(input);
+
+    await user.tab();
+    expect(document.activeElement).toBe(clearBtn);
+
+    await user.tab();
+    expect(document.activeElement).toBe(toggleBtn);
+
+    // Wrapping: Tab from last element wraps to input
+    await user.tab();
+    expect(document.activeElement).toBe(input);
+
+    // Shift+Tab: wraps backwards from input to toggleBtn
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(toggleBtn);
+  });
+
+  it("Escape from any control in the palette closes it and restores focus to opener", () => {
+    const { getByTestId } = render(
+      <div>
+        <button data-testid="opener">Opener Button</button>
+        <CommandPalette />
+      </div>,
+    );
+    const opener = getByTestId("opener");
+    opener.focus();
+    expect(document.activeElement).toBe(opener);
+
+    openPalette();
+    const toggleBtn = screen.getByRole("switch");
+    toggleBtn.focus();
+    expect(document.activeElement).toBe(toggleBtn);
+
+    fireEvent.keyDown(toggleBtn, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it("Escape from input with empty query closes palette and restores focus to opener", () => {
+    const { getByTestId } = render(
+      <div>
+        <button data-testid="opener">Opener Button</button>
+        <CommandPalette />
+      </div>,
+    );
+    const opener = getByTestId("opener");
+    opener.focus();
+
+    openPalette();
+    const input = screen.getByRole("combobox");
+    expect(document.activeElement).toBe(input);
+
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it("Ctrl+K closes palette and restores focus to opener", () => {
+    const { getByTestId } = render(
+      <div>
+        <button data-testid="opener">Opener Button</button>
+        <CommandPalette />
+      </div>,
+    );
+    const opener = getByTestId("opener");
+    opener.focus();
+
+    // Open via Ctrl+K
+    fireEvent.keyDown(document, { key: "k", ctrlKey: true });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    // Close via Ctrl+K
+    fireEvent.keyDown(document, { key: "k", ctrlKey: true });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it("executing an internal command calls router.push (mocked) and does not assign window.location.href", () => {
+    const originalLocation = window.location;
+    // Mock window.location
+    const mockLocation = { href: "" } as unknown as Location;
+    delete (window as unknown as { location?: Location }).location;
+    window.location = mockLocation;
+
+    try {
+      render(<CommandPalette />);
+      openPalette();
+
+      const items = screen.getAllByRole("option");
+      expect(items.length).toBeGreaterThan(0);
+
+      // Dashboard href is "/dashboard" (internal)
+      fireEvent.click(items[0]);
+
+      expect(mockPush).toHaveBeenCalledWith("/dashboard");
+      expect(window.location.href).toBe("");
+    } finally {
+      window.location = originalLocation;
+    }
+  });
+
+  it("executing an external command assigns window.location.href", () => {
+    const originalLocation = window.location;
+    const mockLocation = { href: "" } as unknown as Location;
+    delete (window as unknown as { location?: Location }).location;
+    window.location = mockLocation;
+
+    try {
+      render(<CommandPalette />);
+      openPalette();
+
+      // Trigger executeCommand with external command
+      const externalCmd = {
+        id: "external-link",
+        label: "External Docs",
+        description: "Visit external docs",
+        href: "https://example.com/docs",
+        icon: "Globe",
+        keywords: ["docs"],
+        routeBoosts: {},
+        score: 10,
+        appliedBoost: 1,
+      };
+
+      const { result } = renderHookHelper();
+      result.executeCommand(externalCmd);
+
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(window.location.href).toBe("https://example.com/docs");
+    } finally {
+      window.location = originalLocation;
+    }
+  });
 });
+
+// Helper for hook testing
+function renderHookHelper() {
+  let hookReturn: UseCommandPaletteReturn | undefined;
+  function TestHook() {
+    hookReturn = useCommandPalette();
+    return null;
+  }
+  render(<TestHook />);
+  return { result: hookReturn! };
+}
 
 // ─── Unit tests for rankCommands ──────────────────────────────────────────────
 
@@ -322,15 +479,9 @@ describe("rankCommands", () => {
   });
 
   it("filters by label match", () => {
-    const results = rankCommands(COMMANDS, "wallet", "/dashboard", false);
+    const results = rankCommands(COMMANDS, "settings", "/dashboard", false);
     expect(results.length).toBeGreaterThanOrEqual(1);
     expect(results.every((r) => r.score > 0)).toBe(true);
-  });
-
-  it("boosts Transfer on wallet route", () => {
-    const results = rankCommands(COMMANDS, "", "/dashboard/wallet", false);
-    expect(results[0].id).toBe("transfer");
-    expect(results[0].appliedBoost).toBe(5);
   });
 
   it("boosts Create Availability on calendar route", () => {
@@ -340,9 +491,9 @@ describe("rankCommands", () => {
   });
 
   it("global mode disables all boosts", () => {
-    const contextual = rankCommands(COMMANDS, "", "/dashboard/wallet", false);
-    const global = rankCommands(COMMANDS, "", "/dashboard/wallet", true);
-    expect(contextual[0].id).toBe("transfer");
+    const contextual = rankCommands(COMMANDS, "", "/dashboard/calendar", false);
+    const global = rankCommands(COMMANDS, "", "/dashboard/calendar", true);
+    expect(contextual[0].id).toBe("create-availability");
     expect(global.every((r) => r.appliedBoost === 1)).toBe(true);
   });
 
@@ -352,11 +503,11 @@ describe("rankCommands", () => {
   });
 
   it("query returns results with label start precision bonus", () => {
-    const results = rankCommands(COMMANDS, "transfer", "/dashboard", false);
+    const results = rankCommands(COMMANDS, "create", "/dashboard", false);
     expect(results.length).toBeGreaterThanOrEqual(1);
-    const transfer = results.find((r) => r.id === "transfer");
-    expect(transfer).toBeDefined();
-    expect(transfer!.score).toBeGreaterThanOrEqual(15);
+    const createCmd = results.find((r) => r.id === "create-availability");
+    expect(createCmd).toBeDefined();
+    expect(createCmd!.score).toBeGreaterThanOrEqual(15);
   });
 });
 
@@ -364,18 +515,18 @@ describe("rankCommands", () => {
 
 describe("matchRoute", () => {
   it("matches exact paths", () => {
-    expect(matchRoute("/dashboard/wallet", "/dashboard/wallet")).toBe(true);
-    expect(matchRoute("/dashboard", "/dashboard/wallet")).toBe(false);
+    expect(matchRoute("/dashboard/settings", "/dashboard/settings")).toBe(true);
+    expect(matchRoute("/dashboard", "/dashboard/settings")).toBe(false);
   });
 
   it("matches prefix patterns", () => {
-    expect(matchRoute("/dashboard/wallet", "/dashboard/wallet/*")).toBe(true);
-    expect(matchRoute("/dashboard/wallet/transfer", "/dashboard/wallet/*")).toBe(true);
-    expect(matchRoute("/dashboard", "/dashboard/wallet/*")).toBe(false);
+    expect(matchRoute("/dashboard/settings", "/dashboard/*")).toBe(true);
+    expect(matchRoute("/dashboard/settings/sub", "/dashboard/*")).toBe(true);
+    expect(matchRoute("/marketplace", "/dashboard/*")).toBe(false);
   });
 
   it("does not match unrelated paths", () => {
-    expect(matchRoute("/marketplace", "/dashboard/wallet")).toBe(false);
+    expect(matchRoute("/marketplace", "/dashboard/settings")).toBe(false);
     expect(matchRoute("/marketplace", "/dashboard/*")).toBe(false);
   });
 });
