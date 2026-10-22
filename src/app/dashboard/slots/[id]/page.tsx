@@ -16,6 +16,7 @@ import type { GiftDetails } from "@/components/dashboard/gift-purchase-toggle";
 import { BookingAbandonmentBanner } from "@/components/dashboard/booking-abandonment-banner";
 import { DisputeFilingForm, type DisputeFormData } from "@/app/components/dispute-filing-form";
 import { DisputeTrackingPanel, type Dispute } from "@/app/components/dispute-tracking-panel";
+import { FocusTrap } from "@/components/common/FocusTrap";
 import {
   ArrowLeft,
   Wallet,
@@ -34,10 +35,6 @@ import {
   Scale,
   X
 } from "lucide-react";
-
-function FocusTrap({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
-}
 
 // Robust metadata/details mapper for slots
 const slotDetailsMap: Record<
@@ -253,6 +250,7 @@ export default function SlotDetailPage({
   const handleResumeDraft = () => {
     setHasDraft(false);
     if (!isWalletReady || !hasFunds) return;
+    lastActiveElementRef.current = document.activeElement as HTMLElement;
     setPurchaseStep("auth");
     setIsModalOpen(true);
   };
@@ -266,6 +264,7 @@ export default function SlotDetailPage({
 
   const handleViewDetails = () => {
     if (!isWalletReady || !hasFunds) return;
+    lastActiveElementRef.current = document.activeElement as HTMLElement;
     setPurchaseStep("auth");
     setIsModalOpen(true);
   };
@@ -302,8 +301,11 @@ export default function SlotDetailPage({
   
   // Refs for accessibility / focus trap
   const modalRef = useRef<HTMLDivElement>(null);
+  const disputeModalRef = useRef<HTMLDivElement>(null);
   const purchaseBtnRef = useRef<HTMLButtonElement>(null);
+  const disputeBtnRef = useRef<HTMLButtonElement>(null);
   const lastActiveElementRef = useRef<HTMLElement | null>(null);
+  const disputeLastActiveElementRef = useRef<HTMLElement | null>(null);
 
   // Accessible Announcement utility
   const announce = (msg: string) => {
@@ -312,6 +314,7 @@ export default function SlotDetailPage({
 
   const handleOpenModal = () => {
     if (!isWalletReady || !hasFunds) return;
+    lastActiveElementRef.current = document.activeElement as HTMLElement;
     setPurchaseStep("auth");
     setIsModalOpen(true);
   };
@@ -339,10 +342,12 @@ export default function SlotDetailPage({
   // Keyboard navigation & focus management inside checkout modal
   useEffect(() => {
     if (isModalOpen) {
-      lastActiveElementRef.current = document.activeElement as HTMLElement;
+      if (document.activeElement && !modalRef.current?.contains(document.activeElement)) {
+        lastActiveElementRef.current = document.activeElement as HTMLElement;
+      }
 
-      // Move focus to modal container
-      if (modalRef.current) {
+      // Move focus to modal container if focus didn't already enter inside the dialog
+      if (modalRef.current && !modalRef.current.contains(document.activeElement)) {
         modalRef.current.focus();
       }
       // Defer state update so it does not run synchronously inside the effect
@@ -352,22 +357,32 @@ export default function SlotDetailPage({
       return () => cancelAnimationFrame(raf);
     } else {
       // Restore focus
-      if (lastActiveElementRef.current) {
+      if (lastActiveElementRef.current && document.body.contains(lastActiveElementRef.current)) {
         lastActiveElementRef.current.focus();
       }
     }
   }, [isModalOpen]);
 
+  const handleCloseDisputeModal = useCallback(() => {
+    setIsDisputeModalOpen(false);
+    setCurrentDispute(null);
+  }, []);
+
   // Handle ESC key to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isModalOpen) {
-        handleCloseModal();
+      if (e.key === "Escape") {
+        if (isModalOpen) {
+          handleCloseModal();
+        }
+        if (isDisputeModalOpen) {
+          handleCloseDisputeModal();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isModalOpen, handleCloseModal]);
+  }, [isModalOpen, isDisputeModalOpen, handleCloseModal, handleCloseDisputeModal]);
 
   // Simulated blockchain transaction workflow
   const handleProceedPurchase = () => {
@@ -417,6 +432,7 @@ export default function SlotDetailPage({
 
   // DISPUTE HANDLERS
   const handleOpenDisputeModal = () => {
+    disputeLastActiveElementRef.current = document.activeElement as HTMLElement;
     setDisputeView(existingDisputes.length > 0 ? "tracking" : "filing");
     if (existingDisputes.length > 0) {
       setCurrentDispute(existingDisputes[0]);
@@ -424,10 +440,28 @@ export default function SlotDetailPage({
     setIsDisputeModalOpen(true);
   };
 
-  const handleCloseDisputeModal = () => {
-    setIsDisputeModalOpen(false);
-    setCurrentDispute(null);
-  };
+  // Keyboard navigation & focus management inside dispute modal
+  useEffect(() => {
+    if (isDisputeModalOpen) {
+      if (document.activeElement && !disputeModalRef.current?.contains(document.activeElement)) {
+        disputeLastActiveElementRef.current = document.activeElement as HTMLElement;
+      }
+
+      // Move focus to modal container if focus didn't already enter inside the dialog
+      if (disputeModalRef.current && !disputeModalRef.current.contains(document.activeElement)) {
+        disputeModalRef.current.focus();
+      }
+      const raf = requestAnimationFrame(() => {
+        announce("Dispute modal opened. Press Tab to navigate.");
+      });
+      return () => cancelAnimationFrame(raf);
+    } else {
+      // Restore focus
+      if (disputeLastActiveElementRef.current && document.body.contains(disputeLastActiveElementRef.current)) {
+        disputeLastActiveElementRef.current.focus();
+      }
+    }
+  }, [isDisputeModalOpen]);
 
   const handleSubmitDispute = async (formData: DisputeFormData) => {
     setIsSubmittingDispute(true);
@@ -510,6 +544,8 @@ export default function SlotDetailPage({
     return "critical" as const;
   };
 
+  const isDialogOpen = isModalOpen || isDisputeModalOpen;
+
   return (
     <DashboardShell>
       {/* Screen Reader Live Announcer */}
@@ -517,7 +553,11 @@ export default function SlotDetailPage({
         {announcement}
       </div>
 
-      <div className="space-y-6">
+      <div
+        className="space-y-6"
+        inert={isDialogOpen ? true : undefined}
+        aria-hidden={isDialogOpen ? true : undefined}
+      >
         {hasDraft && (
           <BookingAbandonmentBanner
             onResume={handleResumeDraft}
@@ -934,6 +974,7 @@ export default function SlotDetailPage({
                   {/* Dispute Button */}
                   {existingDisputes.length > 0 && (
                     <button
+                      ref={disputeBtnRef}
                       type="button"
                       onClick={handleOpenDisputeModal}
                       className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 px-5 py-3 text-sm border border-amber-400/30 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20 mt-3"
@@ -1278,7 +1319,7 @@ export default function SlotDetailPage({
         >
           <FocusTrap>
             <div
-              ref={modalRef}
+              ref={disputeModalRef}
               tabIndex={-1}
               role="dialog"
               aria-modal="true"
