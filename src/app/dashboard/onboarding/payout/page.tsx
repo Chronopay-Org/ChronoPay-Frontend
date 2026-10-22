@@ -1,6 +1,6 @@
-"use client";
+"suse client";
 
-import { PayoutStep } from "@/components/dashboard/payout-step";
+import { PAYOUT_STEPS, PayoutStep } from "@/components/dashboard/payout-step";
 import type { PayoutCurrency, PayoutConsent } from "@/components/dashboard/payout-step";
 
 function DemoShell({ children }: { children: React.ReactNode }) {
@@ -25,7 +25,7 @@ function DemoShell({ children }: { children: React.ReactNode }) {
 }
 
 const demoPreview = {
-  walletAddress: "GBS43E6X4Q3K7Z5N2F6T8H9J0K1L2M3N4P5Q6R7S8T9U0V1W2X3Y4Z5A6B7",
+  walletAddress: "GBS43E6XQQQK7Z5N2F6T8H9J0K1L2M3N4P5Q6R7S8T9U0V1W2X3Y4Z5A6B7",
   walletLabel: "Freighter Wallet",
   network: "Stellar",
 };
@@ -34,6 +34,10 @@ export default function PayoutOnboardingPage() {
   const handleSave = async (currency: PayoutCurrency, consent: PayoutConsent) => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     console.log("Saved payout settings", { currency, consent });
+  };
+
+  const handleNext = () => {
+    console.log("Payout step completed; advancing to", PAYOUT_STEPS[1]);
   };
 
   return (
@@ -55,6 +59,7 @@ export default function PayoutOnboardingPage() {
         <PayoutStep
           preview={demoPreview}
           onSave={handleSave}
+          onNext={handleNext}
           draftStatus="saved"
           lastSavedLabel="a few seconds ago"
         />

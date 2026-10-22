@@ -31,6 +31,7 @@ export * from "./wallet-card";
 export * from "./meet-checklist-card";
 export * from "./card";
 export * from "./services-step";
+export * from "./payout-step";
 export * from "./refund-destination-selector";
 export * from "./rating-breakdown-bars";
 export * from "./refund-confirmation-modal";

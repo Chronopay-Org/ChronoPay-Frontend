@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useId, useCallback } from "react";
+import React, { useState, useRef, useId, useCallback, useEffect } from "react";
 import {
   Camera,
   CameraOff,
@@ -87,6 +87,7 @@ export function KycDocUpload({
   const retakeHeadingId = useId();
 
   const startCamera = useCallback(async () => {
+    stopCamera();
     setCameraError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -114,6 +115,12 @@ export function KycDocUpload({
     }
   }, []);
 
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
+
   const captureFrame = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -131,9 +138,14 @@ export function KycDocUpload({
     setStep("preview");
   }, [stopCamera]);
 
-  const handleStart = async () => {
+  const handleStart = async (options?: { textOnly?: boolean }) => {
+    const useTextOnly = options?.textOnly ?? textOnlyMode;
+    if (useTextOnly) {
+      stopCamera();
+      setTextOnlyMode(true);
+    }
     setStep("capture");
-    if (!textOnlyMode) {
+    if (!useTextOnly) {
       await startCamera();
     }
   };
@@ -147,6 +159,7 @@ export function KycDocUpload({
 
   const handleRetakeConfirm = async () => {
     setStep("capture");
+    stopCamera();
     setCameraError(null);
     if (!textOnlyMode) {
       await startCamera();
@@ -155,6 +168,7 @@ export function KycDocUpload({
 
   const handleRetakeSkip = () => {
     setStep("capture");
+    stopCamera();
     setCameraError(null);
     if (!textOnlyMode) {
       startCamera();
@@ -162,12 +176,14 @@ export function KycDocUpload({
   };
 
   const handleConfirmImage = () => {
+    stopCamera();
     setStep("complete");
     onCaptureComplete(true, capturedImage ?? undefined);
   };
 
   const handleUseTextOnly = () => {
     stopCamera();
+    setCameraError(null);
     setTextOnlyMode(true);
   };
 
@@ -180,6 +196,7 @@ export function KycDocUpload({
     setRetakeOtherText("");
     setTextOnlyMode(false);
     setGlareDetected(false);
+    setCornersVisible(true);
     setCornersVisible(true);
   };
 
@@ -293,10 +310,7 @@ export function KycDocUpload({
             </button>
             <button
               type="button"
-              onClick={() => {
-                setTextOnlyMode(true);
-                handleStart();
-              }}
+              onClick={() => handleStart({ textOnly: true })}
               className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-sm"
             >
               <Upload className="h-4 w-4" aria-hidden="true" />
@@ -377,6 +391,7 @@ export function KycDocUpload({
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
+                      stopCamera();
                       const reader = new FileReader();
                       reader.onload = (ev) => {
                         const dataUrl = ev.target?.result as string;

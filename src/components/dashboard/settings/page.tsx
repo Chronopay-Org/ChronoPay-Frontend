@@ -8,8 +8,8 @@ import { CalendarSyncConflictModal } from "@/components/dashboard/settings/calen
 import { DeveloperSettings } from "@/components/dashboard/settings/developer-settings";
 import { DangerZone } from "@/components/dashboard/settings/danger-zone";
 import { NotificationPreferencesPanel } from "@/components/dashboard/settings/notification-preferences-panel";
+import { ChangePasswordForm } from "@/components/dashboard/settings/change-password-form";
 import { DensitySwitcher } from "@/app/components/ui/density-switcher";
-import { PasswordStrengthMeter } from "@/app/components/password-strength-meter";
 import { sampleConflicts } from "@/components/dashboard/settings/conflict-mock-data";
 
 type TabId = "account" | "security" | "notifications" | "appearance" | "wallets";
@@ -175,7 +175,11 @@ export default function SettingsPage() {
                 Change password
               </h3>
               <div className="max-w-md">
-                <PasswordStrengthMeter value="" onChange={() => {}} />
+                <ChangePasswordForm
+                  onChangePassword={async () => {
+                    throw new Error("Password changes are not configured yet.");
+                  }}
+                />
               </div>
             </div>
           </section>
