@@ -84,7 +84,7 @@ describe('KycLivenessCapture', () => {
 
     // Fast forward 11 seconds
     act(() => {
-      jest.advanceTimesByTime(11000);
+      jest.advanceTimersByTime(11000);
     });
     
     expect(screen.getByText('Verification Failed')).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('KycLivenessCapture', () => {
     });
 
     act(() => {
-      jest.advanceTimesByTime(11000);
+      jest.advanceTimersByTime(11000);
     });
 
     expect(stopMock).toHaveBeenCalled();
@@ -115,7 +115,7 @@ describe('KycLivenessCapture', () => {
     });
 
     act(() => {
-      jest.advanceTimesByTime(11000);
+      jest.advanceTimersByTime(11000);
     });
 
     expect(onCaptureComplete).toHaveBeenCalledTimes(1);
@@ -131,7 +131,7 @@ describe('KycLivenessCapture', () => {
     });
 
     act(() => {
-      jest.advanceTimesByTime(11000);
+      jest.advanceTimersByTime(11000);
     });
 
     // Retry and start again.

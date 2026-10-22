@@ -8,6 +8,7 @@ import { Menu, X, Shield, Keyboard, Settings, Search } from "lucide-react";
 import { useRole } from "@/app/components/navigation/RoleContext";
 import { RoleOnboardingDialog } from "@/app/components/navigation/role-onboarding-dialog";
 import { getNavForRole, ROLE_META, type NavItem } from "@/app/components/navigation/role-nav";
+import { isNavItemActive } from "@/app/components/navigation/is-nav-item-active";
 import { HeaderSearch } from "@/app/components/header-search";
 import { KeyboardShortcutsOverlay } from "@/app/components/keyboard-shortcuts-overlay";
 import { AccountSwitcher } from "@/app/components/account-switcher";
@@ -15,6 +16,22 @@ import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 import { ContextualKeysPanel } from "@/app/components/ui/contextual-keys-panel";
 import { CommandPalette } from "@/app/components/command-palette";
+
+const DESKTOP_QUERY = "(min-width: 1024px)";
+
+/** True at the lg breakpoint and above, where the nav rail is always visible. */
+function useIsDesktop() {
+  return useSyncExternalStore(
+    (cb) => {
+      if (typeof window === "undefined" || !window.matchMedia) return () => {};
+      const mql = window.matchMedia(DESKTOP_QUERY);
+      mql.addEventListener?.("change", cb);
+      return () => mql.removeEventListener?.("change", cb);
+    },
+    () => (typeof window !== "undefined" && window.matchMedia ? window.matchMedia(DESKTOP_QUERY).matches : true),
+    () => true,
+  );
+}
 
 function getOnlineStatus() {
   if (typeof navigator === "undefined") return true;

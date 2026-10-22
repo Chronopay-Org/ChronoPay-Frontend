@@ -262,6 +262,38 @@ export function WalletCard({
   const [modalErrorMessage, setModalErrorMessage] = useState<string | undefined>();
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] =
+    useState<WalletPanelTabId>(() => {
+      if (typeof window === "undefined") return "holdings-available";
+      const savedTab = window.localStorage.getItem(HOLDINGS_STORAGE_KEY);
+      return savedTab && HOLDINGS_TAB_IDS.some((tabId) => tabId === savedTab)
+        ? (savedTab as WalletPanelTabId)
+        : "holdings-available";
+    });
+  const [panelScrollPositions, setpanelScrollPositions] = useState<
+    Record<WalletPanelTabId, number>
+  >(() => {
+    const defaults: Record<WalletPanelTabId, number> = {
+      "holdings-available": 0,
+      "holdings-escrowed": 0,
+      "holdings-redeemed": 0,
+      activity: 0,
+      lifetime: 0,
+    };
+    if (typeof window === "undefined") return defaults;
+    const savedScrolls = window.localStorage.getItem(HOLDINGS_SCROLL_STORAGE_KEY);
+    if (!savedScrolls) return defaults;
+    try {
+      const parsed = JSON.parse(savedScrolls) as Partial<Record<WalletPanelTabId, number>>;
+      if (parsed && typeof parsed === "object") {
+        return { ...defaults, ...parsed };
+      }
+    } catch {
+      // ignore malformed saved scroll positions
+    }
+    return defaults;
+  });
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setActiveWallet(wallet);

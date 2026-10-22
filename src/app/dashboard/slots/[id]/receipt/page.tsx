@@ -1,5 +1,4 @@
-import { use } from 'react';
-import { validateAndNormalizeReceiptParams, verifyReceiptSignature } from '@/components/receipt/masking';
+"use client";
 
 /**
  * Shared receipt view. Renders the masked fields carried by buildShareLink
@@ -16,17 +15,15 @@ import { DashboardShell } from "@/app/components/dashboard-shell";
 import { BreadcrumbOverflow } from "@/app/components/ui/breadcrumb-overflow";
 import { StatusChip } from "@/components/dashboard/status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
+import { mockSlots } from "@/components/dashboard/dashboard-data";
 
 type SharedReceiptPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default async function SharedReceiptPage({ params, searchParams }: PageProps) {
-  const resolvedParams = await params;
-  const resolvedSearch = await searchParams;
-
-import { mockSlots } from "@/components/dashboard/dashboard-data";
+const first = (value: string | string[] | undefined) =>
+  (Array.isArray(value) ? value[0] : value) ?? "";
 
 export default function SharedReceiptPage({ params, searchParams }: SharedReceiptPageProps) {
   const { id } = use(params);
@@ -41,94 +38,172 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
   const total = first(query.total);
   const settled = first(query.settled);
 
-  // Fail closed: verify signature before asserting settlement
-  const isValidSignature = await verifyReceiptSignature(
-    data.id,
-    data.assetCode,
-    data.total,
-    data.txHash,
-    data.sig
-  );
+  // Mock state for gas fee estimate refreshing and staleness
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isStale, setIsStale] = useState(false);
 
-  const isVerifiedSettled = !data.isMalformed && isValidSignature && data.status === 'settled';
+  useEffect(() => {
+    // Mark estimate as stale after 15 seconds
+    const timer = setTimeout(() => setIsStale(true), 15000);
+    return () => clearTimeout(timer);
+  }, [isRefreshing]);
 
-  const truncatedHash = data.txHash
-    ? `${data.txHash.slice(0, 6)}...${data.txHash.slice(-4)}`
-    : 'Unknown Hash';
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+      setIsStale(false);
+    }, 1000);
+  };
+
+  const rows: { label: string; value: string }[] = [
+    { label: "Minted asset", value: asset },
+    { label: "Buyer", value: buyer },
+    { label: "Seller", value: seller },
+    { label: "Transaction hash", value: tx },
+    { label: "Settled at", value: settled },
+  ].filter((row) => row.value);
+
+  // Parse total to separate mock token and network cost
+  const parsedTotal = parseFloat(total.replace(/[^0-9.]/g, "")) || 0;
+  const tokenCost = parsedTotal > 0 ? (parsedTotal * 0.98).toFixed(2) : "0.00";
+  const totalCost = parsedTotal > 0 ? parsedTotal.toFixed(2) : "0.00";
+  const currencyMatch = total.match(/[A-Za-z]+$/);
+  const currency = currencyMatch ? currencyMatch[0] : "USDC";
+
+  // Mock network fees
+  const networkFeeTotal = parsedTotal > 0 ? (parsedTotal * 0.02).toFixed(2) : "0.00";
+  const baseFee = parsedTotal > 0 ? (parsedTotal * 0.015).toFixed(2) : "0.00";
+  const priorityFee = parsedTotal > 0 ? (parsedTotal * 0.005).toFixed(2) : "0.00";
 
   return (
-    <main className="max-w-xl mx-auto p-6 space-y-6 bg-white shadow-md rounded-lg mt-10">
-      <div className="flex justify-between items-center border-b pb-4">
-        <h1 className="text-xl font-bold text-gray-900">
-          {data.title || 'Slot Receipt'}
-        </h1>
+    <DashboardShell>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Link
+            href="/dashboard"
+            className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/40 px-4 py-2 text-sm font-medium text-slate-300 transition-all hover:border-cyan-300/30 hover:bg-slate-900 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+          >
+            <ArrowLeft className="icon-directional h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            Back to Dashboard
+          </Link>
 
-        {/* Fail-closed status badge */}
-        {isVerifiedSettled ? (
-          <span className="px-3 py-1 text-sm font-semibold text-green-800 bg-green-100 rounded-full">
-            Settled
-          </span>
-        ) : (
-          <span className="px-3 py-1 text-sm font-semibold text-amber-800 bg-amber-100 rounded-full border border-amber-300">
-            Unverified shared summary
-          </span>
-        )}
-      </div>
+          <BreadcrumbOverflow
+            className="relative"
+            items={[
+              { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+              { label: "Slots", href: "/dashboard/slots" },
+              { label: "Receipt" },
+            ]}
+          />
+        </div>
 
-      {!isVerifiedSettled && (
-        <div className="p-4 bg-amber-50 border-l-4 border-amber-400 text-amber-700 text-sm">
-          <p className="font-medium">Unverified Receipt State</p>
-          <p>
-            This shared receipt could not be cryptographically verified against ledger settlement records. 
-            Please verify the transaction hash directly on the explorer.
-          </p>
-        </div>
-      )}
+        <article
+          className="glass-panel mx-auto max-w-xl rounded-[2rem] border border-white/10 bg-slate-950/40 p-6 text-slate-100 sm:p-8"
+          aria-labelledby="shared-receipt-title"
+        >
+          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5">
+            <div className="space-y-1">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">ChronoPay</p>
+              <h1 id="shared-receipt-title" className="text-xl font-extrabold tracking-tight text-white">
+                Shared Receipt
+              </h1>
+              <p className="helper-text helper-text--muted">Masked summary of a settled transaction.</p>
+            </div>
+            <StatusChip tone="positive">Settled</StatusChip>
+          </header>
 
-      <div className="space-y-3 text-sm text-gray-700">
-        <div className="flex justify-between">
-          <span className="font-medium">Asset:</span>
-          <span>{data.assetCode}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-medium">Total:</span>
-          <span>{data.total}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-medium">Net Amount:</span>
-          <span>{data.net}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-medium">Settled At:</span>
-          <span>{data.settledAt || 'N/A'}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="font-medium">Transaction:</span>
-          {data.txHash ? (
-            <a
-              href={`https://stellar.expert/explorer/public/tx/${data.txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline font-mono"
-            >
-              {truncatedHash}
-            </a>
+          {rows.length > 0 ? (
+            <div className="mt-5 space-y-6">
+              <dl className="space-y-3 text-sm">
+                {rows.map((row) => (
+                  <div key={row.label} className="flex items-start justify-between gap-4">
+                    <dt className="text-slate-300">{row.label}</dt>
+                    <dd className="shrink-0 font-mono font-semibold text-white">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              {/* Gas / Network Fee Breakdown */}
+              <div className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    Fee Breakdown
+                    {isStale && (
+                      <Tooltip content="Estimate may be outdated due to network volatility.">
+                        <AlertTriangle className="h-4 w-4 text-amber-400" />
+                      </Tooltip>
+                    )}
+                  </h3>
+                  <button
+                    onClick={handleRefresh}
+                    className="group flex items-center gap-1.5 text-xs font-medium text-cyan-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 rounded"
+                    aria-label="Refresh network fee estimate"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : 'transition-transform group-hover:rotate-180'}`} />
+                    Refresh
+                  </button>
+                </div>
+                
+                <dl className="space-y-2.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <dt className="text-slate-300">Token Cost</dt>
+                    <dd className="font-mono text-white">{tokenCost} {currency}</dd>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <dt className="flex items-center gap-1.5 text-slate-300">
+                      Network Fee
+                      <Tooltip content="Total cost to process your transaction on the blockchain.">
+                        <Info className="h-3.5 w-3.5 text-slate-400" />
+                      </Tooltip>
+                    </dt>
+                    <dd className="font-mono text-white">{networkFeeTotal} {currency}</dd>
+                  </div>
+
+                  <div className="pl-4 space-y-2 border-l border-white/10 ml-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <dt className="flex items-center gap-1.5 text-slate-400">
+                        Base Fee
+                        <Tooltip content="The minimum network fee required to include this transaction in a block. Burned by the network.">
+                          <Info className="h-3 w-3 text-slate-500" />
+                        </Tooltip>
+                      </dt>
+                      <dd className="font-mono text-slate-300">{baseFee} {currency}</dd>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <dt className="flex items-center gap-1.5 text-slate-400">
+                        Priority Fee
+                        <Tooltip content="An extra tip paid to validators to process your transaction faster.">
+                          <Info className="h-3 w-3 text-slate-500" />
+                        </Tooltip>
+                      </dt>
+                      <dd className="font-mono text-slate-300">{priorityFee} {currency}</dd>
+                    </div>
+                  </div>
+                </dl>
+
+                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+                  <dt className="font-semibold text-white">Total Settled</dt>
+                  <dd className="font-mono font-bold text-cyan-300">{totalCost} {currency}</dd>
+                </div>
+              </div>
+            </div>
           ) : (
-            <span className="text-gray-400">None</span>
+            <p className="helper-text helper-text--muted mt-5">
+              This shared link has no receipt details to display.
+            </p>
           )}
-        </div>
-      </div>
 
-      <div className="border-t pt-4 grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <p className="font-semibold text-gray-900">Buyer</p>
-          <p className="text-gray-600">{data.buyer.name || 'Anonymous'}</p>
-        </div>
-        <div>
-          <p className="font-semibold text-gray-900">Seller</p>
-          <p className="text-gray-600">{data.seller.name || 'Anonymous'}</p>
-        </div>
+          <footer className="mt-5 flex items-start gap-2 border-t border-white/10 pt-5 text-xs text-slate-400">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" aria-hidden={true} />
+            <p className="leading-relaxed">
+              Sensitive fields are masked. The full transaction hash and escrow contract are
+              visible only to the parties in their ChronoPay dashboard.
+            </p>
+          </footer>
+        </article>
       </div>
-    </main>
+    </DashboardShell>
   );
 }

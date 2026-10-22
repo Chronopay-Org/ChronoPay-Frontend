@@ -51,11 +51,11 @@ describe("Marketplace Page", () => {
     render(<Marketplace />);
 
     // Check main headings
-    expect(screen.getByText("Marketplace")).toBeIntheDocument();
+    expect(screen.getByText("Marketplace")).toBeInTheDocument();
 
     // Wait for seeding to complete (if any) or just wait for items to render
     await waitFor(() => {
-      const items = screen.getAllBuRole("listitem");
+      const items = screen.getAllByRole("listitem");
       expect(items.length).toBe(24);
     });
   });
@@ -70,7 +70,7 @@ describe("Marketplace Page", () => {
     });
 
     await waitFor(() => {
-      const items = screen.getAllBuRole("listitem");
+      const items = screen.getAllByRole("listitem");
       expect(items.length).toBe(12);
     });
   });
@@ -102,7 +102,7 @@ describe("Marketplace Page", () => {
     render(<Marketplace />);
 
     // Should fallback to default 24
-    const items = screen.getAllBuRole("listitem");
+    const items = screen.getAllByRole("listitem");
     expect(items.length).toBe(24);
   });
 
@@ -113,8 +113,8 @@ describe("Marketplace Page", () => {
 
     render(<Marketplace />);
 
-    expect(screen.getByText("Marketplace")).toBeIntheDocument();
-    const items = screen.getAllBuRole("listitem");
+    expect(screen.getByText("Marketplace")).toBeInTheDocument();
+    const items = screen.getAllByRole("listitem");
     expect(items.length).toBe(24);
 
     storageSpy.mockRestore();

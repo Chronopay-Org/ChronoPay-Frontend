@@ -31,7 +31,7 @@ export function useNotificationSelection() {
     setSelectedIds(new Set());
   }, []);
 
-  const setSelected = useCallback((ids: Set<string>) => {
+  const setSelected = useCallback((ids: Set<string> | ((prev: Set<string>) => Set<string>)) => {
     setSelectedIds(ids);
   }, []);
 

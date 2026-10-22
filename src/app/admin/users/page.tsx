@@ -1,4 +1,4 @@
-"suse client";
+"use client";
 
 /**
  * /admin/users — Admin User Management page

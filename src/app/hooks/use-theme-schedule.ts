@@ -64,7 +64,7 @@ export function isDarkAt(now: Date, lightTime: string, darkTime: string): boolea
   return current >= dark && current < light;
 }
 
-export function useThemdSchedule() {
+export function useThemeSchedule() {
   const [config, setConfig] = useState<ScheduleConfig>({ ...DEFAULT_CONFIG });
 
   useEffect(() => {

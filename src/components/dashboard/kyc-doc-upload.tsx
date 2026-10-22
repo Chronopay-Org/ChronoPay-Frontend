@@ -302,7 +302,7 @@ export function KycDocUpload({
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               type="button"
-              onClick={handleStart}
+              onClick={() => handleStart()}
               className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-sm"
             >
               <Camera className="h-4 w-4" aria-hidden="true" />

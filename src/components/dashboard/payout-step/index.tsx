@@ -54,6 +54,8 @@ export interface PayoutStepProps {
   preview?: PayoutPreview | null;
   onSave: (currency: PayoutCurrency, consent: PayoutConsent) => Promise<void>;
   onBack?: () => void;
+  /** Called when the user advances past the payout step after a successful save. */
+  onNext?: () => void;
   status?: PayoutStepStatus;
   errorMessage?: string;
   onRetry?: () => void;
@@ -63,6 +65,9 @@ export interface PayoutStepProps {
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
+
+/** Ordered onboarding steps; the payout step is followed by review. */
+export const PAYOUT_STEPS = ["payout", "review"] as const;
 
 const CURRENCIES: {
   value: PayoutCurrency;
@@ -219,6 +224,7 @@ export function PayoutStep({
   preview = null,
   onSave,
   onBack,
+  onNext,
   status: externalStatus,
   errorMessage,
   onRetry,
@@ -343,14 +349,14 @@ export function PayoutStep({
             >
               Edit settings
             </ButtonLink>
-            {onBack && (
+            {onNext && (
               <ButtonLink
                 href="#"
                 variant="primary"
                 size="sm"
                 onClick={(e) => {
                   e.preventDefault();
-                  onBack();
+                  onNext();
                 }}
               >
                 Next step

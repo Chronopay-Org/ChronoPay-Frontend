@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useRef, useSyncExternalStore } from "react";
 
 export type StorageArea = "localStorage" | "sessionStorage" | "cookie";
 
@@ -20,6 +20,15 @@ export interface UseStoredStateResult<T> {
   /** True once the client has resolved the stored value (always false during SSR and the first client render). */
   hydrated: boolean;
 }
+
+/** Listeners notified after a same-tab write so every hook instance re-reads storage. */
+const localListeners = new Set<() => void>();
+
+function notifyLocalListeners(): void {
+  for (const listener of Array.from(localListeners)) listener();
+}
+
+const noopSubscribe = () => () => {};
 
 type SnapshotCache<T> = {
   raw: string | null;
@@ -135,37 +144,46 @@ export function useStoredState<T>(
 
   const getServerSnapshot = useCallback((): T => defaultRef.current, []);
 
-  const value = useSyncExternalStore<T>(
-    getSnapshot,
-    getServerSnapshot,
-    getServerSnapshot,
+  // Subscribe to same-tab writes (via `localListeners`) and cross-tab `storage` events.
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      localListeners.add(onStoreChange);
+      if (typeof window === "undefined") {
+        return () => {
+          localListeners.delete(onStoreChange);
+        };
+      }
+      const handleStorage = (event: StorageEvent) => {
+        if (event.key !== null && event.key !== key) return;
+        if (event.storageArea && event.storageArea !== getStorage(area)) {
+          return;
+        }
+        onStoreChange();
+      };
+      window.addEventListener("storage", handleStorage);
+      return () => {
+        localListeners.delete(onStoreChange);
+        window.removeEventListener("storage", handleStorage);
+      };
+    },
+    [area, key],
   );
 
-  const [, forceRender] = useState(0);
+  const value = useSyncExternalStore<T>(subscribe, getSnapshot, getServerSnapshot);
 
-  // Re-read after hydration and keep in sync with other tabs.
-  useEffect(() => {
-    forceRender((n) => n + 1);
+  const hydrated = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
 
-    if (typeof window === "undefined") return undefined;
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== key) return;
-      if (event.storageArea && event.storageArea !== getStorage(area)) {
-        return;
-      }
-      forceRender((n) => n + 1);
-    };
-
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, [area, key]);
+  const forceRender = notifyLocalListeners;
 
   const write = useCallback(
     (next: T) => {
       if (area === "cookie") {
         writeCookie(key, serialize(next));
-        forceRender((n) => n + 1);
+        forceRender();
         return;
       }
       const storage = getStorage(area);
@@ -175,7 +193,7 @@ export function useStoredState<T>(
       } catch {
         // Quota exceeded or storage disabled: keep the in-memory value but do not throw.
       }
-      forceRender((n) => n + 1);
+      forceRender();
     },
     [area, key, serialize],
   );
@@ -194,7 +212,7 @@ export function useStoredState<T>(
   const remove = useCallback(() => {
     if (area === "cookie") {
       removeCookie(key);
-      forceRender((n) => n + 1);
+      forceRender();
       return;
     }
     const storage = getStorage(area);
@@ -205,10 +223,10 @@ export function useStoredState<T>(
         // ignore
       }
     }
-    forceRender((n) => n + 1);
+    forceRender();
   }, [area, key]);
 
-  return { value, setValue, remove, hydrated: true };
+  return { value, setValue, remove, hydrated };
 }
 
 export default useStoredState;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Copy, Check, Loader2, QrCode, Sparkles, RefreshCw } from "lucide-react";
-import { FocusTrap } from "focus-trap-react";
+import { FocusTrap } from "@/components/common/FocusTrap";
 
 export interface RedeemTokenModalProps {
   isOpen: boolean;
@@ -127,15 +127,7 @@ export function RedeemTokenModal({ isOpen, onClose, tokenCode, onRegenerate }: R
   const isExpired = step === "expired";
 
   return (
-    <FocusTrap
-      active={isOpen}
-      focusTrapOptions={{
-        initialFocus: () => modalRef.current ?? undefined,
-        fallbackFocus: () => modalRef.current ?? document.body,
-        escapeDeactivates: false,
-        allowOutsideClick: true,
-      }}
-    >
+    <FocusTrap>
       <div
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm transition-all animate-fade-in"
         role="presentation"

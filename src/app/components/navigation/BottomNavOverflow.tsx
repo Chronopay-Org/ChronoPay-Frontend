@@ -37,11 +37,11 @@ import {
   BOTTOM_NAV_MAX_VISIBLE,
   type NavItem,
   type UserRole,
-  isNavItemActive,
   readPinnedHrefs,
   sortNavByPins,
   writePinnedHrefs,
 } from "./role-nav";
+import { isNavItemActive } from "./is-nav-item-active";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 

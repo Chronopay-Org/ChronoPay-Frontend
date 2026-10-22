@@ -152,7 +152,7 @@ describe("RecentlyViewedRail", () => {
     render(<RecentlyViewedRail />);
 
     expect(screen.getByText("Recently viewed")).toBeInTheDocument();
-    expect(screen.getByText("1 Hour Consultation")).toBeIntheDocument();
+    expect(screen.getByText("1 Hour Consultation")).toBeInTheDocument();
     expect(screen.getByText("30 Minute Session")).toBeInTheDocument();
   });
 
@@ -167,8 +167,8 @@ describe("RecentlyViewedRail", () => {
     const clearButton = screen.getByText("Clear history");
     fireEvent.click(clearButton);
 
-    expect(screen.getByText("Confirm?")).toBeIntheDocument();
-    expect(screen.getByText("Cancel")).toBeIntheDocument();
+    expect(screen.getByText("Confirm?")).toBeInTheDocument();
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
   });
 
   it("should cancel clear history when Cancel is clicked", () => {
@@ -181,7 +181,7 @@ describe("RecentlyViewedRail", () => {
     fireEvent.click(cancelButton);
 
     expect(screen.queryByText("Confirm?")).not.toBeInTheDocument();
-    expect(screen.getByText("Clear history")).toBeIntheDocument();
+    expect(screen.getByText("Clear history")).toBeInTheDocument();
   });
 
   it("should have proper ARIA labels", () => {
@@ -198,7 +198,7 @@ describe("RecentlyViewedRail", () => {
     render(<RecentlyViewedRail />);
 
     const itemLink = screen.getByLabelText(/View 1 Hour Consultation/);
-    expect(itemLink).toBeIntheDocument();
+    expect(itemLink).toBeInTheDocument();
     expect(itemLink).toHaveAttribute("href", "/marketplace/1");
   });
 
@@ -237,7 +237,7 @@ describe("RecentlyViewedRail", () => {
   it("should wrap navigation with arrow keys", () => {
     render(<RecentlyViewedRail />);
 
-    const items = screen.getAllBuRole("link");
+    const items = screen.getAllByRole("link");
     const lastItem = items[items.length - 1];
 
     lastItem.focus();
@@ -272,7 +272,7 @@ describe("RecentlyViewedRail", () => {
 
     render(<RecentlyViewedRail />);
 
-    const items = screen.getAllBuRole("link");
+    const items = screen.getAllByRole("link");
     expect(items.length).toBe(10);
   });
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useHeatmapPreference } from "@hooks/use-heatmap-preference";
+import { useHeatmapPreference } from "@/hooks/use-heatmap-preference";
 
 const dispatchStorageEvent = (key: string, newValue: string | null) => {
   window.dispatchEvent(

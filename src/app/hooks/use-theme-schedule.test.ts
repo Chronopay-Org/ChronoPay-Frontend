@@ -74,7 +74,7 @@ describe('useThemeSchedule', () => {
     const { result } = renderHook(() => useThemeSchedule());
 
     act(() => {
-      vi.advanceTimesByTime(60000);
+      vi.advanceTimersByTime(60000);
     });
 
     expect(applyTheme).not.toHaveBeenCalled();
@@ -202,7 +202,7 @@ describe('useThemeSchedule', () => {
 
     // Advance 1 minute to 18:00
     act(() => {
-      vi.advanceTimesByTime(60000);
+      vi.advanceTimersByTime(60000);
     });
 
     // Now it should be dark
