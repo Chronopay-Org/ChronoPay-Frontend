@@ -1,6 +1,6 @@
 "use client";
 
-import { PayoutStep } from "@/components/dashboard/payout-step";
+import { PAYOUT_STEPS, PayoutStep } from "@/components/dashboard/payout-step";
 import type { PayoutCurrency, PayoutConsent } from "@/components/dashboard/payout-step";
 
 function DemoShell({ children }: { children: React.ReactNode }) {
@@ -36,6 +36,10 @@ export default function PayoutOnboardingPage() {
     console.log("Saved payout settings", { currency, consent });
   };
 
+  const handleNext = () => {
+    console.log("Payout step completed; advancing to", PAYOUT_STEPS[1]);
+  };
+
   return (
     <DemoShell>
       <div className="mx-auto max-w-4xl space-y-6 p-5 sm:p-6">
@@ -55,6 +59,7 @@ export default function PayoutOnboardingPage() {
         <PayoutStep
           preview={demoPreview}
           onSave={handleSave}
+          onNext={handleNext}
           draftStatus="saved"
           lastSavedLabel="a few seconds ago"
         />
