@@ -3,25 +3,26 @@
 /**
  * QrBadge — A scannable QR verification badge for on-chain receipts.
  *
- * Renders a QR code that encodes the transaction explorer URL. The badge
- * acts as a tap-to-verify button: clicking/tapping opens the explorer in
+ * Renders an inline SVG QR code encoding the transaction explorer URL.
+ * The badge acts as a tap-to-verify button: clicking/tapping opens the explorer in
  * a new tab. A print-friendly variant is included via the
  * `.receipt-printable` CSS class tree.
  *
+ * Security & Privacy:
+ *   - Offline / local generation: no external requests to third-party services.
+ *   - Transaction hashes are never leaked to external QR generation endpoints.
+ *
  * Accessibility (WCAG 2.1 AA):
  *   - The badge is a semantic <button> with an accessible label.
- *   - The QR image has alt text describing its purpose.
+ *   - The QR SVG has role="img" and an accessible aria-label describing its purpose.
  *   - Keyboard operable (Enter/Space).
  *   - `aria-live` region announces the navigation action.
  *   - High-contrast colour scheme; dark-mode compatible.
- *
- * The QR code is rendered via a public QR generation API. For an offline /
- * self-hosted alternative, swap the `src` for a locally generated SVG or
- * canvas-based QR.
  */
 
-import { useId, useState, useCallback } from "react";
-import { QrCode, ExternalLink } from "lucide-react";
+import { useId, useState, useCallback, useMemo } from "react";
+import { ExternalLink } from "lucide-react";
+import { generateQrMatrix } from "@/lib/qr";
 
 interface QrBadgeProps {
   /** The URL to encode in the QR and open on tap. */
@@ -30,12 +31,19 @@ interface QrBadgeProps {
   label?: string;
 }
 
-const QR_API_BASE = "https://api.qrserver.com/v1/create-qr-code";
-
 export function QrBadge({ explorerUrl, label = "transaction" }: QrBadgeProps) {
-  const qrSrc = `${QR_API_BASE}/?size=120x120&data=${encodeURIComponent(explorerUrl)}&margin=8&bgcolor=ffffff&format=svg`;
   const statusId = useId();
   const [navigating, setNavigating] = useState(false);
+
+  const matrix = useMemo(() => {
+    try {
+      return generateQrMatrix(explorerUrl, "M");
+    } catch {
+      return [];
+    }
+  }, [explorerUrl]);
+
+  const moduleCount = matrix.length;
 
   const handleVerify = useCallback(() => {
     setNavigating(true);
@@ -52,15 +60,36 @@ export function QrBadge({ explorerUrl, label = "transaction" }: QrBadgeProps) {
         aria-label={`Verify ${label} on the ledger explorer`}
         className="group relative flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition-colors hover:border-cyan-300/30 hover:bg-cyan-500/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
       >
-        {/* QR code image */}
-        <img
-          src={qrSrc}
-          alt={`QR code for ${label}. Scan or tap to verify on the ledger explorer.`}
-          width={120}
-          height={120}
-          className="rounded-lg"
-          loading="lazy"
-        />
+        {/* Offline inline SVG QR code */}
+        {moduleCount > 0 && (
+          <svg
+            role="img"
+            aria-label={`QR code for ${label}. Scan or tap to verify on the ledger explorer.`}
+            width={120}
+            height={120}
+            viewBox={`0 0 ${moduleCount} ${moduleCount}`}
+            xmlns="http://www.w3.org/2000/svg"
+            shapeRendering="crispEdges"
+            className="rounded-lg bg-white p-2"
+            data-testid="receipt-qr-svg"
+          >
+            <rect width={moduleCount} height={moduleCount} fill="#ffffff" />
+            {matrix.map((row, r) =>
+              row.map((filled, c) =>
+                filled ? (
+                  <rect
+                    key={`${r}-${c}`}
+                    x={c}
+                    y={r}
+                    width={1}
+                    height={1}
+                    fill="#0f172a"
+                  />
+                ) : null,
+              ),
+            )}
+          </svg>
+        )}
 
         {/* Hover overlay hint */}
         <span

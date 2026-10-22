@@ -6,6 +6,7 @@ import { FocusTrap } from "@/components/common/FocusTrap";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardBody, CardFooter, CardHeader } from "./card";
 import { StatusChip } from "./status-chip";
+import { generateQrMatrix as generateRealQrMatrix } from "@/lib/qr";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,19 +31,27 @@ export type ReceiveTokenPanelProps = {
 // Helpers
 // ---------------------------------------------------------------------------
 
+export const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
+
 /**
  * Build a Stellar deep-link URI suitable for encoding as a QR.
  *
- * Format: `web+stellar:pay?destination=<ADDRESS>&network=<NETWORK>`
+ * Format:
+ *  - Testnet: `web+stellar:pay?destination=<ADDRESS>&network_passphrase=Test%20SDF%20Network%20%3B%20September%202015`
+ *  - Mainnet / Public: `web+stellar:pay?destination=<ADDRESS>`
  *
  * This follows the SEP-0007 URI scheme used by wallets like Freighter.
  */
 export function buildStellarDeepLink(
   address: string,
-  network: StellarNetwork,
+  network: StellarNetwork = "mainnet",
 ): string {
-  const params = new URLSearchParams({ destination: address, network });
-  return `web+stellar:pay?${params.toString()}`;
+  const params = new URLSearchParams({ destination: address });
+  if (network === "testnet") {
+    params.set("network_passphrase", TESTNET_PASSPHRASE);
+  }
+  const query = params.toString().replace(/\+/g, "%20");
+  return `web+stellar:pay?${query}`;
 }
 
 /**
@@ -56,20 +65,14 @@ export function truncateAddress(address: string): string {
 
 // ---------------------------------------------------------------------------
 // QR SVG renderer
-//
-// No QR library is bundled — instead we render a deterministic visual
-// representation using a simple hash-based pixel grid.  This is sufficient
-// for the design-system preview and allows tests to run without a canvas
-// polyfill.  In production this should be replaced by a proper QR encoder
-// (e.g. qrcode.react or a WASM encoder).
 // ---------------------------------------------------------------------------
 
 /**
  * Generate a 21×21 boolean matrix from an input string.
  * Uses a simple djb2-style hash spread so the pattern changes per address.
- * NOT a real QR code — it is a deterministic placeholder for design review.
+ * Deterministic placeholder explicitly kept for design review and preview pages.
  */
-export function generateQrMatrix(data: string, size = 21): boolean[][] {
+export function generatePlaceholderQrMatrix(data: string, size = 21): boolean[][] {
   const matrix: boolean[][] = [];
   let hash = 5381;
   for (let i = 0; i < data.length; i++) {
@@ -101,6 +104,21 @@ export function generateQrMatrix(data: string, size = 21): boolean[][] {
   return matrix;
 }
 
+/**
+ * Generate a real standard QR matrix for an input string.
+ * Falls back to generatePlaceholderQrMatrix if a non-QR size is requested for design review.
+ */
+export function generateQrMatrix(data: string, size?: number): boolean[][] {
+  if (size !== undefined && (size < 21 || (size - 17) % 4 !== 0)) {
+    return generatePlaceholderQrMatrix(data, size);
+  }
+  try {
+    return generateRealQrMatrix(data, "M");
+  } catch {
+    return generatePlaceholderQrMatrix(data, size ?? 21);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // QrCode sub-component
 // ---------------------------------------------------------------------------
@@ -114,12 +132,13 @@ interface QrCodeProps {
 
 export function QrCode({
   data,
-  size = 21,
+  size,
   pixelSize = 8,
   "aria-label": ariaLabel,
 }: QrCodeProps) {
   const matrix = generateQrMatrix(data, size);
-  const svgSize = size * pixelSize;
+  const moduleCount = matrix.length;
+  const svgSize = size !== undefined ? size * pixelSize : moduleCount * pixelSize;
 
   return (
     <svg
@@ -129,9 +148,11 @@ export function QrCode({
       height={svgSize}
       viewBox={`0 0 ${svgSize} ${svgSize}`}
       xmlns="http://www.w3.org/2000/svg"
+      shapeRendering="crispEdges"
       data-testid="qr-code-svg"
       className="rounded-lg bg-white p-2"
     >
+      <rect width={svgSize} height={svgSize} fill="#ffffff" />
       {matrix.map((row, rowIdx) =>
         row.map((filled, colIdx) =>
           filled ? (
@@ -237,8 +258,7 @@ function LargeQrSheet({
           <div className="flex items-center justify-center rounded-2xl bg-white p-4 shadow-2xl">
             <QrCode
               data={deepLink}
-              size={21}
-              pixelSize={14}
+              pixelSize={7}
               aria-label={`Large QR code for Stellar address ${address} on ${network}`}
             />
           </div>
@@ -367,8 +387,7 @@ export function ReceiveTokenPanel({
           >
             <QrCode
               data={deepLink}
-              size={21}
-              pixelSize={10}
+              pixelSize={5}
               aria-label={`QR code for Stellar address ${address} on ${network}. Scan to send tokens.`}
             />
           </div>
