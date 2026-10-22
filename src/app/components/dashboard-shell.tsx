@@ -158,8 +158,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const railToggleRef = useRef<HTMLButtonElement>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const liveId = useId();
+  const isDesktop = useIsDesktop();
+  const isRailInert = !isDesktop && !isRailOpen;
 
   const navItems = getNavForRole(role);
+  const allHrefs = navItems.map((item) => item.href);
   const roleMeta = ROLE_META[role];
 
   useEffect(() => {
@@ -284,7 +287,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* Desktop nav links inline in command bar — visible only on large screens */}
           <nav aria-label="Quick navigation" className="hidden lg:flex lg:items-center lg:gap-1">
             {navItems.slice(0, 3).map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              const isActive = isNavItemActive(pathname, item.href, allHrefs);
               return (
                 <Link
                   key={item.href}
@@ -384,6 +387,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           ref={railRef}
           role="navigation"
           aria-label="Module navigation"
+          aria-hidden={isRailInert ? true : undefined}
+          inert={isRailInert ? true : undefined}
           className={clsx(
             "flex flex-col border-e shrink-0 overflow-y-auto",
             "transition-transform duration-200 ease-out motion-reduce:transition-none",
@@ -488,3 +493,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+export { isNavItemActive };
+
