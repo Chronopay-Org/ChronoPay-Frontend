@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 export type ThemeMode = "light" | "dark" | "auto";
 export type ResolvedTheme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "chronopay:theme";
+export const LEGACY_THEME_STORAGE_KEY = "chronopay-theme";
 const MODES: ThemeMode[] = ["auto", "light", "dark"];
 
 function isThemeMode(value: unknown): value is ThemeMode {
@@ -30,10 +31,17 @@ export function applyTheme(theme: ResolvedTheme) {
   document.documentElement.setAttribute("data-theme", theme);
 }
 
-/** Read a persisted theme preference, falling back to "auto". */
+/** Read a persisted theme preference, falling back to "auto", migrating legacy key if present. */
 export function readPersistedTheme(): ThemeMode {
   if (typeof window === "undefined") return "auto";
   try {
+    const legacy = window.localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
+    if (legacy && isThemeMode(legacy)) {
+      if (!window.localStorage.getItem(THEME_STORAGE_KEY)) {
+        window.localStorage.setItem(THEME_STORAGE_KEY, legacy);
+      }
+      window.localStorage.removeItem(LEGACY_THEME_STORAGE_KEY);
+    }
     const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
     return isThemeMode(raw) ? raw : "auto";
   } catch {
@@ -51,8 +59,39 @@ function persistTheme(mode: ThemeMode) {
   }
 }
 
+// Global subscribers for synchronizing multiple useTheme hook instances
+const listeners = new Set<() => void>();
+
+function notifyThemeListeners() {
+  listeners.forEach((listener) => listener());
+}
+
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === THEME_STORAGE_KEY || event.key === LEGACY_THEME_STORAGE_KEY) {
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", handleStorage);
+  }
+  return () => {
+    listeners.delete(callback);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorage);
+    }
+  };
+}
+
 export function useTheme() {
-  const [mode, setMode] = useState<ThemeMode>(readPersistedTheme);
+  // Read theme via useSyncExternalStore to avoid SSR/client hydration mismatch.
+  // Server snapshot returns "auto", client snapshot reads localStorage.
+  const mode = useSyncExternalStore(
+    subscribe,
+    readPersistedTheme,
+    () => "auto" as ThemeMode
+  );
 
   // Keep <html> data-theme in sync with the current mode.
   useEffect(() => {
@@ -69,8 +108,9 @@ export function useTheme() {
   }, [mode]);
 
   const changeTheme = useCallback((next: ThemeMode) => {
-    setMode(next);
     persistTheme(next);
+    applyTheme(resolveTheme(next));
+    notifyThemeListeners();
   }, []);
 
   const cycleTheme = useCallback(() => {
