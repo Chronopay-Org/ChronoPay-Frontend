@@ -368,16 +368,43 @@ describe("UptimeChart", () => {
       expect(cell2?.getAttribute("aria-label")).toContain("2 incidents");
     });
 
-    it("all cells are focusable (tabIndex=0)", () => {
+    it("only one cell has tabIndex=0, others have tabIndex=-1", () => {
       const data = create90DayData();
       const { container } = render(
         <UptimeChart componentName="API" days={data} currentUptimePercent={99} />
       );
 
       const cells = container.querySelectorAll('[role="img"]');
-      cells.forEach((cell) => {
-        expect(cell).toHaveAttribute("tabIndex", "0");
-      });
+      const focusableCells = Array.from(cells).filter(
+        (cell) => cell.getAttribute("tabIndex") === "0"
+      );
+      expect(focusableCells.length).toBe(1);
+
+      const nonFocusableCells = Array.from(cells).filter(
+        (cell) => cell.getAttribute("tabIndex") === "-1"
+      );
+      expect(nonFocusableCells.length).toBe(cells.length - 1);
+    });
+
+    it("two charts rendered together have distinct aria-labelledby targets", () => {
+      const data = create90DayData();
+      const { container } = render(
+        <>
+          <UptimeChart componentName="API" days={data} currentUptimePercent={99} />
+          <UptimeChart componentName="Database" days={data} currentUptimePercent={99} />
+        </>
+      );
+
+      const sections = container.querySelectorAll("section");
+      expect(sections.length).toBe(2);
+      const label1 = sections[0].getAttribute("aria-labelledby");
+      const label2 = sections[1].getAttribute("aria-labelledby");
+
+      expect(label1).toBeTruthy();
+      expect(label2).toBeTruthy();
+      expect(label1).not.toBe(label2);
+      expect(container.querySelector(`#${label1}`)).toHaveTextContent("API");
+      expect(container.querySelector(`#${label2}`)).toHaveTextContent("Database");
     });
   });
 
@@ -406,6 +433,46 @@ describe("UptimeChart", () => {
       expect(document.activeElement).toBe(secondCell);
     });
 
+    it("moves focus to the last cell on End key", () => {
+      const data = [
+        createDayData("2026-07-26", 100),
+        createDayData("2026-07-27", 99),
+        createDayData("2026-07-28", 98),
+      ];
+
+      const { container } = render(
+        <UptimeChart componentName="API" days={data} currentUptimePercent={98} />
+      );
+
+      const cells = container.querySelectorAll('[role="img"]');
+      const firstCell = cells[0] as HTMLElement;
+      const lastCell = cells[cells.length - 1] as HTMLElement;
+
+      firstCell.focus();
+      fireEvent.keyDown(firstCell, { key: "End" });
+      expect(document.activeElement).toBe(lastCell);
+    });
+
+    it("moves focus to the first cell on Home key", () => {
+      const data = [
+        createDayData("2026-07-26", 100),
+        createDayData("2026-07-27", 99),
+        createDayData("2026-07-28", 98),
+      ];
+
+      const { container } = render(
+        <UptimeChart componentName="API" days={data} currentUptimePercent={98} />
+      );
+
+      const cells = container.querySelectorAll('[role="img"]');
+      const firstCell = cells[0] as HTMLElement;
+      const lastCell = cells[cells.length - 1] as HTMLElement;
+
+      lastCell.focus();
+      fireEvent.keyDown(lastCell, { key: "Home" });
+      expect(document.activeElement).toBe(firstCell);
+    });
+
     it("does not navigate beyond first or last cell", () => {
       const data = [
         createDayData("2026-07-27", 99),
@@ -422,6 +489,40 @@ describe("UptimeChart", () => {
       lastCell.focus();
       fireEvent.keyDown(lastCell, { key: "ArrowRight" });
       expect(document.activeElement).toBe(lastCell);
+    });
+
+    it("mirrors arrow keys in RTL mode", () => {
+      const originalDir = document.documentElement.dir;
+      document.documentElement.dir = "rtl";
+
+      try {
+        const data = [
+          createDayData("2026-07-26", 100),
+          createDayData("2026-07-27", 99),
+          createDayData("2026-07-28", 98),
+        ];
+
+        const { container } = render(
+          <UptimeChart componentName="API" days={data} currentUptimePercent={98} />
+        );
+
+        const cells = container.querySelectorAll('[role="img"]');
+        const firstCell = cells[0] as HTMLElement;
+        const secondCell = cells[1] as HTMLElement;
+
+        firstCell.focus();
+        expect(document.activeElement).toBe(firstCell);
+
+        // In RTL, ArrowLeft moves forward (next cell)
+        fireEvent.keyDown(firstCell, { key: "ArrowLeft" });
+        expect(document.activeElement).toBe(secondCell);
+
+        // In RTL, ArrowRight moves backward (previous cell)
+        fireEvent.keyDown(secondCell, { key: "ArrowRight" });
+        expect(document.activeElement).toBe(firstCell);
+      } finally {
+        document.documentElement.dir = originalDir;
+      }
     });
   });
 
