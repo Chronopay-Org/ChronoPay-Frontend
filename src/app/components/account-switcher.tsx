@@ -43,16 +43,22 @@ import {
   avatarInitials,
   type Account,
 } from "@/hooks/use-accounts";
-import { WalletConnectModal } from "@/components/dashboard/WalletConnectModal";
+import { WalletConnectModal, type ConnectionStatus } from "@/components/dashboard/WalletConnectModal";
+import { WALLET_PROVIDERS, defaultWalletConnector, type WalletConnector } from "@/components/dashboard/wallet-providers";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface AccountSwitcherProps {
   /** Optional class name for the wrapper */
   className?: string;
+  /** Optional custom connector for connecting wallets */
+  connector?: WalletConnector;
 }
 
-export function AccountSwitcher({ className = "" }: AccountSwitcherProps) {
+export function AccountSwitcher({
+  className = "",
+  connector = defaultWalletConnector,
+}: AccountSwitcherProps) {
   const {
     accounts,
     activeAccount,
@@ -67,6 +73,47 @@ export function AccountSwitcher({ className = "" }: AccountSwitcherProps) {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [announcement, setAnnouncement] = useState("");
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [modalStatus, setModalStatus] = useState<ConnectionStatus>("idle");
+  const [modalErrorMessage, setModalErrorMessage] = useState<string | undefined>();
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
+
+  const handleConnectWallet = useCallback(
+    async (providerId: string) => {
+      setSelectedProviderId(providerId);
+      setModalStatus("pending");
+      setModalErrorMessage(undefined);
+      try {
+        const result = await connector(providerId);
+        setModalStatus("success");
+        addAccount({
+          address: result.address,
+          label: result.label,
+          provider: result.provider,
+        });
+        setAnnouncement(`Connected account ${truncateAddress(result.address)}`);
+        setIsWalletModalOpen(false);
+        setModalStatus("idle");
+      } catch (err) {
+        setModalStatus("error");
+        setModalErrorMessage(
+          err instanceof Error ? err.message : "Failed to connect wallet",
+        );
+      }
+    },
+    [connector, addAccount],
+  );
+
+  const handleRetryWallet = useCallback(() => {
+    if (selectedProviderId) {
+      handleConnectWallet(selectedProviderId);
+    }
+  }, [selectedProviderId, handleConnectWallet]);
+
+  const handleCloseWalletModal = useCallback(() => {
+    setIsWalletModalOpen(false);
+    setModalStatus("idle");
+    setModalErrorMessage(undefined);
+  }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -588,10 +635,13 @@ export function AccountSwitcher({ className = "" }: AccountSwitcherProps) {
 
       <WalletConnectModal
         isOpen={isWalletModalOpen}
-        onClose={() => setIsWalletModalOpen(false)}
-        providers={[]}
-        status="idle"
-        onConnect={() => setIsWalletModalOpen(false)}
+        onClose={handleCloseWalletModal}
+        providers={WALLET_PROVIDERS}
+        status={modalStatus}
+        errorMessage={modalErrorMessage}
+        onConnect={handleConnectWallet}
+        onRetry={handleRetryWallet}
+        initialMethod="wallet"
       />
     </div>
   );

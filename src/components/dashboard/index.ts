@@ -45,3 +45,4 @@ export * from "./star-rating";
 export * from "./rating-histogram";
 export * from "./review-filters";
 export * from "./review-card";
+export * from "./wallet-providers";

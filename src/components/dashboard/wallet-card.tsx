@@ -7,7 +7,8 @@ import { HelpPopover } from "@/app/components/ui/help-popover";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletHolding, WalletHoldingStatus, WalletSnapshot, WalletActivityEntry, WalletLifetimeStats } from "./types";
-import { WalletConnectModal } from "./WalletConnectModal";
+import { WalletConnectModal, type ConnectionStatus } from "./WalletConnectModal";
+import { WALLET_PROVIDERS, defaultWalletConnector, type WalletConnector } from "./wallet-providers";
 import { useToast } from "@/hooks/use-toast";
 import { glossary } from "@/lib/glossary";
 import { useNetwork, TestnetRibbon } from "@/components/checkout/NetworkSelector";
@@ -239,6 +240,7 @@ export function WalletCard({
   holdings,
   activity,
   lifetimeStats,
+  connector = defaultWalletConnector,
 }: {
   wallet: WalletSnapshot;
   /** Pass true when the app is running on the Stellar testnet. */
@@ -246,6 +248,7 @@ export function WalletCard({
   holdings?: WalletHolding[];
   activity?: WalletActivityEntry[];
   lifetimeStats?: WalletLifetimeStats;
+  connector?: WalletConnector;
 }) {
   const titleId = useId();
   const balanceId = useId();
@@ -254,46 +257,56 @@ export function WalletCard({
   const holdingsHeadingId = useId();
   const { toast } = useToast();
   const { network } = useNetwork();
+  const [activeWallet, setActiveWallet] = useState<WalletSnapshot>(wallet);
+  const [modalStatus, setModalStatus] = useState<ConnectionStatus>("idle");
+  const [modalErrorMessage, setModalErrorMessage] = useState<string | undefined>();
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] =
-    useState<WalletPanelTabId>(() => {
-      if (typeof window === "undefined") return "holdings-available";
-      const savedTab = window.localStorage.getItem(HOLDINGS_STORAGE_KEY);
-      return savedTab && HOLDINGS_TAB_IDS.some((tabId) => tabId === savedTab)
-        ? (savedTab as WalletPanelTabId)
-        : "holdings-available";
-    });
-  const [panelScrollPositions, setpanelScrollPositions] = useState<
-    Record<WalletPanelTabId, number>
-  >(() => {
-    const defaults: Record<WalletPanelTabId, number> = {
-      "holdings-available": 0,
-      "holdings-escrowed": 0,
-      "holdings-redeemed": 0,
-      activity: 0,
-      lifetime: 0,
-    };
-    if (typeof window === "undefined") return defaults;
-    const savedScrolls = window.localStorage.getItem(HOLDINGS_SCROLL_STORAGE_KEY);
-    if (!savedScrolls) return defaults;
-    try {
-      const parsed = JSON.parse(savedScrolls) as Partial<Record<WalletPanelTabId, number>>;
-      if (parsed && typeof parsed === "object") {
-        return { ...defaults, ...parsed };
+
+  useEffect(() => {
+    setActiveWallet(wallet);
+  }, [wallet]);
+
+  const handleConnect = useCallback(
+    async (providerId: string) => {
+      setSelectedProviderId(providerId);
+      setModalStatus("pending");
+      setModalErrorMessage(undefined);
+      try {
+        const result = await connector(providerId);
+        setModalStatus("success");
+        setActiveWallet((prev) => ({
+          ...prev,
+          connection: "connected",
+          address: result.address,
+          status: `Connected to ${result.label || providerId}`,
+          balance: prev.balance && !isZeroBalance(prev.balance) ? prev.balance : "1,240 XLM",
+        }));
+        setIsModalOpen(false);
+      } catch (err) {
+        setModalStatus("error");
+        setModalErrorMessage(
+          err instanceof Error ? err.message : "Failed to connect wallet",
+        );
       }
-    } catch {
-      // ignore malformed saved scroll positions
+    },
+    [connector],
+  );
+
+  const handleRetry = useCallback(() => {
+    if (selectedProviderId) {
+      handleConnect(selectedProviderId);
     }
-    return defaults;
-  });
-  const panelRef = useRef<HTMLDivElement | null>(null);
+  }, [selectedProviderId, handleConnect]);
 
   const handleClose = useCallback(() => {
     setIsModalOpen(false);
+    setModalStatus("idle");
+    setModalErrorMessage(undefined);
   }, []);
 
   const showZeroBalanceNudge =
-    wallet.connection === "connected" && isZeroBalance(wallet.balance);
+    activeWallet.connection === "connected" && isZeroBalance(activeWallet.balance);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -404,14 +417,14 @@ export function WalletCard({
               aria-live="polite"
               aria-atomic="true"
             >
-              {wallet.balance}
+              {activeWallet.balance}
             </p>
           </div>
 
-          <StatusChip tone={statusTone[wallet.connection]}>
-            {wallet.connection === "connected"
+          <StatusChip tone={statusTone[activeWallet.connection]}>
+            {activeWallet.connection === "connected"
               ? "Connected"
-              : wallet.connection === "error"
+              : activeWallet.connection === "error"
                 ? "Connection issue"
                 : "Disconnected"}
           </StatusChip>
@@ -419,7 +432,7 @@ export function WalletCard({
 
         <CardBody className="mt-6">
           <dl className="space-y-4">
-            {wallet.address && (
+            {activeWallet.address && (
               <div className="flex items-center justify-between gap-4 text-sm">
                 <dt className="text-slate-300 flex items-center gap-2">
                   Wallet address
@@ -427,10 +440,10 @@ export function WalletCard({
                 </dt>
                 <dd className="flex items-center gap-2 font-mono text-white text-xs">
                   <span className="truncate">
-                    {wallet.address.slice(0, 8)}…{wallet.address.slice(-6)}
+                    {activeWallet.address.slice(0, 8)}…{activeWallet.address.slice(-6)}
                   </span>
                   <CopyButton
-                    text={wallet.address}
+                    text={activeWallet.address}
                     variant="icon"
                     label="Copy address"
                     onCopied={() => {
@@ -453,7 +466,7 @@ export function WalletCard({
                 Pending escrow
                 <HelpPopover term={glossary.pendingEscrow} />
               </dt>
-              <dd className="font-medium text-white">{wallet.pending}</dd>
+              <dd className="font-medium text-white">{activeWallet.pending}</dd>
             </div>
 
             <div className="flex items-center justify-between gap-4 text-sm">
@@ -461,7 +474,7 @@ export function WalletCard({
                 Next payout
                 <HelpPopover term={glossary.nextPayout} />
               </dt>
-              <dd className="font-medium text-white">{wallet.nextPayout}</dd>
+              <dd className="font-medium text-white">{activeWallet.nextPayout}</dd>
             </div>
           </dl>
 
@@ -641,7 +654,7 @@ export function WalletCard({
             aria-live="polite"
             aria-atomic="true"
           >
-            {wallet.status}
+            {activeWallet.status}
           </p>
         </CardBody>
 
@@ -651,7 +664,7 @@ export function WalletCard({
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 px-4 py-2.5 text-sm border border-white/12 bg-white/6 text-slate-100 hover:border-cyan-200/30 hover:bg-white/10"
           >
-            {actionLabel[wallet.connection]}
+            {actionLabel[activeWallet.connection]}
           </button>
         </CardFooter>
       </Card>
@@ -659,9 +672,12 @@ export function WalletCard({
       <WalletConnectModal
         isOpen={isModalOpen}
         onClose={handleClose}
-        providers={[]}
-        status="idle"
-        onConnect={() => setIsModalOpen(false)}
+        providers={WALLET_PROVIDERS}
+        status={modalStatus}
+        errorMessage={modalErrorMessage}
+        onConnect={handleConnect}
+        onRetry={handleRetry}
+        initialMethod="wallet"
       />
     </>
   );
