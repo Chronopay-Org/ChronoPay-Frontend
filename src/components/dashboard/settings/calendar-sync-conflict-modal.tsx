@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useId, useMemo } from "react";
+import { useState, useCallback, useId, useMemo, useEffect } from "react";
 import { clsx } from "clsx";
 import { X, AlertTriangle, GitBranch, GitMerge } from "lucide-react";
 import { FocusTrap } from "@/components/common/FocusTrap";
@@ -178,6 +178,16 @@ export function CalendarSyncConflictModal({
     });
     return initial;
   });
+  useEffect(() => {
+    setResolutions((previous) => {
+      const next: Record<string, ResolutionStrategy> = {};
+      conflicts.forEach((conflict) => {
+        next[conflict.id] = previous[conflict.id] ?? "merge";
+      });
+      return next;
+    });
+  }, [conflicts]);
+
   const titleId = useId();
   const announcementId = useId();
 
@@ -226,6 +236,12 @@ export function CalendarSyncConflictModal({
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={announcementId}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              handleClose();
+            }
+          }}
           className={clsx(
             "relative w-full max-w-2xl max-h-[85vh] flex flex-col",
             "rounded-[28px] border border-white/10",

@@ -13,14 +13,37 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
   const [captureStatus, setCaptureStatus] = useState<"idle" | "capturing" | "success" | "failed">("idle");
   const [timeLeft, setTimeLeft] = useState(10);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const onCaptureCompleteRef = useRef(onCaptureComplete);
+
+  useEffect(() => {
+    onCaptureCompleteRef.current = onCaptureComplete;
+  }, [onCaptureComplete]);
 
   const prompts: { type: LivenessPrompt; text: string; icon: string }[] = [
-    { type: "blink", text: "Please blink your eyes naturally.", icon: "👁️" },
+    { type: "blink", text: "Please blink your eyes naturally.", icon: "👁" },
     { type: "turn-left", text: "Turn your head slowly to the left.", icon: "⬅️" },
     { type: "smile", text: "Give us a big smile!", icon: "😊" },
   ];
 
   const currentPrompt = prompts[currentPromptIndex];
+
+  const stopCamera = () => {
+    const stream = streamRef.current;
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   useEffect(() => {
     if (captureStatus === "capturing" && !assistedMode && !textOnlyMode) {
@@ -28,8 +51,6 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            setCaptureStatus("failed");
-            onCaptureComplete(false);
             return 0;
           }
           return prev - 1;
@@ -37,16 +58,27 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [captureStatus, assistedMode, textOnlyMode, currentPromptIndex, onCaptureComplete]);
+  }, [captureStatus, assistedMode, textOnlyMode]);
+
+  useEffect(() => {
+    if (captureStatus === "capturing" && timeLeft === 0) {
+      stopCamera();
+      setCaptureStatus("failed");
+      onCaptureCompleteRef.current(false);
+    }
+  }, [captureStatus, timeLeft]);
 
   const startCapture = async () => {
     setCaptureStatus("capturing");
     setTimeLeft(10);
     setCurrentPromptIndex(0);
-    
+
     if (!textOnlyMode) {
       try {
+        // Stop any previous stream before acquiring a new one.
+        stopCamera();
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -57,13 +89,6 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
     }
   };
 
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
-    }
-  };
-
   const handleNextPrompt = () => {
     if (currentPromptIndex < prompts.length - 1) {
       setCurrentPromptIndex(prev => prev + 1);
@@ -71,11 +96,12 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
     } else {
       setCaptureStatus("success");
       stopCamera();
-      onCaptureComplete(true);
+      onCaptureCompleteRef.current(true);
     }
   };
 
   const handleRetry = () => {
+    stopCamera();
     setCaptureStatus("idle");
     setTimeLeft(10);
     setCurrentPromptIndex(0);
@@ -95,8 +121,9 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
           </button>
           <button
             onClick={() => {
-              setTextOnlyMode(!textOnlyMode);
-              if (!textOnlyMode) stopCamera();
+              const next = !textOnlyMode;
+              setTextOnlyMode(next);
+              if (next) stopCamera();
             }}
             className={`text-sm px-3 py-1 rounded-full border transition-colors ${textOnlyMode ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-transparent text-slate-400 border-slate-600 hover:text-slate-300'}`}
             aria-pressed={textOnlyMode}
@@ -175,7 +202,7 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
           <div className="w-full mt-6 bg-slate-700 h-1.5 rounded-full overflow-hidden" aria-label="Progress">
             <div 
               className="bg-cyan-500 h-full transition-all duration-300"
-              style={{ width: `${((currentPromptIndex) / prompts.length) * 100}%` }}
+              style={{ width: `${((currentPromptIndex) / prompts.length) * 100}%`}}
             />
           </div>
         </div>

@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SearchTypeahead } from "./search-typeahead";
+
+const { mockReplace } = vi.hoisted(() => ({ mockReplace: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({
-    replace: vi.fn(),
+    replace: mockReplace,
   }),
   usePathname: () => "/dashboard",
 }));
@@ -82,7 +84,7 @@ describe("SearchTypeahead", () => {
     );
 
     const input = screen.getByLabelText("Search marketplace");
-    await user.type(input, "a");
+    await user.type(input, "i");
 
     await waitFor(() => {
       expect(screen.getByText("UI Components")).toBeInTheDocument();
@@ -99,7 +101,7 @@ describe("SearchTypeahead", () => {
 
   it("handles enter key to select suggestion", async () => {
     const user = userEvent.setup();
-    const { container } = render(
+    render(
       <SearchTypeahead
         suggestions={mockSuggestions}
         onSearch={mockOnSearch}
@@ -118,6 +120,67 @@ describe("SearchTypeahead", () => {
     await waitFor(() => {
       expect(input).toHaveValue("UI Components");
     });
+  });
+
+  it("selects the first visible suggestion after filtering", async () => {
+    const user = userEvent.setup();
+    render(
+      <SearchTypeahead
+        suggestions={[
+          { id: "1", label: "Alpha", category: "Popular" },
+          { id: "2", label: "Color Contrast", category: "Testing" },
+          { id: "3", label: "Console", category: "Popular" },
+        ]}
+      />
+    );
+
+    const input = screen.getByLabelText("Search marketplace");
+    await user.type(input, "con");
+    await user.keyboard("{ArrowDown}");
+
+    const highlightedOption = screen.getByRole("option", { selected: true });
+    expect(input).toHaveAttribute(
+      "aria-activedescendant",
+      highlightedOption.id
+    );
+    expect(highlightedOption).toHaveTextContent("Color Contrast");
+
+    await user.keyboard("{Enter}");
+
+    expect(input).toHaveValue("Color Contrast");
+    expect(mockReplace).toHaveBeenCalledWith("/dashboard?q=Color+Contrast");
+  });
+
+  it("submits the typed query with Enter after Escape closes the list", async () => {
+    const user = userEvent.setup();
+    render(<SearchTypeahead suggestions={mockSuggestions} />);
+
+    const input = screen.getByLabelText("Search marketplace");
+    await user.type(input, "foo");
+    await user.keyboard("{Escape}{Enter}");
+
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(mockReplace).toHaveBeenCalledWith("/dashboard?q=foo");
+  });
+
+  it("resets the active option when the visible suggestions change", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <SearchTypeahead suggestions={mockSuggestions} />
+    );
+
+    const input = screen.getByLabelText("Search marketplace");
+    await user.type(input, "i");
+    await user.keyboard("{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant");
+
+    rerender(
+      <SearchTypeahead
+        suggestions={[{ id: "4", label: "Infrastructure", category: "Testing" }]}
+      />
+    );
+
+    expect(input).not.toHaveAttribute("aria-activedescendant");
   });
 
   it("clears search when clear button is clicked", async () => {
@@ -175,7 +238,7 @@ describe("SearchTypeahead", () => {
   });
 
   it("shows loading indicator when isLoading is true", () => {
-    render(
+    const { container } = render(
       <SearchTypeahead
         suggestions={mockSuggestions}
         isLoading={true}
@@ -185,7 +248,7 @@ describe("SearchTypeahead", () => {
     const input = screen.getByLabelText("Search marketplace");
     fireEvent.change(input, { target: { value: "test" } });
 
-    const loadingIndicator = screen.getByRole("presentation", { hidden: true });
+    const loadingIndicator = container.querySelector(".animate-spin");
     expect(loadingIndicator).toHaveClass("animate-spin");
   });
 
@@ -216,7 +279,7 @@ describe("SearchTypeahead", () => {
     );
 
     const input = screen.getByLabelText("Search marketplace");
-    await user.type(input, "");
+    await user.type(input, "i");
 
     await waitFor(() => {
       expect(screen.getByText("Popular")).toBeInTheDocument();
@@ -232,7 +295,7 @@ describe("SearchTypeahead", () => {
     );
 
     const input = screen.getByLabelText("Search marketplace");
-    expect(input).toHaveAttribute("role", undefined); // input has implicit role
+    expect(input).not.toHaveAttribute("role");
     expect(input).toHaveAttribute("aria-autocomplete", "list");
     expect(input).toHaveAttribute("aria-expanded", "false");
   });

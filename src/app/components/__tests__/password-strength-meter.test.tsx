@@ -4,16 +4,14 @@ import { describe, it, expect, vi } from 'vitest';
 import { PasswordStrengthMeter } from '../password-strength-meter';
 
 describe('PasswordStrengthMeter', () => {
-  it('renders the initial state correctly with an empty password', () => {
+  it('scores an empty password as zero', () => {
     render(<PasswordStrengthMeter value="" />);
     
-    // Check if the input is rendered
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password');
-    
-    // Check if the strength meter shows 'Fair' (score 1 because empty string is not in common list)
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
-    expect(screen.getByText('Fair')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+    expect(screen.getByText('Weak')).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).not.toHaveAttribute('aria-live');
   });
 
   it('toggles password visibility', async () => {
@@ -52,6 +50,14 @@ describe('PasswordStrengthMeter', () => {
     render(<PasswordStrengthMeter value="Str0ngP@ssw0rd!" />);
     
     expect(screen.getByText('Very Strong')).toBeInTheDocument();
+  });
+
+  it('does not rate a password strong without length and three character classes', () => {
+    render(<PasswordStrengthMeter value="abcdefg1" />);
+
+    expect(screen.getByText('Good')).toBeInTheDocument();
+    expect(screen.queryByText('Strong')).not.toBeInTheDocument();
+    expect(screen.queryByText('Very Strong')).not.toBeInTheDocument();
   });
 
   it('calls onChange handler when typing', async () => {

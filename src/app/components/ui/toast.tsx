@@ -25,7 +25,7 @@ import {
   CheckCheck,
 } from "lucide-react";
 import clsx from "clsx";
-import type { ToastItem, ToastVariant } from "@/hooks/use-toast";
+import type { ToastCategory, ToastItem, ToastVariant } from "@/hooks/use-toast";
 
 const variantConfig: Record<ToastVariant, {
   icon: React.ElementType;
@@ -75,7 +75,7 @@ function CountdownRing({ progress, color, reducedMotion }: { progress: number; c
 
 interface ToastProps { toast: ToastItem; onDismiss: (id: string) => void; }
 
-const NOTIFICATION_CATEGORIES = ["bookings", "payments", "disputes", "system"];
+const NOTIFICATION_CATEGORIES: readonly ToastCategory[] = ["bookings", "payments", "disputes", "system"];
 
 export function Toast({ toast, onDismiss }: ToastProps) {
   const { id, variant, title, description, count, messages, category, onUndo, actions } = toast;
@@ -84,6 +84,10 @@ export function Toast({ toast, onDismiss }: ToastProps) {
   const config = variantConfig[variant];
   const Icon = config.icon;
   const isGrouped = count > 1;
+  // Derive whether this toast belongs to a persistent notification category.
+  // Must be computed inside the component so it is always defined before use.
+  const isPersistentCategory: boolean =
+    category !== undefined && NOTIFICATION_CATEGORIES.includes(category);
   const hasActions = Array.isArray(actions) && actions.length > 0;
   const panelId = `toast-panel-${id}`;
   const reducedMotion = useReducedMotion();

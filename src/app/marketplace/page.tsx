@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo } from "react";
+import Link from "next/link";
 import {
   RecentlyViewedRail,
   useRecentlyViewed,
@@ -21,28 +22,28 @@ const seedItems = [
     title: "1 Hour Technical Consultation",
     price: "50 XLM",
     image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=300&fit=crop",
-    href: "/marketplace",
+    href: "/marketplace/demo-1",
   },
   {
     id: "demo-2",
     title: "30 Minute Design Review",
     price: "25 XLM",
     image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=300&fit=crop",
-    href: "/marketplace",
+    href: "/marketplace/demo-2",
   },
   {
     id: "demo-3",
     title: "2 Hour Strategy Session",
     price: "100 XLM",
     image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop",
-    href: "/marketplace",
+    href: "/marketplace/demo-3",
   },
   {
     id: "demo-4",
     title: "15 Minute Quick Call",
     price: "15 XLM",
     image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop",
-    href: "/marketplace",
+    href: "/marketplace/demo-4",
   },
 ];
 
@@ -80,7 +81,7 @@ function buildCatalogue(): (typeof seedItems)[number][] {
       title: SERVICE_TITLES[i % SERVICE_TITLES.length],
       price: PRICE_BAND[i % PRICE_BAND.length],
       image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=300&fit=crop",
-      href: "/marketplace",
+      href: `/marketplace/svc-${i + 1}`,
     });
   }
   return out;
@@ -106,9 +107,9 @@ function MarketplaceGrid() {
       >
         {visible.map((item) => (
           <li key={item.id}>
-            <a
+            <Link
               href={item.href}
-              onClick={() => addItem(item)}
+              onClick={() => addItem({ ...item, href: `/marketplace/${item.id}` })}
               className="card card--interactive group flex h-full flex-col"
             >
               {item.image ? (
@@ -136,7 +137,7 @@ function MarketplaceGrid() {
                 </h3>
                 <p className="mt-2 text-sm text-zinc-400">{item.price}</p>
               </div>
-            </a>
+            </Link>
           </li>
         ))}
       </ol>
