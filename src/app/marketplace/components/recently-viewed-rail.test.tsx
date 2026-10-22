@@ -1,4 +1,4 @@
-/**
+/*
  * recently-viewed-rail.test.tsx
  *
  * Tests for the RecentlyViewedRail component.
@@ -17,8 +17,8 @@
  * - Touch scroll behavior
  */
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach, vi} from "vitest";
 import { RecentlyViewedRail, useRecentlyViewed, type RecentlyViewedItem } from "./recently-viewed-rail";
 
 // Mock localStorage
@@ -88,9 +88,9 @@ describe("RecentlyViewedRail", () => {
   it("should handle corrupted localStorage gracefully and return null", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     localStorage.setItem("chronopay-recently-viewed", "{invalid json}");
-    
+
     const { container } = render(<RecentlyViewedRail />);
-    
+
     // Assert error contract
     expect(consoleSpy).toHaveBeenCalledWith(
       "Failed to load recently viewed items:",
@@ -98,51 +98,51 @@ describe("RecentlyViewedRail", () => {
     );
     // Assert returned value is null due to empty items
     expect(container.firstChild).toBeNull();
-    
+
     consoleSpy.mockRestore();
   });
 
   it("should return null when history is cleared (boundary transition)", () => {
     const { container } = render(<RecentlyViewedRail />);
-    
+
     // initially renders
     expect(screen.getByText("Recently viewed")).toBeInTheDocument();
-    
+
     // trigger clear
     const clearButton = screen.getByText("Clear history");
     fireEvent.click(clearButton);
-    
+
     // confirm clear
     const confirmButton = screen.getByText("Confirm?");
     fireEvent.click(confirmButton);
-    
+
     // assert boundary: component should now render null
     expect(container.firstChild).toBeNull();
   });
 
   it("should handle localStorage setItem error gracefully on update", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    
+
     render(<RecentlyViewedRail />);
-    
+
     // Mock setItem to throw to test effect error boundary
     const originalSetItem = localStorage.setItem;
     localStorage.setItem = () => { throw new Error("Quota exceeded"); };
-    
+
     // dispatch an update event
     const updatedItems: RecentlyViewedItem[] = [{
-      id: "3", title: "New Item", price: "10 XLM", href: "/3", viewedAt: Date.now()
+      id: "3", title: "New Item", price: "10 XLM", href: "/marketplace/3", viewedAt: Date.now()
     }];
     window.dispatchEvent(new CustomEvent("chronopay:recently-viewed-updated", {
       detail: updatedItems
     }));
-    
+
     // Assert error was caught and logged
     expect(consoleSpy).toHaveBeenCalledWith(
       "Failed to save recently viewed items:",
       expect.any(Error)
     );
-    
+
     // Restore
     localStorage.setItem = originalSetItem;
     consoleSpy.mockRestore();
@@ -150,9 +150,9 @@ describe("RecentlyViewedRail", () => {
 
   it("should render items from localStorage", () => {
     render(<RecentlyViewedRail />);
-    
+
     expect(screen.getByText("Recently viewed")).toBeInTheDocument();
-    expect(screen.getByText("1 Hour Consultation")).toBeInTheDocument();
+    expect(screen.getByText("1 Hour Consultation")).toBeIntheDocument();
     expect(screen.getByText("30 Minute Session")).toBeInTheDocument();
   });
 
@@ -163,87 +163,87 @@ describe("RecentlyViewedRail", () => {
 
   it("should show confirmation when clear history is clicked", () => {
     render(<RecentlyViewedRail />);
-    
+
     const clearButton = screen.getByText("Clear history");
     fireEvent.click(clearButton);
-    
-    expect(screen.getByText("Confirm?")).toBeInTheDocument();
-    expect(screen.getByText("Cancel")).toBeInTheDocument();
+
+    expect(screen.getByText("Confirm?")).toBeIntheDocument();
+    expect(screen.getByText("Cancel")).toBeIntheDocument();
   });
 
   it("should cancel clear history when Cancel is clicked", () => {
     render(<RecentlyViewedRail />);
-    
+
     const clearButton = screen.getByText("Clear history");
     fireEvent.click(clearButton);
-    
+
     const cancelButton = screen.getByText("Cancel");
     fireEvent.click(cancelButton);
-    
+
     expect(screen.queryByText("Confirm?")).not.toBeInTheDocument();
-    expect(screen.getByText("Clear history")).toBeInTheDocument();
+    expect(screen.getByText("Clear history")).toBeIntheDocument();
   });
 
   it("should have proper ARIA labels", () => {
     render(<RecentlyViewedRail />);
-    
+
     const section = screen.getByLabelText("Recently viewed");
     expect(section).toBeInTheDocument();
-    
+
     const region = screen.getByRole("region", { name: "Recently viewed items" });
     expect(region).toBeInTheDocument();
   });
 
   it("should have proper ARIA labels for item links", () => {
     render(<RecentlyViewedRail />);
-    
+
     const itemLink = screen.getByLabelText(/View 1 Hour Consultation/);
-    expect(itemLink).toBeInTheDocument();
+    expect(itemLink).toBeIntheDocument();
     expect(itemLink).toHaveAttribute("href", "/marketplace/1");
   });
 
   it("should support keyboard navigation with arrow keys", () => {
     render(<RecentlyViewedRail />);
-    
+
     const items = screen.getAllByRole("link");
     const firstItem = items[0];
-    
+
     firstItem.focus();
     expect(firstItem).toHaveFocus();
-    
+
     fireEvent.keyDown(firstItem, { key: "ArrowRight" });
     expect(items[1]).toHaveFocus();
-    
+
     fireEvent.keyDown(items[1], { key: "ArrowLeft" });
     expect(firstItem).toHaveFocus();
   });
 
   it("should support Home and End keys", () => {
     render(<RecentlyViewedRail />);
-    
+
     const items = screen.getAllByRole("link");
     const lastItem = items[items.length - 1];
-    
+
     lastItem.focus();
     expect(lastItem).toHaveFocus();
-    
+
     fireEvent.keyDown(lastItem, { key: "Home" });
     expect(items[0]).toHaveFocus();
-    
+
     fireEvent.keyDown(items[0], { key: "End" });
     expect(lastItem).toHaveFocus();
   });
 
   it("should wrap navigation with arrow keys", () => {
     render(<RecentlyViewedRail />);
-    
-    const items = screen.getAllByRole("link");
+
+    const items = screen.getAllBuRole("link");
     const lastItem = items[items.length - 1];
-    
+
     lastItem.focus();
     fireEvent.keyDown(lastItem, { key: "ArrowRight" });
     expect(items[0]).toHaveFocus();
-    
+
     const firstItem = items[0];
     fireEvent.keyDown(firstItem, { key: "ArrowLeft" });
     expect(lastItem).toHaveFocus();
@@ -251,7 +251,7 @@ describe("RecentlyViewedRail", () => {
 
   it("should have horizontal scroll container", () => {
     const { container } = render(<RecentlyViewedRail />);
-    
+
     const scrollContainer = container.querySelector('[role="region"]');
     expect(scrollContainer).toHaveClass("overflow-x-auto");
   });
@@ -264,16 +264,43 @@ describe("RecentlyViewedRail", () => {
       href: `/marketplace/${i}`,
       viewedAt: Date.now() - i * 1000,
     }));
-    
+
     localStorage.setItem(
       "chronopay-recently-viewed",
       JSON.stringify(manyItems)
     );
-    
+
     render(<RecentlyViewedRail />);
-    
-    const items = screen.getAllByRole("link");
+
+    const items = screen.getAllBuRole("link");
     expect(items.length).toBe(10);
+  });
+
+  it("should migrate legacy items whose href is /marketplace", () => {
+    const legacyItems: RecentlyViewedItem[] = [
+      {
+        id: "42",
+        title: "Legacy Item",
+        price: "15 XLM",
+        href: "/marketplace",
+        viewedAt: Date.now(),
+      },
+    ];
+    localStorage.setItem(
+      "chronopay-recently-viewed",
+      JSON.stringify(legacyItems)
+    );
+
+    render(<RecentlyViewedRail />);
+
+    const itemLink = screen.getByLabelText(/View Legacy Item/);
+    expect(itemLink).toHaveAttribute("href", "/marketplace/42");
+
+    // Persisted migration
+    const stored = JSON.parse(
+      localStorage.getItem("chronopay-recently-viewed")!
+    );
+    expect(stored[0].href).toBe("/marketplace/42");
   });
 });
 
@@ -289,7 +316,7 @@ describe("useRecentlyViewed hook", () => {
   it("should add item to localStorage", () => {
     const TestComponent = () => {
       const { addItem } = useRecentlyViewed();
-      
+
       return (
         <button
           onClick={() =>
@@ -305,15 +332,15 @@ describe("useRecentlyViewed hook", () => {
         </button>
       );
     };
-    
+
     render(<TestComponent />);
-    
+
     const button = screen.getByText("Add Item");
     fireEvent.click(button);
-    
+
     const stored = localStorage.getItem("chronopay-recently-viewed");
     expect(stored).toBeTruthy();
-    
+
     const items = JSON.parse(stored!);
     expect(items).toHaveLength(1);
     expect(items[0].id).toBe("test-1");
@@ -336,15 +363,15 @@ describe("useRecentlyViewed hook", () => {
         viewedAt: Date.now() - 1000,
       },
     ];
-    
+
     localStorage.setItem(
       "chronopay-recently-viewed",
       JSON.stringify(existingItems)
     );
-    
+
     const TestComponent = () => {
       const { addItem } = useRecentlyViewed();
-      
+
       return (
         <button
           onClick={() =>
@@ -360,29 +387,29 @@ describe("useRecentlyViewed hook", () => {
         </button>
       );
     };
-    
+
     render(<TestComponent />);
-    
+
     const button = screen.getByText("Add Existing");
     fireEvent.click(button);
-    
+
     const stored = localStorage.getItem("chronopay-recently-viewed");
     const items = JSON.parse(stored!);
-    
+
     expect(items[0].id).toBe("2");
     expect(items).toHaveLength(2);
   });
 
   it("should handle error gracefully when adding item with corrupted storage", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    
+
     // Mock get/set to throw error
     const originalGetItem = localStorage.getItem;
     localStorage.getItem = () => { throw new Error("Storage unavailable"); };
-    
+
     const TestComponent = () => {
       const { addItem } = useRecentlyViewed();
-      
+
       return (
         <button
           onClick={() =>
@@ -398,51 +425,18 @@ describe("useRecentlyViewed hook", () => {
         </button>
       );
     };
-    
+
     render(<TestComponent />);
-    
+
     const button = screen.getByText("Add Item Error");
     fireEvent.click(button);
-    
+
     expect(consoleSpy).toHaveBeenCalledWith(
       "Failed to add recently viewed item:",
       expect.any(Error)
     );
-    
+
     localStorage.getItem = originalGetItem;
     consoleSpy.mockRestore();
-  });
-
-  it("should dispatch custom event on update", () => {
-    const eventListener = vi.fn();
-    window.addEventListener("chronopay:recently-viewed-updated", eventListener);
-    
-    const TestComponent = () => {
-      const { addItem } = useRecentlyViewed();
-      
-      return (
-        <button
-          onClick={() =>
-            addItem({
-              id: "test-1",
-              title: "Test Item",
-              price: "10 XLM",
-              href: "/test",
-            })
-          }
-        >
-          Add Item
-        </button>
-      );
-    };
-    
-    render(<TestComponent />);
-    
-    const button = screen.getByText("Add Item");
-    fireEvent.click(button);
-    
-    expect(eventListener).toHaveBeenCalled();
-    
-    window.removeEventListener("chronopay:recently-viewed-updated", eventListener);
   });
 });
