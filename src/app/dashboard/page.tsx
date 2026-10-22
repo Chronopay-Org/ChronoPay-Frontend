@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useMessages } from "@/lib/i18n";
 import { DashboardShell } from "../components/dashboard-shell";
 import {
@@ -202,7 +202,6 @@ export default function Dashboard() {
   const loading = searchParams.has("loading");
   const error = searchParams.has("error");
   const hasData = !searchParams.has("empty");
-  const [activeFilters, setActiveFilters] = useState<ChipFilter[]>([]);
   const [isEnrolling2FA, setIsEnrolling2FA] = useState(false);
   const [twoFactorStatus, setTwoFactorStatus] =
     useState<"enabled" | "disabled">("disabled");
@@ -219,16 +218,14 @@ export default function Dashboard() {
     completeTour,
   } = useOnboardingTour();
 
-  // Update active filters from URL params
-  const updateActiveFilters = useCallback(() => {
-    const filters: ChipFilter[] = [];
-    
+  // Derive active filter chips directly from URL search params — always in sync.
+  const activeFilters = useMemo<ChipFilter[]>(() => {
+    const chips: ChipFilter[] = [];
     FILTER_GROUPS.forEach((group) => {
-      const values = searchParams.getAll(group.id);
-      values.forEach((value) => {
+      searchParams.getAll(group.id).forEach((value) => {
         const option = group.options.find((o) => o.id === value);
         if (option) {
-          filters.push({
+          chips.push({
             groupId: group.id,
             groupLabel: group.title,
             optionId: value,
@@ -237,15 +234,8 @@ export default function Dashboard() {
         }
       });
     });
-    
-    setActiveFilters(filters);
+    return chips;
   }, [searchParams]);
-
-  // Update filters when search params change
-  if (activeFilters.length === 0 && 
-      FILTER_GROUPS.some((g) => searchParams.getAll(g.id).length > 0)) {
-    updateActiveFilters();
-  }
 
   if (loading) {
     return (
@@ -455,7 +445,7 @@ export default function Dashboard() {
           {/* Active Filters Display */}
           <ActiveFiltersChips
             filters={activeFilters}
-            onFiltersChange={setActiveFilters}
+            allGroupIds={FILTER_GROUPS.map((g) => g.id)}
           />
 
           {/* Filters and Grid Layout */}

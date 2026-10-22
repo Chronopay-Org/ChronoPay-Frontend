@@ -15,11 +15,19 @@ export interface ChipFilter {
 
 interface ActiveFiltersChipsProps {
   filters: ChipFilter[];
+  /**
+   * All group IDs known to the page (e.g. ["category", "tags"]).
+   * When provided, "Clear all" removes every one of these keys from the URL
+   * rather than only the keys present in the (potentially stale) `filters`
+   * prop, ensuring no filter params are left behind.
+   */
+  allGroupIds?: string[];
   onFiltersChange?: (activeFilters: ChipFilter[]) => void;
 }
 
 export function ActiveFiltersChips({
   filters,
+  allGroupIds,
   onFiltersChange,
 }: ActiveFiltersChipsProps) {
   const router = useRouter();
@@ -59,9 +67,13 @@ export function ActiveFiltersChips({
     startTransition(() => {
       const params = new URLSearchParams(searchParams.toString());
 
-      // Remove all filter parameters
-      filters.forEach((filter) => {
-        params.delete(filter.groupId);
+      // Remove every known filter group ID.  Prefer the explicit allGroupIds
+      // list (complete, even when filters prop is stale) and fall back to the
+      // group IDs present in the current filters prop.
+      const groupsToClear = allGroupIds ?? filters.map((f) => f.groupId);
+      // Deduplicate so we don't call delete() twice for the same key.
+      [...new Set(groupsToClear)].forEach((id) => {
+        params.delete(id);
       });
 
       router.replace(
@@ -72,7 +84,7 @@ export function ActiveFiltersChips({
     });
 
     onFiltersChange?.([]);
-  }, [searchParams, pathname, router, filters, onFiltersChange]);
+  }, [searchParams, pathname, router, filters, allGroupIds, onFiltersChange]);
 
   if (filters.length === 0) {
     return null;
