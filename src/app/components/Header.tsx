@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { WalletStatusBadge } from "./WalletStatusBadge";
 import { AccountMenu } from "./AccountMenu";
+import { ThemeSwitcher } from "@/components/dashboard/theme-switcher";
 
 export function Header() {
   const [open, setOpen] = useState(false);
@@ -24,43 +25,58 @@ export function Header() {
 
   return (
     <>
-      <header className="border-b border-zinc-800 bg-zinc-950 backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-30 border-b backdrop-blur-xl"
+        style={{
+          backgroundColor: "var(--shell-header-bg)",
+          borderColor: "var(--shell-header-border)",
+        }}
+      >
         <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-6">
           <div className="flex flex-wrap items-center gap-4">
             <Link
               href="/"
-              className="text-lg font-semibold tracking-tight text-slate-100"
+              className="text-lg font-semibold tracking-tight"
+              style={{ color: "var(--foreground)" }}
             >
               ChronoPay
             </Link>
-            <div className="hidden sm:flex flex-wrap items-center gap-3 text-sm text-slate-400">
+            <div
+              className="hidden sm:flex flex-wrap items-center gap-3 text-sm"
+              style={{ color: "var(--muted)" }}
+            >
               <Link
                 href="/"
-                className="rounded-full px-3 py-2 hover:bg-white/6 hover:text-slate-100 transition duration-200 ease-in-out"
+                className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
+                style={{ color: "var(--foreground)" }}
               >
                 Home
               </Link>
               <Link
                 href="/dashboard"
-                className="rounded-full px-3 py-2 hover:bg-white/6 hover:text-slate-100 transition duration-200 ease-in-out"
+                className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
+                style={{ color: "var(--foreground)" }}
               >
                 Dashboard
               </Link>
               <Link
                 href="/marketplace"
-                className="rounded-full px-3 py-2 hover:bg-white/6 hover:text-slate-100 transition duration-200 ease-in-out"
+                className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
+                style={{ color: "var(--foreground)" }}
               >
                 Marketplace
               </Link>
               <Link
                 href="/pricing"
-                className="rounded-full px-3 py-2 hover:bg-white/6 hover:text-slate-100 transition duration-200 ease-in-out"
+                className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
+                style={{ color: "var(--foreground)" }}
               >
                 Pricing
               </Link>
               <Link
                 href="/status"
-                className="rounded-full px-3 py-2 hover:bg-white/6 hover:text-slate-100 transition duration-200 ease-in-out"
+                className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
+                style={{ color: "var(--foreground)" }}
               >
                 Status
               </Link>
@@ -68,7 +84,8 @@ export function Header() {
                 href="https://stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 px-3 py-2 hover:border-white/20 hover:bg-white/6 hover:text-slate-100 transition duration-200 ease-in-out"
+                className="rounded-full border border-slate-400/20 px-3 py-2 hover:border-slate-400/40 hover:bg-slate-500/10 transition duration-200 ease-in-out"
+                style={{ color: "var(--foreground)" }}
               >
                 Stellar
               </a>
@@ -76,7 +93,8 @@ export function Header() {
                 href="https://github.com/Chronopay-Org/ChronoPay-Frontend"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-white/10 px-3 py-2 hover:border-white/20 hover:bg-white/6 hover:text-slate-100 transition duration-200 ease-in-out"
+                className="rounded-full border border-slate-400/20 px-3 py-2 hover:border-slate-400/40 hover:bg-slate-500/10 transition duration-200 ease-in-out"
+                style={{ color: "var(--foreground)" }}
               >
                 GitHub
               </a>
@@ -84,13 +102,18 @@ export function Header() {
           </div>
 
           <div className="hidden sm:flex flex-wrap items-center gap-3">
+            <ThemeSwitcher />
             <WalletStatusBadge />
             <AccountMenu />
           </div>
 
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-900 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-white/10 sm:hidden"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-400/20 px-4 py-2 text-sm font-medium transition hover:bg-slate-500/10 sm:hidden"
+            style={{
+              backgroundColor: "var(--surface)",
+              color: "var(--foreground)",
+            }}
             onClick={() => setOpen(true)}
             aria-expanded={open}
             aria-controls="mobile-menu"
@@ -106,27 +129,38 @@ export function Header() {
           id="mobile-menu"
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 overflow-y-auto bg-neutral-600/50 p-6"
+          className="fixed inset-0 z-50 overflow-y-auto bg-neutral-900/60 p-6 backdrop-blur-sm"
           onClick={(event) => {
             if (event.target === event.currentTarget) {
               setOpen(false);
             }
           }}
         >
-          <div className="mx-auto max-w-sm rounded-3xl border border-white/10 bg-zinc-950 p-6 shadow-2xl shadow-black/40">
+          <div
+            className="mx-auto max-w-sm rounded-3xl border p-6 shadow-2xl"
+            style={{
+              backgroundColor: "var(--surface-strong)",
+              borderColor: "var(--border-subtle)",
+              color: "var(--foreground)",
+            }}
+          >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.24em] text-slate-500">
+                <p className="text-sm uppercase tracking-[0.24em]" style={{ color: "var(--muted)" }}>
                   Menu
                 </p>
-                <h2 className="mt-2 text-xl font-semibold text-slate-100">
+                <h2 className="mt-2 text-xl font-semibold" style={{ color: "var(--foreground)" }}>
                   ChronoPay
                 </h2>
               </div>
               <button
                 ref={closeButtonRef}
                 type="button"
-                className="rounded-full border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-slate-100 hover:bg-white/10"
+                className="rounded-full border px-3 py-2 text-sm hover:bg-slate-500/10"
+                style={{
+                  borderColor: "var(--border-subtle)",
+                  color: "var(--foreground)",
+                }}
                 onClick={() => setOpen(false)}
                 aria-label="Close navigation menu"
               >
@@ -137,35 +171,60 @@ export function Header() {
             <div className="mt-6 space-y-4 text-sm">
               <Link
                 href="/"
-                className="block rounded-2xl border border-white/10 bg-zinc-900 px-4 py-3 text-slate-100 hover:bg-white/5"
+                className="block rounded-2xl border px-4 py-3 hover:bg-slate-500/10"
+                style={{
+                  borderColor: "var(--border-subtle)",
+                  backgroundColor: "var(--surface)",
+                  color: "var(--foreground)",
+                }}
                 onClick={() => setOpen(false)}
               >
                 Home
               </Link>
               <Link
                 href="/dashboard"
-                className="block rounded-2xl border border-white/10 bg-zinc-900 px-4 py-3 text-slate-100 hover:bg-white/5"
+                className="block rounded-2xl border px-4 py-3 hover:bg-slate-500/10"
+                style={{
+                  borderColor: "var(--border-subtle)",
+                  backgroundColor: "var(--surface)",
+                  color: "var(--foreground)",
+                }}
                 onClick={() => setOpen(false)}
               >
                 Dashboard
               </Link>
               <Link
                 href="/marketplace"
-                className="block rounded-2xl border border-white/10 bg-zinc-900 px-4 py-3 text-slate-100 hover:bg-white/5"
+                className="block rounded-2xl border px-4 py-3 hover:bg-slate-500/10"
+                style={{
+                  borderColor: "var(--border-subtle)",
+                  backgroundColor: "var(--surface)",
+                  color: "var(--foreground)",
+                }}
                 onClick={() => setOpen(false)}
               >
                 Marketplace
               </Link>
               <Link
                 href="/pricing"
-                className="block rounded-2xl border border-white/10 bg-zinc-900 px-4 py-3 text-slate-100 hover:bg-white/5"
+                className="block rounded-2xl border px-4 py-3 hover:bg-slate-500/10"
+                style={{
+                  borderColor: "var(--border-subtle)",
+                  backgroundColor: "var(--surface)",
+                  color: "var(--foreground)",
+                }}
                 onClick={() => setOpen(false)}
               >
                 Pricing
               </Link>
               <Link
                 href="/status"
-                className="block rounded-2xl border border-white/10 bg-zinc-900 px-4 py-3 text-slate-100 hover:bg-white/5"
+                className="block rounded-2xl border px-4 py-3 hover:bg-slate-500/10"
+                style={{
+                  borderColor: "var(--border-subtle)",
+                  backgroundColor: "var(--surface)",
+                  color: "var(--foreground)",
+                }}
                 onClick={() => setOpen(false)}
               >
                 Status
@@ -174,7 +233,12 @@ export function Header() {
                 href="https://stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block rounded-2xl border border-white/10 bg-zinc-900 px-4 py-3 text-slate-100 hover:bg-white/5"
+                className="block rounded-2xl border px-4 py-3 hover:bg-slate-500/10"
+                style={{
+                  borderColor: "var(--border-subtle)",
+                  backgroundColor: "var(--surface)",
+                  color: "var(--foreground)",
+                }}
                 onClick={() => setOpen(false)}
               >
                 Stellar
@@ -183,7 +247,12 @@ export function Header() {
                 href="https://github.com/Chronopay-Org/ChronoPay-Frontend"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block rounded-2xl border border-white/10 bg-zinc-900 px-4 py-3 text-slate-100 hover:bg-white/5"
+                className="block rounded-2xl border px-4 py-3 hover:bg-slate-500/10"
+                style={{
+                  borderColor: "var(--border-subtle)",
+                  backgroundColor: "var(--surface)",
+                  color: "var(--foreground)",
+                }}
                 onClick={() => setOpen(false)}
               >
                 GitHub
@@ -191,6 +260,7 @@ export function Header() {
             </div>
 
             <div className="mt-6 space-y-4">
+              <ThemeSwitcher />
               <WalletStatusBadge />
               <AccountMenu />
             </div>

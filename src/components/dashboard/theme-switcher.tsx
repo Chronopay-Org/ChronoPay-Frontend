@@ -72,9 +72,8 @@ export function ThemeSwitcher({ className }: { className?: string }) {
       aria-label="Color theme"
       onKeyDown={handleKeyDown}
       className={clsx(
-        "inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/6 p-1",
-        "focus-within:ring-2 focus-within:ring-cyan-300 focus-within:ring-offset-2 focus-within:ring-offset-slate-950",
-        "dark:bg-white/6",
+        "inline-flex items-center gap-1 rounded-full border border-slate-300/30 bg-slate-900/10 p-1 dark:border-white/10 dark:bg-white/6",
+        "focus-within:ring-2 focus-within:ring-cyan-500 dark:focus-within:ring-cyan-300 focus-within:ring-offset-2",
         className,
       )}
     >
@@ -91,10 +90,10 @@ export function ThemeSwitcher({ className }: { className?: string }) {
             onClick={() => changeTheme(value)}
             className={clsx(
               "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-1",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 dark:focus-visible:ring-cyan-300 focus-visible:ring-offset-1",
               active
-                ? "bg-cyan-300 text-slate-950"
-                : "text-slate-300 hover:bg-white/8 hover:text-white",
+                ? "bg-cyan-600 text-white dark:bg-cyan-300 dark:text-slate-950 shadow-sm"
+                : "text-slate-600 hover:bg-slate-900/10 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/8 dark:hover:text-white",
             )}
           >
             <Icon className="h-3.5 w-3.5" aria-hidden="true" />

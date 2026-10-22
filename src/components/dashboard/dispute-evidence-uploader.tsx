@@ -13,6 +13,7 @@ import {
 
 export type ScanStatus = "pending" | "scanning" | "clean" | "threat_detected" | "failed";
 export type UploadStatus = "idle" | "uploading" | "completed" | "error";
+export type EvidenceErrorKind = "validation" | "offline" | "upload";
 
 export interface DisputeFile {
   id: string;
@@ -24,6 +25,7 @@ export interface DisputeFile {
   uploadStatus: UploadStatus;
   scanStatus: ScanStatus;
   errorMessage?: string;
+  errorKind?: EvidenceErrorKind;
 }
 
 export interface DisputeEvidenceUploaderProps {
@@ -32,6 +34,9 @@ export interface DisputeEvidenceUploaderProps {
   maxFiles?: number;
   onFilesChange?: (files: DisputeFile[]) => void;
   isOffline?: boolean;
+  disabled?: boolean;
+  ariaLabel?: string;
+  ariaDescribedBy?: string;
 }
 
 const DEFAULT_ALLOWED_TYPES = [
@@ -43,7 +48,16 @@ const DEFAULT_ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
-const DEFAULT_ALLOWED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".csv", ".docx"];
+const MIME_TYPE_EXTENSIONS: Record<string, string[]> = {
+  "application/pdf": [".pdf"],
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/jpg": [".jpg", ".jpeg"],
+  "text/csv": [".csv"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+};
+
+const GENERIC_MIME_TYPES = new Set(["", "application/octet-stream", "binary/octet-stream"]);
 
 export function DisputeEvidenceUploader({
   maxFileSizeMB = 10,
@@ -51,12 +65,24 @@ export function DisputeEvidenceUploader({
   maxFiles = 5,
   onFilesChange,
   isOffline = false,
+  disabled = false,
+  ariaLabel = "Upload evidence files. Drag and drop files here or click to browse.",
+  ariaDescribedBy,
 }: DisputeEvidenceUploaderProps) {
   const [files, setFiles] = useState<DisputeFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploaderId = useId();
+  const allowedExtensions = Array.from(
+    new Set(
+      allowedTypes.flatMap((type) => MIME_TYPE_EXTENSIONS[type.toLowerCase()] ?? [])
+    )
+  );
+  const acceptedFormats = allowedExtensions
+    .filter((extension, index, extensions) => extension !== ".jpeg" || !extensions.includes(".jpg"))
+    .map((extension) => extension.slice(1).toUpperCase())
+    .join(", ");
 
   const notifyChange = (updatedFiles: DisputeFile[]) => {
     setFiles(updatedFiles);
@@ -83,20 +109,18 @@ export function DisputeEvidenceUploader({
       const fileType = file.type.toLowerCase();
       const fileName = file.name.toLowerCase();
 
-      const isTypeAllowed = allowedTypes.some(
-        (type) => type.toLowerCase() === fileType || (fileType && fileType.includes(type.toLowerCase()))
-      );
-      const isExtensionAllowed = DEFAULT_ALLOWED_EXTENSIONS.some((ext) =>
+      const isTypeAllowed = allowedTypes.some((type) => type.toLowerCase() === fileType);
+      const isExtensionAllowed = allowedExtensions.some((ext) =>
         fileName.endsWith(ext)
       );
 
-      if (!isTypeAllowed && !isExtensionAllowed) {
-        return `Unsupported file type. Accepted formats: PDF, PNG, JPG, CSV, DOCX.`;
+      if (!isExtensionAllowed || (!GENERIC_MIME_TYPES.has(fileType) && !isTypeAllowed)) {
+        return `Unsupported file type. Accepted formats: ${acceptedFormats}.`;
       }
 
       return null;
     },
-    [maxFileSizeMB, allowedTypes]
+    [maxFileSizeMB, allowedTypes, allowedExtensions, acceptedFormats]
   );
 
   const processFile = useCallback(
@@ -115,6 +139,7 @@ export function DisputeEvidenceUploader({
           uploadStatus: "error",
           scanStatus: "failed",
           errorMessage: validationError,
+          errorKind: "validation",
         };
         return invalidFile;
       }
@@ -130,6 +155,7 @@ export function DisputeEvidenceUploader({
           uploadStatus: "error",
           scanStatus: "failed",
           errorMessage: "Network offline. Upload paused.",
+          errorKind: "offline",
         };
         return offlineFile;
       }
@@ -206,6 +232,7 @@ export function DisputeEvidenceUploader({
   };
 
   const handleFiles = (incomingFiles: FileList | File[]) => {
+    if (disabled) return;
     setGeneralError(null);
     const fileList = Array.from(incomingFiles);
 
@@ -263,6 +290,32 @@ export function DisputeEvidenceUploader({
   };
 
   const handleRetry = (id: string) => {
+    const retryFile = files.find((file) => file.id === id);
+    if (!retryFile || (retryFile.errorKind !== "offline" && retryFile.errorKind !== "upload")) {
+      return;
+    }
+
+    const validationError = validateFile(retryFile.file);
+    if (validationError) {
+      setFiles((prev) => {
+        const updated = prev.map((file) =>
+          file.id === id
+            ? {
+                ...file,
+                progress: 0,
+                uploadStatus: "error" as UploadStatus,
+                scanStatus: "failed" as ScanStatus,
+                errorMessage: validationError,
+                errorKind: "validation" as EvidenceErrorKind,
+              }
+            : file
+        );
+        onFilesChange?.(updated);
+        return updated;
+      });
+      return;
+    }
+
     if (isOffline) {
       setGeneralError("Cannot retry while offline. Check your network connection.");
       return;
@@ -276,6 +329,7 @@ export function DisputeEvidenceUploader({
             uploadStatus: "uploading" as UploadStatus,
             scanStatus: "pending" as ScanStatus,
             errorMessage: undefined,
+            errorKind: undefined,
           };
         }
         return f;
@@ -340,20 +394,21 @@ export function DisputeEvidenceUploader({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={(e) => {
-          if (e.target !== fileInputRef.current) {
+          if (!disabled && e.target !== fileInputRef.current) {
             fileInputRef.current?.click();
           }
         }}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault();
             fileInputRef.current?.click();
           }
         }}
-        tabIndex={0}
+        tabIndex={disabled ? -1 : 0}
         role="button"
-        aria-label="Upload evidence files. Drag and drop files here or click to browse."
-        aria-describedby={`${uploaderId}-hint`}
+        aria-label={ariaLabel}
+        aria-describedby={[`${uploaderId}-hint`, ariaDescribedBy].filter(Boolean).join(" ")}
+        aria-disabled={disabled}
         className={`relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-400 ${
           isDragging
             ? "border-cyan-400 bg-cyan-950/20 scale-[0.99]"
@@ -365,8 +420,9 @@ export function DisputeEvidenceUploader({
           id={uploaderId}
           type="file"
           multiple
-          accept={DEFAULT_ALLOWED_EXTENSIONS.join(",")}
+          accept={allowedExtensions.join(",")}
           onChange={handleFileSelect}
+          disabled={disabled}
           className="sr-only"
           tabIndex={-1}
         />
@@ -377,7 +433,7 @@ export function DisputeEvidenceUploader({
           <span className="text-cyan-400 hover:underline">Click to upload</span> or drag and drop
         </p>
         <p id={`${uploaderId}-hint`} className="mt-1 text-xs text-slate-400 text-center">
-          PDF, PNG, JPG, CSV, DOCX (Max {maxFileSizeMB}MB per file, up to {maxFiles} files)
+          {acceptedFormats} (Max {maxFileSizeMB}MB per file, up to {maxFiles} files)
         </p>
       </div>
 
@@ -464,7 +520,8 @@ export function DisputeEvidenceUploader({
                             : "Upload failed.")}
                       </span>
                     </div>
-                    {item.uploadStatus === "error" && (
+                    {item.uploadStatus === "error" &&
+                      (item.errorKind === "offline" || item.errorKind === "upload") && (
                       <button
                         type="button"
                         onClick={() => handleRetry(item.id)}

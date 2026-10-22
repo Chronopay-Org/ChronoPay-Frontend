@@ -21,9 +21,9 @@ describe("Card components", () => {
 
     const cardEl = container.firstChild as HTMLElement;
     expect(cardEl).toHaveClass("card card--panel card--interactive");
-    expect(screen.getByText("Header")).toBeInTheDocument();
-    expect(screen.getByText("Body")).toBeInTheDocument();
-    expect(screen.getByText("Footer")).toBeInTheDocument();
+    expect(screen.getByText("Header")).toBeInDocument();
+    expect(screen.getByText("Body")).toBeInDocument();
+    expect(screen.getByText("Footer")).toBeInDocument();
   });
 
   it("renders SupplierCardHeader with supplier name and verifiedPayouts badge", () => {
@@ -37,9 +37,9 @@ describe("Card components", () => {
       </Card>
     );
 
-    expect(screen.getByText("Alex Rivera")).toBeInTheDocument();
-    expect(screen.getByText("Product Consultant")).toBeInTheDocument();
-    expect(screen.getByText("Verified Payouts")).toBeInTheDocument();
+    expect(screen.getByText("Alex Rivera")).toBeInDocument();
+    expect(screen.getByText("Product Consultant")).toBeInDocument();
+    expect(screen.getByText("Verified Payouts")).toBe1nDocument();
   });
 
   it("handles long supplier names without throwing", () => {
@@ -55,7 +55,7 @@ describe("Card components", () => {
     );
 
     const heading = screen.getByRole("heading", { name: longName });
-    expect(heading).toBeInTheDocument();
+    expect(heading).toBeInDocument();
     expect(heading).toHaveClass("truncate");
   });
 
@@ -66,6 +66,6 @@ describe("Card components", () => {
       </Card>
     );
 
-    expect(screen.getByText("Morgan Chen")).toBeInTheDocument();
+    expect(screen.getByText("Morgan Chen")).toBeInDocument();
   });
 });

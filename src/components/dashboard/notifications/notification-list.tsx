@@ -35,10 +35,41 @@ export function NotificationList({
     selectedCount,
   } = useNotificationSelection();
 
+  const anchorIndexRef = useRef<number | null>(null);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setItems(initialNotifications);
+    setItems((prevItems) => {
+      const overrides = new Map(
+        prevItems.map((item) => [
+          item.id,
+          { read: item.read, archived: (item as NotificationItemType & { archived?: boolean }).archived },
+        ]),
+      );
+      return initialNotifications
+        .filter((item) => !overrides.get(item.id)?.archived)
+        .map((item) => {
+          const override = overrides.get(item.id);
+          return override ? { ...item, read: override.read } : item;
+        });
+    });
   }, [initialNotifications]);
+
+  useEffect(() => {
+    setSelected((prev) => {
+      const currentIds = new Set(items.map((i) => i.id));
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (currentIds.has(id)) {
+          next.add(id);
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [items, setSelected]);
 
   const someSelected = selectedCount > 0 && selectedCount < items.length;
   const allSelected = items.length > 0 && selectedCount === items.length;
@@ -56,6 +87,21 @@ export function NotificationList({
       selectAll(items.map((i) => i.id));
     }
   }, [allSelected, clearSelection, selectAll, items]);
+
+  const handleToggleSelect = useCallback(
+    (id: string, index?: number) => {
+      if (typeof index === "number") {
+        anchorIndexRef.current = index;
+      } else {
+        const foundIndex = items.findIndex((item) => item.id === id);
+        if (foundIndex !== -1) {
+          anchorIndexRef.current = foundIndex;
+        }
+      }
+      toggleSelect(id);
+    },
+    [items, toggleSelect],
+  );
 
   const handleMarkAsRead = useCallback(() => {
     const ids = Array.from(selectedIds);
@@ -88,10 +134,11 @@ export function NotificationList({
         e.preventDefault();
         const nextIndex = currentIndex + 1;
         if (nextIndex >= items.length) return;
-        const prevLastIndex = lastFocusedIndexRef.current ?? currentIndex;
-        const rangeIds = items
-          .slice(Math.min(prevLastIndex, nextIndex), Math.max(prevLastIndex, nextIndex) + 1)
-          .map((i) => i.id);
+        const anchor = anchorIndexRef.current ?? currentIndex;
+        anchorIndexRef.current = anchor;
+        const start = Math.min(anchor, nextIndex);
+        const end = Math.max(anchor, nextIndex);
+        const rangeIds = items.slice(start, end + 1).map((i) => i.id);
         setSelected(new Set(rangeIds));
         lastFocusedIndexRef.current = nextIndex;
         const nextEl = listRef.current?.querySelector<HTMLElement>(
@@ -105,16 +152,45 @@ export function NotificationList({
         e.preventDefault();
         const nextIndex = currentIndex - 1;
         if (nextIndex < 0) return;
-        const prevLastIndex = lastFocusedIndexRef.current ?? currentIndex;
-        const rangeIds = items
-          .slice(Math.min(prevLastIndex, nextIndex), Math.max(prevLastIndex, nextIndex) + 1)
-          .map((i) => i.id);
+        const anchor = anchorIndexRef.current ?? currentIndex;
+        anchorIndexRef.current = anchor;
+        const start = Math.min(anchor, nextIndex);
+        const end = Math.max(anchor, nextIndex);
+        const rangeIds = items.slice(start, end + 1).map((i) => i.id);
         setSelected(new Set(rangeIds));
         lastFocusedIndexRef.current = nextIndex;
         const nextEl = listRef.current?.querySelector<HTMLElement>(
           `[data-index="${nextIndex}"]`,
         );
         nextEl?.focus();
+        return;
+      }
+
+      if (e.key === "ArrowDown" && !e.shiftKey) {
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < items.length) {
+          e.preventDefault();
+          anchorIndexRef.current = nextIndex;
+          lastFocusedIndexRef.current = nextIndex;
+          const nextEl = listRef.current?.querySelector<HTMLElement>(
+            `[data-index="${nextIndex}"]`,
+          );
+          nextEl?.focus();
+        }
+        return;
+      }
+
+      if (e.key === "ArrowUp" && !e.shiftKey) {
+        const nextIndex = currentIndex - 1;
+        if (nextIndex >= 0) {
+          e.preventDefault();
+          anchorIndexRef.current = nextIndex;
+          lastFocusedIndexRef.current = nextIndex;
+          const nextEl = listRef.current?.querySelector<HTMLElement>(
+            `[data-index="${nextIndex}"]`,
+          );
+          nextEl?.focus();
+        }
         return;
       }
 
@@ -135,6 +211,9 @@ export function NotificationList({
   const handleFocusIndex = useCallback(
     (index: number) => {
       lastFocusedIndexRef.current = index;
+      if (anchorIndexRef.current === null) {
+        anchorIndexRef.current = index;
+      }
     },
     [lastFocusedIndexRef],
   );
@@ -208,7 +287,7 @@ export function NotificationList({
             key={notification.id}
             notification={notification}
             isSelected={isSelected(notification.id)}
-            onToggle={toggleSelect}
+            onToggle={handleToggleSelect}
             index={index}
             onFocusIndex={handleFocusIndex}
           />

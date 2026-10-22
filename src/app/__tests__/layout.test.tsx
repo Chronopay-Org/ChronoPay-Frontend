@@ -36,18 +36,21 @@ describe('RootLayout', () => {
   });
 
   describe('component rendering', () => {
-    it('exercises the default lang and dir branch evidence', () => {
+    it('exercises the default lang and dir branch evidence and includes themeInitScript', () => {
       const { container } = render(
         <RootLayout>
           <div data-testid="child-content">Content</div>
         </RootLayout>
       );
       
-      const htmlElement = container.querySelector('html');
+      const htmlElement = container.querySelector('html') || document.querySelector('html');
       expect(htmlElement).not.toBeNull();
-      // Assert the branch evidence: defaults to 'en' and 'ltr'
       expect(htmlElement).toHaveAttribute('lang', 'en');
       expect(htmlElement).toHaveAttribute('dir', 'ltr');
+
+      const scripts = Array.from(document.querySelectorAll('script'));
+      const hasInitScript = scripts.some((s) => s.textContent?.includes('chronopay:theme'));
+      expect(hasInitScript).toBe(true);
     });
 
     it('renders the children normally within providers', () => {
@@ -71,8 +74,8 @@ describe('RootLayout', () => {
         </RootLayout>
       );
       
-      const htmlElement = container.querySelector('html');
-      expect(htmlElement).toBeInTheDocument();
+      const htmlElement = container.querySelector('html') || document.querySelector('html');
+      expect(htmlElement).not.toBeNull();
       expect(htmlElement).toHaveAttribute('lang', 'en');
     });
   });

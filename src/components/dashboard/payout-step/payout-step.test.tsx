@@ -33,16 +33,18 @@ function setup(props: Partial<React.ComponentProps<typeof PayoutStep>> = {}) {
   const onSave = vi.fn().mockResolvedValue(undefined);
   const onBack = vi.fn();
   const onRetry = vi.fn();
+  const onNext = vi.fn();
   const result = render(
     <PayoutStep
       preview={mockPreview}
       onSave={onSave}
       onBack={onBack}
       onRetry={onRetry}
+      onNext={onNext}
       {...props}
     />,
   );
-  return { ...result, onSave, onBack, onRetry };
+  return { ...result, onSave, onBack, onRetry, onNext };
 }
 
 /** Check the consent checkbox. */
@@ -173,7 +175,7 @@ describe("PayoutStep", () => {
       setup();
       expect(screen.getByText("Payout destination")).toBeInTheDocument();
       expect(screen.getByText("Freighter Wallet")).toBeInTheDocument();
-      expect(screen.getByText("Connected")).toBeInTheDocument();
+      expect(screen.getByText("Not connected")).toBeInTheDocument();
       expect(screen.getByText("Stellar")).toBeInTheDocument();
     });
 
@@ -260,6 +262,19 @@ describe("PayoutStep", () => {
       clickSave();
       expect(onSave).not.toHaveBeenCalled();
     });
+
+    it("does not call onSave twice on rapid clicks while pending", async () => {
+      const { onSave } = setup({ status: "idle" });
+      onSave.mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 1000)),
+      );
+      checkConsent();
+      clickSave();
+      clickSave();
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 
   describe("Error state", () => {
@@ -283,6 +298,22 @@ describe("PayoutStep", () => {
       });
       expect(onRetry).toHaveBeenCalled();
     });
+
+    it("clears the error state on retry in uncontrolled usage", () => {
+      const { onSave } = setup({ onRetry: undefined });
+      onSave.mockRejectedValue(new Error("Connection failed"));
+      checkConsent();
+      clickSave();
+      return waitFor(() => {
+        expect(screen.getByText("Could not save payout settings")).toBeInTheDocument();
+      }).then(() => {
+        const retryBtn = screen.getByRole("link", { name: /retry/i });
+        act(() => {
+          fireEvent.click(retryBtn);
+        });
+        expect(screen.getByText("Preferred payout currency")).toBeInTheDocument();
+      });
+    });
   });
 
   describe("Success state", () => {
@@ -298,13 +329,13 @@ describe("PayoutStep", () => {
       expect(screen.getByRole("link", { name: /next step/i })).toBeInTheDocument();
     });
 
-    it("calls onBack when next step is clicked", () => {
-      const { onBack } = setup({ status: "success" });
+    it("calls onNext when next step is clicked", () => {
+      const { onNext } = setup({ status: "success" });
       const nextBtn = screen.getByRole("link", { name: /next step/i });
       act(() => {
         fireEvent.click(nextBtn);
       });
-      expect(onBack).toHaveBeenCalled();
+      expect(onNext).toHaveBeenCalled();
     });
   });
 
@@ -406,6 +437,24 @@ describe("PayoutStep", () => {
     it("shows Payouts active status chip in success state", () => {
       setup({ status: "success" });
       expect(screen.getByText("Payouts active")).toBeInTheDocument();
+    });
+
+    it("disables save when the wallet address is invalid", () => {
+      setup({ preview: { ...mockPreview, walletAddress: "invalid" } });
+      checkConsent();
+      const saveBtn = screen.getByRole("link", { name: /save & continue/i });
+      expect(saveBtn).toHaveAttribute("disabled");
+    });
+
+    it("hides next step button when onNext is absent", () => {
+      render(
+        <PayoutStep
+          preview={mockPreview}
+          onSave={vi.fn()}
+          status="success"
+        />,
+      );
+      expect(screen.queryByRole("link", { name: /next step/i })).not.toBeInTheDocument();
     });
   });
 });

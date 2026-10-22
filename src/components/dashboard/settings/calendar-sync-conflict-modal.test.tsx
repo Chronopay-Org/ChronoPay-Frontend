@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { CalendarSyncConflictModal } from "./calendar-sync-conflict-modal";
 import type { SyncConflict, ConflictResolution } from "../types";
 
@@ -147,6 +148,39 @@ describe("CalendarSyncConflictModal", () => {
     expect(onResolve).toHaveBeenCalledWith(expected);
   });
 
+  it("defaults resolutions for conflicts added after the dialog opens", async () => {
+    const user = userEvent.setup();
+    const additionalConflict: SyncConflict = {
+      ...mockConflicts[0],
+      id: "conflict-3",
+      eventTitle: "Marketing sync",
+    };
+    const { rerender } = render(
+      <CalendarSyncConflictModal conflicts={mockConflicts} onResolve={onResolve} onClose={onClose} />,
+    );
+
+    await user.click(screen.getAllByRole("radio", { name: /Keep the local version/i })[0]);
+    rerender(
+      <CalendarSyncConflictModal
+        conflicts={[...mockConflicts, additionalConflict]}
+        onResolve={onResolve}
+        onClose={onClose}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Resolve/i })).not.toBeDisabled();
+      expect(screen.getAllByRole("radio", { name: /Combine changes from both sides/i })[2]).toBeChecked();
+    });
+
+    await user.click(screen.getByRole("button", { name: /Resolve/i }));
+    expect(onResolve).toHaveBeenCalledWith([
+      { conflictId: "conflict-1", strategy: "useLocal" },
+      { conflictId: "conflict-2", strategy: "merge" },
+      { conflictId: "conflict-3", strategy: "merge" },
+    ]);
+  });
+
   it("calls onResolve with custom resolutions after changing strategies", async () => {
     const user = userEvent.setup();
     render(
@@ -185,6 +219,42 @@ describe("CalendarSyncConflictModal", () => {
 
     await user.click(screen.getByRole("button", { name: /Close conflict resolution dialog/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes on Escape and restores focus to the opener", async () => {
+    const user = userEvent.setup();
+
+    function DialogWithOpener() {
+      const [isOpen, setIsOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setIsOpen(true)}>
+            Open conflicts
+          </button>
+          {isOpen ? (
+            <CalendarSyncConflictModal
+              conflicts={mockConflicts}
+              onResolve={onResolve}
+              onClose={() => {
+                onClose();
+                setIsOpen(false);
+              }}
+            />
+          ) : null}
+        </>
+      );
+    }
+
+    render(<DialogWithOpener />);
+    const opener = screen.getByRole("button", { name: "Open conflicts" });
+    await user.click(opener);
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(document.activeElement).toBe(opener);
+    });
   });
 
   it("displays dialog with correct ARIA attributes", () => {

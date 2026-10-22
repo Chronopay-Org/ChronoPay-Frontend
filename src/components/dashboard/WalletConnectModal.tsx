@@ -12,8 +12,8 @@ export type WalletProvider = {
   recommended?: boolean;
 };
 
-type ConnectionStatus = 'idle' | 'pending' | 'success' | 'error';
-type ConnectionMethod = 'wallet' | 'email';
+export type ConnectionStatus = 'idle' | 'pending' | 'success' | 'error';
+export type ConnectionMethod = 'wallet' | 'email';
 
 const LOCAL_STORAGE_KEY = 'wallet_connect_method';
 
@@ -36,6 +36,7 @@ interface WalletConnectModalProps {
   checkoutData?: CheckoutData;
   onSign?: () => void;
   onCancelHandoff?: () => void;
+  initialMethod?: ConnectionMethod;
 }
 
 export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
@@ -50,6 +51,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   checkoutData,
   onSign,
   onCancelHandoff,
+  initialMethod = 'wallet',
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [selectedCaps, setSelectedCaps] = useState<string[]>([]);
@@ -64,11 +66,13 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod | undefined>(() => {
     try {
       if (typeof window !== 'undefined') {
-        return (window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod) ?? undefined;
+        const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null;
+        return stored ?? initialMethod;
       }
     } catch {
-      return undefined;
+      return initialMethod;
     }
+    return initialMethod;
   });
 
   useEffect(() => {
@@ -85,11 +89,11 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     // Reset per-open state (stored method may have changed while closed). The
     // writes are deferred so they don't run synchronously inside the effect.
     window.setTimeout(() => {
-      setSelectedMethod(stored ?? undefined);
+      setSelectedMethod(stored ?? initialMethod);
       setEmail('');
       setShowAlternativeWallets(false);
     }, 0);
-  }, [isOpen]);
+  }, [isOpen, initialMethod]);
 
   const allCaps = useMemo(() => {
     const caps = new Set<string>();
@@ -549,6 +553,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
                         key={p.id}
                         type="button"
                         autoFocus={i === 0}
+                        aria-label={`Connect to ${p.name}`}
                         onClick={() => {
                            setShowAlternativeWallets(false);
                            onConnect(p.id);

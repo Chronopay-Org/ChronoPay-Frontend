@@ -14,7 +14,7 @@
 
 "use client";
 
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useRef, useState, useEffect, useId } from "react";
 import { UptimeChartProps, DayData } from "./uptime.types";
 import { UptimeCell } from "./UptimeCell";
 
@@ -24,32 +24,49 @@ export function UptimeChart({
   currentUptimePercent,
 }: UptimeChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const cellsRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const cellsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const headingId = useId();
+  const [isRtl, setIsRtl] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
   // Ensure we have exactly 90 days
   const displayDays = days?.slice(-90) || []; // Take last 90 days (newest last)
 
-  // Keyboard navigation: arrow keys move focus between cells
+  useEffect(() => {
+    setIsRtl(document.documentElement.dir === "rtl");
+  }, []);
+
+  // Keyboard navigation: arrow keys, Home, End move focus between cells
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
+    (e: React.KeyboardEvent<HTMLDivElement>, currentIndex: number) => {
       if (!displayDays || displayDays.length === 0) return;
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+
+      let nextIndex = currentIndex;
+
+      if (e.key === "ArrowLeft") {
         e.preventDefault();
-
-        const cells = Array.from(cellsRef.current.values());
-        const currentIndex = cells.indexOf(e.currentTarget);
-
-        if (currentIndex !== -1) {
-          const nextIndex =
-            e.key === "ArrowRight"
-              ? Math.min(currentIndex + 1, cells.length - 1)
-              : Math.max(currentIndex - 1, 0);
-
-          cells[nextIndex]?.focus();
-        }
+        nextIndex = isRtl
+          ? Math.min(currentIndex + 1, displayDays.length - 1)
+          : Math.max(currentIndex - 1, 0);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        nextIndex = isRtl
+          ? Math.max(currentIndex - 1, 0)
+          : Math.min(currentIndex + 1, displayDays.length - 1);
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        nextIndex = isRtl ? displayDays.length - 1 : 0;
+      } else if (e.key === "End") {
+        e.preventDefault();
+        nextIndex = isRtl ? 0 : displayDays.length - 1;
+      } else {
+        return;
       }
+
+      setFocusedIndex(nextIndex);
+      cellsRef.current[nextIndex]?.focus();
     },
-    [displayDays]
+    [displayDays, isRtl]
   );
 
   if (!days || days.length === 0) {
@@ -75,19 +92,14 @@ export function UptimeChart({
     day: "numeric",
   });
 
-
-  // Determine text direction (RTL)
-  const dir = typeof window !== "undefined" && 
-    document.documentElement.dir === "rtl" ? "rtl" : "ltr";
-
   return (
     <section
       className="space-y-6"
-      aria-labelledby="uptime-chart-title"
+      aria-labelledby={headingId}
     >
       {/* Title and summary */}
       <div>
-        <h2 id="uptime-chart-title" className="text-lg font-semibold text-slate-100 mb-1">
+        <h2 id={headingId} className="text-lg font-semibold text-slate-100 mb-1">
           {componentName}
         </h2>
         <p className="text-sm text-slate-400">
@@ -107,7 +119,7 @@ export function UptimeChart({
         <div
           className="flex gap-3 min-w-min px-1 py-2"
           style={{
-            flexDirection: dir === "rtl" ? "row-reverse" : "row",
+            flexDirection: isRtl ? "row-reverse" : "row",
           }}
         >
           {/* Time period label: 90 days ago */}
@@ -120,20 +132,18 @@ export function UptimeChart({
 
           {/* Cells for each day */}
           {displayDays.map((day: DayData, index: number) => (
-            <div
+            <UptimeCell
               key={day.date}
-              ref={(el) => {
-                if (el) cellsRef.current.set(day.date, el);
+              cellRef={(el) => {
+                cellsRef.current[index] = el;
               }}
-              onKeyDown={handleKeyDown}
-              role="presentation"
-            >
-              <UptimeCell
-                date={day.date}
-                uptimePercent={day.uptimePercent}
-                incidents={day.incidents}
-              />
-            </div>
+              date={day.date}
+              uptimePercent={day.uptimePercent}
+              incidents={day.incidents}
+              tabIndex={index === focusedIndex ? 0 : -1}
+              onFocus={() => setFocusedIndex(index)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+            />
           ))}
 
           {/* Time period label: Today */}
