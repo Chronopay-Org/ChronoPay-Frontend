@@ -78,8 +78,18 @@ function SystemStatus() {
   );
 }
 
-function NavLink({ item, pathname, onClick }: { item: NavItem; pathname: string; onClick?: () => void }) {
-  const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+function NavLink({
+  item,
+  pathname,
+  allHrefs,
+  onClick,
+}: {
+  item: NavItem;
+  pathname: string;
+  allHrefs: string[];
+  onClick?: () => void;
+}) {
+  const isActive = isNavItemActive(pathname, item.href, allHrefs);
 
   return (
     <Link
@@ -111,6 +121,8 @@ function NavLink({ item, pathname, onClick }: { item: NavItem; pathname: string;
 export function BottomNav({ items, pathname }: { items: NavItem[]; pathname: string }) {
   if (items.length === 0) return null;
 
+  const allHrefs = items.map((item) => item.href);
+
   return (
     <nav
       aria-label="Bottom navigation"
@@ -124,7 +136,7 @@ export function BottomNav({ items, pathname }: { items: NavItem[]; pathname: str
     >
       <div className="flex h-16 items-stretch">
         {items.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive = isNavItemActive(pathname, item.href, allHrefs);
           return (
             <Link
               key={item.href}
@@ -462,7 +474,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* Nav items */}
           <nav aria-label="Role modules" className="flex flex-col gap-1 px-3 pb-4">
             {navItems.map((item) => (
-              <NavLink key={item.href} item={item} pathname={pathname} onClick={closeRail} />
+              <NavLink
+                key={item.href}
+                item={item}
+                pathname={pathname}
+                allHrefs={allHrefs}
+                onClick={closeRail}
+              />
             ))}
           </nav>
 
@@ -510,6 +528,4 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
-export { isNavItemActive };
 
