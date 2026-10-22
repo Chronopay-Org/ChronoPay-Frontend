@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Loader2, Tag, XCircle } from "lucide-react";
 
 interface PromoCodeEntryProps {
@@ -41,9 +41,27 @@ function resolvePromo(value: string) {
 export function PromoCodeEntry({ baseTotal, onDiscountApplied }: PromoCodeEntryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [value, setValue] = useState("");
+  const [appliedCode, setAppliedCode] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "valid" | "invalid" | "expired">("idle");
   const [message, setMessage] = useState("");
   const [appliedPercent, setAppliedPercent] = useState(0);
+
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const validationIdRef = useRef(0);
+
+  const cancelPendingValidation = () => {
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    validationIdRef.current += 1;
+  };
+
+  useEffect(() => {
+    return () => {
+      cancelPendingValidation();
+    };
+  }, []);
 
   const discountedTotal = useMemo(() => {
     if (!appliedPercent) return baseTotal;
@@ -53,19 +71,29 @@ export function PromoCodeEntry({ baseTotal, onDiscountApplied }: PromoCodeEntryP
   const handleApply = () => {
     const normalizedValue = value.trim().toUpperCase();
     if (!normalizedValue) {
+      cancelPendingValidation();
       setStatus("invalid");
       setMessage("Enter a promo code to continue.");
       return;
     }
 
+    cancelPendingValidation();
     setStatus("loading");
     setMessage("Checking promo code…");
 
-    window.setTimeout(() => {
+    const currentValidationId = validationIdRef.current;
+
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      if (currentValidationId !== validationIdRef.current) {
+        return;
+      }
+
       const result = resolvePromo(normalizedValue);
       setStatus(result.status);
       setMessage(result.message);
       setAppliedPercent(result.status === "valid" ? result.percent : 0);
+      setAppliedCode(result.status === "valid" ? normalizedValue : "");
 
       if (result.status === "valid") {
         const nextDiscountedTotal = Math.max(0, baseTotal * (1 - result.percent / 100));
@@ -85,10 +113,12 @@ export function PromoCodeEntry({ baseTotal, onDiscountApplied }: PromoCodeEntryP
   };
 
   const handleClear = () => {
+    cancelPendingValidation();
     setValue("");
     setStatus("idle");
     setMessage("");
     setAppliedPercent(0);
+    setAppliedCode("");
     onDiscountApplied?.({
       code: "",
       percent: 0,
@@ -98,11 +128,13 @@ export function PromoCodeEntry({ baseTotal, onDiscountApplied }: PromoCodeEntryP
 
   const handleToggle = () => {
     if (isOpen) {
+      cancelPendingValidation();
       setIsOpen(false);
       setValue("");
       setStatus("idle");
       setMessage("");
       setAppliedPercent(0);
+      setAppliedCode("");
       onDiscountApplied?.({
         code: "",
         percent: 0,
@@ -155,7 +187,13 @@ export function PromoCodeEntry({ baseTotal, onDiscountApplied }: PromoCodeEntryP
             <input
               id="promo-code-input"
               value={value}
-              onChange={(event) => setValue(event.target.value.toUpperCase())}
+              onChange={(event) => {
+                setValue(event.target.value.toUpperCase());
+                if (status !== "idle") {
+                  setStatus("idle");
+                  setMessage("");
+                }
+              }}
               placeholder="Enter code"
               className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
               autoCapitalize="characters"
@@ -166,6 +204,8 @@ export function PromoCodeEntry({ baseTotal, onDiscountApplied }: PromoCodeEntryP
               <button
                 type="button"
                 onClick={handleApply}
+                disabled={status === "loading"}
+                aria-busy={status === "loading"}
                 className="rounded-xl bg-cyan-300 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
               >
                 Apply
@@ -196,7 +236,7 @@ export function PromoCodeEntry({ baseTotal, onDiscountApplied }: PromoCodeEntryP
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">
               <span className="flex items-center gap-2 font-semibold">
                 <Check className="h-4 w-4" aria-hidden="true" />
-                {value.toUpperCase()} applied
+                {appliedCode.toUpperCase()} applied
               </span>
               <span className="text-xs text-emerald-100/80">{appliedPercent}% off</span>
             </div>
