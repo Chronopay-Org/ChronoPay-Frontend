@@ -48,6 +48,12 @@ import type { ReactNode } from "react";
 
 export type ToastVariant = "success" | "info" | "warning" | "error" | "critical";
 
+/**
+ * Persistent notification categories — toasts with one of these categories
+ * show an unread badge and a "mark as read" control.
+ */
+export type ToastCategory = "bookings" | "payments" | "disputes" | "system";
+
 /** An action button exposed by a toast (e.g. Retry, View details). */
 export interface ToastAction {
   /** Button label — also used as the accessible name. */
@@ -66,9 +72,10 @@ export interface ToastInput {
   /**
    * Optional grouping key. Toasts sharing the same category are collapsed into
    * one stacked card with a count badge.  Toasts without a category are never
-   * grouped.
+   * grouped.  Must be one of the persistent category values to show unread
+   * badge and mark-as-read controls.
    */
-  category?: string;
+  category?: ToastCategory;
   /** Optional reversible action exposed by the toast's Undo control. */
   onUndo?: () => void;
   /**
@@ -103,7 +110,7 @@ export interface ToastItem {
   description?: string;
   duration?: number;
   /** Grouping category (undefined = never grouped) */
-  category?: string;
+  category?: ToastCategory;
   /** Number of messages collapsed into this entry (1 = not grouped) */
   count: number;
   /** All individual messages — useful for the expanded panel. */
