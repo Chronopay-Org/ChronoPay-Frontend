@@ -499,4 +499,121 @@ describe("NotificationList", () => {
     const title = screen.getByText("Confirmation needed");
     expect(title.className).not.toMatch(/font-semibold/);
   });
+
+  // ── Acceptance criteria: Range selection with fixed anchor ───────────────
+
+  it("focus item 0, then Shift+Down x3 selects items 0-3, and Shift+Up shrinks to 0-2", () => {
+    setup();
+    const options = screen.getAllByRole("option");
+    options[0].focus();
+
+    // Shift+Down x 1 -> selects 0..1
+    fireEvent.keyDown(options[0], { key: "ArrowDown", shiftKey: true, bubbles: true });
+    expect(options[0]).toHaveAttribute("aria-selected", "true");
+    expect(options[1]).toHaveAttribute("aria-selected", "true");
+    expect(options[2]).toHaveAttribute("aria-selected", "false");
+    expect(options[3]).toHaveAttribute("aria-selected", "false");
+
+    // Shift+Down x 2 -> selects 0..2
+    fireEvent.keyDown(options[1], { key: "ArrowDown", shiftKey: true, bubbles: true });
+    expect(options[0]).toHaveAttribute("aria-selected", "true");
+    expect(options[1]).toHaveAttribute("aria-selected", "true");
+    expect(options[2]).toHaveAttribute("aria-selected", "true");
+    expect(options[3]).toHaveAttribute("aria-selected", "false");
+
+    // Shift+Down x 3 -> selects 0..3
+    fireEvent.keyDown(options[2], { key: "ArrowDown", shiftKey: true, bubbles: true });
+    expect(options[0]).toHaveAttribute("aria-selected", "true");
+    expect(options[1]).toHaveAttribute("aria-selected", "true");
+    expect(options[2]).toHaveAttribute("aria-selected", "true");
+    expect(options[3]).toHaveAttribute("aria-selected", "true");
+
+    // Shift+Up -> shrinks to 0..2
+    fireEvent.keyDown(options[3], { key: "ArrowUp", shiftKey: true, bubbles: true });
+    expect(options[0]).toHaveAttribute("aria-selected", "true");
+    expect(options[1]).toHaveAttribute("aria-selected", "true");
+    expect(options[2]).toHaveAttribute("aria-selected", "true");
+    expect(options[3]).toHaveAttribute("aria-selected", "false");
+  });
+
+  // ── Acceptance criteria: Merging incoming notifications with local read/archive overrides ──
+
+  it("marking an item read, then re-rendering with a new array of the same notifications, keeps it read", () => {
+    const { rerender } = setup(defaultNotifications);
+    const options = screen.getAllByRole("option");
+
+    // Select item 0 (n1 is initially unread)
+    fireEvent.click(options[0]);
+
+    // Mark as read
+    fireEvent.click(screen.getByRole("button", { name: /mark.*as.*read/i }));
+
+    // Verify item 0 has read styling
+    expect(screen.getByText("Slot booked").className).not.toMatch(/font-semibold/);
+
+    // Re-render with brand new array references where item 0 has read: false
+    const freshNotifications: NotificationItem[] = [
+      {
+        id: "n1",
+        title: "Slot booked",
+        description: "A slot was booked.",
+        timestamp: "2 min ago",
+        read: false,
+        tone: "success",
+      },
+      {
+        id: "n2",
+        title: "Payout completed",
+        description: "Payout released.",
+        timestamp: "1 hour ago",
+        read: false,
+        tone: "info",
+      },
+    ];
+
+    rerender(
+      <NotificationList
+        notifications={freshNotifications}
+        onMarkAsRead={mockOnMarkAsRead}
+        onArchive={mockOnArchive}
+      />,
+    );
+
+    // Verify item 0 still has read styling (not font-semibold)
+    expect(screen.getByText("Slot booked").className).not.toMatch(/font-semibold/);
+  });
+
+  // ── Acceptance criteria: Pruning selectedIds when items change ───────────
+
+  it("removing a selected notification drops it from the selection count", () => {
+    const { rerender } = setup(defaultNotifications);
+    const options = screen.getAllByRole("option");
+
+    // Select items 0 (n1) and 1 (n2)
+    fireEvent.click(options[0]);
+    fireEvent.click(options[1]);
+
+    const countEls = screen.getAllByText("2 selected");
+    expect(countEls.length).toBeGreaterThanOrEqual(1);
+
+    // Re-render with n2 removed from notifications prop
+    const updatedNotifications = [
+      defaultNotifications[0],
+      defaultNotifications[2],
+      defaultNotifications[3],
+    ];
+
+    rerender(
+      <NotificationList
+        notifications={updatedNotifications}
+        onMarkAsRead={mockOnMarkAsRead}
+        onArchive={mockOnArchive}
+      />,
+    );
+
+    // Selection count should drop to 1
+    const newCountEls = screen.getAllByText("1 selected");
+    expect(newCountEls.length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("2 selected")).not.toBeInTheDocument();
+  });
 });
