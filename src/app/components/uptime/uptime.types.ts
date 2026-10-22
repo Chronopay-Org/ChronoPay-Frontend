@@ -45,6 +45,18 @@ export interface UptimeCellProps {
   
   /** Array of incidents for this day */
   incidents: Incident[];
+
+  /** Tab index for roving tabindex */
+  tabIndex?: number;
+
+  /** Keydown handler for keyboard navigation */
+  onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+
+  /** Focus handler */
+  onFocus?: (e: React.FocusEvent<HTMLDivElement>) => void;
+
+  /** Ref for the focusable cell element */
+  cellRef?: React.Ref<HTMLDivElement>;
 }
 
 export interface UptimeTooltipProps {

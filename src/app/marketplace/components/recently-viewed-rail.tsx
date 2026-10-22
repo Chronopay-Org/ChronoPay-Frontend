@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import type { ToastVariant } from "@/hooks/use-toast";
 
@@ -18,6 +19,19 @@ export interface RecentlyViewedItem {
 const STORAGE_KEY = "chronopay-recently-viewed";
 const MAX_ITEMS = 10;
 
+// Legacy entries stored `href: "/marketplace"`; rewrite them from the id so
+// old storage keeps working after the listing detail route was introduced.
+function normalizeItem(item: RecentlyViewedItem): RecentlyViewedItem {
+  if (!item.href || item.href === "/marketplace") {
+    return { ...item, href: `/marketplace/${item.id}` };
+  }
+  return item;
+}
+
+function normalizeItems(items: RecentlyViewedItem[]): RecentlyViewedItem[] {
+  return items.map(normalizeItem);
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────────
 
 export function RecentlyViewedRail() {
@@ -32,7 +46,7 @@ export function RecentlyViewedRail() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored) as RecentlyViewedItem[];
+        return normalizeItems(JSON.parse(stored) as RecentlyViewedItem[]);
       }
     } catch (error) {
       console.error("Failed to load recently viewed items:", error);
@@ -44,7 +58,7 @@ export function RecentlyViewedRail() {
   useEffect(() => {
     const handleUpdate = (e: Event) => {
       const updated = (e as CustomEvent<RecentlyViewedItem[]>).detail;
-      setItems(updated);
+      setItems(normalizeItems(updated));
     };
 
     window.addEventListener("chronopay:recently-viewed-updated", handleUpdate);
@@ -64,7 +78,10 @@ export function RecentlyViewedRail() {
   const addItem = useCallback((item: Omit<RecentlyViewedItem, "viewedAt">) => {
     setItems((prev: RecentlyViewedItem[]) => {
       const existingIndex = prev.findIndex((i: RecentlyViewedItem) => i.id === item.id);
-      const newItem: RecentlyViewedItem = { ...item, viewedAt: Date.now() };
+      const newItem: RecentlyViewedItem = {
+        ...normalizeItem({ ...item, viewedAt: Date.now() }),
+        viewedAt: Date.now(),
+      };
 
       // Remove existing item if present
       const filtered = existingIndex >= 0 
@@ -109,14 +126,18 @@ export function RecentlyViewedRail() {
         case "ArrowRight":
         case "ArrowDown":
           e.preventDefault();
-          const nextIndex = (index + 1) % items.length;
-          setFocusedIndex(nextIndex);
+          {
+            const nextIndex = (index + 1) % items.length;
+            setFocusedIndex(nextIndex);
+          }
           break;
         case "ArrowLeft":
         case "ArrowUp":
           e.preventDefault();
-          const prevIndex = index === 0 ? items.length - 1 : index - 1;
-          setFocusedIndex(prevIndex);
+          {
+            const prevIndex = index === 0 ? items.length - 1 : index - 1;
+            setFocusedIndex(prevIndex);
+          }
           break;
         case "Home":
           e.preventDefault();
@@ -212,7 +233,7 @@ export function RecentlyViewedRail() {
         }}
       >
         {items.map((item: RecentlyViewedItem, index: number) => (
-          <a
+          <Link
             key={item.id}
             href={item.href}
             data-recently-viewed-item
@@ -247,7 +268,7 @@ export function RecentlyViewedRail() {
                 <p className="mt-1 text-sm text-zinc-400">{item.price}</p>
               </div>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
 
@@ -270,10 +291,13 @@ export function useRecentlyViewed() {
   const addItem = useCallback((item: Omit<RecentlyViewedItem, "viewedAt">) => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      const existing: RecentlyViewedItem[] = stored ? JSON.parse(stored) : [];
+      const existing: RecentlyViewedItem[] = stored ? normalizeItems(JSON.parse(stored)) : [];
       
       const existingIndex = existing.findIndex((i) => i.id === item.id);
-      const newItem: RecentlyViewedItem = { ...item, viewedAt: Date.now() };
+      const newItem: RecentlyViewedItem = {
+        ...normalizeItem({ ...item, viewedAt: Date.now() }),
+        viewedAt: Date.now(),
+      };
 
       const filtered = existingIndex >= 0 
         ? existing.filter((i) => i.id !== item.id)

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { DashboardShell } from "../components/dashboard-shell";
+
+import { reportError } from "./reportError";
 import { EmptyStateIllustration } from "../components/empty-state-illustration";
 
 export function DashboardError({
@@ -13,11 +14,13 @@ export function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    if (error) {
+      reportError(error);
+    }
   }, [error]);
 
   return (
-    <DashboardShell>
+    <>
       <section
         role="alert"
         className="glass-panel mx-auto max-w-2xl rounded-[2rem] p-6 sm:p-8"
@@ -59,7 +62,7 @@ export function DashboardError({
           </Link>
         </div>
       </section>
-    </DashboardShell>
+    </>
   );
 }
 

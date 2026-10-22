@@ -75,8 +75,8 @@ function NavLink({ item, pathname, onClick }: { item: NavItem; pathname: string;
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
         "focus-visible:ring-offset-slate-950",
         isActive
-          ? "bg-white/10 text-white"
-          : "hover:bg-white/6 text-slate-400 hover:text-slate-200"
+          ? "bg-slate-500/10 text-cyan-600 dark:text-cyan-300"
+          : "hover:bg-slate-500/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
       )}
       style={{
         backgroundColor: isActive ? "var(--shell-rail-active)" : undefined,
@@ -295,8 +295,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     "rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400",
                     isActive
-                      ? "text-white"
-                      : "hover:bg-white/6 text-slate-400 hover:text-slate-200"
+                      ? "text-cyan-600 dark:text-white"
+                      : "hover:bg-slate-500/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
                   )}
                 >
                   {item.label}
@@ -330,12 +330,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   "hidden items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors sm:flex",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
                   "focus-visible:ring-offset-slate-950",
-                  "hover:bg-white/6 border-white/10 text-slate-400 hover:text-white"
+                  "hover:bg-slate-500/10 border-slate-300/30 dark:border-white/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 )}
               >
                 <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span>Search…</span>
-                <kbd className="ml-1 hidden rounded border border-white/10 bg-white/5 px-1 py-0.5 font-mono text-[10px] leading-none text-slate-500 sm:inline">
+                <kbd className="ml-1 hidden rounded border border-slate-300/30 dark:border-white/10 bg-slate-500/10 px-1 py-0.5 font-mono text-[10px] leading-none text-slate-500 dark:text-slate-400 sm:inline">
                   ⌘K
                 </kbd>
               </button>
@@ -349,7 +349,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   "rounded-full p-2 transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
                   "focus-visible:ring-offset-slate-950",
-                  "hover:bg-white/6 text-slate-400 hover:text-white"
+                  "hover:bg-slate-500/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 )}
               >
                 <Keyboard className="h-4 w-4" aria-hidden="true" />
@@ -364,7 +364,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 "rounded-full p-2 transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2",
                 "focus-visible:ring-offset-slate-950",
-                "hover:bg-white/6 text-slate-400 hover:text-white"
+                "hover:bg-slate-500/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               )}
             >
               <Settings className="h-4 w-4" aria-hidden="true" />

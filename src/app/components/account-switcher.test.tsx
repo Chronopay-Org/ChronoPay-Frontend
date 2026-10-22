@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import React from "react";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { AccountSwitcher } from "./account-switcher";
 
 const root = process.cwd();
 const sourceFile = "src/app/components/account-switcher.tsx";
@@ -81,5 +85,115 @@ describe("AccountSwitcher (source contract)", () => {
     const src = readSource();
     expect(src).toMatch(/WalletConnectModal/);
     expect(src).toMatch(/Add account/);
+  });
+});
+
+describe("AccountSwitcher (wallet connection & providers)", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query === "(prefers-reduced-motion: reduce)" ? false : true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      })),
+    });
+  });
+
+  it("opens modal and renders shared wallet providers when 'Add account' is clicked", async () => {
+    const user = userEvent.setup();
+    render(<AccountSwitcher />);
+
+    // Open dropdown menu
+    const trigger = screen.getByRole("button", { name: /switch account/i });
+    await user.click(trigger);
+
+    // Click 'Add account'
+    const addAccountBtn = screen.getByRole("button", { name: /add account/i });
+    await user.click(addAccountBtn);
+
+    // Modal should be open and list shared providers
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Connect to Freighter/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Connect to xBull/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Connect to Albedo/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("successfully connects a provider and calls addAccount, adding it to the accounts list", async () => {
+    const user = userEvent.setup();
+    const mockConnector = vi.fn().mockResolvedValue({
+      address: "GBXBL4OQJ2KLK6GVM3V7W5X3M4YVJY6XLP3DQE7H6R5YTZ1KLA8BULL",
+      label: "Custom xBull",
+      provider: "xbull",
+    });
+
+    render(<AccountSwitcher connector={mockConnector} />);
+
+    // Open dropdown menu
+    await user.click(screen.getByRole("button", { name: /switch account/i }));
+
+    // Click 'Add account'
+    await user.click(screen.getByRole("button", { name: /add account/i }));
+
+    // Choose xBull
+    const connectBtn = screen.getByRole("button", { name: /Connect to xBull/i });
+    await user.click(connectBtn);
+
+    expect(mockConnector).toHaveBeenCalledWith("xbull");
+
+    // Modal should close on success
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    // Reopen dropdown menu to verify the new account exists
+    await user.click(screen.getByRole("button", { name: /switch account/i }));
+    expect(screen.getAllByText("Custom xBull").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("surfaces connector errors in the modal error state with retry button", async () => {
+    const user = userEvent.setup();
+    const mockConnector = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("User rejected extension access"))
+      .mockResolvedValueOnce({
+        address: "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
+        label: "Freighter Account",
+        provider: "freighter",
+      });
+
+    render(<AccountSwitcher connector={mockConnector} />);
+
+    // Open dropdown and click Add account
+    await user.click(screen.getByRole("button", { name: /switch account/i }));
+    await user.click(screen.getByRole("button", { name: /add account/i }));
+
+    // Choose Freighter
+    await user.click(screen.getByRole("button", { name: /Connect to Freighter/i }));
+
+    // Should show error state in modal
+    await waitFor(() => {
+      expect(screen.getByText("User rejected extension access")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+
+    // Click retry
+    await user.click(screen.getByRole("button", { name: /retry/i }));
+
+    expect(mockConnector).toHaveBeenCalledTimes(2);
+
+    // Should close modal after retry succeeds
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 });

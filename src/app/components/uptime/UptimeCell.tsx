@@ -21,10 +21,26 @@ export function UptimeCell({
   date,
   uptimePercent,
   incidents,
+  tabIndex = 0,
+  onKeyDown,
+  onFocus,
+  cellRef: externalRef,
 }: UptimeCellProps) {
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
-  const cellRef = useRef<HTMLDivElement>(null);
+  const internalRef = useRef<HTMLDivElement>(null);
   const tooltipId = `uptime-tooltip-${useId()}`;
+
+  const setRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      internalRef.current = el;
+      if (typeof externalRef === "function") {
+        externalRef(el);
+      } else if (externalRef && "current" in externalRef) {
+        (externalRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+      }
+    },
+    [externalRef]
+  );
 
   // Format date for display (e.g., "July 28")
   const dateObj = new Date(`${date}T00:00:00Z`);
@@ -63,30 +79,38 @@ export function UptimeCell({
     setIsTooltipVisible(false);
   }, []);
 
-  const handleFocus = useCallback(() => {
-    setIsTooltipVisible(true);
-  }, []);
+  const handleFocus = useCallback(
+    (e: React.FocusEvent<HTMLDivElement>) => {
+      setIsTooltipVisible(true);
+      onFocus?.(e);
+    },
+    [onFocus]
+  );
 
   const handleBlur = useCallback(() => {
     setIsTooltipVisible(false);
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      setIsTooltipVisible(false);
-    }
-  }, []);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setIsTooltipVisible(false);
+      }
+      onKeyDown?.(e);
+    },
+    [onKeyDown]
+  );
 
   return (
     <div className="relative flex flex-col items-center gap-1 group">
       {/* Cell bar */}
       <div
-        ref={cellRef}
+        ref={setRef}
         role="img"
         aria-label={ariaLabel}
         aria-describedby={isTooltipVisible ? tooltipId : undefined}
-        tabIndex={0}
+        tabIndex={tabIndex}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onFocus={handleFocus}
@@ -127,7 +151,7 @@ export function UptimeCell({
         <UptimeTooltip
           tooltipId={tooltipId}
           // eslint-disable-next-line react-hooks/refs
-          triggerElement={cellRef.current}
+          triggerElement={internalRef.current}
           date={date}
           uptimePercent={uptimePercent}
           incidents={incidents}

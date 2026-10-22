@@ -39,9 +39,9 @@ import {
 } from "react";
 import { ROLE_META, ALL_ROLES, type UserRole } from "../navigation/role-nav";
 import { useRole } from "../navigation/RoleContext";
+import { useTheme, type ThemeMode } from "@/hooks/use-theme";
 
 type Density = "comfortable" | "balanced" | "compact";
-type Theme = "light" | "dark";
 
 // Tone → chip colour classes (text + bg pairs satisfy ≥ 4.5:1 contrast)
 const TONE_CHIP: Record<string, string> = {
@@ -112,21 +112,16 @@ export function RoleChip() {
   };
 
   // ── Quick-settings (theme + density) ─────────────────────────────────
-  const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "dark";
-    return "dark";
-  });
+  const { mode: currentTheme, changeTheme } = useTheme();
 
   const [currentDensity, setCurrentDensity] = useState<Density>(() => {
     if (typeof window === "undefined") return "balanced";
     return (localStorage.getItem("chronopay-density") as Density) ?? "balanced";
   });
 
-  const applyTheme = useCallback((t: Theme) => {
-    setCurrentTheme(t);
-    localStorage.setItem("chronopay-theme", t);
-    document.documentElement.setAttribute("data-theme", t);
-  }, []);
+  const applyTheme = useCallback((t: ThemeMode) => {
+    changeTheme(t);
+  }, [changeTheme]);
 
   const applyDensity = useCallback((d: Density) => {
     setCurrentDensity(d);
@@ -305,7 +300,7 @@ export function RoleChip() {
                 Theme
               </span>
               <div className="flex gap-1">
-                {(["dark"] as const).map((t) => (
+                {(["light", "dark", "auto"] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
@@ -323,13 +318,19 @@ export function RoleChip() {
                       <svg className="h-3.5 w-3.5" aria-hidden={true} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
-                    ) : (
+                    ) : t === "dark" ? (
                       <svg className="h-3.5 w-3.5" aria-hidden={true} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                       </svg>
+                    ) : (
+                      <svg className="h-3.5 w-3.5" aria-hidden={true} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="2" y="3" width="20" height="14" rx="2" strokeWidth={2} />
+                        <line x1="8" y1="21" x2="16" y2="21" strokeWidth={2} strokeLinecap="round" />
+                        <line x1="12" y1="17" x2="12" y2="21" strokeWidth={2} strokeLinecap="round" />
+                      </svg>
                     )}
-                    <span className="sr-only">{t === "light" ? "Light" : "Dark"}</span>
-                    {t === "light" ? "Light" : "Dark"}
+                    <span className="sr-only">{t.charAt(0).toUpperCase() + t.slice(1)}</span>
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
                   </button>
                 ))}
               </div>

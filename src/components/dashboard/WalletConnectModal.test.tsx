@@ -98,6 +98,49 @@ describe("WalletConnectModal", () => {
     expect(onConnect).toHaveBeenCalledWith("freighter");
   });
 
+  it("renders shared providers list and triggers onConnect with providerId", () => {
+    const onConnect = vi.fn();
+    render(
+      <WalletConnectModal
+        isOpen
+        onClose={vi.fn()}
+        providers={providers}
+        status="idle"
+        onConnect={onConnect}
+      />
+    );
+
+    const freighterBtn = screen.getByRole("button", { name: /Connect to Freighter/i });
+    expect(freighterBtn).toBeInTheDocument();
+    const albedoBtn = screen.getByRole("button", { name: /Connect to Albedo/i });
+    expect(albedoBtn).toBeInTheDocument();
+
+    fireEvent.click(freighterBtn);
+    expect(onConnect).toHaveBeenCalledWith("freighter");
+  });
+
+  it("triggers onRetry callback when retry button is clicked in error state", () => {
+    const onRetry = vi.fn();
+    render(
+      <WalletConnectModal
+        isOpen
+        onClose={vi.fn()}
+        providers={providers}
+        status="error"
+        errorMessage="Connection timeout"
+        onConnect={vi.fn()}
+        onRetry={onRetry}
+      />
+    );
+
+    expect(screen.getByText("Connection timeout")).toBeInTheDocument();
+    const retryBtn = screen.getByRole("button", { name: /Retry/i });
+    expect(retryBtn).toBeInTheDocument();
+
+    fireEvent.click(retryBtn);
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
   /* ── Reduced Motion & Success State Tests ────────────────────────────── */
 
   it("renders standard motion success mark when prefers-reduced-motion is false", () => {
@@ -256,7 +299,7 @@ describe("WalletConnectModal", () => {
     );
 
     // Should render the signing skeleton
-    expect(screen.getByText(/Waiting for signature in/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Waiting for signature in/i)[0]).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Cancel/i }));

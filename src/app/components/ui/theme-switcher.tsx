@@ -1,5 +1,7 @@
-import { Sun, Moon, Clock } from 'lucide-react';
-import { useThemeSchedule } from '@/app/hooks/use-theme-schedule';
+"use client";
+
+import { Sun, Moon } from 'lucide-react';
+import { useThemeSchedule } from '-/app/hooks/use-theme-schedule';
 import { ThemePreviewStrip } from './theme-preview-strip';
 
 export const ThemeSwitcher = () => {
@@ -16,7 +18,7 @@ export const ThemeSwitcher = () => {
           type="checkbox"
           checked={config.type !== 'none'}
           onChange={(e) => updateConfig({ type: e.target.checked ? 'custom' : 'none' })}
-          className="h-4 w-4 rounded"
+          className="h-w-4 rounded"
         />
       </div>
 
