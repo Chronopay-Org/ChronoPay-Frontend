@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
+import { addMonths } from "@/utils/date";
 
 export interface MiniCalendarNavigatorProps {
   currentDate: Date;
@@ -43,11 +44,7 @@ export function MiniCalendarNavigator({
   };
 
   const navigateMonth = (direction: number) => {
-    setViewDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setMonth(newDate.getMonth() + direction);
-      return newDate;
-    });
+    setViewDate((prev) => addMonths(prev, direction));
   };
 
   const isSelected = (date: Date) => {

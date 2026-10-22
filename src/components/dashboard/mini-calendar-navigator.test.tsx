@@ -123,6 +123,34 @@ describe("MiniCalendarNavigator", () => {
     ).toBeInTheDocument();
   });
 
+  it("navigates from Jan 31 to February on Next month without month-overflow skip", () => {
+    renderNav({ currentDate: new Date(2026, 0, 31) });
+    expect(
+      screen.getByRole("heading", { name: "January 2026" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Next month, February" }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "February 2026" }),
+    ).toBeInTheDocument();
+  });
+
+  it("navigates from Mar 31 to February on Previous month without month-overflow skip", () => {
+    renderNav({ currentDate: new Date(2026, 2, 31) });
+    expect(
+      screen.getByRole("heading", { name: "March 2026" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Previous month, February" }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "February 2026" }),
+    ).toBeInTheDocument();
+  });
+
   it("keeps the original selection while navigating other months", () => {
     renderNav();
     fireEvent.click(screen.getByRole("button", { name: "Next month, May" }));
