@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OnboardingTour } from './onboarding-tour';
@@ -149,33 +149,42 @@ describe('OnboardingTour', () => {
   it('should close on Escape key', async () => {
     const user = userEvent.setup();
     const onComplete = vi.fn();
-    const { container } = render(
-      <OnboardingTour open={true} onComplete={onComplete} />
-    );
-    
-    const dialog = container.querySelector('[role="dialog"]');
-    fireEvent.keyDown(dialog || document, { key: 'Escape' });
-    
+    render(<OnboardingTour open={true} onComplete={onComplete} />);
+
+    await user.keyboard("{Escape}");
+
     expect(onComplete).toHaveBeenCalled();
   });
 
-  it('should display step indicator', () => {
-    render(
-      <OnboardingTour open={true} onComplete={() => {}} />
-    );
-    
-    expect(screen.getByText(/Step 1 of 3/)).toBeInTheDocument();
+  it('should not navigate when typing space in an input', async () => {
+    const onComplete = vi.fn();
+    render(<OnboardingTour open={true} onComplete={onComplete} />);
+
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+    await new Promise((r) => setTimeout(r, 200));
+
+    const evt = new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true });
+    Object.defineProperty(evt, "target", { value: input, writable: false });
+    window.dispatchEvent(evt);
+
+    expect(screen.getByText("Connect Your Wallet")).toBeInTheDocument();
+    expect(onComplete).not.toHaveBeenCalled();
+    input.remove();
   });
 
-  it('should navigate using progress dots', async () => {
+  it('advances exactly one step with a single Space press on the focused Next button', async () => {
     const user = userEvent.setup();
-    render(
-      <OnboardingTour open={true} onComplete={() => {}} />
-    );
-    
-    const dots = screen.getAllByRole('button', { name: /Go to step/ });
-    await user.click(dots[2]);
-    
-    expect(screen.getByText('Manage Your Time Slots')).toBeInTheDocument();
+    const onComplete = vi.fn();
+    render(<OnboardingTour open={true} onComplete={onComplete} />);
+
+    const nextButton = screen.getByRole("button", { name: /Next/i });
+    nextButton.focus();
+    await user.keyboard(" ");
+
+    expect(screen.getByText("Quick Actions")).toBeInTheDocument();
+    expect(screen.getByText(/Step 2 of 3/)).toBeInTheDocument();
+    expect(onComplete).not.toHaveBeenCalled();
   });
 });

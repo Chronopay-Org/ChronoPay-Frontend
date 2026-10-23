@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { ChevronRight, X } from "lucide-react";
 import { FocusTrap } from "@/components/common/FocusTrap";
 
@@ -163,28 +157,82 @@ export function OnboardingTour({
   // Handle keyboard navigation
   useEffect(() => {
     if (!open) return;
+
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (target instanceof HTMLInputElement) return true;
+      if (target instanceof HTMLTextAreaElement) return true;
+      if (target instanceof HTMLSelectElement) return true;
+      if (!(target instanceof HTMLElement)) return false;
+      if (target.isContentEditable) return true;
+      const editable = target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']");
+      return !!editable;
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+      if (isEditableTarget(e.target)) return;
+      if (isEditableTarget(e.currentTarget as unknown as EventTarget)) return;
+      // Also ignore if event originated from inside a focus trap/dialog but target is editable
+      const path = typeof e.composedPath === "function" ? e.composedPath() : [];
+      for (const node of path) {
+        if (node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement || node instanceof HTMLSelectElement) {
+          return;
+        }
+        if (node instanceof HTMLElement && node.isContentEditable) {
+          return;
+        }
+      }
+
       if (e.key === "Escape") {
+        e.preventDefault();
         onComplete();
-      } else if (e.key === "ArrowRight" || e.key === " ") {
+        return;
+      }
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
         if (isLastStep) {
           onComplete();
         } else {
           setStepIndex((i) => Math.min(i + 1, steps.length - 1));
         }
-      } else if (e.key === "ArrowLeft") {
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
         setStepIndex((i) => Math.max(i - 1, 0));
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [open, isLastStep, steps.length, onComplete]);
 
   // Focus primary button on mount
   useEffect(() => {
-    if (open) {
-      setTimeout(() => primaryBtnRef.current?.focus(), 100);
-    }
+    if (!open) return;
+    const timeoutId = setTimeout(() => {
+      if (typeof document === "undefined") return;
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) {
+        const tagName = active.tagName;
+        if (
+          tagName === "INPUT" ||
+          tagName === "TEXTAREA" ||
+          tagName === "SELECT" ||
+          active.isContentEditable ||
+          active.closest("input, textarea, select, [contenteditable='true']")
+        ) {
+          return;
+        }
+        // If focus moved outside dialog to something else, don't steal it back
+        if (dialogRef.current && !dialogRef.current.contains(active)) {
+          return;
+        }
+      }
+      primaryBtnRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timeoutId);
   }, [open, stepIndex]);
 
   if (!open || !currentStep || !spotlight) return null;
