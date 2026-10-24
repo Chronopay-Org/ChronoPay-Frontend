@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import SettingsPage from "./page";
+import SettingsPage, { metadata } from "./page";
 
 // Mock the DashboardShell so we don't have to deal with contexts
 vi.mock("@/app/components/dashboard-shell", () => ({
@@ -23,5 +23,12 @@ describe("SettingsPage", () => {
   it("handles rendering without errors (boundary)", () => {
     const { container } = render(<SettingsPage />);
     expect(container).not.toBeEmptyDOMElement();
+  });
+});
+
+describe("SettingsPage metadata", () => {
+  it("sets a route-specific title and is noindex", () => {
+    expect(metadata.title).toBe("Settings");
+    expect(metadata.robots).toEqual({ index: false, follow: false });
   });
 });

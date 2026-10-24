@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { axe } from "jest-axe";
-import SlotDetailPage from "./page";
+import SlotDetailPage, { generateMetadata } from "./page";
 
 // Mock the next/link and lucide-react
 vi.mock("next/link", () => ({
@@ -199,5 +199,19 @@ describe("SlotDetailPage", () => {
     expect(document.activeElement).toBe(disputeButton);
     expect(pageBackground).not.toHaveAttribute("inert");
     expect(pageBackground).not.toHaveAttribute("aria-hidden");
+  });
+});
+
+describe("SlotDetailPage generateMetadata", () => {
+  it("names the slot from the fixtures", async () => {
+    const meta = await generateMetadata({ params: Promise.resolve({ id: "slot-2" }) });
+    expect(meta.title).toBe("UX design review");
+    expect(meta.robots).toEqual({ index: false, follow: false });
+  });
+
+  it("falls back to the first slot for unknown ids, matching the page", async () => {
+    const meta = await generateMetadata({ params: Promise.resolve({ id: "does-not-exist" }) });
+    expect(meta.title).toBe("Product strategy call");
+    expect(meta.robots).toEqual({ index: false, follow: false });
   });
 });

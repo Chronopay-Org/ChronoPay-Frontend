@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import AdminUsersPage from "./page";
+import AdminUsersPage, { metadata } from "./page";
 import { SAMPLE_ADMIN_USERS } from "@/components/dashboard/admin-user-data";
 
 describe("AdminUsersPage", () => {
@@ -202,5 +202,12 @@ describe("AdminUsersPage", () => {
       "aria-sort",
       "ascending",
     );
+  });
+});
+
+describe("AdminUsersPage metadata", () => {
+  it("sets a route-specific title and is noindex", () => {
+    expect(metadata.title).toBe("User management");
+    expect(metadata.robots).toEqual({ index: false, follow: false });
   });
 });

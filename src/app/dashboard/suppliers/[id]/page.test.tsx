@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import Page from './page';
+import Page, { generateMetadata } from './page';
 
 // Mock components to simplify testing
 vi.mock('../../../components/dashboard-shell', () => ({
@@ -105,5 +105,19 @@ describe('Supplier Page', () => {
     
     // Should still be overview
     expect(overviewTab).toHaveAttribute('aria-current', 'page');
+  });
+});
+
+describe('Supplier Page generateMetadata', () => {
+  it('names the supplier from the fixtures', async () => {
+    const meta = await generateMetadata({ params: Promise.resolve({ id: 'supplier-2' }) });
+    expect(meta.title).toBe('Morgan Chen');
+    expect(meta.robots).toEqual({ index: false, follow: false });
+  });
+
+  it('uses a generic title for unknown suppliers', async () => {
+    const meta = await generateMetadata({ params: Promise.resolve({ id: 'unknown' }) });
+    expect(meta.title).toBe('Supplier profile');
+    expect(meta.robots).toEqual({ index: false, follow: false });
   });
 });

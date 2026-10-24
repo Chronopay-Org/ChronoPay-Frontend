@@ -6,9 +6,13 @@ import { ToastContainer } from "@/app/components/ui/toast-container";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
 import { I18nProvider } from "@/lib/i18n";
 import { SiteFooter } from "@/app/components/SiteFooter";
+import { SITE_NAME } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "ChronoPay - Time Economy",
+  title: {
+    default: "ChronoPay - Time Economy",
+    template: `%s · ${SITE_NAME}`,
+  },
   description: "Tokenize and trade human time on the Stellar network.",
 };
 

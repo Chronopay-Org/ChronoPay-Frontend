@@ -22,7 +22,10 @@ describe('RootLayout', () => {
   describe('metadata', () => {
     it('provides the correct default metadata', () => {
       expect(metadata).toBeDefined();
-      expect(metadata.title).toBe('ChronoPay - Time Economy');
+      expect(metadata.title).toEqual({
+        default: 'ChronoPay - Time Economy',
+        template: '%s · ChronoPay',
+      });
       expect(metadata.description).toBe('Tokenize and trade human time on the Stellar network.');
     });
 

@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
-import PricingPage from "./page";
+import PricingPage, { metadata } from "./page";
 
 describe("PricingPage", () => {
   it("renders the pricing page correctly", () => {
@@ -69,5 +69,13 @@ describe("PricingPage", () => {
     // Expect console.log to have been called by handleSelectPlan
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("User selected plan: starter"));
     consoleSpy.mockRestore();
+  });
+});
+
+describe("PricingPage metadata", () => {
+  it("sets a route-specific title and remains indexable", () => {
+    expect(metadata.title).toBe("Pricing");
+    expect(metadata.description).toBeTruthy();
+    expect(metadata.robots).toBeUndefined();
   });
 });

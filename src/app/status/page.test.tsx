@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import StatusPage from "./page";
+import StatusPage, { metadata } from "./page";
 
 describe("StatusPage", () => {
   it("renders the header and main headings", () => {
@@ -47,5 +47,12 @@ describe("StatusPage", () => {
 
     expect(screen.getByText("Escrow approval delay")).toBeInTheDocument();
     expect(screen.getByText("Stellar Horizon timeout")).toBeInTheDocument();
+  });
+});
+
+describe("StatusPage metadata", () => {
+  it("sets a route-specific title and remains indexable", () => {
+    expect(metadata.title).toBe("System status");
+    expect(metadata.robots).toBeUndefined();
   });
 });

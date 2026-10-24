@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { StatusMatrix, statusMatrixData } from "@/components/design/status-matrix";
 import { UptimeChart, type DayData, type Incident } from "@/app/components/uptime";
+
+export const metadata: Metadata = {
+  title: "System status",
+  description: "Live uptime and incident history for ChronoPay services.",
+};
 
 function generateSeries(
   startDate: string,

@@ -1,6 +1,6 @@
 import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import Marketplace from "./page";
+import Marketplace, { metadata } from "./page";
 
 // Mock next/navigation
 const mockSearchParams = {
@@ -147,5 +147,16 @@ describe("Marketplace Page", () => {
       expect(Array.isArray(parsed)).toBe(true);
       expect(parsed.some((item: any) => item.id === id)).toBe(true);
     });
+  });
+});
+
+describe("Marketplace metadata", () => {
+  it("sets a route-specific title", () => {
+    expect(metadata.title).toBe("Marketplace");
+    expect(metadata.description).toBeTruthy();
+  });
+
+  it("remains indexable", () => {
+    expect(metadata.robots).toBeUndefined();
   });
 });
