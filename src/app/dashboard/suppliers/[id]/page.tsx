@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
+import { notFound } from "next/navigation";
+import { supplierProfiles } from "@/components/dashboard/dashboard-data";
 import { DashboardShell } from "../../../components/dashboard-shell";
 import { PanelShell } from "@/components/dashboard/panel-shell";
 import { AvailabilityStrip, type DayAvailability } from "@/components/dashboard/availability-strip";
@@ -34,7 +36,9 @@ function getDays(): DayAvailability[] {
   });
 }
 
-export default function Page({ params }: { params: { id: string } }) {
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const supplier = supplierProfiles[id];
   const [active, setActive] = useState("overview");
   useEffect(() => {
     const onHash = () => {
@@ -45,26 +49,30 @@ export default function Page({ params }: { params: { id: string } }) {
     onHash();
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
+  if (!supplier) {
+    notFound();
+    return null;
+  }
   const days = getDays();
   return (
     <DashboardShell>
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-400/20 text-2xl font-bold text-cyan-100 ring-1 ring-white/10" aria-hidden="true">AR</div>
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-400/20 text-2xl font-bold text-cyan-100 ring-1 ring-white/10" aria-hidden="true">{supplier.initials}</div>
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
-                Alex Rivera
+                {supplier.name}
                 <BadgeCheck className="h-5 w-5 text-cyan-400" aria-label="Verified" />
               </h1>
-              <p className="text-sm text-slate-400">Stellar Ecosystem Consultant</p>
-              <p className="mt-1 flex items-center gap-1 text-sm text-slate-500"><MapPin className="h-4 w-4" aria-hidden="true" /> Remote · GMT-5</p>
+              <p className="text-sm text-slate-400">{supplier.role}</p>
+              <p className="mt-1 flex items-center gap-1 text-sm text-slate-500"><MapPin className="h-4 w-4" aria-hidden="true" /> {supplier.location}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 text-sm">
-            <span className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200"><Star className="h-4 w-4 text-amber-400" aria-hidden="true" /> 4.6 (42)</span>
-            <span className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200"><Clock className="h-4 w-4 text-emerald-400" aria-hidden="true" /> ~1h</span>
-            <span className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200"><ShieldCheck className="h-4 w-4 text-blue-400" aria-hidden="true" /> 98%</span>
+            <span className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200"><Star className="h-4 w-4 text-amber-400" aria-hidden="true" /> {supplier.rating} ({supplier.reviewCount})</span>
+            <span className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200"><Clock className="h-4 w-4 text-emerald-400" aria-hidden="true" /> {supplier.responseTime}</span>
+            <span className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-200"><ShieldCheck className="h-4 w-4 text-blue-400" aria-hidden="true" /> {supplier.completionRate}</span>
           </div>
         </header>
 
@@ -85,15 +93,23 @@ export default function Page({ params }: { params: { id: string } }) {
           <section id="overview" className="scroll-mt-28" aria-labelledby="overview-heading">
             <h2 id="overview-heading" className="sr-only">Overview</h2>
             <PanelShell title="About" description="Supplier bio and expertise">
-              <p className="text-sm leading-relaxed text-slate-300">Specializes in Stellar smart contracts, tokenization, and DeFi integrations. Let&apos;s build the future of payments.</p>
+              <p className="text-sm leading-relaxed text-slate-300">{supplier.bio}</p>
             </PanelShell>
+            <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+              {supplier.stats.map((stat) => (
+                <div key={stat.label} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <dt className="text-xs uppercase tracking-wide text-slate-400">{stat.label}</dt>
+                  <dd className="mt-1 text-lg font-semibold text-white">{stat.value}</dd>
+                </div>
+              ))}
+            </dl>
           </section>
 
           <section id="availability" className="scroll-mt-28" aria-labelledby="availability-heading">
             <h2 id="availability-heading" className="sr-only">Availability</h2>
             <AvailabilityStrip days={days} />
             <div className="mt-4 flex justify-end">
-              <ButtonLink href={`/dashboard/slots?supplier=${params.id}`} variant="secondary" size="sm"><CalendarDays className="mr-2 h-4 w-4" aria-hidden="true" />View full calendar</ButtonLink>
+              <ButtonLink href={`/dashboard/slots?supplier=${supplier.id}`} variant="secondary" size="sm"><CalendarDays className="mr-2 h-4 w-4" aria-hidden="true" />View full calendar</ButtonLink>
             </div>
           </section>
 

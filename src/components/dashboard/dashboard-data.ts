@@ -351,6 +351,80 @@ export const suppliers: Supplier[] = [
   },
 ];
 
+/** Fields rendered on the `/dashboard/suppliers/[id]` profile page. */
+export type SupplierProfile = {
+  id: string;
+  name: string;
+  role: string;
+  initials: string;
+  location: string;
+  bio: string;
+  rating: string;
+  reviewCount: number;
+  responseTime: string;
+  completionRate: string;
+  stats: { label: string; value: string }[];
+};
+
+/**
+ * Supplier profiles keyed by route id. Every seller referenced from the slot
+ * detail page (`slotDetailsMap` in `src/app/dashboard/slots/[id]/page.tsx`) must
+ * have an entry here, otherwise the profile route renders its not-found page.
+ */
+export const supplierProfiles: Record<string, SupplierProfile> = {
+  "sarah-jenkins": {
+    id: "sarah-jenkins",
+    name: "Sarah Jenkins",
+    role: "Lead Product Architect",
+    initials: "SJ",
+    location: "Remote · GMT-5",
+    bio: "Former MIT researcher and Stellar Core contributor with 10+ years of experience designing high-scale decentralized architectures.",
+    rating: "4.9",
+    reviewCount: 38,
+    responseTime: "~1h",
+    completionRate: "99.4%",
+    stats: [
+      { label: "Tokenized Hours", value: "142h" },
+      { label: "Completion Rate", value: "99.4%" },
+      { label: "Rating", value: "4.9/5" },
+    ],
+  },
+  "marcus-vance": {
+    id: "marcus-vance",
+    name: "Marcus Vance",
+    role: "Principal UX Designer",
+    initials: "MV",
+    location: "Remote · GMT+1",
+    bio: "Award-winning designer passionate about building human-centered financial products. Previously at Stripe and Stellar Development Foundation.",
+    rating: "5.0",
+    reviewCount: 27,
+    responseTime: "~2h",
+    completionRate: "100%",
+    stats: [
+      { label: "Tokenized Hours", value: "85h" },
+      { label: "Completion Rate", value: "100%" },
+      { label: "Rating", value: "5.0/5" },
+    ],
+  },
+  "elena-rostova": {
+    id: "elena-rostova",
+    name: "Elena Rostova",
+    role: "Managing Partner, Zenith Capital",
+    initials: "ER",
+    location: "Remote · GMT+3",
+    bio: "Venture capitalist and ecosystem growth advisor. Helps web3 startups bootstrap from inception to series A and scale their protocols.",
+    rating: "4.8",
+    reviewCount: 64,
+    responseTime: "~3h",
+    completionRate: "98.7%",
+    stats: [
+      { label: "Tokenized Hours", value: "210h" },
+      { label: "Completion Rate", value: "98.7%" },
+      { label: "Rating", value: "4.8/5" },
+    ],
+  },
+};
+
 /** Sample per-criterion rating breakdown for supplier profiles. */
 // ─── Supplier Trust Metrics ──────────────────────────────────────────────────
 
