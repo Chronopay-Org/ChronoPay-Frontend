@@ -274,21 +274,3 @@ export function getBottomNavPartition(
 ): BottomNavPartition {
   return partitionBottomNavItems(getNavForRole(role), pinnedHrefs);
 }
-
-/**
- * Determines whether a nav item should be marked active for a given pathname.
- * The dashboard home item is only active on the exact dashboard route so it
- * does not stay highlighted while browsing child destinations.
- */
-export function isNavItemActive(item: NavItem, pathname: string): boolean {
-  const normalize = (value: string) =>
-    value.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
-  const itemPath = normalize(item.href);
-  const currentPath = normalize(pathname);
-
-  if (itemPath === "/dashboard") {
-    return currentPath === itemPath;
-  }
-
-  return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
-}

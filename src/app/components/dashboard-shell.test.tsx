@@ -71,6 +71,16 @@ function renderShell(initialRole: "buyer" | "supplier" | "admin" = "buyer") {
   );
 }
 
+// happy-dom does not implement `inert`, so focusability is modelled the way a
+// browser does it: anything inside an inert subtree drops out of the tab order.
+function tabbableElements(): HTMLElement[] {
+  const selector =
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  return Array.from(document.querySelectorAll<HTMLElement>(selector)).filter(
+    (el) => el.closest("[inert]") === null,
+  );
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("DashboardShell", () => {
@@ -157,6 +167,134 @@ describe("DashboardShell", () => {
     marketplaceLinks.forEach((link) => {
       expect(link).not.toHaveAttribute("aria-current");
     });
+  });
+
+  it("marks only Settings current on /dashboard/settings, never Home", () => {
+    mockUsePathname.mockReturnValue("/dashboard/settings");
+    renderShell("buyer");
+    const railNav = screen.getByLabelText("Role modules");
+    const current = within(railNav)
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page");
+    expect(current).toHaveLength(1);
+    expect(current[0]).toHaveAttribute("aria-label", "Account settings");
+    expect(within(railNav).getByRole("link", { name: "Dashboard home" })).not.toHaveAttribute(
+      "aria-current",
+    );
+  });
+
+  it("marks exactly one rail item current for every role on its own route", () => {
+    const cases: Array<{
+      role: "buyer" | "supplier" | "admin";
+      pathname: string;
+      expected: string;
+    }> = [
+      { role: "buyer", pathname: "/dashboard", expected: "/dashboard" },
+      { role: "buyer", pathname: "/dashboard/settings", expected: "/dashboard/settings" },
+      { role: "buyer", pathname: "/marketplace/listing/42", expected: "/marketplace" },
+      {
+        role: "supplier",
+        pathname: "/dashboard/onboarding/services",
+        expected: "/dashboard/onboarding/services",
+      },
+      { role: "supplier", pathname: "/dashboard/settings", expected: "/dashboard/settings" },
+      { role: "admin", pathname: "/admin/users", expected: "/admin/users" },
+    ];
+
+    for (const testCase of cases) {
+      mockUsePathname.mockReturnValue(testCase.pathname);
+      const { container, unmount } = renderShell(testCase.role);
+      const railNav = within(container).getByLabelText("Role modules");
+      const current = within(railNav)
+        .getAllByRole("link")
+        .filter((link) => link.getAttribute("aria-current") === "page");
+      // Exactly one item is current — "Home" never claims a child route.
+      expect(current.map((link) => link.getAttribute("href"))).toEqual([testCase.expected]);
+      unmount();
+    }
+  });
+
+  // ── Closed mobile rail is out of the tab order ────────────────────────────
+
+  it("marks the closed rail inert and hidden from assistive tech on mobile", () => {
+    setViewportWidth(375);
+    renderShell("buyer");
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).toHaveAttribute("inert");
+    expect(rail).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByLabelText("Open navigation menu")).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("excludes every rail link from the tab order while the mobile rail is closed", () => {
+    setViewportWidth(375);
+    renderShell("buyer");
+    const rail = screen.getByLabelText("Module navigation");
+    // ByRole queries hide nodes inside aria-hidden, so read the links directly.
+    const railLinks = Array.from(rail.querySelectorAll<HTMLAnchorElement>("a[href]"));
+    expect(railLinks.length).toBeGreaterThan(0);
+
+    const tabbable = tabbableElements();
+    railLinks.forEach((link) => {
+      expect(tabbable).not.toContain(link);
+    });
+  });
+
+  it("tabs from the rail toggle to main content without entering the closed rail", () => {
+    setViewportWidth(375);
+    window.localStorage.setItem("chronopay:role:selected", "true");
+    window.localStorage.setItem("chronopay:role", "buyer");
+    render(
+      <RoleProvider initialRole="buyer">
+        <DashboardShell>
+          <a href="/dashboard/bookings/123">Open booking</a>
+        </DashboardShell>
+      </RoleProvider>,
+    );
+
+    const rail = screen.getByLabelText("Module navigation");
+    const main = document.getElementById("main-content");
+    expect(main).toBeInTheDocument();
+
+    const tabbable = tabbableElements();
+    const toggle = tabbable.indexOf(screen.getByLabelText("Open navigation menu"));
+    const contentLink = tabbable.indexOf(screen.getByRole("link", { name: "Open booking" }));
+    expect(toggle).toBeGreaterThanOrEqual(0);
+    expect(contentLink).toBeGreaterThan(toggle);
+
+    const between = tabbable.slice(toggle + 1, contentLink);
+    expect(between.some((el) => rail.contains(el))).toBe(false);
+  });
+
+  it("returns rail links to the tab order once the mobile rail is opened", () => {
+    setViewportWidth(375);
+    renderShell("buyer");
+    const rail = screen.getByLabelText("Module navigation");
+
+    fireEvent.click(screen.getByLabelText("Open navigation menu"));
+
+    expect(rail).not.toHaveAttribute("inert");
+    expect(rail).not.toHaveAttribute("aria-hidden");
+    const tabbable = tabbableElements();
+    within(rail)
+      .getAllByRole("link")
+      .forEach((link) => {
+        expect(tabbable).toContain(link);
+      });
+  });
+
+  it("keeps the rail interactive and never inert at the lg breakpoint and above", () => {
+    setViewportWidth(1280);
+    renderShell("buyer");
+    const rail = screen.getByLabelText("Module navigation");
+    expect(rail).not.toHaveAttribute("inert");
+    expect(rail).not.toHaveAttribute("aria-hidden");
+
+    const tabbable = tabbableElements();
+    within(rail)
+      .getAllByRole("link")
+      .forEach((link) => {
+        expect(tabbable).toContain(link);
+      });
   });
 
   // ── Role Indicator ────────────────────────────────────────────────────────
