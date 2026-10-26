@@ -1,18 +1,15 @@
-"use client";
+import type { Metadata } from "next";
+import SettingsClient from "./settings-client";
 
-import dynamic from "next/dynamic";
-import { DashboardShell } from "@/app/components/dashboard-shell";
-
-// The settings panel touches `document` while rendering, so load it client-side only.
-const SettingsPanel = dynamic(() => import("@/components/dashboard/settings/page"), {
-  ssr: false,
-  loading: () => <p className="text-sm text-slate-400">Loading settings…</p>,
-});
+export const metadata: Metadata = {
+  title: "Settings",
+  description: "Manage your ChronoPay account settings, notifications, and preferences.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function SettingsPage() {
-  return (
-    <DashboardShell>
-      <SettingsPanel />
-    </DashboardShell>
-  );
+  return <SettingsClient />;
 }

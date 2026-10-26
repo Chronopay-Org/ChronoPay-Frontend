@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import StatusPage from "@/app/status/page";
+import StatusPage, { metadata as statusMetadata } from "@/app/status/page";
 
 describe("StatusPage", () => {
   it("renders the public status overview and key sections", () => {
@@ -11,7 +11,7 @@ describe("StatusPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Platform health matrix/i)).toBeInTheDocument();
     expect(screen.getByText(/90-day uptime/i)).toBeInTheDocument();
-    expect(screen.getByText(/Incidents/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Incidents/i })).toBeInTheDocument();
   });
 
   it("includes an accessible operational badge and status summary", () => {
@@ -20,5 +20,9 @@ describe("StatusPage", () => {
     const badge = screen.getByRole("status");
     expect(badge).toHaveTextContent(/Operational/i);
     expect(screen.getByText(/Marketplace services, escrow workflows, and the Stellar network/i)).toBeInTheDocument();
+  });
+
+  it("exports metadata with the correct title", () => {
+    expect(statusMetadata).toHaveProperty("title", "System Status");
   });
 });

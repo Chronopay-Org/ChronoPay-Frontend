@@ -8,8 +8,15 @@ import { I18nProvider } from "@/lib/i18n";
 import { SiteFooter } from "@/app/components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "ChronoPay - Time Economy",
+  title: {
+    default: "ChronoPay - Time Economy",
+    template: "%s · ChronoPay",
+  },
   description: "Tokenize and trade human time on the Stellar network.",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 /** Runs before React hydrates to set the theme and avoid FOUC. */
