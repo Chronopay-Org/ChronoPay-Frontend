@@ -179,3 +179,7 @@ export function useRole(): RoleContextValue {
   }
   return ctx;
 }
+
+export function useOptionalRole(): UserRole | undefined {
+  return useContext(RoleContext)?.role;
+}
