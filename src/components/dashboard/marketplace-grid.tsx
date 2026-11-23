@@ -253,7 +253,7 @@ export function MarketplaceGrid({
                         ★ {item.rating.toFixed(1)}
                       </span>
                       {item.reviews && (
-                        <span className="ml-1 text-xs text-zinc-500">
+                        <span className="ms-1 text-xs text-zinc-500">
                           ({item.reviews})
                         </span>
                       )}

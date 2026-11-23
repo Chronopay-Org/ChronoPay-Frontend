@@ -209,7 +209,7 @@ export function KeyboardShortcutsOverlay({
             </label>
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
                 aria-hidden="true"
               />
               <input
@@ -227,7 +227,7 @@ export function KeyboardShortcutsOverlay({
                 aria-autocomplete="list"
                 aria-controls={listboxId}
                 aria-activedescendant={activeItemId}
-                className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-slate-500 focus:border-cyan-300/40 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 focus:ring-offset-slate-950"
+                className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 ps-9 pe-9 text-sm text-white placeholder:text-slate-500 focus:border-cyan-300/40 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 focus:ring-offset-slate-950"
               />
               {query && (
                 <button
@@ -237,7 +237,7 @@ export function KeyboardShortcutsOverlay({
                     setQuery("");
                     inputRef.current?.focus();
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
+                  className="absolute end-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
                 >
                   <X className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>

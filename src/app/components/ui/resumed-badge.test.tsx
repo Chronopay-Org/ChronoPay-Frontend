@@ -59,7 +59,7 @@ describe("ResumedBadge", () => {
       const { className } = screen.getByRole("status");
       expect(className).toContain("absolute");
       expect(className).toContain("top-0");
-      expect(className).toContain("right-0");
+      expect(className).toContain("end-0");
     });
   });
 
@@ -199,6 +199,28 @@ describe("ResumedBadge", () => {
       advance(VISIBLE_MS);
 
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("stepLabel prop", () => {
+    it("displays the stepLabel when provided", () => {
+      render(<ResumedBadge stepLabel="Storefront branding" />);
+
+      expect(
+        screen.getByText("Resumed at Storefront branding"),
+      ).toBeInTheDocument();
+    });
+
+    it("falls back to default text when stepLabel is omitted or whitespace", () => {
+      const { rerender } = render(<ResumedBadge />);
+      expect(
+        screen.getByText("Resumed where you left off"),
+      ).toBeInTheDocument();
+
+      rerender(<ResumedBadge stepLabel="   " />);
+      expect(
+        screen.getByText("Resumed where you left off"),
+      ).toBeInTheDocument();
     });
   });
 

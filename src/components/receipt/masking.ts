@@ -1,11 +1,7 @@
 import type { ReceiptData } from "./types";
+import { truncateHash } from "@/lib/format-address";
 
-/** Truncate a long on-chain identifier to a head/tail preview. */
-export function truncateHash(value: string, head = 6, tail = 6): string {
-  const clean = value.replace(/\.\.\.minted$/, "");
-  if (clean.length <= head + tail + 1) return clean;
-  return `${clean.slice(0, head)}...${clean.slice(-tail)}`;
-}
+export { truncateHash };
 
 /** Mask a counterparty name, keeping only the first initial of each word. */
 export function maskName(name: string): string {

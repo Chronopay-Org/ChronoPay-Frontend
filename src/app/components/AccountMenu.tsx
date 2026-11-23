@@ -95,7 +95,7 @@ export function AccountMenu() {
           id="account-menu"
           role="menu"
           aria-label="Account actions"
-          className="absolute right-0 z-10 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+          className="absolute end-0 z-10 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.3)] backdrop-blur-xl"
         >
           <button
             ref={firstItemRef}
@@ -103,7 +103,7 @@ export function AccountMenu() {
             role="menuitem"
             onClick={copyAddress}
             disabled={!address}
-            className="w-full rounded-2xl px-4 py-3 text-left text-sm text-slate-100 transition hover:bg-slate-900/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl px-4 py-3 text-start text-sm text-slate-100 transition hover:bg-slate-900/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <div className="flex items-center justify-between gap-2">
               <span>Copy address</span>
@@ -119,7 +119,7 @@ export function AccountMenu() {
               disconnect();
               setOpen(false);
             }}
-            className="mt-2 w-full rounded-2xl px-4 py-3 text-left text-sm text-slate-100 transition hover:bg-slate-900/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
+            className="mt-2 w-full rounded-2xl px-4 py-3 text-start text-sm text-slate-100 transition hover:bg-slate-900/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60"
           >
             Disconnect
           </button>

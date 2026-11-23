@@ -248,8 +248,8 @@ export function Tooltip({
     : "elevation-2 absolute z-50 max-w-xs px-3 py-2 text-sm text-white bg-zinc-800 border border-zinc-600 rounded-lg transition-opacity duration-150 motion-reduce:transition-none";
   const placementClasses =
     position.resolvedSide === "top"
-      ? "bottom-full mb-2 left-1/2 -translate-x-1/2"
-      : "top-full mt-2 left-1/2 -translate-x-1/2";
+      ? "bottom-full mb-2 start-1/2 -translate-x-1/2"
+      : "top-full mt-2 start-1/2 -translate-x-1/2";
 
   return (
     <div className={`relative inline-block ${className}`}>
@@ -287,12 +287,12 @@ export function Tooltip({
           {content}
           {/* Smart arrow */}
           <div
-            className={`absolute w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${
+            className={`absolute w-0 h-0 border-s-4 border-e-4 border-t-4 border-transparent ${
               position.resolvedSide === "top"
-                ? `-bottom-1 left-1/2 -translate-x-1/2 ${
+                ? `-bottom-1 start-1/2 -translate-x-1/2 ${
                     isLongform ? "border-t-zinc-900" : "border-t-zinc-800"
                   }`
-                : `-top-1 left-1/2 -translate-x-1/2 ${
+                : `-top-1 start-1/2 -translate-x-1/2 ${
                     isLongform ? "border-b-zinc-900" : "border-b-zinc-800"
                   }`
             }`}

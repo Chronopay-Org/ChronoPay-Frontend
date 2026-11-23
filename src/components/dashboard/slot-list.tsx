@@ -627,7 +627,7 @@ export const SlotList = ({
                       >
                         <span
                           id={`conflict-${slot.id}`}
-                          className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
+                          className="absolute end-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
                         >
                           {conflicts[slot.id]}
                         </span>
@@ -690,7 +690,7 @@ export const SlotList = ({
 
                   {/* Rebooking trigger for cancelled / rescheduled tokens */}
                   {isRebookable(slot) ? (
-                    <div className="flex flex-wrap items-center gap-2 pl-1">
+                    <div className="flex flex-wrap items-center gap-2 ps-1">
                       <span className="text-xs text-slate-400">
                         This time-token was {slot.status.toLowerCase()}.
                       </span>

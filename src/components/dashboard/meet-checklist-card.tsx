@@ -407,7 +407,7 @@ export function MeetChecklistCard({
                   aria-describedby={item.description ? `${rowId}-desc` : undefined}
                   onClick={() => handleCheck(item.id, item.label)}
                   className={clsx(
-                    "group flex w-full min-h-11 items-start gap-3 rounded-xl border px-3.5 py-3 text-left",
+                    "group flex w-full min-h-11 items-start gap-3 rounded-xl border px-3.5 py-3 text-start",
                     "transition-colors motion-safe:transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300",
                     "focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
@@ -477,7 +477,7 @@ export function MeetChecklistCard({
                       aria-label={item.actionLabel ?? `Open: ${item.label}`}
                       onClick={(e) => e.stopPropagation()}
                       className={clsx(
-                        "ml-auto shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+                        "ms-auto shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
                         "border-white/12 bg-white/5 text-slate-300",
                         "hover:border-cyan-300/30 hover:text-cyan-200",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300",

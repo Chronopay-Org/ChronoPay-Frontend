@@ -121,7 +121,7 @@ export function ReviewCard({
         <div className="relative" ref={menuRef}>
           <button
             type="button"
-            className="p-2 -mr-2 text-slate-400 hover:text-white rounded-full hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="p-2 -me-2 text-slate-400 hover:text-white rounded-full hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="More options"
             aria-expanded={isMenuOpen}
@@ -132,12 +132,12 @@ export function ReviewCard({
           
           {isMenuOpen && (
             <div
-              className="absolute right-0 top-full mt-1 w-40 rounded-lg border border-white/10 bg-slate-800 shadow-xl z-10 py-1"
+              className="absolute end-0 top-full mt-1 w-40 rounded-lg border border-white/10 bg-slate-800 shadow-xl z-10 py-1"
               role="menu"
             >
               <button
                 type="button"
-                className="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:bg-white/5"
+                className="w-full text-start px-4 py-2 text-sm text-rose-400 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:bg-white/5"
                 role="menuitem"
                 onClick={() => {
                   setIsReportModalOpen(true);
@@ -162,7 +162,7 @@ export function ReviewCard({
           type="button"
           onClick={() => onHelpfulToggle?.(id)}
           className={clsx(
-            "flex items-center gap-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-md px-2 py-1 -ml-2",
+            "flex items-center gap-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-md px-2 py-1 -ms-2",
             isHelpful
               ? "text-cyan-400 bg-cyan-400/10"
               : "text-slate-400 hover:text-slate-200 hover:bg-white/5"

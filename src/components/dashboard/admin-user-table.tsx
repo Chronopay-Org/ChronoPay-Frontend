@@ -333,7 +333,7 @@ export function AdminUserTable({
               <th
                 role="columnheader"
                 scope="col"
-                className="w-10 px-4 py-3 text-left"
+                className="w-10 px-4 py-3 text-start"
                 aria-label="Select all rows"
               >
                 <input
@@ -374,7 +374,7 @@ export function AdminUserTable({
                     className={[
                       col.width ?? "",
                       "px-4 py-3",
-                      col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left",
+                      col.align === "right" ? "text-end" : col.align === "center" ? "text-center" : "text-start",
                       "text-xs font-semibold uppercase tracking-[0.12em] text-slate-400",
                       "border-b border-white/8",
                     ].join(" ")}
@@ -506,12 +506,12 @@ export function AdminUserTable({
                   </td>
 
                   {/* Payouts */}
-                  <td role="gridcell" className="px-4 py-3 text-right tabular-nums text-slate-300">
+                  <td role="gridcell" className="px-4 py-3 text-end tabular-nums text-slate-300">
                     {user.payouts.toLocaleString()}
                   </td>
 
                   {/* Bookings */}
-                  <td role="gridcell" className="px-4 py-3 text-right tabular-nums text-slate-300">
+                  <td role="gridcell" className="px-4 py-3 text-end tabular-nums text-slate-300">
                     {user.bookings.toLocaleString()}
                   </td>
 

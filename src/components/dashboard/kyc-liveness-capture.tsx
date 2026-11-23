@@ -162,9 +162,9 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
                 aria-label="Camera feed for liveness capture"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none" />
-              <div className="absolute bottom-4 left-0 right-0 text-center">
+              <div className="absolute bottom-4 start-0 end-0 text-center">
                 <p className="text-white font-medium text-lg px-4 drop-shadow-md">
-                  <span className="text-2xl mr-2" aria-hidden="true">{currentPrompt.icon}</span>
+                  <span className="text-2xl me-2" aria-hidden="true">{currentPrompt.icon}</span>
                   {currentPrompt.text}
                 </p>
               </div>

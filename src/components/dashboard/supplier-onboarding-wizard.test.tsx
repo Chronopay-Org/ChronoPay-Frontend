@@ -229,6 +229,24 @@ describe("SupplierOnboardingWizard", () => {
       />,
     );
     expect(screen.getByText("Step 2 of 3")).toBeInTheDocument();
+    expect(screen.getByText("Resumed at Storefront branding")).toBeInTheDocument();
+  });
+
+  it("does not render ResumedBadge for a fresh session with no stored state", () => {
+    render(<SupplierOnboardingWizard steps={buildSteps()} storageKey="t-fresh" />);
+    expect(screen.queryByText(/resumed/i)).not.toBeInTheDocument();
+  });
+
+  it("renders ResumedBadge with the restored step title and aria-live announcement when progress is restored", () => {
+    sessionStorage.setItem(
+      "t-resumed",
+      JSON.stringify({ currentIndex: 1, furthestIndex: 1, skippedIds: [] }),
+    );
+    render(<SupplierOnboardingWizard steps={buildSteps()} storageKey="t-resumed" />);
+    const badgeText = screen.getByText("Resumed at Storefront branding");
+    expect(badgeText).toBeInTheDocument();
+    const badgeStatus = badgeText.closest('[role="status"]');
+    expect(badgeStatus).toHaveAttribute("aria-live", "polite");
   });
 
   it("re-enables a previously reached rail step and allows clicking back to it", async () => {

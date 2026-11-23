@@ -223,7 +223,7 @@ export function KycDocUpload({
               aria-label="Restart document upload"
             >
               <X className="h-3.5 w-3.5 inline-block align-middle" aria-hidden="true" />
-              <span className="ml-1 align-middle">Cancel</span>
+              <span className="ms-1 align-middle">Cancel</span>
             </button>
           )}
         </div>
@@ -280,7 +280,7 @@ export function KycDocUpload({
           className="mb-4 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 text-sm text-purple-200"
           role="alert"
         >
-          <HelpCircle className="h-4 w-4 inline-block align-middle mr-1.5" aria-hidden="true" />
+          <HelpCircle className="h-4 w-4 inline-block align-middle me-1.5" aria-hidden="true" />
           <span className="align-middle">
             Text-only mode active. You can upload a photo file instead of using the camera.
           </span>
@@ -351,15 +351,15 @@ export function KycDocUpload({
                   ].join(" ")}
                 >
                   {/* Corner markers */}
-                  <span className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-cyan-300" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-cyan-300" />
-                  <span className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-cyan-300" />
-                  <span className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-cyan-300" />
+                  <span className="absolute -top-1 -start-1 w-3 h-3 border-t-2 border-s-2 border-cyan-300" />
+                  <span className="absolute -top-1 -end-1 w-3 h-3 border-t-2 border-e-2 border-cyan-300" />
+                  <span className="absolute -bottom-1 -start-1 w-3 h-3 border-b-2 border-s-2 border-cyan-300" />
+                  <span className="absolute -bottom-1 -end-1 w-3 h-3 border-b-2 border-e-2 border-cyan-300" />
                 </div>
 
                 {/* Glare warning overlay */}
                 {glareDetected && (
-                  <div className="absolute top-3 left-3 right-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
+                  <div className="absolute top-3 start-3 end-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     <span>Glare detected — adjust lighting</span>
                   </div>
@@ -367,7 +367,7 @@ export function KycDocUpload({
 
                 {/* Corner warning */}
                 {!cornersVisible && (
-                  <div className="absolute bottom-3 left-3 right-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
+                  <div className="absolute bottom-3 start-3 end-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     <span>Some corners are not visible — adjust position</span>
                   </div>
@@ -423,7 +423,7 @@ export function KycDocUpload({
                   aria-pressed={glareDetected}
                   aria-label="Toggle glare detection simulation"
                 >
-                  <Sun className="h-3 w-3 inline-block align-middle mr-1" aria-hidden="true" />
+                  <Sun className="h-3 w-3 inline-block align-middle me-1" aria-hidden="true" />
                   Glare
                 </button>
               )}
@@ -440,7 +440,7 @@ export function KycDocUpload({
                   aria-pressed={!cornersVisible}
                   aria-label="Toggle corner visibility simulation"
                 >
-                  <CornerDownRight className="h-3 w-3 inline-block align-middle mr-1" aria-hidden="true" />
+                  <CornerDownRight className="h-3 w-3 inline-block align-middle me-1" aria-hidden="true" />
                   Corners
                 </button>
               )}
@@ -475,7 +475,7 @@ export function KycDocUpload({
               className="mt-4 w-full p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-200"
               role="alert"
             >
-              <CameraOff className="h-4 w-4 inline-block align-middle mr-1.5" aria-hidden="true" />
+              <CameraOff className="h-4 w-4 inline-block align-middle me-1.5" aria-hidden="true" />
               <span className="align-middle">{cameraError}</span>
             </div>
           )}

@@ -225,7 +225,7 @@ export function NotificationList({
         title="All caught up"
         description="You have no notifications at the moment."
         accentLabel="✓"
-        status={{ label: "Clear", tone: "success" }}
+        status={{ label: "Clear", tone: "positive" }}
         guidance={["New notifications will appear here", "You can also check your notification preferences"]}
       />
     );

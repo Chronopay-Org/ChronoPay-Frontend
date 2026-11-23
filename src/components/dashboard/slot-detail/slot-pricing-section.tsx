@@ -150,7 +150,7 @@ export function SlotPricingSection({
                   Smart Escrow Fee
                   <span className="group relative">
                     <Info className="h-3.5 w-3.5 text-slate-400 cursor-pointer hover:text-white" />
-                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-900 border border-white/10 p-2 text-[10px] text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-xl z-10">
+                    <span className="pointer-events-none absolute bottom-full start-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-900 border border-white/10 p-2 text-[10px] text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-xl z-10">
                       1.5% fee held securely in Stellar contract during booking.
                     </span>
                   </span>
@@ -164,7 +164,7 @@ export function SlotPricingSection({
                   Stellar Network Fee
                   <span className="group relative">
                     <Info className="h-3.5 w-3.5 text-slate-400 cursor-pointer hover:text-white" />
-                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-900 border border-white/10 p-2 text-[10px] text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-xl z-10">
+                    <span className="pointer-events-none absolute bottom-full start-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-900 border border-white/10 p-2 text-[10px] text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-xl z-10">
                       Gas fees paid directly to Stellar validators for ledger commitment.
                     </span>
                   </span>

@@ -357,7 +357,7 @@ export function HeaderSearch() {
             </label>
             <div className="relative flex items-center">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
                 aria-hidden={true}
               />
               {/* Input carries all combobox ARIA */}
@@ -381,7 +381,7 @@ export function HeaderSearch() {
                 aria-controls={listboxId}
                 aria-activedescendant={activeItemId}
                 className="
-                  h-8 w-48 rounded-full border border-white/10 bg-white/6 pl-8 pr-7
+                  h-8 w-48 rounded-full border border-white/10 bg-white/6 ps-8 pe-7
                   text-sm text-white placeholder:text-slate-500
                   focus:border-cyan-300/40 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 focus:ring-offset-slate-950
                   transition-[width,background-color,border-color] duration-200
@@ -397,7 +397,7 @@ export function HeaderSearch() {
                     updateQuery("");
                     inputRef.current?.focus();
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-colors"
+                  className="absolute end-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-colors"
                 >
                   <X className="h-3 w-3" aria-hidden={true} />
                 </button>
@@ -407,7 +407,7 @@ export function HeaderSearch() {
             {/* Dropdown panel */}
             {(isPanelVisible || showEmptyHint) && (
               <div
-                className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur-xl ring-1 ring-black/20 z-50"
+                className="absolute end-0 top-full mt-2 w-72 rounded-xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur-xl ring-1 ring-black/20 z-50"
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 {/* Recent searches header -- shown when query is empty */}
@@ -518,7 +518,7 @@ export function HeaderSearch() {
                                 e.stopPropagation();
                                 removeRecentSearch(item.label);
                               }}
-                              className="ml-auto shrink-0 rounded-full p-0.5 text-slate-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-[opacity,color]"
+                              className="ms-auto shrink-0 rounded-full p-0.5 text-slate-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-[opacity,color]"
                             >
                               <X className="h-3 w-3" aria-hidden="true" />
                             </button>
@@ -554,7 +554,7 @@ export function HeaderSearch() {
                 {revertQuery && (
                   <div className="px-3 pt-3 pb-1">
                     <div className="flex items-center gap-1.5">
-                      <ArrowLeft className="h-3 w-3 text-slate-500" aria-hidden="true" />
+                      <ArrowLeft className="icon-directional h-3 w-3 text-slate-500" aria-hidden="true" />
                       <span className="text-xs text-slate-500">
                         Original search:{" "}
                         <button

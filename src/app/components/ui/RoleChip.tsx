@@ -210,7 +210,7 @@ export function RoleChip() {
       {open && (
         <div
           className={[
-            "absolute right-0 top-full z-50 mt-2",
+            "absolute end-0 top-full z-50 mt-2",
             "w-72 rounded-2xl border border-white/10",
             "bg-slate-900/95 shadow-xl backdrop-blur-xl",
           ].join(" ")}

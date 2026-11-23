@@ -183,7 +183,7 @@ export function OfflineQueueIndicator({
         )}
         <span>{isOffline ? "Offline" : connection === "reconnecting" ? "Reconnecting" : "Online"}</span>
         {pendingCount > 0 && (
-          <span aria-hidden="true" className="ml-1 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold">
+          <span aria-hidden="true" className="ms-1 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold">
             {pendingCount}
           </span>
         )}
@@ -196,7 +196,7 @@ export function OfflineQueueIndicator({
           role="dialog"
           aria-modal="true"
           aria-label="Offline queue"
-          className="absolute right-0 z-40 mt-2 w-80 origin-top-right rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-[0_24px_60px_-20px_rgba(2,6,23,0.95)] backdrop-blur-xl sm:w-96"
+          className="absolute end-0 z-40 mt-2 w-80 origin-top-right rounded-2xl border border-white/10 bg-slate-950/95 p-4 shadow-[0_24px_60px_-20px_rgba(2,6,23,0.95)] backdrop-blur-xl sm:w-96"
         >
           <div className="flex items-center justify-between gap-3">
             <div>

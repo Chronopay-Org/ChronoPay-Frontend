@@ -80,7 +80,7 @@ export function SlotCheckoutModal({
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 z-10"
+              className="absolute top-4 end-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 z-10"
               aria-label="Close modal dialog"
             >
               ✕
@@ -129,12 +129,12 @@ export function SlotCheckoutModal({
                   <div className="flex justify-between items-start mb-3">
                     <h4 className="text-sm font-bold text-cyan-300 flex items-center gap-1.5">
                       Sign In
-                      <span className="group relative ml-1">
+                      <span className="group relative ms-1">
                         <Info
                           className="h-3.5 w-3.5 text-cyan-400/60 cursor-pointer hover:text-cyan-300"
                           aria-label="Why sign in?"
                         />
-                        <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-900 border border-white/10 p-2 text-[10px] text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-xl z-20">
+                        <span className="pointer-events-none absolute bottom-full start-1/2 -translate-x-1/2 mb-2 w-48 rounded bg-slate-900 border border-white/10 p-2 text-[10px] text-slate-200 opacity-0 group-hover:opacity-100 transition shadow-xl z-20">
                           Signing in syncs your wallet with your profile, giving you access
                           to purchase history, saved settings, and priority support.
                         </span>
@@ -209,7 +209,7 @@ export function SlotCheckoutModal({
               <div className="rounded-2xl border border-white/5 bg-slate-950/40 p-4 space-y-3.5 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Time Token</span>
-                  <span className="font-semibold text-white max-w-[180px] truncate text-right">
+                  <span className="font-semibold text-white max-w-[180px] truncate text-end">
                     {slotTitle}
                   </span>
                 </div>
@@ -227,7 +227,7 @@ export function SlotCheckoutModal({
                 {giftDetails?.isGift && (
                   <div className="flex justify-between">
                     <span className="text-slate-400">Gift for</span>
-                    <span className="font-semibold text-white max-w-[180px] truncate text-right">
+                    <span className="font-semibold text-white max-w-[180px] truncate text-end">
                       {giftDetails.recipientName ||
                         giftDetails.recipientEmail ||
                         "Recipient"}
@@ -380,7 +380,7 @@ export function SlotCheckoutModal({
                   className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-4 py-2.5 text-xs border border-cyan-400/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20"
                 >
                   View Receipt
-                  <Receipt className="h-3 w-3 ml-1.5" />
+                  <Receipt className="h-3 w-3 ms-1.5" />
                 </button>
 
                 <a
@@ -390,7 +390,7 @@ export function SlotCheckoutModal({
                   className="w-full flex items-center justify-center rounded-full font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white px-4 py-2.5 text-xs border border-white/10 text-slate-300 hover:bg-white/5"
                 >
                   View Ledger Transaction
-                  <ExternalLink className="h-3 w-3 ml-1.5" />
+                  <ExternalLink className="h-3 w-3 ms-1.5" />
                 </a>
 
                 <Link

@@ -298,7 +298,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <button
                 type="button"
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
+                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-start transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
                 onClick={() => handleSelectMethod('wallet')}
                 aria-label="Connect Stellar wallet"
               >
@@ -318,7 +318,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
 
               <button
                 type="button"
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
+                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-start transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
                 onClick={() => handleSelectMethod('email')}
                 aria-label="Continue with email"
               >
@@ -446,7 +446,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
                         )) || <span className="text-xs text-slate-400">-</span>}
                       </div>
 
-                      <div className="mt-2 sm:mt-0 sm:text-right">
+                      <div className="mt-2 sm:mt-0 sm:text-end">
                         <button
                           type="button"
                           onClick={() => handleConnect(p.id)}
@@ -571,7 +571,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
                       Back to retry
                     </button>
                   </div>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1" role="list">
+                  <div className="space-y-2 max-h-48 overflow-y-auto pe-1" role="list">
                     {providers.map((p, i) => (
                       <button
                         key={p.id}
@@ -599,7 +599,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
 
           <button
             type="button"
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="absolute end-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             aria-label="Close modal"
             onClick={onClose}
           >

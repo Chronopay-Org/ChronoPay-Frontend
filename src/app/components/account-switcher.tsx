@@ -390,7 +390,7 @@ export function AccountSwitcher({
                   setAnnouncement("Address copied to clipboard");
                 }
               }}
-              className="ml-2 rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
+              className="ms-2 rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
               aria-label={`Copy address ${account.address}`}
             >
               <Copy className="h-3 w-3" />
@@ -477,7 +477,7 @@ export function AccountSwitcher({
       {isOpen && (
         <div
           className={[
-            "absolute right-0 top-full mt-2 w-80 rounded-xl",
+            "absolute end-0 top-full mt-2 w-80 rounded-xl",
             "border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur-xl",
             "ring-1 ring-black/20 z-50",
           ].join(" ")}
@@ -505,7 +505,7 @@ export function AccountSwitcher({
             </label>
             <div className="relative flex items-center">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
+                className="pointer-events-none absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
                 aria-hidden="true"
               />
               <input
@@ -530,7 +530,7 @@ export function AccountSwitcher({
                 aria-controls={listboxId}
                 aria-activedescendant={activeItemId}
                 className={[
-                  "h-9 w-full rounded-lg border border-white/10 bg-white/6 pl-8 pr-7",
+                  "h-9 w-full rounded-lg border border-white/10 bg-white/6 ps-8 pe-7",
                   "text-sm text-white placeholder:text-slate-500",
                   "focus:border-cyan-300/40 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-1 focus:ring-offset-slate-950",
                   "transition-[background-color,border-color] duration-200",
@@ -545,7 +545,7 @@ export function AccountSwitcher({
                     setActiveIndex(-1);
                     inputRef.current?.focus();
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-500 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400 transition-colors"
+                  className="absolute end-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-500 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400 transition-colors"
                 >
                   <X className="h-3 w-3" aria-hidden="true" />
                 </button>

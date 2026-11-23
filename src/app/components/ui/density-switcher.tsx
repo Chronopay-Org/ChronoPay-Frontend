@@ -88,7 +88,7 @@ export function DensitySwitcher() {
               aria-label={`${option.label} density`}
               onClick={() => setSelectedDensity(option.value)}
               className={
-                `rounded-3xl border p-5 text-left transition duration-200 focus-ring-white ` +
+                `rounded-3xl border p-5 text-start transition duration-200 focus-ring-white ` +
                 (active
                   ? "border-cyan-400 bg-cyan-500/10 text-white"
                   : "border-slate-700 bg-slate-950/70 text-slate-300 hover:border-white/20 hover:bg-slate-900")
