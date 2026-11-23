@@ -35,6 +35,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
+import dynamic from "next/dynamic";
 import { ChevronDown, Plus, Search, X, Clock, Copy } from "lucide-react";
 import {
   useAccounts,
@@ -43,8 +44,20 @@ import {
   avatarInitials,
   type Account,
 } from "@/hooks/use-accounts";
-import { WalletConnectModal, type ConnectionStatus } from "@/components/dashboard/WalletConnectModal";
+import type { ConnectionStatus } from "@/components/dashboard/WalletConnectModal";
 import { WALLET_PROVIDERS, defaultWalletConnector, type WalletConnector } from "@/components/dashboard/wallet-providers";
+
+const WalletConnectModal = dynamic(
+  () => import("@/components/dashboard/WalletConnectModal").then((module) => module.WalletConnectModal),
+  {
+    ssr: false,
+    loading: () => (
+      <div role="status" aria-live="polite" className="fixed inset-0 z-50 grid place-items-center bg-black/50 px-4">
+        <span className="rounded-xl bg-slate-900 px-4 py-3 text-sm text-slate-200">Loading wallet connection…</span>
+      </div>
+    ),
+  },
+);
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -633,16 +646,18 @@ export function AccountSwitcher({
         {announcement}
       </div>
 
-      <WalletConnectModal
-        isOpen={isWalletModalOpen}
-        onClose={handleCloseWalletModal}
-        providers={WALLET_PROVIDERS}
-        status={modalStatus}
-        errorMessage={modalErrorMessage}
-        onConnect={handleConnectWallet}
-        onRetry={handleRetryWallet}
-        initialMethod="wallet"
-      />
+      {isWalletModalOpen ? (
+        <WalletConnectModal
+          isOpen
+          onClose={handleCloseWalletModal}
+          providers={WALLET_PROVIDERS}
+          status={modalStatus}
+          errorMessage={modalErrorMessage}
+          onConnect={handleConnectWallet}
+          onRetry={handleRetryWallet}
+          initialMethod="wallet"
+        />
+      ) : null}
     </div>
   );
 }

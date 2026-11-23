@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { WalletStatusBadge } from "./WalletStatusBadge";
 import { AccountMenu } from "./AccountMenu";
 import { ThemeSwitcher } from "@/components/dashboard/theme-switcher";
+import { NotificationBell } from "@/components/dashboard/notifications/notification-bell";
 import { REPO_URL } from "@/lib/site-links";
 
 export function Header() {
@@ -103,6 +104,7 @@ export function Header() {
           </div>
 
           <div className="hidden sm:flex flex-wrap items-center gap-3">
+            <NotificationBell />
             <ThemeSwitcher />
             <WalletStatusBadge />
             <AccountMenu />
@@ -261,6 +263,7 @@ export function Header() {
             </div>
 
             <div className="mt-6 space-y-4">
+              <NotificationBell />
               <ThemeSwitcher />
               <WalletStatusBadge />
               <AccountMenu />

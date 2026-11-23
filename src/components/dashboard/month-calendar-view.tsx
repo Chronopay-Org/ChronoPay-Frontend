@@ -4,13 +4,19 @@ import { useState, useCallback, useMemo, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import { addMonths } from "@/utils/date";
+import { LiveRegion } from "@/components/common/LiveRegion";
 import { CalendarHeatmapLegend, type HeatmapIntensity } from "./calendar-heatmap-legend";
+import { toISODateKey } from "./use-calendar-state";
 
 export interface MonthCalendarViewProps {
   /** Currently selected date */
   selectedDate: Date;
   /** Callback when a date is selected */
   onDateSelect: (date: Date) => void;
+  /** Optional controlled visible month */
+  visibleMonth?: Date;
+  /** Optional callback when visible month changes */
+  onMonthChange?: (month: Date) => void;
   /** Availability data: ISO date string (YYYY-MM-DD) -> slot count */
   availabilityData: Map<string, number>;
   /** Whether heatmap overlay is enabled */
@@ -63,7 +69,7 @@ function getIntensityStyles(intensity: HeatmapIntensity): React.CSSProperties {
 }
 
 function formatDateKey(date: Date): string {
-  return date.toISOString().split("T")[0];
+  return toISODateKey(date);
 }
 
 function isSameDay(a: Date, b: Date): boolean {
@@ -81,6 +87,8 @@ function isDateInRange(date: Date, min?: Date, max?: Date): boolean {
 export function MonthCalendarView({
   selectedDate,
   onDateSelect,
+  visibleMonth,
+  onMonthChange,
   availabilityData = new Map(),
   heatmapEnabled = false,
   onHeatmapToggle,
@@ -89,7 +97,9 @@ export function MonthCalendarView({
   minDate,
   maxDate,
 }: MonthCalendarViewProps) {
-  const [viewDate, setViewDate] = useState(new Date(selectedDate));
+  const [internalViewDate, setInternalViewDate] = useState(new Date(selectedDate));
+  const viewDate = visibleMonth ?? internalViewDate;
+  const [monthAnnouncement, setMonthAnnouncement] = useState("");
   const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState<number | null>(null);
   const dayRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -130,10 +140,18 @@ export function MonthCalendarView({
 
   const focusedDayIndex = keyboardFocusedIndex ?? selectedIndex;
 
-  const navigateMonth = useCallback((direction: number) => {
-    setViewDate((prev) => addMonths(prev, direction));
-    setKeyboardFocusedIndex(null);
-  }, []);
+  const navigateMonth = useCallback(
+    (direction: number) => {
+      const next = addMonths(viewDate, direction);
+      if (!visibleMonth) {
+        setInternalViewDate(next);
+      }
+      onMonthChange?.(next);
+      setMonthAnnouncement(`${monthNames[next.getMonth()]} ${next.getFullYear()}`);
+      setKeyboardFocusedIndex(null);
+    },
+    [viewDate, visibleMonth, onMonthChange]
+  );
 
   const handleDayClick = useCallback(
     (date: Date | null, index: number) => {
@@ -258,87 +276,92 @@ export function MonthCalendarView({
 
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Calendar days">
-        {days.map((date, index) => {
-          if (!date) {
-            return <div key={`empty-${index}`} className="aspect-square" aria-hidden="true" />;
-          }
-
-          const isSelected = isSameDay(date, selectedDate);
-          const isToday = isSameDay(date, today);
-          const isCurrentMonth = date.getMonth() === viewDate.getMonth();
-          const isInRange = isDateInRange(date, minDate, maxDate);
-          const dateKey = formatDateKey(date);
-          const slotCount = availabilityData.get(dateKey) || 0;
-          const intensity = getHeatmapIntensity(slotCount);
-          const hasAvailability = slotCount > 0;
-
-          const dayButton = (
-            <button
-              key={dateKey}
-              ref={(el) => {
-                dayRefs.current[index] = el;
-              }}
-              onClick={() => handleDayClick(date, index)}
-              onKeyDown={(e) => handleKeyDown(e, index)}
-              disabled={!isInRange}
-              className={clsx(
-                "relative aspect-square rounded-lg text-xs font-medium transition-all focus-ring-cyan",
-                "flex flex-col items-center justify-center",
-                isInRange
-                  ? isCurrentMonth
-                    ? "text-slate-300 hover:bg-white/5"
-                    : "text-slate-600 hover:bg-white/3"
-                  : "text-slate-700 pointer-events-none",
-                isSelected && "bg-cyan-500 text-white shadow-lg shadow-cyan-500/25",
-                isToday && !isSelected && "bg-white/10 text-white ring-1 ring-white/20",
-                !isInRange && "opacity-30",
-                hasAvailability && "font-semibold"
-              )}
-              aria-label={
-                `${date.toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}` +
-                `${isSelected ? ", selected" : ""}` +
-                `${isToday ? ", today" : ""}` +
-                `${hasAvailability ? `, ${slotCount} slot${slotCount !== 1 ? "s" : ""} available` : ", no availability"}`
+        {Array.from({ length: Math.ceil(days.length / 7) }, (_, rowIndex) => (
+          <div key={`row-${rowIndex}`} role="row" className="contents">
+            {days.slice(rowIndex * 7, rowIndex * 7 + 7).map((date, colIndex) => {
+              const index = rowIndex * 7 + colIndex;
+              if (!date) {
+                return <div key={`empty-${index}`} className="aspect-square" aria-hidden="true" />;
               }
-              aria-pressed={isSelected}
-              role="gridcell"
-              tabIndex={index === focusedDayIndex ? 0 : -1}
-            >
-              <span className="relative z-10">{date.getDate()}</span>
 
-              {/* Heatmap overlay - applied as background on the button itself */}
-              {heatmapEnabled && hasAvailability && (
-                <span
-                  className="pointer-events-none absolute inset-0 rounded-lg"
-                  style={getIntensityStyles(intensity)}
-                  aria-hidden="true"
-                />
-              )}
+              const isSelected = isSameDay(date, selectedDate);
+              const isToday = isSameDay(date, today);
+              const isCurrentMonth = date.getMonth() === viewDate.getMonth();
+              const isInRange = isDateInRange(date, minDate, maxDate);
+              const dateKey = formatDateKey(date);
+              const slotCount = availabilityData.get(dateKey) || 0;
+              const intensity = getHeatmapIntensity(slotCount);
+              const hasAvailability = slotCount > 0;
 
-              {/* Availability indicator dot (complements heatmap, doesn't replace) */}
-              {hasAvailability && (
-                <span
+              return (
+                <button
+                  key={dateKey}
+                  ref={(el) => {
+                    dayRefs.current[index] = el;
+                  }}
+                  onClick={() => handleDayClick(date, index)}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
+                  disabled={!isInRange}
                   className={clsx(
-                    "relative z-10 mt-0.5 h-1 w-1 rounded-full",
-                    intensity === "none"
-                      ? "bg-transparent"
-                      : intensity === "low"
-                      ? "bg-emerald-400"
-                      : intensity === "medium"
-                      ? "bg-amber-400"
-                      : intensity === "high"
-                      ? "bg-rose-400"
-                      : "bg-cyan-300"
+                    "relative aspect-square rounded-lg text-xs font-medium transition-all focus-ring-cyan",
+                    "flex flex-col items-center justify-center",
+                    isInRange
+                      ? isCurrentMonth
+                        ? "text-slate-300 hover:bg-white/5"
+                        : "text-slate-600 hover:bg-white/3"
+                      : "text-slate-700 pointer-events-none",
+                    isSelected && "bg-cyan-500 text-white shadow-lg shadow-cyan-500/25",
+                    isToday && !isSelected && "bg-white/10 text-white ring-1 ring-white/20",
+                    !isInRange && "opacity-30",
+                    hasAvailability && "font-semibold"
                   )}
-                  aria-hidden="true"
-                />
-              )}
-            </button>
-          );
+                  aria-label={
+                    `${date.toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}` +
+                    `${isSelected ? ", selected" : ""}` +
+                    `${isToday ? ", today" : ""}` +
+                    `${hasAvailability ? `, ${slotCount} slot${slotCount !== 1 ? "s" : ""} available` : ", no availability"}`
+                  }
+                  aria-selected={isSelected}
+                  role="gridcell"
+                  tabIndex={index === focusedDayIndex ? 0 : -1}
+                >
+                  <span className="relative z-10">{date.getDate()}</span>
 
-          return dayButton;
-        })}
+                  {/* Heatmap overlay - applied as background on the button itself */}
+                  {heatmapEnabled && hasAvailability && (
+                    <span
+                      className="pointer-events-none absolute inset-0 rounded-lg"
+                      style={getIntensityStyles(intensity)}
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  {/* Availability indicator dot (complements heatmap, doesn't replace) */}
+                  {hasAvailability && (
+                    <span
+                      className={clsx(
+                        "relative z-10 mt-0.5 h-1 w-1 rounded-full",
+                        intensity === "none"
+                          ? "bg-transparent"
+                          : intensity === "low"
+                          ? "bg-emerald-400"
+                          : intensity === "medium"
+                          ? "bg-amber-400"
+                          : intensity === "high"
+                          ? "bg-rose-400"
+                          : "bg-cyan-300"
+                      )}
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
+
+      <LiveRegion>{monthAnnouncement}</LiveRegion>
 
       {/* Heatmap Toggle & Legend */}
       <div className="mt-4 space-y-3">

@@ -34,6 +34,11 @@ npm run dev      # http://localhost:3000
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npm run test:unit` | Vitest unit tests |
+| `npm run test:coverage` | Vitest unit tests with coverage |
+
+### Coverage gate
+
+`npm run test:coverage` enforces a coverage gate over the modules listed in `vitest.config.mts` (`coverage.include`): **95%** lines, statements and functions, and **90%** branches. The list covers the UI and `src/lib`/`src/hooks` modules that already have dedicated tests.
 
 ## Environment variables
 

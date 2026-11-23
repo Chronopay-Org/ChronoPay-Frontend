@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import clsx from "clsx";
-import { MoreVertical, ThumbsUp, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { MoreVertical, ThumbsUp, Flag, CheckCircle2 } from "lucide-react";
 import { StarRating } from "./star-rating";
+import {
+  ReviewModerationFlagModal,
+  type ReviewModerationReason,
+} from "./review-moderation-flag-modal";
 
 export interface ReviewCardProps {
   id: string;
@@ -12,8 +16,15 @@ export interface ReviewCardProps {
   content: string;
   helpfulCount?: number;
   isHelpful?: boolean;
+  isAlreadyFlagged?: boolean;
+  isOffline?: boolean;
   onHelpfulToggle?: (id: string) => void;
   onReport?: (id: string, reason: string) => void;
+  onFlag?: (
+    id: string,
+    reason: ReviewModerationReason,
+    context: string
+  ) => Promise<void> | void;
   className?: string;
 }
 
@@ -31,13 +42,15 @@ export function ReviewCard({
   content,
   helpfulCount = 0,
   isHelpful = false,
+  isAlreadyFlagged = false,
+  isOffline = false,
   onHelpfulToggle,
   onReport,
+  onFlag,
   className = "",
 }: ReviewCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [reportReason, setReportReason] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on click outside
@@ -58,21 +71,18 @@ export function ReviewCard({
     function handleEscape(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setIsMenuOpen(false);
-        setIsReportModalOpen(false);
       }
     }
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
-  const handleReportSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onReport && reportReason.trim()) {
-      onReport(id, reportReason);
-      setIsReportModalOpen(false);
-      setIsMenuOpen(false);
-      setReportReason("");
-    }
+  const handleFlagSubmit = async (
+    reason: ReviewModerationReason,
+    context: string
+  ) => {
+    await onFlag?.(id, reason, context);
+    onReport?.(id, context || reason);
   };
 
   return (
@@ -92,6 +102,12 @@ export function ReviewCard({
               <span className="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full" title="Verified Buyer">
                 <CheckCircle2 size={12} />
                 Verified
+              </span>
+            )}
+            {isAlreadyFlagged && (
+              <span className="flex items-center gap-1 text-xs font-medium text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-full" data-testid="review-flagged-badge">
+                <Flag size={12} aria-hidden="true" />
+                Flagged
               </span>
             )}
           </div>
@@ -159,56 +175,14 @@ export function ReviewCard({
       </div>
 
       {/* Report Modal */}
-      {isReportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div
-            className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl animate-in fade-in zoom-in-95"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="report-dialog-title"
-          >
-            <div className="flex items-center gap-3 mb-4 text-rose-400">
-              <AlertTriangle size={24} />
-              <h2 id="report-dialog-title" className="text-xl font-bold text-white">
-                Report Review
-              </h2>
-            </div>
-            
-            <form onSubmit={handleReportSubmit} className="flex flex-col gap-4">
-              <div className="space-y-2">
-                <label htmlFor="report-reason" className="text-sm font-medium text-slate-300">
-                  Why are you reporting this review?
-                </label>
-                <textarea
-                  id="report-reason"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[100px] resize-y"
-                  placeholder="Please provide details..."
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div className="flex justify-end gap-3 mt-4">
-                <button
-                  type="button"
-                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                  onClick={() => setIsReportModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!reportReason.trim()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-rose-500 rounded-lg hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Submit Report
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ReviewModerationFlagModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        reviewId={id}
+        isAlreadyFlagged={isAlreadyFlagged}
+        isOffline={isOffline}
+        onSubmit={handleFlagSubmit}
+      />
     </article>
   );
 }
