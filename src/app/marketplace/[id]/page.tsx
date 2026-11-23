@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -30,9 +31,14 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
         </Link>
 
         <article className="card mt-6 overflow-hidden" aria-labelledby="listing-title">
-          <div className="aspect-video w-full overflow-hidden bg-zinc-800" aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={listing.image} alt="" className="h-full w-full object-cover" />
+          <div className="relative aspect-video w-full overflow-hidden bg-zinc-800" aria-hidden="true">
+            <Image
+              src={listing.image}
+              alt=""
+              fill
+              sizes="(min-width: 768px) 768px, 100vw"
+              className="object-cover"
+            />
           </div>
           <div className="space-y-4 p-6">
             <h1 id="listing-title" className="text-2xl font-semibold text-white">

@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Marketplace from "./page";
@@ -27,6 +28,11 @@ vi.mock("next/link", () => ({
     const { prefetch: _prefetch, ...rest } = props;
     return <a  {...rest} />;
   },
+}));
+
+// Mock next/image to render a plain img while preserving src, alt, sizes, and className
+vi.mock("next/image", () => ({
+  default: ({ fill: _fill, ...props }: any) => createElement("img", props),
 }));
 
 // Mock toast to prevent warnings
@@ -147,5 +153,20 @@ describe("Marketplace Page", () => {
       expect(Array.isArray(parsed)).toBe(true);
       expect(parsed.some((item: any) => item.id === id)).toBe(true);
     });
+  });
+
+  it("renders listing images with decorative alt, sizes, and 16:9 container", async () => {
+    render(<Marketplace />);
+
+    const grid = await screen.findByTestId("marketplace-grid");
+    const imgs = grid.querySelectorAll("img");
+    expect(imgs.length).toBe(24);
+
+    const firstImg = imgs[0];
+    expect(firstImg.getAttribute("alt")).toBe("");
+    expect(firstImg.getAttribute("src")).toContain("https://images.unsplash.com/");
+    expect(firstImg.getAttribute("sizes")).toBeTruthy();
+    expect(firstImg.parentElement?.className).toContain("relative");
+    expect(firstImg.parentElement?.className).toContain("aspect-video");
   });
 });
