@@ -38,11 +38,11 @@ import { useToast } from "@/hooks/use-toast";
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getHelpfulBtn() {
-  return screen.getByRole("button", { name: /helpful/i });
+  return screen.getByRole("button", { name: /\bhelpful\b/i });
 }
 
 function getUnhelpfulBtn() {
-  return screen.getByRole("button", { name: /unhelpful/i });
+  return screen.getByRole("button", { name: /\bunhelpful\b/i });
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -60,10 +60,10 @@ describe("ReviewVoteButtons", () => {
         initialUnhelpfulCount={3}
       />
     );
-    expect(screen.getByRole("button", { name: /helpful/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /unhelpful/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /helpful/i }).textContent).toContain("10");
-    expect(screen.getByRole("button", { name: /unhelpful/i }).textContent).toContain("3");
+    expect(getHelpfulBtn()).toBeInTheDocument();
+    expect(getUnhelpfulBtn()).toBeInTheDocument();
+    expect(getHelpfulBtn().textContent).toContain("10");
+    expect(getUnhelpfulBtn().textContent).toContain("3");
   });
 
   it("renders with default zero counts when no props supplied", () => {
