@@ -8,6 +8,8 @@ export type LifecycleStatus = "active" | "cancelled" | "rescheduled";
 export type Slot = {
   id: string;
   title: string;
+  /** Optional ISO date string (YYYY-MM-DD) for real date-based calendar grouping */
+  date?: string;
   dateLabel: string;
   timeRange: string;
   demand: string;

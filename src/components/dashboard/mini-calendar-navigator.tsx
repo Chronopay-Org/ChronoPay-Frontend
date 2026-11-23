@@ -4,10 +4,15 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import { addMonths } from "@/utils/date";
+import { toISODateKey } from "./use-calendar-state";
 
 export interface MiniCalendarNavigatorProps {
   currentDate: Date;
   onDateSelect: (date: Date) => void;
+  /** Optional controlled visible month */
+  visibleMonth?: Date;
+  /** Optional callback when visible month changes */
+  onMonthChange?: (month: Date) => void;
   availabilityData?: Map<string, number>; // date string -> slot count
   className?: string;
 }
@@ -15,10 +20,13 @@ export interface MiniCalendarNavigatorProps {
 export function MiniCalendarNavigator({
   currentDate,
   onDateSelect,
+  visibleMonth,
+  onMonthChange,
   availabilityData = new Map(),
   className = "",
 }: MiniCalendarNavigatorProps) {
-  const [viewDate, setViewDate] = useState(new Date(currentDate));
+  const [internalViewDate, setInternalViewDate] = useState(new Date(currentDate));
+  const viewDate = visibleMonth ?? internalViewDate;
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -44,7 +52,11 @@ export function MiniCalendarNavigator({
   };
 
   const navigateMonth = (direction: number) => {
-    setViewDate((prev) => addMonths(prev, direction));
+    const next = addMonths(viewDate, direction);
+    if (!visibleMonth) {
+      setInternalViewDate(next);
+    }
+    onMonthChange?.(next);
   };
 
   const isSelected = (date: Date) => {
@@ -65,7 +77,7 @@ export function MiniCalendarNavigator({
   };
 
   const getAvailabilityDensity = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toISODateKey(date);
     const slots = availabilityData.get(dateStr) || 0;
     if (slots === 0) return "none";
     if (slots <= 3) return "low";
@@ -130,47 +142,52 @@ export function MiniCalendarNavigator({
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Calendar days">
-        {days.map((date, index) => {
-          if (!date) {
-            return <div key={`empty-${index}`} className="aspect-square" aria-hidden="true" />;
-          }
+      <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Mini calendar days">
+        {Array.from({ length: Math.ceil(days.length / 7) }, (_, rowIndex) => (
+          <div key={`mini-row-${rowIndex}`} role="row" className="contents">
+            {days.slice(rowIndex * 7, rowIndex * 7 + 7).map((date, colIndex) => {
+              const index = rowIndex * 7 + colIndex;
+              if (!date) {
+                return <div key={`empty-${index}`} className="aspect-square" aria-hidden="true" />;
+              }
 
-          const selected = isSelected(date);
-          const today = isToday(date);
-          const density = getAvailabilityDensity(date);
-          const dateId = `mini-cal-${date.toISOString().split('T')[0]}`;
+              const selected = isSelected(date);
+              const today = isToday(date);
+              const density = getAvailabilityDensity(date);
+              const dateId = `mini-cal-${toISODateKey(date)}`;
 
-          return (
-            <button
-              key={dateId}
-              onClick={() => onDateSelect(date)}
-              className={clsx(
-                "relative aspect-square rounded-lg text-xs font-medium transition-all focus-ring-cyan",
-                selected
-                  ? "bg-cyan-500 text-white shadow-lg shadow-cyan-500/25"
-                  : today
-                  ? "bg-white/10 text-white ring-1 ring-white/20"
-                  : "text-slate-300 hover:bg-white/5",
-                "flex flex-col items-center justify-center"
-              )}
-              aria-label={`${date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}${selected ? ', selected' : ''}${today ? ', today' : ''}`}
-              aria-pressed={selected}
-              role="gridcell"
-            >
-              <span>{date.getDate()}</span>
-              
-              {/* Availability Density Dot */}
-              <span
-                className={clsx(
-                  "mt-0.5 h-1 w-1 rounded-full",
-                  densityDotClass[density]
-                )}
-                aria-hidden="true"
-              />
-            </button>
-          );
-        })}
+              return (
+                <button
+                  key={dateId}
+                  onClick={() => onDateSelect(date)}
+                  className={clsx(
+                    "relative aspect-square rounded-lg text-xs font-medium transition-all focus-ring-cyan",
+                    selected
+                      ? "bg-cyan-500 text-white shadow-lg shadow-cyan-500/25"
+                      : today
+                      ? "bg-white/10 text-white ring-1 ring-white/20"
+                      : "text-slate-300 hover:bg-white/5",
+                    "flex flex-col items-center justify-center"
+                  )}
+                  aria-label={`${date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}${selected ? ', selected' : ''}${today ? ', today' : ''}`}
+                  aria-selected={selected}
+                  role="gridcell"
+                >
+                  <span>{date.getDate()}</span>
+
+                  {/* Availability Density Dot */}
+                  <span
+                    className={clsx(
+                      "mt-0.5 h-1 w-1 rounded-full",
+                      densityDotClass[density]
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Legend */}
