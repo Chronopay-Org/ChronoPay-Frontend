@@ -31,6 +31,7 @@ import { Search, X, Clock, TrendingUp, ArrowLeft } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
 import { EmptyStateCard } from "./empty-state-card";
 import { LiveRegion } from "@/components/common/LiveRegion";
+import { HighlightMatch } from "@/components/common/highlight-match";
 
 // Types
 
@@ -668,25 +669,5 @@ export function HeaderSearch() {
         </div>
       )}
     </div>
-  );
-}
-
-// HighlightMatch
-
-/**
- * Renders a suggestion label with the matching portion of the query highlighted.
- */
-function HighlightMatch({ text, query }: { text: string; query: string }) {
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return <>{text}</>;
-
-  return (
-    <>
-      {text.slice(0, idx)}
-      <mark className="bg-transparent text-cyan-300 font-semibold">
-        {text.slice(idx, idx + query.length)}
-      </mark>
-      {text.slice(idx + query.length)}
-    </>
   );
 }
