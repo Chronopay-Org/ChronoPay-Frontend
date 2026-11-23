@@ -11,10 +11,11 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   DEFAULT_CHECKLIST_ITEMS,
   MeetChecklistCard,
+  getMeetChecklistStorageKey,
   type MeetChecklistCardProps,
   type ChecklistItemId,
 } from "./meet-checklist-card";
@@ -545,5 +546,99 @@ describe("MeetChecklistCard — edge cases", () => {
     await user.click(cb);
     await user.click(cb);
     expect(onAllComplete).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Collapsible disclosure
+// ---------------------------------------------------------------------------
+
+describe("MeetChecklistCard — collapsible state", () => {
+  it("starts collapsed when defaultCollapsed=true and hides checklist items", () => {
+    setup({ defaultCollapsed: true });
+    const toggle = screen.getByRole("button", {
+      name: /expand pre-meet checklist/i,
+    });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveAttribute("aria-controls");
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+  });
+
+  it("expands and collapses when the toggle button is clicked", async () => {
+    const user = userEvent.setup();
+    setup({ defaultCollapsed: true });
+
+    const expandBtn = screen.getByRole("button", {
+      name: /expand pre-meet checklist/i,
+    });
+    await user.click(expandBtn);
+
+    const collapseBtn = screen.getByRole("button", {
+      name: /collapse pre-meet checklist/i,
+    });
+    expect(collapseBtn).toHaveAttribute("aria-expanded", "true");
+    expect(getCheckboxes()).toHaveLength(DEFAULT_CHECKLIST_ITEMS.length);
+
+    await user.click(collapseBtn);
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Persistence per slotId
+// ---------------------------------------------------------------------------
+
+describe("MeetChecklistCard — persistence per slotId", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("persists checked items in localStorage and restores them on remount", async () => {
+    const user = userEvent.setup();
+    const { unmount } = setup({ slotId: "slot-42" });
+
+    const first = getCheckboxes()[0];
+    await user.click(first);
+    expect(first).toHaveAttribute("aria-checked", "true");
+
+    const stored = window.localStorage.getItem(
+      getMeetChecklistStorageKey("slot-42"),
+    );
+    expect(stored).toBe(JSON.stringify([DEFAULT_CHECKLIST_ITEMS[0].id]));
+
+    unmount();
+
+    setup({ slotId: "slot-42" });
+    expect(getCheckboxes()[0]).toHaveAttribute("aria-checked", "true");
+    expect(
+      screen.getByText(`1/${DEFAULT_CHECKLIST_ITEMS.length}`),
+    ).toBeInTheDocument();
+  });
+
+  it("isolates persisted state between different slotIds", async () => {
+    const user = userEvent.setup();
+    const { unmount } = setup({ slotId: "slot-a" });
+    await user.click(getCheckboxes()[0]);
+    unmount();
+
+    setup({ slotId: "slot-b" });
+    expect(getCheckboxes()[0]).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("clears persisted state when reset is clicked", async () => {
+    const user = userEvent.setup();
+    const { unmount } = setup({ slotId: "slot-reset" });
+
+    await user.click(getCheckboxes()[0]);
+    await user.click(screen.getByRole("button", { name: /reset/i }));
+
+    expect(
+      window.localStorage.getItem(getMeetChecklistStorageKey("slot-reset")),
+    ).toBeNull();
+
+    unmount();
+
+    setup({ slotId: "slot-reset" });
+    expect(getCheckboxes()[0]).toHaveAttribute("aria-checked", "false");
   });
 });
