@@ -4,6 +4,14 @@ import RootLayout, { metadata } from '../layout';
 
 import { vi } from 'vitest';
 
+const mockHeadersGet = vi.fn<(name: string) => string | null>(() => 'test-nonce-123');
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn(async () => ({
+    get: mockHeadersGet,
+  })),
+}));
+
 // Mock dependencies to avoid complex context setup errors in tests
 vi.mock('@/hooks/use-toast', () => ({
   ToastProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="toast-provider">{children}</div>,
@@ -36,12 +44,13 @@ describe('RootLayout', () => {
   });
 
   describe('component rendering', () => {
-    it('exercises the default lang and dir branch evidence and includes themeInitScript', () => {
-      const { container } = render(
-        <RootLayout>
-          <div data-testid="child-content">Content</div>
-        </RootLayout>
-      );
+    it('exercises the default lang and dir branch evidence and binds both inline scripts to the CSP nonce', async () => {
+      mockHeadersGet.mockReturnValue('test-nonce-123');
+
+      const ui = await RootLayout({
+        children: <div data-testid="child-content">Content</div>,
+      });
+      const { container } = render(ui);
       
       const htmlElement = container.querySelector('html') || document.querySelector('html');
       expect(htmlElement).not.toBeNull();
@@ -49,16 +58,20 @@ describe('RootLayout', () => {
       expect(htmlElement).toHaveAttribute('dir', 'ltr');
 
       const scripts = Array.from(document.querySelectorAll('script'));
-      const hasInitScript = scripts.some((s) => s.textContent?.includes('chronopay:theme'));
-      expect(hasInitScript).toBe(true);
+      const themeScript = scripts.find((s) => s.textContent?.includes('chronopay:theme'));
+      const densityScript = scripts.find((s) => s.textContent?.includes('chronopay-density'));
+
+      expect(themeScript).toBeDefined();
+      expect(densityScript).toBeDefined();
+      expect(themeScript).toHaveAttribute('nonce', 'test-nonce-123');
+      expect(densityScript).toHaveAttribute('nonce', 'test-nonce-123');
     });
 
-    it('renders the children normally within providers', () => {
-      const { getByTestId, getByText } = render(
-        <RootLayout>
-          <div data-testid="child-content">Content</div>
-        </RootLayout>
-      );
+    it('renders the children normally within providers', async () => {
+      const ui = await RootLayout({
+        children: <div data-testid="child-content">Content</div>,
+      });
+      const { getByTestId, getByText } = render(ui);
       
       expect(getByTestId('child-content')).toBeInTheDocument();
       expect(getByText('Content')).toBeInTheDocument();
@@ -67,12 +80,13 @@ describe('RootLayout', () => {
       expect(getByTestId('role-provider')).toBeInTheDocument();
     });
 
-    it('handles missing or empty children gracefully (boundary behavior)', () => {
-      const { container } = render(
-        <RootLayout>
-          {null}
-        </RootLayout>
-      );
+    it('handles missing or empty children gracefully (boundary behavior)', async () => {
+      mockHeadersGet.mockReturnValue(null);
+
+      const ui = await RootLayout({
+        children: null,
+      });
+      const { container } = render(ui);
       
       const htmlElement = container.querySelector('html') || document.querySelector('html');
       expect(htmlElement).not.toBeNull();

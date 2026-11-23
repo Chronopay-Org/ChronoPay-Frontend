@@ -123,5 +123,23 @@ describe("renderMarkdown", () => {
       expect(result).toContain('rel="noopener noreferrer"');
       expect(result).toContain('&quot; onfocus=&quot;alert(1)');
     });
+
+    it("produces CSP-safe HTML with no inline event handlers or inline style attributes", () => {
+      const sample = [
+        "# Heading",
+        "Paragraph with **bold**, *italic*, ~~strike~~, `code`, and [link](https://example.com).",
+        "- list item",
+        "1. ordered item",
+        "```",
+        "<img src=x onerror=alert(1) style=\"color:red\">",
+        "```",
+        '<div onclick="alert(1)" style="background:red">raw html</div>',
+      ].join("\n\n");
+
+      const html = renderMarkdown(sample);
+      expect(html).not.toMatch(/<[^>]+?\son[a-z]+\s*=/i);
+      expect(html).not.toMatch(/<[^>]+?\sstyle\s*=/i);
+      expect(html).not.toMatch(/<script\b/i);
+    });
   });
 });
