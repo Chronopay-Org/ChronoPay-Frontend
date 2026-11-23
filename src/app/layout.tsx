@@ -39,6 +39,7 @@ export const themeInitScript = `
   try {
     var KEY = "chronopay:theme";
     var stored = null;
+    var scheduleRaw = null;
     try {
       var legacy = window.localStorage.getItem("chronopay-theme");
       if (legacy) {
@@ -48,11 +49,36 @@ export const themeInitScript = `
         window.localStorage.removeItem("chronopay-theme");
       }
       stored = window.localStorage.getItem(KEY);
+      scheduleRaw = window.localStorage.getItem("theme-schedule");
     } catch (e) { /* ignore storage errors */ }
-    var mode = (stored === "light" || stored === "dark" || stored === "auto") ? stored : "auto";
+    var mode = (stored === "light" || stored === "dark" || stored === "auto" || stored === "scheduled") ? stored : "auto";
     var resolved = mode;
     if (mode === "auto") {
       resolved = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    } else if (mode === "scheduled") {
+      var lightTime = "06:00";
+      var darkTime = "18:00";
+      if (scheduleRaw) {
+        try {
+          var cfg = JSON.parse(scheduleRaw);
+          var timeRe = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
+          if (cfg && cfg.type !== "sun" && timeRe.test(cfg.lightTime) && timeRe.test(cfg.darkTime)) {
+            lightTime = cfg.lightTime;
+            darkTime = cfg.darkTime;
+          }
+        } catch (e) { /* fall back to default 06:00-18:00 */ }
+      }
+      var now = new Date();
+      var current = now.getHours() * 60 + now.getMinutes();
+      var lp = lightTime.split(":");
+      var dp = darkTime.split(":");
+      var light = parseInt(lp[0], 10) * 60 + parseInt(lp[1], 10);
+      var dark = parseInt(dp[0], 10) * 60 + parseInt(dp[1], 10);
+      var isDark = false;
+      if (light !== dark) {
+        isDark = light < dark ? (current >= dark || current < light) : (current >= dark && current < light);
+      }
+      resolved = isDark ? "dark" : "light";
     }
     document.documentElement.setAttribute("data-theme", resolved);
   } catch (e) { /* fail safe to default theme in globals.css */ }
