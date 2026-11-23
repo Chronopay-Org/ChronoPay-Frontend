@@ -8,17 +8,24 @@ import { NotificationItem } from "./notification-item";
 import { BulkActionBar } from "./bulk-action-bar";
 import { useNotificationSelection } from "./use-notification-selection";
 import type { NotificationItem as NotificationItemType } from "./types";
+import { useNotifications } from "@/lib/api/hooks";
 
 export function NotificationList({
   notifications: initialNotifications,
   onMarkAsRead,
   onArchive,
 }: {
-  notifications: NotificationItemType[];
+  notifications?: NotificationItemType[];
   onMarkAsRead?: (ids: string[]) => void;
   onArchive?: (ids: string[]) => void;
 }) {
-  const [items, setItems] = useState(initialNotifications);
+  const {
+    data: sourceNotifications,
+    loading: sourceLoading,
+    error: sourceError,
+  } = useNotifications(initialNotifications === undefined);
+  const notifications = initialNotifications ?? sourceNotifications;
+  const [items, setItems] = useState(notifications ?? []);
   const selectAllRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const announceId = useId();
@@ -38,6 +45,7 @@ export function NotificationList({
   const anchorIndexRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (!notifications) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems((prevItems) => {
       const overrides = new Map(
@@ -46,14 +54,14 @@ export function NotificationList({
           { read: item.read, archived: (item as NotificationItemType & { archived?: boolean }).archived },
         ]),
       );
-      return initialNotifications
+      return notifications
         .filter((item) => !overrides.get(item.id)?.archived)
         .map((item) => {
           const override = overrides.get(item.id);
           return override ? { ...item, read: override.read } : item;
         });
     });
-  }, [initialNotifications]);
+  }, [notifications]);
 
   useEffect(() => {
     setSelected((prev) => {
@@ -217,6 +225,15 @@ export function NotificationList({
     },
     [lastFocusedIndexRef],
   );
+
+  if (initialNotifications === undefined && sourceError) throw sourceError;
+  if (initialNotifications === undefined && (sourceLoading || !notifications)) {
+    return (
+      <div role="status" aria-busy="true" className="py-6 text-sm text-slate-400">
+        Loading notifications…
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

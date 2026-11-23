@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import {
   RecentlyViewedRail,
@@ -11,12 +11,32 @@ import {
   ResultsPerPageSelector,
   usePageSize,
 } from "@/components/marketplace/results-per-page-selector";
-import { buildCatalogue, seedItems } from "./catalogue";
+import { useListings } from "@/lib/api/hooks";
+import MarketplaceLoading from "./loading";
 
 function MarketplaceGrid() {
   const { value, setValue } = usePageSize();
   const { addItem } = useRecentlyViewed();
-  const catalogue = useMemo(() => buildCatalogue(), []);
+  const { data: catalogue, loading, error } = useListings();
+
+  useEffect(() => {
+    if (!catalogue) return;
+
+    try {
+      if (localStorage.getItem("chronopay-marketplace-visited")) return;
+      catalogue.slice(0, 4).forEach((item, index) => {
+        setTimeout(() => {
+          addItem(item);
+        }, index * 100);
+      });
+      localStorage.setItem("chronopay-marketplace-visited", "true");
+    } catch {
+      // Storage can be disabled; listing data remains usable without the rail seed.
+    }
+  }, [addItem, catalogue]);
+
+  if (error) throw error;
+  if (loading || !catalogue) return <MarketplaceLoading />;
 
   // Take only `value` items so the selector visibly changes the page size.
   const visible = catalogue.slice(0, value);
@@ -84,21 +104,6 @@ function MarketplaceGrid() {
 }
 
 export default function Marketplace() {
-  const { addItem } = useRecentlyViewed();
-
-  // Populate recently-viewed rail on first visit.
-  useEffect(() => {
-    const hasVisited = localStorage.getItem("chronopay-marketplace-visited");
-    if (!hasVisited) {
-      seedItems.forEach((item, index) => {
-        setTimeout(() => {
-          addItem(item);
-        }, index * 100);
-      });
-      localStorage.setItem("chronopay-marketplace-visited", "true");
-    }
-  }, [addItem]);
-
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
       <main

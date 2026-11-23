@@ -10,10 +10,14 @@
 
 import { PanelShell } from "@/components/dashboard/panel-shell";
 import { AdminUserTable } from "@/components/dashboard/admin-user-table";
-import { SAMPLE_ADMIN_USERS } from "@/components/dashboard/admin-user-data";
 import type { BulkAction, UserRole } from "@/components/dashboard/admin-user-types";
+import { useAdminUsers } from "@/lib/api/hooks";
 
 export default function AdminUsersPage() {
+  const { data: users, loading, error } = useAdminUsers();
+
+  if (error) throw error;
+
   function handleBulkAction(
     action: BulkAction,
     ids: string[],
@@ -45,10 +49,13 @@ export default function AdminUsersPage() {
           title="All Users"
           description="Shift+click column headers for multi-column sort. Space to select, Ctrl+A to select all."
         >
-          <AdminUserTable
-            users={SAMPLE_ADMIN_USERS}
-            onBulkAction={handleBulkAction}
-          />
+          {loading || !users ? (
+            <div role="status" aria-busy="true" className="py-8 text-sm text-slate-400">
+              Loading users…
+            </div>
+          ) : (
+            <AdminUserTable users={users} onBulkAction={handleBulkAction} />
+          )}
         </PanelShell>
       </main>
     </div>
