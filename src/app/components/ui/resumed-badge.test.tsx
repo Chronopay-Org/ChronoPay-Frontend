@@ -202,6 +202,28 @@ describe("ResumedBadge", () => {
     });
   });
 
+  describe("stepLabel prop", () => {
+    it("displays the stepLabel when provided", () => {
+      render(<ResumedBadge stepLabel="Storefront branding" />);
+
+      expect(
+        screen.getByText("Resumed at Storefront branding"),
+      ).toBeInTheDocument();
+    });
+
+    it("falls back to default text when stepLabel is omitted or whitespace", () => {
+      const { rerender } = render(<ResumedBadge />);
+      expect(
+        screen.getByText("Resumed where you left off"),
+      ).toBeInTheDocument();
+
+      rerender(<ResumedBadge stepLabel="   " />);
+      expect(
+        screen.getByText("Resumed where you left off"),
+      ).toBeInTheDocument();
+    });
+  });
+
   describe("itemId prop (accepted for API symmetry, does not affect behavior)", () => {
     it.each([
       ["a normal id", "item-1"],

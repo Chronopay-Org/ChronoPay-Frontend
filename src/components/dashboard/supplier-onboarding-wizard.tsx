@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { AlertCircle, Check, ChevronLeft, SkipForward } from "lucide-react";
 import { Card, CardBody, CardFooter, CardHeader } from "./card";
+import { ResumedBadge } from "@/app/components/ui/resumed-badge";
 import { useWizardProgress } from "@/hooks/use-wizard-progress";
 
 // ---------------------------------------------------------------------------
@@ -68,7 +69,7 @@ export function SupplierOnboardingWizard({
   const errorRef = useRef<HTMLParagraphElement>(null);
   const isFirstRender = useRef(true);
 
-  const { currentIndex, furthestIndex, skippedIds, goToIndex, goNext, goBack, toggleSkip } =
+  const { currentIndex, furthestIndex, skippedIds, resumed, goToIndex, goNext, goBack, toggleSkip } =
     useWizardProgress(storageKey, steps.length);
 
   const [attemptedAdvance, setAttemptedAdvance] = useState(false);
@@ -121,7 +122,7 @@ export function SupplierOnboardingWizard({
 
   return (
     <Card as="section" variant="panel" aria-labelledby={`${baseId}-heading`}>
-      <CardHeader className="flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between">
+      <CardHeader className="relative flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 id={`${baseId}-heading`} className="text-sm font-semibold text-white">
             {heading}
@@ -130,6 +131,7 @@ export function SupplierOnboardingWizard({
             Step {safeIndex + 1} of {steps.length}
           </p>
         </div>
+        {resumed ? <ResumedBadge stepLabel={currentStep.title} /> : null}
         <div
           className="h-1.5 w-full max-w-[10rem] overflow-hidden rounded-full bg-white/10 sm:w-40"
           role="progressbar"
