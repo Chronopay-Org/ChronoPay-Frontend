@@ -26,6 +26,10 @@ import { NotificationList as DirectNotificationList } from "./notification-list"
 import { NotificationItem as DirectNotificationItem } from "./notification-item";
 import { BulkActionBar as DirectBulkActionBar } from "./bulk-action-bar";
 import { useNotificationSelection as directUseNotificationSelection } from "./use-notification-selection";
+import {
+  NotificationsProvider as DirectNotificationsProvider,
+  useNotifications as directUseNotifications,
+} from "./notifications-provider";
 import { notifications as directNotifications } from "./mock-data";
 import type { NotificationItem as NotificationItemType, NotificationTone } from "./types";
 
@@ -37,6 +41,8 @@ describe("notifications barrel: exported surface", () => {
         "NotificationItem",
         "BulkActionBar",
         "useNotificationSelection",
+        "NotificationsProvider",
+        "useNotifications",
         "notifications",
       ].sort(),
     );
@@ -47,6 +53,8 @@ describe("notifications barrel: exported surface", () => {
     expect(barrel.NotificationItem).toBe(DirectNotificationItem);
     expect(barrel.BulkActionBar).toBe(DirectBulkActionBar);
     expect(barrel.useNotificationSelection).toBe(directUseNotificationSelection);
+    expect(barrel.NotificationsProvider).toBe(DirectNotificationsProvider);
+    expect(barrel.useNotifications).toBe(directUseNotifications);
     expect(barrel.notifications).toBe(directNotifications);
   });
 
@@ -56,6 +64,8 @@ describe("notifications barrel: exported surface", () => {
       barrel.NotificationItem,
       barrel.BulkActionBar,
       barrel.useNotificationSelection,
+      barrel.NotificationsProvider,
+      barrel.useNotifications,
     ]) {
       expect(typeof fn).toBe("function");
     }

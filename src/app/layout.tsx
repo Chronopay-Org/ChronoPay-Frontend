@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Header } from "./components/Header";
 import { ToastProvider } from "@/hooks/use-toast";
+import { NotificationsProvider } from "@/components/dashboard/notifications";
 import { ToastContainer } from "@/app/components/ui/toast-container";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
 import { I18nProvider } from "@/lib/i18n";
@@ -71,14 +72,16 @@ export default function RootLayout({
         </a>
 
         <ToastProvider>
-          <I18nProvider>
-            <RoleProvider initialRole="buyer">
-              <Header />
-              {children}
-              <SiteFooter />
-              <ToastContainer />
-            </RoleProvider>
-          </I18nProvider>
+          <NotificationsProvider>
+            <I18nProvider>
+              <RoleProvider initialRole="buyer">
+                <Header />
+                {children}
+                <SiteFooter />
+                <ToastContainer />
+              </RoleProvider>
+            </I18nProvider>
+          </NotificationsProvider>
         </ToastProvider>
       </body>
     </html>
