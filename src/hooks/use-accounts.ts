@@ -46,17 +46,7 @@ export interface AccountsState {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Truncate a Stellar address for display: first 6 chars + "…" + last 4 chars.
- * Full address is preserved in aria-label on the calling component.
- *
- * @example truncateAddress("GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN")
- *   → "GAAZI4…OCCWN"
- */
-export function truncateAddress(address: string): string {
-  if (!address || address.length <= 12) return address;
-  return `${address.slice(0, 6)}…${address.slice(-4)}`;
-}
+export { truncateAddress } from "@/lib/format-address";
 
 /**
  * Derive a deterministic background colour for an avatar from the address.
