@@ -11,6 +11,8 @@ import type { WalletHolding, WalletHoldingStatus, WalletSnapshot, WalletActivity
 import type { ConnectionStatus } from "./WalletConnectModal";
 import { WALLET_PROVIDERS, defaultWalletConnector, type WalletConnector } from "./wallet-providers";
 import { useToast } from "@/hooks/use-toast";
+import { useRovingTabs } from "@/hooks/use-roving-tabs";
+import { useLocale } from "@/lib/i18n";
 import { glossary } from "@/lib/glossary";
 import { useNetwork, TestnetRibbon } from "@/components/checkout/NetworkSelector";
 
@@ -270,6 +272,7 @@ export function WalletCard({
   const holdingsHeadingId = useId();
   const { toast } = useToast();
   const { network } = useNetwork();
+  const { dir } = useLocale();
   const [activeWallet, setActiveWallet] = useState<WalletSnapshot>(wallet);
   const [modalStatus, setModalStatus] = useState<ConnectionStatus>("idle");
   const [modalErrorMessage, setModalErrorMessage] = useState<string | undefined>();
@@ -398,37 +401,13 @@ export function WalletCard({
     }));
   }, [activeTab]);
 
-  const handleTabKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, tabId: WalletPanelTabId) => {
-      const currentIndex = walletPanelTabConfig.findIndex((tab) => tab.id === tabId);
-      const nextTabIds = walletPanelTabConfig.map((tab) => tab.id);
-
-      if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-        event.preventDefault();
-        const step = event.key === "ArrowRight" ? 1 : -1;
-        const nextIndex =
-          (currentIndex + step + nextTabIds.length) % nextTabIds.length;
-        const nextTab = nextTabIds[nextIndex];
-        setActiveTab(nextTab);
-      }
-
-      if (event.key === "Home") {
-        event.preventDefault();
-        setActiveTab(nextTabIds[0]);
-      }
-
-      if (event.key === "End") {
-        event.preventDefault();
-        setActiveTab(nextTabIds[nextTabIds.length - 1]);
-      }
-
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        setActiveTab(tabId);
-      }
-    },
-    [],
-  );
+  const { registerTab, handleKeyDown: handleTabListKeyDown } =
+    useRovingTabs<WalletPanelTabId>({
+      tabs: HOLDINGS_TAB_IDS,
+      activeTab,
+      onSelect: setActiveTab,
+      dir,
+    });
 
   const getHoldingsByCategory = (tabId: WalletPanelTabId): WalletHolding[] => {
     if (tabId === "holdings-available") return getHoldingsByStatus(holdings, "available");
@@ -538,7 +517,12 @@ export function WalletCard({
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Wallet panel">
+            <div
+              className="mt-4 flex flex-wrap gap-2"
+              role="tablist"
+              aria-label="Wallet panel"
+              onKeyDown={handleTabListKeyDown}
+            >
               {walletPanelTabConfig.map((tab) => {
                 const isActive = activeTab === tab.id;
                 const count = tab.category === "holdings" ? getHoldingsByCategory(tab.id).length : null;
@@ -546,6 +530,7 @@ export function WalletCard({
                 return (
                   <button
                     key={tab.id}
+                    ref={registerTab(tab.id)}
                     id={`wallet-panel-tab-${tab.id}`}
                     type="button"
                     role="tab"
@@ -553,7 +538,6 @@ export function WalletCard({
                     aria-controls={`wallet-panel-content-${tab.id}`}
                     tabIndex={isActive ? 0 : -1}
                     onClick={() => setActiveTab(tab.id)}
-                    onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
                     className={[
                       "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
                       isActive
