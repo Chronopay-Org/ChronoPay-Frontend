@@ -1,6 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import RootLayout, { metadata } from '../layout';
+import RootLayout, { metadata, viewport } from '../layout';
+import { DEMO_URL } from '@/lib/site-links';
 
 import { vi } from 'vitest';
 
@@ -33,6 +34,23 @@ describe('RootLayout', () => {
       expect(metadata).toBeDefined();
       expect(metadata.title).toBe('ChronoPay - Time Economy');
       expect(metadata.description).toBe('Tokenize and trade human time on the Stellar network.');
+      expect(metadata.metadataBase).toBeInstanceOf(URL);
+      expect(metadata.metadataBase?.href).toBe(new URL(DEMO_URL).href);
+      expect(metadata.openGraph).toEqual({
+        title: 'ChronoPay - Time Economy',
+        description: 'Tokenize and trade human time on the Stellar network.',
+        type: 'website',
+      });
+      expect(metadata.twitter).toEqual({
+        card: 'summary_large_image',
+        title: 'ChronoPay - Time Economy',
+        description: 'Tokenize and trade human time on the Stellar network.',
+      });
+    });
+
+    it('provides a viewport export with themeColor', () => {
+      expect(viewport).toBeDefined();
+      expect(viewport.themeColor).toBe('#07111f');
     });
 
     it('contains no empty-result paths for critical metadata', () => {
@@ -41,6 +59,11 @@ describe('RootLayout', () => {
       expect(metadata.title).not.toBeNull();
       expect(metadata.description).not.toBe('');
       expect(metadata.description).not.toBeNull();
+      expect(metadata.metadataBase).not.toBeNull();
+      expect(metadata.openGraph).toBeDefined();
+      expect(metadata.twitter).toBeDefined();
+      expect(viewport.themeColor).not.toBe('');
+      expect(viewport.themeColor).not.toBeNull();
     });
   });
 

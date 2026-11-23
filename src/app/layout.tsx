@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import { Header } from "./components/Header";
@@ -8,10 +8,29 @@ import { ToastContainer } from "@/app/components/ui/toast-container";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
 import { I18nProvider } from "@/lib/i18n";
 import { SiteFooter } from "@/app/components/SiteFooter";
+import { DEMO_URL } from "@/lib/site-links";
+
+const SITE_TITLE = "ChronoPay - Time Economy";
+const SITE_DESCRIPTION = "Tokenize and trade human time on the Stellar network.";
 
 export const metadata: Metadata = {
-  title: "ChronoPay - Time Economy",
-  description: "Tokenize and trade human time on the Stellar network.",
+  metadataBase: new URL(DEMO_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#07111f",
 };
 
 /** Runs before React hydrates to set the theme and avoid FOUC. */
