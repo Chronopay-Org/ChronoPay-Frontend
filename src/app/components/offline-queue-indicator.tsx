@@ -7,6 +7,7 @@ import { StatusChip } from "@/components/dashboard/status-chip";
 import type { QueuedAction, OfflineQueueState, OfflineQueueConnectionState } from "@/components/dashboard/types";
 
 type OfflineQueueIndicatorProps = {
+  state?: OfflineQueueState;
   initialState?: OfflineQueueState;
   onRetry?: (actionId: string) => void | Promise<void>;
   onCancel?: (actionId: string) => void;
@@ -14,17 +15,21 @@ type OfflineQueueIndicatorProps = {
 };
 
 export function OfflineQueueIndicator({
+  state,
   initialState = { connection: "online", queue: [] },
   onRetry,
   onCancel,
   simulateOffline = false,
 }: OfflineQueueIndicatorProps) {
-  const [connection, setConnection] = useState<OfflineQueueConnectionState>(initialState.connection);
-  const [queue, setQueue] = useState<QueuedAction[]>(initialState.queue);
+  const [localConnection, setLocalConnection] = useState<OfflineQueueConnectionState>(initialState.connection);
+  const [localQueue, setLocalQueue] = useState<QueuedAction[]>(initialState.queue);
+  const connection = state?.connection ?? localConnection;
+  const queue = state?.queue ?? localQueue;
   const [isExpanded, setIsExpanded] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const previousQueueRef = useRef(queue);
   const statusId = useId();
   const panelId = useId();
 
@@ -41,27 +46,50 @@ export function OfflineQueueIndicator({
   }, [statusId]);
 
   useEffect(() => {
+    const previousQueue = previousQueueRef.current;
+    previousQueueRef.current = queue;
+
+    if (queue.length > previousQueue.length) {
+      announce("Action added to the offline queue.");
+      return;
+    }
+    if (queue.length < previousQueue.length) {
+      announce("Action removed from the offline queue.");
+      return;
+    }
+
+    const changedAction = queue.find((item) => {
+      const previous = previousQueue.find((entry) => entry.id === item.id);
+      return previous && previous.status !== item.status &&
+        (item.status === "completed" || item.status === "failed");
+    });
+    if (changedAction) announce(`${changedAction.label} ${changedAction.status}.`);
+  }, [announce, queue]);
+
+  useEffect(() => {
     if (typeof navigator === "undefined") return;
 
     if (simulateOffline) {
       queueMicrotask(() => {
-        setConnection("offline");
+        setLocalConnection("offline");
       });
       return;
     }
 
     const setOnline = () => {
-      setConnection("online");
+      setLocalConnection("online");
       announce("Back online. Syncing queued actions.");
-      setQueue((prev) =>
-        prev.map((item) =>
-          item.status === "pending" || item.status === "retrying" ? { ...item, status: "pending" as const } : item
-        )
-      );
+      if (!state) {
+        setLocalQueue((prev) =>
+          prev.map((item) =>
+            item.status === "retrying" ? { ...item, status: "pending" as const } : item
+          )
+        );
+      }
     };
 
     const setOffline = () => {
-      setConnection("offline");
+      setLocalConnection("offline");
       announce("You are offline. Actions will be queued until reconnection.");
     };
 
@@ -71,7 +99,7 @@ export function OfflineQueueIndicator({
       window.removeEventListener("online", setOnline);
       window.removeEventListener("offline", setOffline);
     };
-  }, [announce, simulateOffline]);
+  }, [announce, simulateOffline, state]);
 
   useEffect(() => {
     if (!isExpanded) return;
@@ -89,29 +117,35 @@ export function OfflineQueueIndicator({
     async (actionId: string) => {
       if (!onRetry) return;
       setRetryingId(actionId);
-      setQueue((prev) => prev.map((item) => (item.id === actionId ? { ...item, status: "retrying" as const } : item)));
+      if (!state) {
+        setLocalQueue((prev) => prev.map((item) => (item.id === actionId ? { ...item, status: "retrying" as const } : item)));
+      }
       try {
         await onRetry(actionId);
-        setQueue((prev) => prev.map((item) => (item.id === actionId ? { ...item, status: "completed" as const } : item)));
+        if (!state) {
+          setLocalQueue((prev) => prev.map((item) => (item.id === actionId ? { ...item, status: "completed" as const } : item)));
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : "Retry failed.";
-        setQueue((prev) =>
-          prev.map((item) => (item.id === actionId ? { ...item, status: "failed" as const, error: message } : item))
-        );
+        if (!state) {
+          setLocalQueue((prev) =>
+            prev.map((item) => (item.id === actionId ? { ...item, status: "failed" as const, error: message } : item))
+          );
+        }
       } finally {
         setRetryingId(null);
       }
     },
-    [onRetry]
+    [onRetry, state]
   );
 
   const handleCancel = useCallback(
     (actionId: string) => {
       if (!onCancel) return;
       onCancel(actionId);
-      setQueue((prev) => prev.filter((item) => item.id !== actionId));
+      if (!state) setLocalQueue((prev) => prev.filter((item) => item.id !== actionId));
     },
-    [onCancel]
+    [onCancel, state]
   );
 
   const formatTime = (iso: string) => {

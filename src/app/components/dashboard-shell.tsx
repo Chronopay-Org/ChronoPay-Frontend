@@ -16,6 +16,7 @@ import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 import { ContextualKeysPanel } from "@/app/components/ui/contextual-keys-panel";
 import { CommandPalette } from "@/app/components/command-palette";
+import { useOfflineQueue } from "@/hooks/use-offline-queue";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
 
@@ -181,6 +182,7 @@ export function BottomNav({ items, pathname }: { items: NavItem[]; pathname: str
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { role } = useRole();
+  const offlineQueue = useOfflineQueue();
   const [isRailOpen, setIsRailOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [liveAnnouncement, setLiveAnnouncement] = useState("");
@@ -371,7 +373,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   ⌘K
                 </kbd>
               </button>
-              <OfflineQueueIndicator />
+              <OfflineQueueIndicator
+                state={offlineQueue.state}
+                onRetry={offlineQueue.retry}
+                onCancel={offlineQueue.cancel}
+              />
               <button
                 type="button"
                 aria-label="Keyboard shortcuts"

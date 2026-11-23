@@ -244,9 +244,12 @@ export type QueuedActionStatus = "pending" | "retrying" | "completed" | "failed"
 
 export type QueuedAction = {
   id: string;
+  executorId?: string;
   label: string;
   status: QueuedActionStatus;
   queuedAt: string;
+  attempts?: number;
+  nextRetryAt?: string;
   error?: string;
 };
 
