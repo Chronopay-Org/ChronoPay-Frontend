@@ -115,7 +115,7 @@ function ElapsedTimeBadge({ seconds }: { seconds: number }) {
           style={{ animationDuration: "1s", transformOrigin: "8px 8px" }}
         />
       </svg>
-      <span className="motion-reduce:ml-0">Elapsed&nbsp;{label}</span>
+      <span className="motion-reduce:ms-0">Elapsed&nbsp;{label}</span>
     </span>
   );
 }
@@ -265,7 +265,7 @@ export function SigningSkeleton({
             viewBox="0 0 16 16"
             fill="none"
             aria-hidden="true"
-            className="mr-1.5 h-3.5 w-3.5"
+            className="me-1.5 h-3.5 w-3.5"
           >
             <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" />
             <path d="M6.5 6.5a1.5 1.5 0 1 1 2.17 1.34c-.4.22-.67.6-.67 1.02" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

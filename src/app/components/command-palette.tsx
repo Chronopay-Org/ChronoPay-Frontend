@@ -419,7 +419,7 @@ export function CommandPalette() {
                         <div
                           role="tooltip"
                           className={[
-                            "absolute right-0 top-full mt-1.5 z-20",
+                            "absolute end-0 top-full mt-1.5 z-20",
                             "w-56 rounded-lg border border-white/10",
                             "bg-zinc-800 px-3 py-2 text-xs text-white",
                             "shadow-lg",
@@ -431,9 +431,9 @@ export function CommandPalette() {
                           <p>{command.boostReason}</p>
                           <div
                             className={[
-                              "absolute -top-1 right-3",
+                              "absolute -top-1 end-3",
                               "h-2 w-2 rotate-45 bg-zinc-800",
-                              "border-l border-t border-white/10",
+                              "border-s border-t border-white/10",
                             ].join(" ")}
                             aria-hidden="true"
                           />

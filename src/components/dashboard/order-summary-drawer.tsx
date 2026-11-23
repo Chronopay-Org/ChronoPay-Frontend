@@ -125,7 +125,7 @@ export function OrderSummaryDrawer({
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={openDrawer}
-        className="mb-4 flex w-full items-center justify-between rounded-full border border-cyan-400/20 bg-slate-900/80 px-4 py-3 text-left shadow-[0_16px_40px_rgba(2,6,23,0.4)] backdrop-blur transition-colors hover:border-cyan-300/40 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+        className="mb-4 flex w-full items-center justify-between rounded-full border border-cyan-400/20 bg-slate-900/80 px-4 py-3 text-start shadow-[0_16px_40px_rgba(2,6,23,0.4)] backdrop-blur transition-colors hover:border-cyan-300/40 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
       >
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-cyan-300">
@@ -184,7 +184,7 @@ export function OrderSummaryDrawer({
                 </button>
               </div>
               <div
-                className="mt-5 max-h-[70vh] overflow-y-auto pb-6 pr-1"
+                className="mt-5 max-h-[70vh] overflow-y-auto pb-6 pe-1"
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}

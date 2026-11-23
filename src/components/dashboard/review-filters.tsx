@@ -82,7 +82,7 @@ export function ReviewFilters({
         <div className="relative">
           <select
             id="review-sort"
-            className="appearance-none bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            className="appearance-none bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg ps-3 pe-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-400"
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value as any)}
           >
@@ -93,7 +93,7 @@ export function ReviewFilters({
           </select>
           <ChevronDown
             size={14}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            className="absolute end-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
           />
         </div>
       </div>

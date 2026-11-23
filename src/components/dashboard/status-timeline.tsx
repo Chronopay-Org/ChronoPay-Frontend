@@ -164,7 +164,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
       <ol
         ref={listRef}
         aria-label="Timeline events"
-        className="relative ml-3 max-h-[600px] border-s border-white/10 overflow-y-auto"
+        className="relative ms-3 max-h-[600px] border-s border-white/10 overflow-y-auto"
       >
         {displayedNodes.map((node, index) => {
           if (isBranchGroup(node)) {
@@ -246,11 +246,11 @@ function BranchGroupEntry({
       role="group"
       aria-label={`Branch group: ${group.label}`}
       aria-labelledby={branchLabelsId}
-      className={`relative mb-10 ml-6 ${isLast ? "mb-0" : ""}`}
+      className={`relative mb-10 ms-6 ${isLast ? "mb-0" : ""}`}
     >
       {/* ── Fork indicator (dot) ───────────────────────────────── */}
       <span
-        className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 ring-8 ring-slate-900"
+        className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 ring-8 ring-slate-900"
         aria-hidden="true"
       >
         <GitFork className="h-3.5 w-3.5 text-white" />
@@ -287,20 +287,20 @@ function BranchGroupEntry({
                 role="group"
                 aria-label={`Branch ${branchIndex + 1}: ${branch.map((i) => i.title).join(", ")}`}
                 className={[
-                  "relative pl-6 mb-4",
+                  "relative ps-6 mb-4",
                   isLastBranch && !hasRejoin ? "mb-0" : "",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded",
                 ].join(" ")}
               >
                 {/* Branch vertical line (lighter than main timeline) */}
                 <span
-                  className="absolute left-0 top-0 bottom-0 w-px bg-white/5"
+                  className="absolute start-0 top-0 bottom-0 w-px bg-white/5"
                   aria-hidden="true"
                 />
 
                 {/* Branch connector (horizontal line from main timeline to branch) */}
                 <span
-                  className="absolute -left-[18px] top-3 h-px w-[18px] bg-white/10"
+                  className="absolute -start-[18px] top-3 h-px w-[18px] bg-white/10"
                   aria-hidden="true"
                 />
 
@@ -316,7 +316,7 @@ function BranchGroupEntry({
                 </div>
 
                 {/* Branch items */}
-                <div className="relative border-l border-white/10 ml-1">
+                <div className="relative border-s border-white/10 ms-1">
                   {branch.map((item, itemIndex) => (
                     <TimelineEntry
                       key={item.id}
@@ -331,20 +331,20 @@ function BranchGroupEntry({
 
           {/* ── Rejoin marker ────────────────────────────────────────── */}
           {group.rejoinLabel && (
-            <div className="relative pl-6 mt-2" role="region" aria-label={`Rejoin: ${group.rejoinLabel}`}>
+            <div className="relative ps-6 mt-2" role="region" aria-label={`Rejoin: ${group.rejoinLabel}`}>
               {/* Horizontal connector from branches back to main line */}
               <span
-                className="absolute -left-[18px] top-3 h-px w-[18px] bg-white/10"
+                className="absolute -start-[18px] top-3 h-px w-[18px] bg-white/10"
                 aria-hidden="true"
               />
               {/* Rejoin dot */}
               <span
-                className="absolute -left-[7px] top-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/80 ring-4 ring-slate-900"
+                className="absolute -start-[7px] top-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/80 ring-4 ring-slate-900"
                 aria-hidden="true"
               >
                 <GitMerge className="h-2.5 w-2.5 text-white" />
               </span>
-              <div className="flex items-center gap-2 ml-1">
+              <div className="flex items-center gap-2 ms-1">
                 <GitMerge className="h-3 w-3 text-emerald-400" aria-hidden="true" />
                 <span className="text-xs font-semibold tracking-wider text-emerald-400">
                   {group.rejoinLabel}
@@ -408,7 +408,7 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
             onClick={() => setIsExpanded((current) => !current)}
             aria-expanded={isExpanded}
             aria-controls={`details-${item.id}`}
-            className="rounded text-left text-sm text-cyan-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+            className="rounded text-start text-sm text-cyan-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           >
             {isExpanded ? "Hide details" : "Show details"}
           </button>

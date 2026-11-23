@@ -160,7 +160,7 @@ export function A11yIssuePanel({
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
-          className={`fixed right-0 top-0 h-full z-50 w-full md:w-96 md:max-w-md bg-slate-900 border-l border-white/10 shadow-xl overflow-y-auto ${className}`}
+          className={`fixed end-0 top-0 h-full z-50 w-full md:w-96 md:max-w-md bg-slate-900 border-s border-white/10 shadow-xl overflow-y-auto ${className}`}
         >
           {/* Header */}
           <div className="sticky top-0 z-10 border-b border-white/10 bg-slate-900/95 backdrop-blur-sm px-4 sm:px-6 py-4 flex items-start justify-between gap-3">

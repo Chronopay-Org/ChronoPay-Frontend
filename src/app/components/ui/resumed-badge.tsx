@@ -20,7 +20,7 @@ export function ResumedBadge(_props: ResumedBadgeProps) {
 
   return (
     <div
-      className="absolute top-0 right-0 -mt-2 -mr-2 z-10 flex items-center gap-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 text-xs font-medium text-indigo-300 shadow-sm backdrop-blur-md animate-in fade-in zoom-in duration-300 pointer-events-none"
+      className="absolute top-0 end-0 -mt-2 -me-2 z-10 flex items-center gap-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 text-xs font-medium text-indigo-300 shadow-sm backdrop-blur-md animate-in fade-in zoom-in duration-300 pointer-events-none"
       role="status"
       aria-live="polite"
     >

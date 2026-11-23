@@ -230,7 +230,7 @@ export function TwoFactorFallbackPicker({
                 onClick={() => selectMethod(method.id)}
                 onKeyDown={(event) => handleCardKeyDown(event, index)}
                 className={clsx(
-                  "group relative flex items-start gap-4 rounded-2xl border p-4 text-left transition-all",
+                  "group relative flex items-start gap-4 rounded-2xl border p-4 text-start transition-all",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                   checked
                     ? "border-cyan-300/50 bg-cyan-300/10 ring-1 ring-cyan-300/30"
@@ -240,7 +240,7 @@ export function TwoFactorFallbackPicker({
                 {method.badge ? (
                   <span
                     className={clsx(
-                      "absolute -top-2.5 right-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]",
+                      "absolute -top-2.5 end-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]",
                       checked
                         ? "bg-cyan-300 text-slate-950"
                         : "bg-cyan-100/90 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300",

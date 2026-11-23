@@ -244,7 +244,7 @@ export function SupplierFollowControl({
           aria-labelledby={titleId}
           onKeyDown={handlePopoverKeyDown}
           className={[
-            "absolute right-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)]",
+            "absolute end-0 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)]",
             "rounded-2xl border border-white/10 bg-slate-900 p-3 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.9)]",
             "animate-in fade-in-0 zoom-in-95 duration-150 motion-reduce:animate-none",
           ].join(" ")}

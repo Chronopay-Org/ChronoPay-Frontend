@@ -55,7 +55,7 @@ function CurrencyOption({
         </p>
       </div>
       {selected && (
-        <span className="ml-auto shrink-0 text-cyan-300" aria-hidden="true">
+        <span className="ms-auto shrink-0 text-cyan-300" aria-hidden="true">
           <CheckCircle className="h-5 w-5" />
         </span>
       )}

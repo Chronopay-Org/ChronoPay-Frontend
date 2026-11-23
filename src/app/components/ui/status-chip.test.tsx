@@ -130,10 +130,10 @@ describe("StatusChip", () => {
     });
 
     it("appends caller classes after the tone classes", () => {
-      const span = renderChip({ tone: "danger", className: "ml-2", children: "x" });
+      const span = renderChip({ tone: "danger", className: "ms-2", children: "x" });
       const className = span.className;
-      expect(className).toMatch(/ml-2$/);
-      expect(className.indexOf("text-rose-100")).toBeLessThan(className.indexOf("ml-2"));
+      expect(className).toMatch(/ms-2$/);
+      expect(className.indexOf("text-rose-100")).toBeLessThan(className.indexOf("ms-2"));
     });
 
     it("adds no extra whitespace-free token when className is omitted", () => {
@@ -149,9 +149,9 @@ describe("StatusChip", () => {
     });
 
     it("emits a single class attribute (className is not forwarded twice)", () => {
-      const span = renderChip({ className: "ml-2", children: "x" });
+      const span = renderChip({ className: "ms-2", children: "x" });
       expect(span.getAttribute("class")).toBe(span.className);
-      expect(span.className.match(/ml-2/g)).toHaveLength(1);
+      expect(span.className.match(/ms-2/g)).toHaveLength(1);
     });
   });
 
@@ -180,7 +180,7 @@ describe("StatusChip", () => {
     });
 
     it("still renders the computed class list when a className is also forwarded", () => {
-      const span = renderChip({ className: "ml-2", children: "x" });
+      const span = renderChip({ className: "ms-2", children: "x" });
       expect(span).toHaveClass(...BASE_CLASSES);
     });
   });

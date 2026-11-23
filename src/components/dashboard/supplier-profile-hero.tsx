@@ -109,13 +109,13 @@ export function SupplierProfileHero({
           type="button"
           onClick={handleShare}
           aria-label={`Share ${name} profile`}
-          className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-slate-950/60 text-slate-200 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+          className="absolute end-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-slate-950/60 text-slate-200 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
         >
           <Share2 className="h-4 w-4" aria-hidden={true} />
         </button>
 
         {/* Avatar + identity overlay — bottom left */}
-        <div className="absolute bottom-3 left-3 z-10 flex items-end gap-3 sm:bottom-4 sm:left-4 sm:gap-4">
+        <div className="absolute bottom-3 start-3 z-10 flex items-end gap-3 sm:bottom-4 sm:start-4 sm:gap-4">
           {avatar ? (
             <img
               src={avatar}

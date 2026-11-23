@@ -191,7 +191,7 @@ export function ZeroBalanceNudge({
         <HelpPopover
           term={glossary.timeToken}
           triggerLabel="Help: Time tokens"
-          className="ml-1 align-middle"
+          className="ms-1 align-middle"
         />
         .
       </div>
@@ -224,7 +224,7 @@ export function ZeroBalanceNudge({
               <span className="text-xs font-semibold text-cyan-100">
                 {action.label}
                 {action.testnetOnly && (
-                  <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-200">
+                  <span className="ms-1.5 inline-flex items-center rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-200">
                     Testnet
                   </span>
                 )}

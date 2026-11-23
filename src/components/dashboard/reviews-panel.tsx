@@ -128,10 +128,10 @@ export function ReviewsPanel({
           {filtered.map((review) => (
             <li
               key={review.id}
-              className={`flex flex-col gap-1 py-4 first:pt-0 last:pb-0 border-l-2 pl-3 ${bucketBorderClass[review.bucket]}`}
+              className={`flex flex-col gap-1 py-4 first:pt-0 last:pb-0 border-s-2 ps-3 ${bucketBorderClass[review.bucket]}`}
             >
               {canReply || review.reply ? (
-                <div className="pl-1">
+                <div className="ps-1">
                   <div className="mb-1 flex items-center gap-2">
                     <span
                       className={`h-2 w-2 shrink-0 rounded-full ${bucketDotClass[review.bucket]}`}
@@ -181,18 +181,18 @@ export function ReviewsPanel({
                         Flagged
                       </span>
                     )}
-                    <span className="ml-auto text-xs text-slate-500">
+                    <span className="ms-auto text-xs text-slate-500">
                       {review.date}
                     </span>
                   </div>
-                  <p className="text-sm leading-relaxed text-slate-300 pl-4">
+                  <p className="text-sm leading-relaxed text-slate-300 ps-4">
                     {review.excerpt}
                   </p>
                 </>
               )}
 
               {/* Helpful / Unhelpful voting & moderation flag */}
-              <div className="flex flex-wrap items-center gap-1.5 pl-4 pt-1">
+              <div className="flex flex-wrap items-center gap-1.5 ps-4 pt-1">
                 <span className="text-xs text-slate-500 me-1">
                   Was this helpful?
                 </span>
@@ -213,7 +213,7 @@ export function ReviewsPanel({
                       ? `Review by ${review.author} already flagged`
                       : `Flag review by ${review.author}`
                   }
-                  className="ml-auto inline-flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1 text-xs font-medium text-slate-400 transition-colors hover:border-amber-400/30 hover:text-amber-200 focus-ring-cyan disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ms-auto inline-flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1 text-xs font-medium text-slate-400 transition-colors hover:border-amber-400/30 hover:text-amber-200 focus-ring-cyan disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Flag className="h-3 w-3" aria-hidden="true" />
                   {review.isFlagged ? "Flagged" : "Flag"}

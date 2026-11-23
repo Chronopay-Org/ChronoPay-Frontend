@@ -253,7 +253,7 @@ export default function DesignReviewPage() {
                       Automated tab-cycle verification for every modal and overlay
                     </p>
                   </div>
-                  <span className="ml-auto text-xs font-medium text-cyan-400">
+                  <span className="ms-auto text-xs font-medium text-cyan-400">
                     Test →
                   </span>
                 </div>
@@ -275,7 +275,7 @@ export default function DesignReviewPage() {
                       Multi-step layout with side rail, per-step validation, and skippable-later toggle
                     </p>
                   </div>
-                  <span className="ml-auto text-xs font-medium text-cyan-400">
+                  <span className="ms-auto text-xs font-medium text-cyan-400">
                     View →
                   </span>
                 </div>

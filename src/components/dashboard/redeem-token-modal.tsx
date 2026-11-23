@@ -144,7 +144,7 @@ export function RedeemTokenModal({ isOpen, onClose, tokenCode, onRegenerate }: R
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 z-10"
+              className="absolute top-4 end-4 h-8 w-8 flex items-center justify-center rounded-full border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 z-10"
               aria-label="Close modal dialog"
             >
               ✕
