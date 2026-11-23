@@ -350,14 +350,16 @@ describe("ReviewsPanel – ReviewVoteButtons integration", () => {
     expect(pureHelpful).toHaveLength(3);
   });
 
-  it("updates helpful count optimistically when a vote button is clicked", () => {
-    const { getByRole, getAllByRole } = render(<ReviewsPanel />);
+  it("updates helpful count optimistically when a vote button is clicked", async () => {
+    const { getAllByRole } = render(<ReviewsPanel />);
     const firstHelpfulBtns = getAllByRole("button", {
       name: /mark review as helpful/i,
     });
     const firstBtn = firstHelpfulBtns[0];
     expect(firstBtn.textContent).toContain("12");
-    firstBtn.click();
+    await act(async () => {
+      firstBtn.click();
+    });
     expect(firstBtn.textContent).toContain("13");
     expect(firstBtn).toHaveAttribute("aria-pressed", "true");
   });

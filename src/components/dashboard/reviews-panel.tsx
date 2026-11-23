@@ -4,109 +4,28 @@
  * ReviewsPanel
  *
  * Wraps PanelShell with the SentimentChipFilter injected into the `action`
- * slot, and renders a filtered list of review stubs below.
+ * slot, and renders a filtered list of reviews below.
  *
- * This component is the primary integration point for the sentiment chip
- * filter feature — it demonstrates how to wire counts, trend data, and the
- * onChange callback together.
- *
- * Each review item now includes helpful/unhelpful vote buttons via
- * ReviewVoteButtons, satisfying #261 (optimistic voting with undo toast).
+ * Connects to the shared `useReviews` store (either via props from a parent
+ * page such as the supplier profile, or via an internal default instance when
+ * rendered standalone) for optimistic voting, supplier replies, and moderation
+ * flagging.
  */
 
 import { useState, Suspense } from "react";
+import { Flag } from "lucide-react";
 import { PanelShell } from "./panel-shell";
 import { SentimentChipFilter } from "./sentiment-chip-filter";
 import { ReviewVoteButtons } from "./review-vote-buttons";
 import type { VoteType } from "./review-vote-buttons";
+import { ReviewReplyThread } from "./review-reply-thread";
+import {
+  ReviewModerationFlagModal,
+  type ReviewModerationReason,
+} from "./review-moderation-flag-modal";
 import { reviewSentimentCounts, reviewSentimentTrend } from "./dashboard-data";
 import type { SentimentBucket } from "./types";
-
-// ─── Sample review stubs ──────────────────────────────────────────────────────
-
-interface ReviewStub {
-  id: string;
-  author: string;
-  excerpt: string;
-  bucket: Exclude<SentimentBucket, "all">;
-  date: string;
-  helpfulCount: number;
-  unhelpfulCount: number;
-  userVote: VoteType;
-}
-
-const REVIEW_STUBS: ReviewStub[] = [
-  {
-    id: "r1",
-    author: "Priya M.",
-    excerpt: "Incredibly responsive and delivered exactly what was scoped. Will book again.",
-    bucket: "positive",
-    date: "Jul 22, 2026",
-    helpfulCount: 12,
-    unhelpfulCount: 1,
-    userVote: null,
-  },
-  {
-    id: "r2",
-    author: "Tom B.",
-    excerpt: "Good depth of knowledge but ran a few minutes over the agreed slot.",
-    bucket: "mixed",
-    date: "Jul 20, 2026",
-    helpfulCount: 5,
-    unhelpfulCount: 2,
-    userVote: null,
-  },
-  {
-    id: "r3",
-    author: "Anya K.",
-    excerpt: "Session was rescheduled twice with no notice. Communication needs improvement.",
-    bucket: "critical",
-    date: "Jul 18, 2026",
-    helpfulCount: 8,
-    unhelpfulCount: 0,
-    userVote: null,
-  },
-  {
-    id: "r4",
-    author: "Carlos D.",
-    excerpt: "Walked me through the full Stellar onboarding flow — exactly what I needed.",
-    bucket: "positive",
-    date: "Jul 16, 2026",
-    helpfulCount: 20,
-    unhelpfulCount: 0,
-    userVote: null,
-  },
-  {
-    id: "r5",
-    author: "Lee H.",
-    excerpt: "Solid advice but some recommendations felt generic rather than tailored.",
-    bucket: "mixed",
-    date: "Jul 14, 2026",
-    helpfulCount: 3,
-    unhelpfulCount: 4,
-    userVote: null,
-  },
-  {
-    id: "r6",
-    author: "Sara N.",
-    excerpt: "Did not address my questions and ended early without explanation.",
-    bucket: "critical",
-    date: "Jul 12, 2026",
-    helpfulCount: 7,
-    unhelpfulCount: 1,
-    userVote: null,
-  },
-  {
-    id: "r7",
-    author: "Mei W.",
-    excerpt: "Top-tier expertise and a pleasure to work with. Highly recommend.",
-    bucket: "positive",
-    date: "Jul 10, 2026",
-    helpfulCount: 15,
-    unhelpfulCount: 0,
-    userVote: null,
-  },
-];
+import { useReviews, type ReviewItem } from "@/hooks/use-reviews";
 
 // ─── Bucket colour helpers ────────────────────────────────────────────────────
 
@@ -130,13 +49,50 @@ const bucketLabel: Record<Exclude<SentimentBucket, "all">, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ReviewsPanel({ className = "" }: { className?: string }) {
+export interface ReviewsPanelProps {
+  className?: string;
+  reviews?: ReviewItem[];
+  pendingVotes?: Record<string, boolean>;
+  isOffline?: boolean;
+  canReply?: boolean;
+  onVote?: (reviewId: string, nextVote: VoteType) => Promise<void> | void;
+  onReply?: (reviewId: string, body: string) => Promise<void> | void;
+  onFlag?: (
+    reviewId: string,
+    reason: ReviewModerationReason,
+    context?: string
+  ) => Promise<void> | void;
+}
+
+export function ReviewsPanel({
+  className = "",
+  reviews: controlledReviews,
+  pendingVotes: controlledPendingVotes,
+  isOffline: controlledIsOffline,
+  canReply = false,
+  onVote: controlledOnVote,
+  onReply: controlledOnReply,
+  onFlag: controlledOnFlag,
+}: ReviewsPanelProps) {
+  const internalStore = useReviews();
+  const reviews = controlledReviews ?? internalStore.reviews;
+  const pendingVotes = controlledPendingVotes ?? internalStore.pendingVotes;
+  const isOffline = controlledIsOffline ?? internalStore.isOffline;
+  const handleVote = controlledOnVote ?? internalStore.voteReview;
+  const handleReply = controlledOnReply ?? internalStore.replyToReview;
+  const handleFlag = controlledOnFlag ?? internalStore.flagReview;
+
   const [activeBucket, setActiveBucket] = useState<SentimentBucket>("all");
+  const [flaggingReviewId, setFlaggingReviewId] = useState<string | null>(null);
 
   const filtered =
     activeBucket === "all"
-      ? REVIEW_STUBS
-      : REVIEW_STUBS.filter((r) => r.bucket === activeBucket);
+      ? reviews
+      : reviews.filter((r) => r.bucket === activeBucket);
+
+  const activeFlagReview = flaggingReviewId
+    ? reviews.find((r) => r.id === flaggingReviewId) ?? null
+    : null;
 
   return (
     <PanelShell
@@ -174,23 +130,69 @@ export function ReviewsPanel({ className = "" }: { className?: string }) {
               key={review.id}
               className={`flex flex-col gap-1 py-4 first:pt-0 last:pb-0 border-l-2 pl-3 ${bucketBorderClass[review.bucket]}`}
             >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`h-2 w-2 shrink-0 rounded-full ${bucketDotClass[review.bucket]}`}
-                  aria-hidden="true"
-                />
-                <span className="text-sm font-medium text-white">
-                  {review.author}
-                </span>
-                <span className="ml-auto text-xs text-slate-500">
-                  {review.date}
-                </span>
-              </div>
-              <p className="text-sm leading-relaxed text-slate-300 pl-4">
-                {review.excerpt}
-              </p>
-              {/* Helpful / Unhelpful voting — Issue #261 */}
-              <div className="flex items-center gap-1.5 pl-4 pt-1">
+              {canReply || review.reply ? (
+                <div className="pl-1">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${bucketDotClass[review.bucket]}`}
+                      aria-hidden="true"
+                    />
+                    {review.isFlagged && (
+                      <span
+                        data-testid="review-flagged-badge"
+                        className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-300"
+                      >
+                        <Flag className="h-3 w-3" aria-hidden="true" />
+                        Flagged
+                      </span>
+                    )}
+                  </div>
+                  <ReviewReplyThread
+                    review={{
+                      id: review.id,
+                      authorName: review.author,
+                      rating: review.rating,
+                      body: review.excerpt,
+                      timestamp: review.date,
+                      reply: review.reply,
+                    }}
+                    canReply={canReply}
+                    onSubmitReply={(body) => {
+                      void handleReply(review.id, body);
+                    }}
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${bucketDotClass[review.bucket]}`}
+                      aria-hidden="true"
+                    />
+                    <span className="text-sm font-medium text-white">
+                      {review.author}
+                    </span>
+                    {review.isFlagged && (
+                      <span
+                        data-testid="review-flagged-badge"
+                        className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-300"
+                      >
+                        <Flag className="h-3 w-3" aria-hidden="true" />
+                        Flagged
+                      </span>
+                    )}
+                    <span className="ml-auto text-xs text-slate-500">
+                      {review.date}
+                    </span>
+                  </div>
+                  <p className="text-sm leading-relaxed text-slate-300 pl-4">
+                    {review.excerpt}
+                  </p>
+                </>
+              )}
+
+              {/* Helpful / Unhelpful voting & moderation flag */}
+              <div className="flex flex-wrap items-center gap-1.5 pl-4 pt-1">
                 <span className="text-xs text-slate-500 me-1">
                   Was this helpful?
                 </span>
@@ -199,12 +201,41 @@ export function ReviewsPanel({ className = "" }: { className?: string }) {
                   initialHelpfulCount={review.helpfulCount}
                   initialUnhelpfulCount={review.unhelpfulCount}
                   initialUserVote={review.userVote}
+                  disabled={Boolean(pendingVotes[review.id])}
+                  onVote={(newVote) => handleVote(review.id, newVote)}
                 />
+                <button
+                  type="button"
+                  onClick={() => setFlaggingReviewId(review.id)}
+                  disabled={Boolean(review.isFlagged)}
+                  aria-label={
+                    review.isFlagged
+                      ? `Review by ${review.author} already flagged`
+                      : `Flag review by ${review.author}`
+                  }
+                  className="ml-auto inline-flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1 text-xs font-medium text-slate-400 transition-colors hover:border-amber-400/30 hover:text-amber-200 focus-ring-cyan disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Flag className="h-3 w-3" aria-hidden="true" />
+                  {review.isFlagged ? "Flagged" : "Flag"}
+                </button>
               </div>
             </li>
           ))}
         </ul>
       )}
+
+      <ReviewModerationFlagModal
+        isOpen={Boolean(activeFlagReview)}
+        onClose={() => setFlaggingReviewId(null)}
+        reviewId={activeFlagReview?.id}
+        isAlreadyFlagged={Boolean(activeFlagReview?.isFlagged)}
+        isOffline={isOffline}
+        onSubmit={(reason, context) => {
+          if (activeFlagReview) {
+            return handleFlag(activeFlagReview.id, reason, context);
+          }
+        }}
+      />
     </PanelShell>
   );
 }

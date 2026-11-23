@@ -22,8 +22,8 @@ export interface RecentSearchItem {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "chronopay:recent-searches";
-const MAX_RECENTS = 6;
+export const STORAGE_KEY = "chronopay:recent-searches";
+export const MAX_RECENTS = 6;
 
 /**
  * Static suggestion catalogue — represents searchable entities in ChronoPay.
@@ -123,21 +123,49 @@ export function findDidYouMean(
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function loadRecents(): RecentSearchItem[] {
+export function isRecentSearchItem(item: unknown): item is RecentSearchItem {
+  if (typeof item !== "object" || item === null) return false;
+  const candidate = item as Record<string, unknown>;
+  return (
+    typeof candidate.term === "string" &&
+    candidate.term.trim().length > 0 &&
+    typeof candidate.timestamp === "number" &&
+    Number.isFinite(candidate.timestamp)
+  );
+}
+
+export function loadRecents(): RecentSearchItem[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed.map((item) => {
-        if (typeof item === "string") {
-          return { term: item, timestamp: Date.now() - 86400000 * 2 }; // earlier
+    if (!Array.isArray(parsed)) return [];
+
+    const deduped = new Map<string, RecentSearchItem>();
+
+    for (const item of parsed) {
+      let normalized: RecentSearchItem | null = null;
+
+      if (typeof item === "string") {
+        const trimmed = item.trim();
+        if (trimmed.length > 0) {
+          normalized = { term: trimmed, timestamp: 0 };
         }
-        return item as RecentSearchItem;
-      }).slice(0, MAX_RECENTS);
+      } else if (isRecentSearchItem(item)) {
+        normalized = { term: item.term.trim(), timestamp: item.timestamp };
+      }
+
+      if (!normalized) continue;
+
+      const key = normalized.term.toLowerCase();
+      const existing = deduped.get(key);
+      if (!existing || normalized.timestamp > existing.timestamp) {
+        deduped.set(key, normalized);
+      }
     }
-    return [];
+
+    return Array.from(deduped.values()).slice(0, MAX_RECENTS);
   } catch {
     return [];
   }

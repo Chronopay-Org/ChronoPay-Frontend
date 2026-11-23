@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import clsx from "clsx";
 import { Card, CardBody, CardFooter, CardHeader } from "./card";
 import { StatusChip } from "./status-chip";
+import { useStoredState } from "@/hooks/use-stored-state";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,6 +50,16 @@ export type MeetChecklistCardProps = {
   /** Override the default checklist items list. */
   items?: readonly ChecklistItem[];
   /**
+   * Optional slot identifier. When provided, checked item IDs are persisted
+   * per slot in `localStorage` via `useStoredState`.
+   */
+  slotId?: string;
+  /**
+   * When true, the checklist body starts collapsed behind an accessible
+   * disclosure toggle (`aria-expanded` / `aria-controls`). Defaults to false.
+   */
+  defaultCollapsed?: boolean;
+  /**
    * Called when every item has been checked.
    * Provides the set of completed item ids.
    */
@@ -58,6 +69,23 @@ export type MeetChecklistCardProps = {
   /** Optional extra classes on the outer Card. */
   className?: string;
 };
+
+const EMPTY_CHECKED: ChecklistItemId[] = [];
+
+export function getMeetChecklistStorageKey(slotId: string): string {
+  return `chronopay.meet-checklist.${slotId}`;
+}
+
+function parseCheckedIds(raw: string): ChecklistItemId[] | undefined {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return undefined;
+    if (!parsed.every((item) => typeof item === "string")) return undefined;
+    return parsed as ChecklistItemId[];
+  } catch {
+    return undefined;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Default checklist items
@@ -124,6 +152,8 @@ export function MeetChecklistCard({
   contactLabel = "Contact supplier",
   isRemote = false,
   items = DEFAULT_CHECKLIST_ITEMS,
+  slotId,
+  defaultCollapsed = false,
   onAllComplete,
   onReset,
   className = "",
@@ -133,24 +163,39 @@ export function MeetChecklistCard({
   const groupLabelId = `${baseId}-group-label`;
   const progressId = `${baseId}-progress`;
   const alertId = `${baseId}-alert`;
+  const contentId = `${baseId}-content`;
 
   const visibleItems = items.filter(
     (item) => !isRemote || !item.inPersonOnly,
   );
 
-  const [checked, setChecked] = useState<Set<ChecklistItemId>>(new Set());
+  const storageKey = slotId ? getMeetChecklistStorageKey(slotId) : "";
+  const {
+    value: storedChecked,
+    setValue: setStoredChecked,
+    remove: removeStoredChecked,
+  } = useStoredState<ChecklistItemId[]>(storageKey, {
+    defaultValue: EMPTY_CHECKED,
+    parse: parseCheckedIds,
+  });
+
+  const [localChecked, setLocalChecked] = useState<Set<ChecklistItemId>>(new Set());
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [announcement, setAnnouncement] = useState("");
+
+  const checked = useMemo(
+    () => (slotId ? new Set<ChecklistItemId>(storedChecked) : localChecked),
+    [slotId, storedChecked, localChecked],
+  );
 
   const totalCount = visibleItems.length;
   const checkedCount = visibleItems.filter((i) => checked.has(i.id)).length;
   const allComplete = totalCount > 0 && checkedCount === totalCount;
 
-  // Announce completion exactly once via the onAllComplete callback
-  const completionFiredRef = { current: false };
   const handleCheck = useCallback(
     (id: ChecklistItemId, label: string) => {
-      setChecked((prev) => {
-        const next = new Set(prev);
+      const applyToggle = (prevSet: Set<ChecklistItemId>) => {
+        const next = new Set(prevSet);
         const nowChecked = !next.has(id);
         if (nowChecked) {
           next.add(id);
@@ -161,8 +206,7 @@ export function MeetChecklistCard({
         }
 
         const nextTotal = visibleItems.filter((i) => next.has(i.id)).length;
-        if (nextTotal === totalCount && !completionFiredRef.current) {
-          completionFiredRef.current = true;
+        if (nowChecked && totalCount > 0 && nextTotal === totalCount) {
           // Use setTimeout so announcement state update is separate
           setTimeout(() => {
             setAnnouncement(
@@ -173,14 +217,23 @@ export function MeetChecklistCard({
         }
 
         return next;
-      });
+      };
+
+      if (slotId) {
+        setStoredChecked((prev) => Array.from(applyToggle(new Set(prev))));
+      } else {
+        setLocalChecked((prev) => applyToggle(prev));
+      }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visibleItems, totalCount, onAllComplete],
+    [slotId, setStoredChecked, visibleItems, totalCount, onAllComplete],
   );
 
   function handleReset() {
-    setChecked(new Set());
+    if (slotId) {
+      removeStoredChecked();
+    } else {
+      setLocalChecked(new Set());
+    }
     setAnnouncement("Checklist reset.");
     onReset?.();
   }
@@ -206,10 +259,52 @@ export function MeetChecklistCard({
           )}
         </div>
 
-        <StatusChip tone={allComplete ? "positive" : "neutral"}>
-          {checkedCount}/{totalCount}
-        </StatusChip>
+        <div className="flex items-center gap-2">
+          <StatusChip tone={allComplete ? "positive" : "neutral"}>
+            {checkedCount}/{totalCount}
+          </StatusChip>
+          <button
+            type="button"
+            aria-expanded={!isCollapsed}
+            aria-controls={contentId}
+            aria-label={
+              isCollapsed
+                ? "Expand pre-meet checklist"
+                : "Collapse pre-meet checklist"
+            }
+            onClick={() => setIsCollapsed((prev) => !prev)}
+            className={clsx(
+              "inline-flex min-h-9 min-w-9 items-center justify-center rounded-full border border-white/12 bg-white/5",
+              "px-2.5 py-1.5 text-xs font-medium text-slate-200",
+              "hover:border-cyan-300/30 hover:bg-white/10",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300",
+              "focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
+              "transition-colors",
+            )}
+          >
+            <svg
+              aria-hidden="true"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={clsx(
+                "transition-transform motion-safe:transition-transform",
+                !isCollapsed && "rotate-180",
+              )}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        </div>
       </CardHeader>
+
+      {!isCollapsed && (
+        <div id={contentId}>
 
       {/* ── Location + contact meta ─────────────────────────────────────── */}
       {(!isRemote || contactHref) && (
@@ -472,6 +567,8 @@ export function MeetChecklistCard({
           </button>
         )}
       </CardFooter>
+        </div>
+      )}
 
       {/* ── Polite screen-reader live region ───────────────────────────── */}
       <p

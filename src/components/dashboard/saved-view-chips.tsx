@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Bookmark, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 import clsx from "clsx";
@@ -61,6 +61,20 @@ function safeParseViews(raw: string | null): SavedView[] {
   }
 }
 
+const emptySubscribe = () => () => {};
+
+function readStoredViews(
+  storage?: Pick<Storage, "getItem" | "setItem" | "removeItem">
+): SavedView[] {
+  try {
+    if (storage) return safeParseViews(storage.getItem(STORAGE_KEY));
+    if (typeof window === "undefined") return [];
+    return safeParseViews(window.localStorage.getItem(STORAGE_KEY));
+  } catch {
+    return [];
+  }
+}
+
 interface SavedViewChipsProps {
   /** Persist hook override for tests (defaults to window.localStorage). */
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -78,8 +92,12 @@ export function SavedViewChips({ storage }: SavedViewChipsProps) {
   const searchParams = useSearchParams();
 
   const store = storage;
-  const [views, setViews] = useState<SavedView[]>([]);
-  const [persisted, setPersisted] = useState(false);
+  const [views, setViews] = useState<SavedView[]>(() => readStoredViews(store));
+  const persisted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -89,19 +107,6 @@ export function SavedViewChips({ storage }: SavedViewChipsProps) {
   const [announcement, setAnnouncement] = useState("");
   const saveInputRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
-
-  const safeGet = useCallback(
-    (key: string): string | null => {
-      try {
-        if (store) return store.getItem(key);
-        if (typeof window === "undefined") return null;
-        return window.localStorage.getItem(key);
-      } catch {
-        return null;
-      }
-    },
-    [store]
-  );
 
   const safeSet = useCallback(
     (key: string, value: string): void => {
@@ -119,13 +124,6 @@ export function SavedViewChips({ storage }: SavedViewChipsProps) {
   );
 
   useEffect(() => {
-    // Load the persisted view list once from localStorage (external system).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setViews(safeParseViews(safeGet(STORAGE_KEY)));
-    setPersisted(true);
-  }, [safeGet]);
-
-  useEffect(() => {
     if (renamingId) renameInputRef.current?.focus();
   }, [renamingId]);
 
@@ -133,15 +131,16 @@ export function SavedViewChips({ storage }: SavedViewChipsProps) {
     if (saveOpen) saveInputRef.current?.focus();
   }, [saveOpen]);
 
+  const currentParams = searchParams.toString();
+
   // Close the open chip menu when the URL changes (e.g. a view was applied).
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+  const [prevParams, setPrevParams] = useState(currentParams);
+  if (prevParams !== currentParams) {
+    setPrevParams(currentParams);
     setMenuOpenId(null);
     setRenamingId(null);
     setSaveOpen(false);
-  }, [searchParams]);
-
-  const currentParams = searchParams.toString();
+  }
 
   const normalizedCurrent = normalizeParams(currentParams);
 

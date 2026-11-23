@@ -65,13 +65,13 @@ export function CalendarAgendaView({
         Availability Agenda
       </h2>
 
-      <div role="list" aria-label="Available days grouped by month">
+      <div aria-label="Available days grouped by month">
         {Object.entries(groupedByMonth).map(([month, monthDays]) => (
           <div key={month} className="mb-6 last:mb-0">
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">
               {month}
             </h3>
-            <ul className="space-y-2" role="group" aria-label={`Days in ${month}`}>
+            <ul className="space-y-2" role="list" aria-label={`Days in ${month}`}>
               {monthDays.map((day) => {
                 const isBookable = day.status === "available" || day.status === "limited";
                 const dayId = `agenda-${day.dateLabel.replace(/\s+/g, "-").toLowerCase()}`;

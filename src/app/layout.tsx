@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { Header } from "./components/Header";
 import { ToastProvider } from "@/hooks/use-toast";
+import { NotificationsProvider } from "@/components/dashboard/notifications";
 import { ToastContainer } from "@/app/components/ui/toast-container";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
 import { I18nProvider } from "@/lib/i18n";
@@ -38,11 +40,12 @@ export const themeInitScript = `
 })();
 `;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   // Determine text direction from locale (defaults to LTR)
   const dir = "ltr"; // TODO: Make dynamic based on locale cookie/header
   const lang = "en"; // TODO: Make dynamic based on locale selection
@@ -51,6 +54,7 @@ export default function RootLayout({
     <html lang={lang} dir={dir} suppressHydrationWarning>
       <head>
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: themeInitScript,
           }}
@@ -58,6 +62,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col antialiased">
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `(function(){try{}catch(e){};try{var d=localStorage.getItem('chronopay-density');if(d==='comfortable'||d==='balanced'||d==='compact')document.documentElement.dataset.density=d;}catch(e){}})();`,
           }}
@@ -71,14 +76,16 @@ export default function RootLayout({
         </a>
 
         <ToastProvider>
-          <I18nProvider>
-            <RoleProvider initialRole="buyer">
-              <Header />
-              {children}
-              <SiteFooter />
-              <ToastContainer />
-            </RoleProvider>
-          </I18nProvider>
+          <NotificationsProvider>
+            <I18nProvider>
+              <RoleProvider initialRole="buyer">
+                <Header />
+                {children}
+                <SiteFooter />
+                <ToastContainer />
+              </RoleProvider>
+            </I18nProvider>
+          </NotificationsProvider>
         </ToastProvider>
       </body>
     </html>

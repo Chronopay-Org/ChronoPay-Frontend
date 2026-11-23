@@ -316,5 +316,33 @@ export function useRecentlyViewed() {
     }
   }, []);
 
-  return { addItem };
+  const addItems = useCallback((itemsToAdd: Omit<RecentlyViewedItem, "viewedAt">[]) => {
+    if (itemsToAdd.length === 0) return;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      let updated: RecentlyViewedItem[] = stored ? normalizeItems(JSON.parse(stored)) : [];
+      const now = Date.now();
+
+      itemsToAdd.forEach((item, index) => {
+        const newItem: RecentlyViewedItem = {
+          ...normalizeItem({ ...item, viewedAt: now + index }),
+          viewedAt: now + index,
+        };
+        updated = [newItem, ...updated.filter((i) => i.id !== item.id)];
+      });
+
+      updated = updated.slice(0, MAX_ITEMS);
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+      // Dispatch event for RecentlyViewedRail to update
+      window.dispatchEvent(new CustomEvent("chronopay:recently-viewed-updated", {
+        detail: updated
+      }));
+    } catch (error) {
+      console.error("Failed to add recently viewed items:", error);
+    }
+  }, []);
+
+  return { addItem, addItems };
 }

@@ -8,6 +8,8 @@ export type LifecycleStatus = "active" | "cancelled" | "rescheduled";
 export type Slot = {
   id: string;
   title: string;
+  /** Optional ISO date string (YYYY-MM-DD) for real date-based calendar grouping */
+  date?: string;
   dateLabel: string;
   timeRange: string;
   demand: string;
@@ -244,9 +246,12 @@ export type QueuedActionStatus = "pending" | "retrying" | "completed" | "failed"
 
 export type QueuedAction = {
   id: string;
+  executorId?: string;
   label: string;
   status: QueuedActionStatus;
   queuedAt: string;
+  attempts?: number;
+  nextRetryAt?: string;
   error?: string;
 };
 

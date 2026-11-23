@@ -1,11 +1,23 @@
 "use client";
 
 import { useState, useRef, useId, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { TimelineItem, TimelineNode, TimelineBranchGroup, statusToneMap } from "./timeline-types";
 import { StatusChip } from "./status-chip";
-import { KycDocUpload } from "./kyc-doc-upload";
 import { KycLivenessCapture } from "./kyc-liveness-capture";
 import { Filter, GitFork, GitMerge, MessageSquareText } from "lucide-react";
+
+const KycDocUpload = dynamic(
+  () => import("./kyc-doc-upload").then((module) => module.KycDocUpload),
+  {
+    ssr: false,
+    loading: () => (
+      <div role="status" aria-live="polite" className="rounded-2xl bg-white/5 p-4 text-sm text-slate-300">
+        Loading document upload…
+      </div>
+    ),
+  },
+);
 
 interface StatusTimelineProps {
   items: TimelineNode[];

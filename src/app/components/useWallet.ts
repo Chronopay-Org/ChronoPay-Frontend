@@ -1,66 +1,158 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
+import {
+  isValidStellarAddress,
+  resolveDefaultAdapter,
+  toWalletError,
+  type WalletAdapter,
+  type WalletErrorCode,
+} from "@/lib/wallet/adapter";
 
-type WalletStatus = "connected" | "disconnected" | "loading" | "error";
+export type WalletStatus = "connected" | "disconnected" | "loading" | "error";
 
-type WalletState = {
+export interface WalletState {
   status: WalletStatus;
   address?: string;
   error?: string;
-};
-
-let walletState: WalletState = { status: "disconnected" };
-const subscribers = new Set<() => void>();
-
-function notifySubscribers() {
-  subscribers.forEach((callback) => callback());
+  errorCode?: WalletErrorCode;
 }
 
-export function __test_setWalletState(next: WalletState) {
-  walletState = next;
-  notifySubscribers();
+export interface WalletStore {
+  getState(): WalletState;
+  subscribe(listener: () => void): () => void;
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  setAdapter(adapter: WalletAdapter | null): void;
 }
 
-export function __test_resetWalletState() {
-  walletState = { status: "disconnected" };
-  subscribers.clear();
-}
+const INITIAL_STATE: WalletState = { status: "disconnected" };
 
-function setWalletState(next: WalletState) {
-  walletState = next;
-  notifySubscribers();
-}
+/**
+ * Adapter-backed store. Exposed as a factory so tests can drive it with a
+ * deterministic adapter instead of reaching into module-level state.
+ */
+export function createWalletStore(
+  adapter: WalletAdapter | null = null,
+): WalletStore {
+  let currentAdapter = adapter;
+  let state: WalletState = INITIAL_STATE;
+  let unsubscribeAdapter: (() => void) | null = null;
+  const listeners = new Set<() => void>();
 
-export function useWallet() {
-  const [state, setState] = useState<WalletState>(walletState);
+  function emit() {
+    listeners.forEach((listener) => listener());
+  }
 
-  useEffect(() => {
-    const subscriber = () => setState(walletState);
-    subscribers.add(subscriber);
-    return () => {
-      subscribers.delete(subscriber);
-    };
-  }, []);
+  function setState(next: WalletState) {
+    state = next;
+    emit();
+  }
 
-  const connect = useCallback(() => {
-    if (walletState.status === "loading") return;
-    setWalletState({ status: "loading" });
-
-    window.setTimeout(() => {
-      setWalletState({
-        status: "connected",
-        address: "0x12a4F9b3c7D8e9A1fB2C",
+  function applyConnection(address: string): boolean {
+    if (!isValidStellarAddress(address)) {
+      setState({
+        status: "error",
+        error:
+          "The wallet returned an address that is not a valid Stellar public key.",
+        errorCode: "INVALID_ADDRESS",
       });
-    }, 700);
-  }, []);
+      return false;
+    }
+    setState({ status: "connected", address });
+    return true;
+  }
 
-  const disconnect = useCallback(() => {
-    setWalletState({ status: "disconnected" });
-  }, []);
+  function watchAdapter(target: WalletAdapter) {
+    unsubscribeAdapter?.();
+    unsubscribeAdapter = target.onChange((change) => {
+      if (!change.address) {
+        setState(INITIAL_STATE);
+        return;
+      }
+      applyConnection(change.address);
+    });
+  }
+
+  async function connect() {
+    if (state.status === "loading") return;
+
+    const target = currentAdapter;
+    if (!target) {
+      setState({
+        status: "error",
+        error: "No wallet adapter is configured.",
+        errorCode: "UNKNOWN",
+      });
+      return;
+    }
+
+    setState({ status: "loading" });
+
+    try {
+      const connection = await target.connect();
+      if (target !== currentAdapter) return;
+      if (applyConnection(connection.address)) {
+        watchAdapter(target);
+      }
+    } catch (error) {
+      if (target !== currentAdapter) return;
+      const walletError = toWalletError(error);
+      setState({
+        status: "error",
+        error: walletError.message,
+        errorCode: walletError.code,
+      });
+    }
+  }
+
+  async function disconnect() {
+    unsubscribeAdapter?.();
+    unsubscribeAdapter = null;
+
+    try {
+      await currentAdapter?.disconnect();
+    } catch {
+      // Local state is authoritative; a failed disconnect still signs out.
+    }
+
+    setState(INITIAL_STATE);
+  }
 
   return {
-    status: state.status as WalletStatus,
+    getState: () => state,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    connect,
+    disconnect,
+    setAdapter(nextAdapter) {
+      unsubscribeAdapter?.();
+      unsubscribeAdapter = null;
+      currentAdapter = nextAdapter;
+      setState(INITIAL_STATE);
+    },
+  };
+}
+
+export const walletStore: WalletStore = createWalletStore(resolveDefaultAdapter());
+
+export function useWallet() {
+  const state = useSyncExternalStore(
+    walletStore.subscribe,
+    walletStore.getState,
+    walletStore.getState,
+  );
+
+  const connect = useCallback(() => walletStore.connect(), []);
+  const disconnect = useCallback(() => walletStore.disconnect(), []);
+
+  return {
+    status: state.status,
     address: state.address,
     error: state.error,
+    errorCode: state.errorCode,
     connect,
     disconnect,
   };

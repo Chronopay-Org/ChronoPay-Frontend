@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useStoredState } from "@/hooks/use-stored-state";
 
 type DensityOption = "comfortable" | "balanced" | "compact";
 
@@ -37,44 +38,31 @@ function isValidDensity(value: string | null): value is DensityOption {
   return OPTIONS.some((option) => option.value === value);
 }
 
+function parseDensity(raw: string): DensityOption | undefined {
+  return isValidDensity(raw) ? raw : undefined;
+}
+
+function serializeDensity(value: DensityOption): string {
+  return value;
+}
+
 export function DensitySwitcher() {
-  const [selectedDensity, setSelectedDensity] =
-    useState<DensityOption>(() => {
-      try {
-        const stored = window.localStorage.getItem(STORAGE_KEY);
-        if (isValidDensity(stored)) {
-          applyDensity(stored);
-          return stored;
-        }
-      } catch {
-        // localStorage may be unavailable
-      }
-      applyDensity("balanced");
-      return "balanced";
-    });
-  const [mounted, setMounted] = useState(false);
+  const {
+    value: selectedDensity,
+    setValue: setSelectedDensity,
+    hydrated,
+  } = useStoredState<DensityOption>(STORAGE_KEY, {
+    defaultValue: "balanced",
+    parse: parseDensity,
+    serialize: serializeDensity,
+  });
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
-
-  // Sync density to localStorage on changes — synchronizing React state with
-  // an external storage system is a valid effect pattern.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    if (!mounted) return;
-
-    try {
-      window.localStorage.setItem(STORAGE_KEY, selectedDensity);
-    } catch {
-      // localStorage may be unavailable in private browsing.
-    }
-
+    if (!hydrated) return;
     applyDensity(selectedDensity);
-  }, [selectedDensity, mounted]);
+  }, [selectedDensity, hydrated]);
 
-  if (!mounted) {
+  if (!hydrated) {
     return (
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         {OPTIONS.map((option) => (

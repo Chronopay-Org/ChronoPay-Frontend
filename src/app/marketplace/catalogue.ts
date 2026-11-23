@@ -68,25 +68,30 @@ const SERVICE_TITLES = [
   "Personal Finance Tune-up",
   "Demo Day Prep Coaching",
 ];
-const PRICE_BAND = ["10 XLM", "20 XLM", "25 XLM", "35 XLM", "50 XLM", "75 XLM", "100 XLM"];
+export const PRICE_BAND = ["10 XLM", "20 XLM", "25 XLM", "35 XLM", "50 XLM", "75 XLM", "100 XLM"];
 
 // Larger simulated catalogue — 50 items so the 12 / 24 / 48 options all
 // produce visibly different pages.
+const CATALOGUE: MarketplaceListing[] = [
+  ...seedItems,
+  ...Array.from({ length: 46 }, (_, i) => ({
+    id: `svc-${i + 1}`,
+    title: SERVICE_TITLES[i % SERVICE_TITLES.length],
+    price: PRICE_BAND[i % PRICE_BAND.length],
+    image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=300&fit=crop",
+    href: `/marketplace/svc-${i + 1}`,
+  })),
+];
+
+const CATALOGUE_BY_ID = new Map<string, MarketplaceListing>(
+  CATALOGUE.map((item) => [item.id, item]),
+);
+
 export function buildCatalogue(): MarketplaceListing[] {
-  const out = [...seedItems];
-  for (let i = 0; i < 46; i++) {
-    out.push({
-      id: `svc-${i + 1}`,
-      title: SERVICE_TITLES[i % SERVICE_TITLES.length],
-      price: PRICE_BAND[i % PRICE_BAND.length],
-      image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=300&fit=crop",
-      href: `/marketplace/svc-${i + 1}`,
-    });
-  }
-  return out;
+  return CATALOGUE;
 }
 
 /** Resolve a single listing by id, or `undefined` when it does not exist. */
 export function getListingById(id: string): MarketplaceListing | undefined {
-  return buildCatalogue().find((item) => item.id === id);
+  return CATALOGUE_BY_ID.get(id);
 }

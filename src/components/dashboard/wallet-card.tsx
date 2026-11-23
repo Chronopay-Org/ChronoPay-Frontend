@@ -1,17 +1,30 @@
 "use client";
 
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { StatusChip } from "./status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardHeader, CardBody, CardFooter } from "./card";
 import type { WalletHolding, WalletHoldingStatus, WalletSnapshot, WalletActivityEntry, WalletLifetimeStats } from "./types";
-import { WalletConnectModal, type ConnectionStatus } from "./WalletConnectModal";
+import type { ConnectionStatus } from "./WalletConnectModal";
 import { WALLET_PROVIDERS, defaultWalletConnector, type WalletConnector } from "./wallet-providers";
 import { useToast } from "@/hooks/use-toast";
 import { glossary } from "@/lib/glossary";
 import { useNetwork, TestnetRibbon } from "@/components/checkout/NetworkSelector";
+
+const WalletConnectModal = dynamic(
+  () => import("./WalletConnectModal").then((module) => module.WalletConnectModal),
+  {
+    ssr: false,
+    loading: () => (
+      <div role="status" aria-live="polite" className="fixed inset-0 z-50 grid place-items-center bg-black/50 px-4">
+        <span className="rounded-xl bg-slate-900 px-4 py-3 text-sm text-slate-200">Loading wallet connection…</span>
+      </div>
+    ),
+  },
+);
 
 const statusTone = {
   connected: "positive",
@@ -701,16 +714,18 @@ export function WalletCard({
         </CardFooter>
       </Card>
 
-      <WalletConnectModal
-        isOpen={isModalOpen}
-        onClose={handleClose}
-        providers={WALLET_PROVIDERS}
-        status={modalStatus}
-        errorMessage={modalErrorMessage}
-        onConnect={handleConnect}
-        onRetry={handleRetry}
-        initialMethod="wallet"
-      />
+      {isModalOpen ? (
+        <WalletConnectModal
+          isOpen
+          onClose={handleClose}
+          providers={WALLET_PROVIDERS}
+          status={modalStatus}
+          errorMessage={modalErrorMessage}
+          onConnect={handleConnect}
+          onRetry={handleRetry}
+          initialMethod="wallet"
+        />
+      ) : null}
     </>
   );
 }

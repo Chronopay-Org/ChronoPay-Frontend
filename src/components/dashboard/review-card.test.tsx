@@ -25,64 +25,64 @@ describe("ReviewCard", () => {
     expect(screen.getByTitle("Verified Buyer")).toBeInTheDocument();
   });
 
+  it("renders flagged badge when isAlreadyFlagged is true", () => {
+    render(<ReviewCard {...defaultProps} isAlreadyFlagged={true} />);
+    expect(screen.getByTestId("review-flagged-badge")).toHaveTextContent("Flagged");
+  });
+
   it("handles helpful toggle", async () => {
     const onHelpfulToggle = vi.fn();
     render(<ReviewCard {...defaultProps} helpfulCount={10} onHelpfulToggle={onHelpfulToggle} />);
-    
+
     const user = userEvent.setup();
     const helpfulBtn = screen.getByRole("button", { name: /Helpful \(10\)/i });
     await user.click(helpfulBtn);
     expect(onHelpfulToggle).toHaveBeenCalledWith("r1");
   });
 
-  it("opens report modal and handles submission", async () => {
+  it("opens ReviewModerationFlagModal and handles submission", async () => {
     const onReport = vi.fn();
-    render(<ReviewCard {...defaultProps} onReport={onReport} />);
-    
+    const onFlag = vi.fn();
+    render(<ReviewCard {...defaultProps} onReport={onReport} onFlag={onFlag} />);
+
     const user = userEvent.setup();
-    
+
     // Open overflow menu
     await user.click(screen.getByRole("button", { name: /More options/i }));
-    
+
     // Click report
     const reportBtn = await screen.findByRole("menuitem", { name: /Report review/i });
     await user.click(reportBtn);
-    
+
     // Modal should be open
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: /Flag this review/i });
     expect(dialog).toBeInTheDocument();
-    
-    // Fill form
-    const textarea = screen.getByPlaceholderText(/Please provide details/i);
-    await user.type(textarea, "Inappropriate content");
-    
+
+    // Select a reason and fill context
+    await user.click(screen.getByLabelText(/Inappropriate content/i));
+    await user.type(screen.getByLabelText(/Additional context/i), "Inappropriate content");
+
     // Submit
-    const submitBtn = screen.getByRole("button", { name: /Submit Report/i });
-    await user.click(submitBtn);
-    
+    await user.click(screen.getByRole("button", { name: /Submit report/i }));
+
+    expect(onFlag).toHaveBeenCalledWith("r1", "inappropriate", "Inappropriate content");
     expect(onReport).toHaveBeenCalledWith("r1", "Inappropriate content");
-    
+
     // Modal should close
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
-  it("disables submit button when report reason is empty", async () => {
-    render(<ReviewCard {...defaultProps} />);
-    
+  it("passes isAlreadyFlagged and isOffline to ReviewModerationFlagModal", async () => {
+    render(<ReviewCard {...defaultProps} isAlreadyFlagged={true} isOffline={true} />);
+
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: /More options/i }));
     await user.click(await screen.findByRole("menuitem", { name: /Report review/i }));
-    
-    const submitBtn = screen.getByRole("button", { name: /Submit Report/i });
-    expect(submitBtn).toBeDisabled();
-    
-    const textarea = screen.getByPlaceholderText(/Please provide details/i);
-    await user.type(textarea, "  ");
-    expect(submitBtn).toBeDisabled();
-    
-    await user.type(textarea, "test");
-    expect(submitBtn).toBeEnabled();
+
+    expect(
+      screen.getByText(/already being reviewed by our moderation team/i)
+    ).toBeInTheDocument();
   });
 });

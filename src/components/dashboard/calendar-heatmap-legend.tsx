@@ -89,7 +89,7 @@ export function CalendarHeatmapLegend({
         isHorizontal ? "flex flex-wrap items-center gap-3" : "flex flex-col gap-2",
         className
       )}
-      role="legend"
+      role="group"
       aria-label="Availability heatmap intensity legend"
     >
       {intensityOrder.map((intensity) => {
