@@ -414,7 +414,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <aside
           id="admin-rail"
           ref={railRef}
-          role="navigation"
           aria-label="Module navigation"
           aria-hidden={isRailInert ? true : undefined}
           inert={isRailInert ? true : undefined}

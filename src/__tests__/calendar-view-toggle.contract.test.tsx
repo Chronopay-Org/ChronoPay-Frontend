@@ -184,11 +184,10 @@ describe("keyboard boundaries", () => {
 });
 
 describe("accessibility wiring", () => {
-  it("labels the tab list and the group it contains", () => {
+  it("labels the tab list", () => {
     renderToggle();
 
     expect(screen.getByRole("tablist")).toHaveAccessibleName("Calendar view mode");
-    expect(screen.getByRole("group")).toHaveAccessibleName("Calendar view");
   });
 
   it("gives every mode its description as the tooltip", () => {

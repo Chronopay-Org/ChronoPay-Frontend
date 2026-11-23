@@ -335,12 +335,14 @@ export default function DesignReviewPage() {
                   componentName="API Service"
                   days={apiUptimeData}
                   currentUptimePercent={98.5}
+                  regionLabel="API Service"
                 />
                 <div className="border-t border-slate-700 pt-6" />
                 <UptimeChart
                   componentName="Payments Service"
                   days={paymentsUptimeData}
                   currentUptimePercent={98.0}
+                  regionLabel="Payments Service"
                 />
               </div>
 
@@ -356,6 +358,7 @@ export default function DesignReviewPage() {
                   componentName="API Service"
                   days={apiUptimeData}
                   currentUptimePercent={98.5}
+                  regionLabel="API Service (Light surface)"
                 />
               </div>
 

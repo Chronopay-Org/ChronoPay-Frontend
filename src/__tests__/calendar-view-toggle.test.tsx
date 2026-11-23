@@ -151,7 +151,7 @@ describe("CalendarViewToggle", () => {
   });
 
   it("applies custom className", () => {
-    render(
+    const { container } = render(
       <CalendarViewToggle
         currentMode="month"
         onModeChange={mockOnModeChange}
@@ -159,6 +159,6 @@ describe("CalendarViewToggle", () => {
       />
     );
 
-    expect(screen.getByRole("tablist")).toHaveClass("custom-toolbar");
+    expect(container.firstChild).toHaveClass("custom-toolbar");
   });
 });

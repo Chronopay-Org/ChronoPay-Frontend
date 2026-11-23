@@ -209,9 +209,10 @@ export function SearchTypeahead({
           onKeyDown={handleKeyDown}
           onFocus={() => inputValue.length > 0 && setIsOpen(true)}
           onBlur={() => setTimeout(() => setIsOpen(false), 150)}
+          role="combobox"
           aria-label="Search marketplace"
           aria-autocomplete="list"
-          aria-controls={isOpen ? listId : undefined}
+          aria-controls={listId}
           aria-expanded={isOpen}
           aria-activedescendant={
             isOpen && activeIndex >= 0 && activeIndex < visibleOptions.length

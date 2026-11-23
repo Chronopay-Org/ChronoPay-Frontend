@@ -63,7 +63,7 @@ export function AvailabilityLegend({
         isHorizontal ? "flex flex-wrap items-center gap-4" : "flex flex-col gap-3",
         className
       )}
-      role="legend"
+      role="group"
       aria-label="Availability status legend"
     >
       {(Object.entries(legendItems) as [AvailabilityStatus, typeof legendItems.open][]).map(

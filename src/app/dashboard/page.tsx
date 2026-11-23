@@ -383,6 +383,7 @@ export default function Dashboard() {
             }} />
           ) : (
             <SecurityStatusCard 
+              heading="Security settings"
               items={createSecurityItems({ twoFactor: twoFactorStatus }).map(item => 
                 item.id === "two-factor" && item.status === "disabled"
                   ? { ...item, onAction: () => setIsEnrolling2FA(true) }

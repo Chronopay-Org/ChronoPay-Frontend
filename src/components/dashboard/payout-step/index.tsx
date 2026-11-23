@@ -62,6 +62,8 @@ export interface PayoutStepProps {
   initialCurrency?: PayoutCurrency;
   draftStatus?: DraftStatus;
   lastSavedLabel?: string;
+  /** Optional element type for the outer PanelShell wrapper. */
+  as?: React.ElementType;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -231,6 +233,7 @@ export function PayoutStep({
   initialCurrency = "XLM",
   draftStatus = "saved",
   lastSavedLabel,
+  as = "section",
 }: PayoutStepProps) {
   const [currency, setCurrency] = useState<PayoutCurrency>(initialCurrency);
   const [consent, setConsent] = useState<PayoutConsent>({
@@ -315,6 +318,7 @@ export function PayoutStep({
   if (status === "success") {
     return (
       <PanelShell
+        as={as}
         eyebrow="Step 3 of 4"
         title="Payout account"
         description="Your payout account is configured and ready."
@@ -372,6 +376,7 @@ export function PayoutStep({
   if (status === "error") {
     return (
       <PanelShell
+        as={as}
         eyebrow="Step 3 of 4"
         title="Payout account"
         description="We ran into an issue while saving your payout settings."
@@ -427,6 +432,7 @@ export function PayoutStep({
   // Idle / pending state
   return (
     <PanelShell
+      as={as}
       eyebrow="Step 3 of 4"
       title="Payout account"
       description="Connect a payout account to receive payments from your bookings. Choose your preferred currency, review the destination, and confirm consent."
