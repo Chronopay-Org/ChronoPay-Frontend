@@ -11,12 +11,12 @@ const toneClasses: Record<Tone, string> = {
 };
 
 export function StatusChip({
-  tone,
+  tone = "neutral",
   children,
   className = "",
   ...props
 }: {
-  tone: Tone;
+  tone?: Tone;
   children: ReactNode;
   className?: string;
 } & Omit<HTMLAttributes<HTMLSpanElement>, "className">) {
