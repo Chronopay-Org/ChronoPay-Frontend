@@ -37,20 +37,28 @@ export function FilterSidebar({
     filters.reduce((acc, group) => ({ ...acc, [group.id]: true }), {})
   );
 
+  const getParamValues = useCallback(
+    (key: string) =>
+      typeof searchParams.getAll === "function"
+        ? searchParams.getAll(key)
+        : new URLSearchParams(searchParams.toString()).getAll(key),
+    [searchParams],
+  );
+
   const getActiveFilters = useCallback(() => {
     const active: Record<string, string[]> = {};
     filters.forEach((group) => {
-      const groupValues = searchParams.getAll(group.id);
+      const groupValues = getParamValues(group.id);
       if (groupValues.length > 0) {
         active[group.id] = groupValues;
       }
     });
     return active;
-  }, [filters, searchParams]);
+  }, [filters, getParamValues]);
 
   const handleFilterToggle = useCallback(
     (groupId: string, optionId: string) => {
-      const currentValues = searchParams.getAll(groupId);
+      const currentValues = getParamValues(groupId);
       const updatedValues = currentValues.includes(optionId)
         ? currentValues.filter((v) => v !== optionId)
         : [...currentValues, optionId];
