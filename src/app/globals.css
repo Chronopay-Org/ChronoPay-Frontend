@@ -1,3 +1,4 @@
+/* GENERATED from src/design/tokens.ts — edit the TypeScript source, then run the token generator. */
 @import "tailwindcss";
 
 :where([dir="rtl"] .icon-directional, .icon-directional[dir="rtl"]) {

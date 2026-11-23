@@ -4,6 +4,31 @@ import { useState, useCallback, useId } from "react";
 import { clsx } from "clsx";
 import { CheckCircle2, Copy } from "lucide-react";
 
+export interface SemanticTokenEntry {
+  semantic: string;
+  dark: string;
+  light: string;
+  category: string;
+  description: string;
+}
+
+const SEMANTIC_TOKENS: SemanticTokenEntry[] = [
+  {
+    semantic: "--background",
+    dark: "#07111f",
+    light: "#f0f5fb",
+    category: "color",
+    description: "Page background. Matches the darkest app surface.",
+  },
+  {
+    semantic: "--foreground",
+    dark: "#f4f7fb",
+    light: "#0a1628",
+    category: "color",
+    description: "Primary text on background surfaces.",
+  },
+];
+
 type Theme = "dark" | "light" | "auto";
 
 interface TokenEntry {
@@ -14,12 +39,14 @@ interface TokenEntry {
   description: string;
 }
 
+const DEFAULT_TOKENS: TokenEntry[] = SEMANTIC_TOKENS;
+
 interface SemanticTokenMapProps {
   tokens?: TokenEntry[];
   className?: string;
 }
 
-const DEFAULT_TOKENS: TokenEntry[] = [
+const _LEGACY_UNUSED_TOKENS: TokenEntry[] = [
   {
     semantic: "--background",
     dark: "#07111f",

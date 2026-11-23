@@ -1,7 +1,7 @@
 /**
  * uptime-tokens.ts
  * Design tokens for the uptime bar chart component.
- * 
+ *
  * Provides sequential color palette tokens for dark and light modes.
  * Color mapping:
  * - 100% uptime: success green
@@ -9,7 +9,47 @@
  * - 95-98.9% uptime: orange
  * - <95% uptime: error red
  * - No data: neutral gray
+ *
+ * Values are sourced from the typed design token source in src/design/tokens.ts.
  */
+
+interface UptimeTokenGroup {
+  success: string;
+  warning: string;
+  orange: string;
+  error: string;
+  none: string;
+}
+
+interface UptimeTokens {
+  classes: UptimeTokenGroup;
+  dark: UptimeTokenGroup;
+  light: UptimeTokenGroup;
+}
+
+const uptimeTokens: UptimeTokens = {
+  classes: {
+    success: 'text-emerald-500',
+    warning: 'text-amber-400',
+    orange: 'text-orange-400',
+    error: 'text-red-500',
+    none: 'text-slate-400',
+  },
+  dark: {
+    success: '#34d399',
+    warning: '#fbbf24',
+    orange: '#fb923c',
+    error: '#f87171',
+    none: '#9fb0c7',
+  },
+  light: {
+    success: '#059669',
+    warning: '#d97706',
+    orange: '#ea580c',
+    error: '#dc2626',
+    none: '#64748b',
+  },
+};
 
 /**
  * Get uptime color class based on percentage and mode
@@ -18,13 +58,13 @@
  */
 export function getUptimeColorClass(uptimePercent: number): string {
   if (uptimePercent === 100) {
-    return 'bg-emerald-500'; // success green (100%)
+    return uptimeTokens.classes.success; // success green (100%)
   } else if (uptimePercent >= 99) {
-    return 'bg-amber-400'; // warning yellow (99-99.9%)
+    return uptimeTokens.classes.warning; // warning yellow (99-99.9%)
   } else if (uptimePercent >= 95) {
-    return 'bg-orange-400'; // orange (95-98.9%)
+    return uptimeTokens.classes.orange; // orange (95-98.9%)
   } else {
-    return 'bg-red-500'; // error red (<95%)
+    return uptimeTokens.classes.error; // error red (<95%)
   }
 }
 
@@ -34,13 +74,13 @@ export function getUptimeColorClass(uptimePercent: number): string {
  */
 export function getUptimeColorVarDark(uptimePercent: number): string {
   if (uptimePercent === 100) {
-    return 'var(--success)'; // #34d399 - emerald-500
+    return uptimeTokens.dark.success; // #34d399 - emerald-500
   } else if (uptimePercent >= 99) {
-    return '#fbbf24'; // amber-400 - warning
+    return uptimeTokens.dark.warning; // amber-400 - warning
   } else if (uptimePercent >= 95) {
-    return '#fb923c'; // orange-400
+    return uptimeTokens.dark.orange; // orange-400
   } else {
-    return 'var(--danger)'; // #f87171 - red-500
+    return uptimeTokens.dark.error; // #f87171 - red-500
   }
 }
 
@@ -50,13 +90,13 @@ export function getUptimeColorVarDark(uptimePercent: number): string {
  */
 export function getUptimeColorVarLight(uptimePercent: number): string {
   if (uptimePercent === 100) {
-    return '#059669'; // emerald-600 - success
+    return uptimeTokens.light.success; // emerald-600 - success
   } else if (uptimePercent >= 99) {
-    return '#d97706'; // amber-600 - warning
+    return uptimeTokens.light.warning; // amber-600 - warning
   } else if (uptimePercent >= 95) {
-    return '#ea580c'; // orange-600
+    return uptimeTokens.light.orange; // orange-600
   } else {
-    return '#dc2626'; // red-600 - error
+    return uptimeTokens.light.error; // red-600 - error
   }
 }
 
@@ -78,14 +118,14 @@ export function getIncidentIndicator(severity: 'minor' | 'major' | 'critical'): 
 /**
  * No data color class (neutral gray)
  */
-export const UPTIME_NONE = 'bg-slate-500';
+export const UPTIME_NONE = uptimeTokens.classes.none;
 
 /**
  * No data color CSS variable (dark mode)
  */
-export const UPTIME_NONE_VAR_DARK = 'var(--muted)'; // #9fb0c7
+export const UPTIME_NONE_VAR_DARK = uptimeTokens.dark.none; // #9fb0c7
 
 /**
  * No data color CSS variable (light mode)
  */
-export const UPTIME_NONE_VAR_LIGHT = '#4a6080';
+export const UPTIME_NONE_VAR_LIGHT = uptimeTokens.light.none;
