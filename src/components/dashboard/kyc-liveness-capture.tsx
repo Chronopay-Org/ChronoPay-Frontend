@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 export type LivenessPrompt = "blink" | "turn-left" | "turn-right" | "smile";
 
 interface KycLivenessCaptureProps {
-  onCaptureComplete: (success: boolean) => void;
+  onCaptureComplete: (success: boolean) => void | Promise<void>;
 }
 
 export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProps) {
@@ -12,6 +12,8 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [captureStatus, setCaptureStatus] = useState<"idle" | "capturing" | "success" | "failed">("idle");
   const [timeLeft, setTimeLeft] = useState(10);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [captureError, setCaptureError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const onCaptureCompleteRef = useRef(onCaptureComplete);
@@ -27,6 +29,7 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
   ];
 
   const currentPrompt = prompts[currentPromptIndex];
+  const hasTimedOut = captureStatus === "capturing" && timeLeft === 0;
 
   const stopCamera = () => {
     const stream = streamRef.current;
@@ -61,17 +64,24 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
   }, [captureStatus, assistedMode, textOnlyMode]);
 
   useEffect(() => {
-    if (captureStatus === "capturing" && timeLeft === 0) {
+    if (hasTimedOut) {
       stopCamera();
-      setCaptureStatus("failed");
-      onCaptureCompleteRef.current(false);
+      void Promise.resolve()
+        .then(() => onCaptureCompleteRef.current(false))
+        .catch((error: unknown) => {
+        setCaptureError(
+          error instanceof Error ? error.message : "Verification could not be updated. Please try again.",
+        );
+      });
     }
-  }, [captureStatus, timeLeft]);
+  }, [hasTimedOut]);
 
   const startCapture = async () => {
     setCaptureStatus("capturing");
     setTimeLeft(10);
     setCurrentPromptIndex(0);
+    setCameraError(null);
+    setCaptureError(null);
 
     if (!textOnlyMode) {
       try {
@@ -83,20 +93,31 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
           videoRef.current.srcObject = stream;
         }
       } catch (err) {
-        console.error("Camera access denied or unavailable", err);
+        setCameraError(
+          err instanceof Error && err.name === "NotAllowedError"
+            ? "Camera permission was denied. You can continue in text-only mode or retry camera access."
+            : "Camera is unavailable. You can continue in text-only mode or retry camera access.",
+        );
         setTextOnlyMode(true);
       }
     }
   };
 
-  const handleNextPrompt = () => {
+  const handleNextPrompt = async () => {
     if (currentPromptIndex < prompts.length - 1) {
       setCurrentPromptIndex(prev => prev + 1);
       setTimeLeft(10);
     } else {
-      setCaptureStatus("success");
       stopCamera();
-      onCaptureCompleteRef.current(true);
+      try {
+        await onCaptureCompleteRef.current(true);
+        setCaptureStatus("success");
+      } catch (error) {
+        setCaptureError(
+          error instanceof Error ? error.message : "Verification could not be updated. Please try again.",
+        );
+        setCaptureStatus("failed");
+      }
     }
   };
 
@@ -105,6 +126,12 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
     setCaptureStatus("idle");
     setTimeLeft(10);
     setCurrentPromptIndex(0);
+    setCaptureError(null);
+  };
+
+  const retryCamera = () => {
+    setTextOnlyMode(false);
+    void startCapture();
   };
 
   return (
@@ -149,8 +176,20 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
         </div>
       )}
 
-      {captureStatus === "capturing" && (
+      {captureStatus === "capturing" && !hasTimedOut && (
         <div className="flex flex-col items-center">
+          {cameraError && (
+            <div className="mb-4 w-full rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200" role="alert">
+              <p>{cameraError}</p>
+              <button
+                type="button"
+                onClick={retryCamera}
+                className="mt-2 font-semibold underline underline-offset-2"
+              >
+                Retry camera access
+              </button>
+            </div>
+          )}
           {!textOnlyMode ? (
             <div className="relative w-full aspect-video bg-slate-900 rounded-lg overflow-hidden mb-6 border-2 border-dashed border-slate-600">
               <video
@@ -216,11 +255,13 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
         </div>
       )}
 
-      {captureStatus === "failed" && (
+      {(captureStatus === "failed" || hasTimedOut) && (
         <div className="text-center py-8">
           <div className="text-5xl mb-4 text-red-400">❌</div>
           <h3 className="text-xl font-bold text-white mb-2">Verification Failed</h3>
-          <p className="text-slate-300 mb-6">Time ran out before the action was completed. Please try again.</p>
+          <p className="text-slate-300 mb-6">
+            {captureError ?? "Time ran out before the action was completed. Please try again."}
+          </p>
           <button
             onClick={handleRetry}
             className={`w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors focus:ring-2 focus:ring-slate-400 focus:outline-none ${assistedMode ? 'py-4 text-lg' : 'py-2.5 text-sm'}`}
