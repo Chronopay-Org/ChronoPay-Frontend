@@ -33,6 +33,8 @@ npm run dev      # http://localhost:3000
 | `npm run build` | Production build |
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript type check (`tsc --noEmit`) |
+| `npm test` | Run lint, unit tests, and production build |
 | `npm run test:unit` | Vitest unit tests |
 
 ## Environment variables
