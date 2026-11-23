@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ISSUES_URL } from "@/lib/site-links";
 import { PlanComparison, type PricingPlan } from "../../components/dashboard/plan-comparison";
 
 /**
@@ -172,7 +173,7 @@ const PRICING_PLANS: PricingPlan[] = [
     monthlyPrice: 29999, // $299.99
     yearlyPrice: 287990, // $2,879.90 (save 4%)
     ctaLabel: "Contact Sales",
-    ctaHref: "https://github.com/Chronopay-Org/ChronoPay-Frontend/issues",
+    ctaHref: ISSUES_URL,
     accentColor: "amber",
     features: [
       {
@@ -337,7 +338,7 @@ export default function PricingPage() {
               Get started
             </a>
             <a
-              href="https://github.com/Chronopay-Org/ChronoPay-Frontend/issues"
+              href={ISSUES_URL}
               className="inline-flex items-center justify-center rounded-full bg-cyan-300 px-6 py-3 font-medium text-slate-950 hover:bg-cyan-200 transition-colors focus-ring-cyan"
             >
               Contact the team

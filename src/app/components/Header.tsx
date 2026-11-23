@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { WalletStatusBadge } from "./WalletStatusBadge";
 import { AccountMenu } from "./AccountMenu";
 import { ThemeSwitcher } from "@/components/dashboard/theme-switcher";
+import { REPO_URL } from "@/lib/site-links";
 
 export function Header() {
   const [open, setOpen] = useState(false);
@@ -90,7 +91,7 @@ export function Header() {
                 Stellar
               </a>
               <a
-                href="https://github.com/Chronopay-Org/ChronoPay-Frontend"
+                href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full border border-slate-400/20 px-3 py-2 hover:border-slate-400/40 hover:bg-slate-500/10 transition duration-200 ease-in-out"
@@ -244,7 +245,7 @@ export function Header() {
                 Stellar
               </a>
               <a
-                href="https://github.com/Chronopay-Org/ChronoPay-Frontend"
+                href={REPO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block rounded-2xl border px-4 py-3 hover:bg-slate-500/10"
