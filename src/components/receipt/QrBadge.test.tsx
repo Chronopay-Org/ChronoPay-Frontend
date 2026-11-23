@@ -69,4 +69,38 @@ describe("QrBadge", () => {
     fireEvent.click(button);
     expect(liveRegion).toHaveTextContent("Opening explorer for escrow release.");
   });
+
+  it("downloads an SVG QR code using renderQrSvg when Download QR is clicked", () => {
+    const createObjectURL = vi.fn().mockReturnValue("blob:mock-qr-url");
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: createObjectURL,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
+
+    render(<QrBadge explorerUrl={EXPLORER_URL} label="Architecture Review" />);
+    const downloadBtn = screen.getByRole("button", {
+      name: /download qr code for architecture review/i,
+    });
+
+    fireEvent.click(downloadBtn);
+
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    const blob = createObjectURL.mock.calls[0][0] as Blob;
+    expect(blob).toBeInstanceOf(Blob);
+    expect(blob.type).toContain("image/svg+xml");
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-qr-url");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Downloaded QR code for Architecture Review.",
+    );
+  });
 });

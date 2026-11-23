@@ -691,6 +691,13 @@ body {
     display: none !important;
   }
 
+  /* Keep the verification QR badge crisp and visible on paper. */
+  .receipt-printable [data-testid="receipt-qr-svg"] {
+    display: block !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
   /* ── Print-specific watermark ──────────────────────────────────────── */
   .receipt-printable::before {
     content: "ChronoPay — On-chain Receipt";
