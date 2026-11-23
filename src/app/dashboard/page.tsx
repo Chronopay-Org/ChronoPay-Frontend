@@ -6,6 +6,7 @@ import { DashboardShell } from "../components/dashboard-shell";
 import {
   BookingChecklist,
   BookingProgress,
+  MeetChecklistCard,
   MetricCard,
   OnboardingWidget,
   OnboardingWalkthrough,
@@ -272,6 +273,8 @@ export default function Dashboard() {
   }
 
   const suggestedAlternatives = slots.slice(0, 3);
+  const nextUpcomingSlot =
+    slots.find((slot) => slot.isNextAvailable) ?? slots[0];
 
   return (
     <DashboardShell>
@@ -425,6 +428,15 @@ export default function Dashboard() {
             suggestedAlternatives={suggestedAlternatives}
           />
         </PanelShell>
+
+        {nextUpcomingSlot && (
+          <MeetChecklistCard
+            slotId={nextUpcomingSlot.id}
+            meetingTime={`${nextUpcomingSlot.dateLabel}, ${nextUpcomingSlot.timeRange}`}
+            locationLabel={nextUpcomingSlot.title}
+            defaultCollapsed
+          />
+        )}
 
         {/* Marketplace Search and Filters */}
         <div className="space-y-6">

@@ -160,7 +160,7 @@ export function DisputeFilingForm({
           className="block text-sm font-semibold uppercase tracking-wider text-slate-300"
         >
           Dispute Category
-          <span className="text-rose-400 ml-1" aria-hidden="true">*</span>
+          <span className="text-rose-400 ms-1" aria-hidden="true">*</span>
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {(Object.entries(DISPUTE_CATEGORIES) as [DisputeCategory, typeof DISPUTE_CATEGORIES[DisputeCategory]][]).map(([key, cat]) => (
@@ -173,7 +173,7 @@ export function DisputeFilingForm({
                 handleFieldBlur("category", key);
               }}
               onBlur={() => handleFieldBlur("category", category)}
-              className={`text-left p-4 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-cyan-400 ${
+              className={`text-start p-4 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-cyan-400 ${
                 category === key
                   ? "border-cyan-400/50 bg-cyan-400/10 ring-1 ring-cyan-400/30"
                   : "border-white/10 bg-slate-950/40 hover:border-white/20"
@@ -187,7 +187,7 @@ export function DisputeFilingForm({
                 </div>
                 {category === key && (
                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-400">
-                    <ChevronRight className="h-3 w-3 text-slate-950" />
+                    <ChevronRight className="icon-directional h-3 w-3 text-slate-950" />
                   </div>
                 )}
               </div>
@@ -209,7 +209,7 @@ export function DisputeFilingForm({
           className="block text-sm font-semibold uppercase tracking-wider text-slate-300"
         >
           Reason for Dispute
-          <span className="text-rose-400 ml-1" aria-hidden="true">*</span>
+          <span className="text-rose-400 ms-1" aria-hidden="true">*</span>
         </label>
         <div className="relative">
           <input
@@ -228,7 +228,7 @@ export function DisputeFilingForm({
             aria-invalid={touched.reason && !!errors.reason}
             aria-describedby={`${formId}-reason-error ${formId}-reason-hint`}
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">
+          <div className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">
             {reason.length}/{REASON_MAX_LENGTH}
           </div>
         </div>
@@ -251,7 +251,7 @@ export function DisputeFilingForm({
           className="block text-sm font-semibold uppercase tracking-wider text-slate-300"
         >
           Detailed Description
-          <span className="text-rose-400 ml-1" aria-hidden="true">*</span>
+          <span className="text-rose-400 ms-1" aria-hidden="true">*</span>
         </label>
         <div className="relative">
           <textarea
@@ -270,7 +270,7 @@ export function DisputeFilingForm({
             aria-invalid={touched.description && !!errors.description}
             aria-describedby={`${formId}-description-error ${formId}-description-hint`}
           />
-          <div className="absolute right-3 bottom-3 text-xs text-slate-500">
+          <div className="absolute end-3 bottom-3 text-xs text-slate-500">
             {description.length}/{DESCRIPTION_MAX_LENGTH}
           </div>
         </div>
@@ -290,7 +290,7 @@ export function DisputeFilingForm({
       <div className="space-y-3">
         <label className="block text-sm font-semibold uppercase tracking-wider text-slate-300">
           Evidence Files
-          <span className="text-rose-400 ml-1" aria-hidden="true">*</span>
+          <span className="text-rose-400 ms-1" aria-hidden="true">*</span>
         </label>
         <DisputeEvidenceUploader
           maxFileSizeMB={10}

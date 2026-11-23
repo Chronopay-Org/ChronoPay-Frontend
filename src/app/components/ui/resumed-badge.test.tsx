@@ -59,7 +59,7 @@ describe("ResumedBadge", () => {
       const { className } = screen.getByRole("status");
       expect(className).toContain("absolute");
       expect(className).toContain("top-0");
-      expect(className).toContain("right-0");
+      expect(className).toContain("end-0");
     });
   });
 

@@ -70,7 +70,7 @@ export function DisputeFilingForm({ slotId: _slotId, onSubmit, isSubmitting, onC
     <div>
       <label htmlFor={descriptionId} className="block text-sm font-medium text-slate-300 mb-2">Detailed Description</label>
       <textarea id={descriptionId} value={description} onChange={(event) => setDescription(event.target.value)} aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? `${descriptionId}-error` : undefined} placeholder="Please provide a detailed description of the issue..." rows={4} className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-amber-400/50 focus:outline-none focus:ring-2 focus:ring-amber-400/20 resize-none" disabled={isSubmitting} maxLength={1000} />
-      {error(`${descriptionId}-error`, errors.description)}<p className="text-xs text-slate-500 mt-1 text-right">{description.length}/1000</p>
+      {error(`${descriptionId}-error`, errors.description)}<p className="text-xs text-slate-500 mt-1 text-end">{description.length}/1000</p>
     </div>
     <div>
       <p className="block text-sm font-medium text-slate-300 mb-2">Evidence (Optional)</p>

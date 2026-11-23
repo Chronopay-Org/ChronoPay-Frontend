@@ -157,7 +157,7 @@ export function SharePreview({ receipt }: SharePreviewProps) {
           <div className="h-2.5 w-2.5 rounded-full bg-rose-400" aria-hidden="true" />
           <div className="h-2.5 w-2.5 rounded-full bg-amber-400" aria-hidden="true" />
           <div className="h-2.5 w-2.5 rounded-full bg-emerald-400" aria-hidden="true" />
-          <span className="ml-2 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+          <span className="ms-2 text-[10px] font-medium uppercase tracking-wider text-slate-500">
             Preview
           </span>
         </div>
@@ -227,7 +227,7 @@ export function SharePreview({ receipt }: SharePreviewProps) {
           >
             {remaining}
             {isOverLimit && (
-              <span className="ml-1 font-semibold">over limit</span>
+              <span className="ms-1 font-semibold">over limit</span>
             )}
           </span>
         </div>

@@ -273,7 +273,7 @@ export function SavedViewChips({ storage }: SavedViewChipsProps) {
               <li
                 key={view.id}
                 className={clsx(
-                  "inline-flex items-center gap-1 rounded-full border py-1 pl-3 pr-1 text-sm transition-colors",
+                  "inline-flex items-center gap-1 rounded-full border py-1 ps-3 pe-1 text-sm transition-colors",
                   active
                     ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300"
                     : "border-zinc-700 bg-zinc-900/50 text-zinc-300 hover:border-zinc-600"
@@ -336,7 +336,7 @@ export function SavedViewChips({ storage }: SavedViewChipsProps) {
                       aria-label={`Actions for saved view ${view.name}`}
                       onKeyDown={(event) => handleMenuKeyDown(event, view.id)}
                       className={clsx(
-                        "absolute right-0 top-8 z-20 min-w-36 rounded-lg border border-zinc-700 bg-zinc-900 p-1 shadow-xl",
+                        "absolute end-0 top-8 z-20 min-w-36 rounded-lg border border-zinc-700 bg-zinc-900 p-1 shadow-xl",
                         "focus-within:ring-2 focus-within:ring-cyan-300"
                       )}
                     >
@@ -348,7 +348,7 @@ export function SavedViewChips({ storage }: SavedViewChipsProps) {
                             setRenamingId(view.id);
                             setRenameValue(view.name);
                           }}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-zinc-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-start text-sm text-zinc-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
                         >
                           <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                           Rename
@@ -364,7 +364,7 @@ export function SavedViewChips({ storage }: SavedViewChipsProps) {
                             setDeletePendingId(view.id);
                           }
                         }}
-                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-red-400 hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-start text-sm text-red-400 hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         {deletePending ? "Confirm delete?" : "Delete"}

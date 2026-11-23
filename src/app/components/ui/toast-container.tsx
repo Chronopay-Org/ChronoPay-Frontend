@@ -26,7 +26,7 @@ export function ToastContainer() {
     <div
       aria-label="Notifications"
       aria-live="off"
-      className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col-reverse gap-2 sm:bottom-6 sm:right-6"
+      className="pointer-events-none fixed bottom-4 end-4 z-50 flex w-full max-w-sm flex-col-reverse gap-2 sm:bottom-6 sm:end-6"
     >
 
       {/* "Clear all" — shown only when 2+ entries are present */}

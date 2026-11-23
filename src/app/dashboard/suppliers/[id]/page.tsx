@@ -110,7 +110,7 @@ export default function Page({ params }: { params: { id: string } }) {
             <h2 id="availability-heading" className="sr-only">Availability</h2>
             <AvailabilityStrip days={days} />
             <div className="mt-4 flex justify-end">
-              <ButtonLink href={`/dashboard/slots?supplier=${params.id}`} variant="secondary" size="sm"><CalendarDays className="mr-2 h-4 w-4" aria-hidden="true" />View full calendar</ButtonLink>
+              <ButtonLink href={`/dashboard/slots?supplier=${params.id}`} variant="secondary" size="sm"><CalendarDays className="me-2 h-4 w-4" aria-hidden="true" />View full calendar</ButtonLink>
             </div>
           </section>
 

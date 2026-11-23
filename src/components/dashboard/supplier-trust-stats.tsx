@@ -114,7 +114,7 @@ function TrustMetricTile({ metric }: { metric: TrustMetric }) {
       {/* Value */}
       <p id={descId} className="text-2xl font-semibold tracking-tight text-white">
         {metric.value}
-        <span className="ml-0.5 text-sm font-normal text-slate-500">{metric.unit}</span>
+        <span className="ms-0.5 text-sm font-normal text-slate-500">{metric.unit}</span>
       </p>
 
       {/* Sparkline + microcopy */}

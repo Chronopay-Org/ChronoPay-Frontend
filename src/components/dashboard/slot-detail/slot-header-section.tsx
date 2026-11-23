@@ -243,7 +243,7 @@ export function SlotHeaderSection({
         {/* Seller metrics grid */}
         <div className="grid grid-cols-3 gap-4 border-t border-white/8 pt-5">
           {details.seller.stats.map((stat, i) => (
-            <div key={i} className="text-center sm:text-left">
+            <div key={i} className="text-center sm:text-start">
               <p className="text-[10px] text-slate-400 uppercase tracking-wider">
                 {stat.label}
               </p>

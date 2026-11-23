@@ -96,7 +96,7 @@ export function RefundConfirmationModal({
                 ) : null}
               </div>
               <span
-                className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-300"
+                className="ms-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-300"
                 aria-hidden="true"
               >
                 <Check className="h-4 w-4 text-slate-950" />

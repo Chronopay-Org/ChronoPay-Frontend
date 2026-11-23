@@ -37,7 +37,7 @@ export function SlotActionsSection({
           onClick={onConnectWallet}
           className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-5 py-3 text-sm bg-cyan-300 text-slate-950 hover:bg-cyan-200 shadow-[0_16px_34px_rgba(34,211,238,0.15)]"
         >
-          <Wallet className="h-4 w-4 mr-2" />
+          <Wallet className="h-4 w-4 me-2" />
           Connect Stellar Wallet
         </button>
       )}
@@ -80,7 +80,7 @@ export function SlotActionsSection({
           onClick={onOpenDispute}
           className="w-full flex items-center justify-center rounded-full font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 px-5 py-3 text-sm border border-amber-400/30 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20 mt-3"
         >
-          <Scale className="h-4 w-4 mr-2" />
+          <Scale className="h-4 w-4 me-2" />
           View Dispute ({existingDisputesCount})
         </button>
       )}

@@ -49,7 +49,7 @@ function IssueCard({
       onClick={onClick}
       aria-pressed={isSelected}
       aria-label={`${issue.title}, severity: ${issue.severity}`}
-      className={`w-full text-left rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 p-4 ${severityColors[issue.severity]} ${
+      className={`w-full text-start rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 p-4 ${severityColors[issue.severity]} ${
         isSelected ? "bg-white/10 border-cyan-400/50" : "bg-slate-900/50"
       }`}
     >

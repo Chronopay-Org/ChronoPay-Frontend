@@ -232,7 +232,7 @@ export function SupplierOnboardingWizard({
           disabled={safeIndex === 0}
           className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-4 text-sm font-medium text-slate-100 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          <ChevronLeft className="icon-directional h-4 w-4" aria-hidden="true" />
           Back
         </button>
 
@@ -292,7 +292,7 @@ function WizardRail({
                 aria-disabled={!reachable}
                 disabled={!reachable}
                 onClick={() => onSelect(index)}
-                className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 md:gap-3 ${
+                className={`flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-start text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 md:gap-3 ${
                   status === "current"
                     ? "border-cyan-300/40 bg-cyan-400/10 text-white"
                     : "border-transparent text-slate-300 hover:bg-white/5"

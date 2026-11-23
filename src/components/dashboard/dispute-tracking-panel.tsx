@@ -97,7 +97,7 @@ export function DisputeTrackingPanel({
             </div>
             <h2 className="text-xl font-bold text-white">{dispute.reason}</h2>
           </div>
-          <div className="text-right text-sm text-slate-400 space-y-1">
+          <div className="text-end text-sm text-slate-400 space-y-1">
             <div className="flex items-center gap-1.5 justify-end">
               <Calendar className="h-3.5 w-3.5" />
               <span>Filed {new Date(dispute.createdAt).toLocaleDateString()}</span>

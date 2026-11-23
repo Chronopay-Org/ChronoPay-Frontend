@@ -434,3 +434,52 @@ describe("Dashboard Page – Issue #1128 active-filter chip URL sync", () => {
     expect(calledUrl).not.toMatch(/tags=/);
   });
 });
+
+// ============================================================================
+// Section 3 – Pre-meet checklist mounted on dashboard with persistence
+// ============================================================================
+
+describe("Dashboard Page – MeetChecklistCard integration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+    (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(
+      makeSearchParams(),
+    );
+  });
+
+  it("renders MeetChecklistCard collapsed by default and persists toggled items across reload", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<Dashboard />);
+
+    expect(screen.getByTestId("meet-checklist-card")).toBeInTheDocument();
+
+    const expandBtn = screen.getByRole("button", {
+      name: /expand pre-meet checklist/i,
+    });
+    expect(expandBtn).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(expandBtn);
+
+    const firstCheckbox = screen.getByRole("checkbox", {
+      name: /confirm meeting location/i,
+    });
+    expect(firstCheckbox).toHaveAttribute("aria-checked", "false");
+
+    await user.click(firstCheckbox);
+    expect(firstCheckbox).toHaveAttribute("aria-checked", "true");
+
+    // Simulate reload by unmounting and remounting Dashboard
+    unmount();
+    render(<Dashboard />);
+
+    const expandAgain = screen.getByRole("button", {
+      name: /expand pre-meet checklist/i,
+    });
+    await user.click(expandAgain);
+
+    expect(
+      screen.getByRole("checkbox", { name: /confirm meeting location/i }),
+    ).toHaveAttribute("aria-checked", "true");
+  });
+});

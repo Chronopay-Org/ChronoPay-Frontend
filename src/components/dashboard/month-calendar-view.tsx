@@ -246,7 +246,7 @@ export function MonthCalendarView({
           className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white focus-ring-cyan"
           aria-label={`Previous month, ${monthNames[(viewDate.getMonth() + 11) % 12]}`}
         >
-          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          <ChevronLeft className="icon-directional h-4 w-4" aria-hidden="true" />
         </button>
 
         <h3 className="text-sm font-semibold text-white">
@@ -258,7 +258,7 @@ export function MonthCalendarView({
           className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white focus-ring-cyan"
           aria-label={`Next month, ${monthNames[(viewDate.getMonth() + 1) % 12]}`}
         >
-          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          <ChevronRight className="icon-directional h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 

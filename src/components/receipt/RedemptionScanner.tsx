@@ -190,7 +190,7 @@ export function RedemptionScanner({ onVerify, className = "" }: RedemptionScanne
                 className="absolute inset-x-0 top-1/2 h-6 w-6 -translate-y-1/2 self-center justify-self-center text-cyan-300/80 mx-auto motion-safe:animate-pulse"
                 aria-hidden={true}
               />
-              {(["top-0 left-0 border-t-2 border-l-2", "top-0 right-0 border-t-2 border-r-2", "bottom-0 left-0 border-b-2 border-l-2", "bottom-0 right-0 border-b-2 border-r-2"] as const).map(
+              {(["top-0 start-0 border-t-2 border-s-2", "top-0 end-0 border-t-2 border-e-2", "bottom-0 start-0 border-b-2 border-s-2", "bottom-0 end-0 border-b-2 border-e-2"] as const).map(
                 (cornerClasses) => (
                   <span
                     key={cornerClasses}
