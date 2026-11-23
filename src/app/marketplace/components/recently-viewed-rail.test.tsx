@@ -93,7 +93,7 @@ describe("RecentlyViewedRail", () => {
 
     // Assert error contract
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to load recently viewed items:",
+      expect.stringContaining("Failed to load recently viewed items"),
       expect.any(Error)
     );
     // Assert returned value is null due to empty items
@@ -139,7 +139,7 @@ describe("RecentlyViewedRail", () => {
 
     // Assert error was caught and logged
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to save recently viewed items:",
+      expect.stringContaining("Failed to save recently viewed items"),
       expect.any(Error)
     );
 
@@ -432,7 +432,7 @@ describe("useRecentlyViewed hook", () => {
     fireEvent.click(button);
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to add recently viewed item:",
+      expect.stringContaining("Failed to add recently viewed item"),
       expect.any(Error)
     );
 

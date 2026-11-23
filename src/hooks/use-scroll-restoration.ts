@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { reportError } from "@/app/dashboard/reportError";
 
 const SCROLL_RESTORATION_KEY = "scroll-restoration";
 
@@ -35,7 +36,7 @@ export function useScrollRestoration(listId: string) {
                 try {
                   sessionStorage.removeItem(`${SCROLL_RESTORATION_KEY}-${listId}`);
                 } catch (e) {
-                  console.error("Failed to clear scroll restoration", e);
+                  reportError(e, "Failed to clear scroll restoration");
                 }
               }, 3000);
             }
@@ -43,7 +44,7 @@ export function useScrollRestoration(listId: string) {
         }
       }
     } catch (e) {
-      console.error("Failed to restore scroll position", e);
+      reportError(e, "Failed to restore scroll position");
     }
 
     return () => {
@@ -62,7 +63,7 @@ export function useScrollRestoration(listId: string) {
     try {
       sessionStorage.setItem(`${SCROLL_RESTORATION_KEY}-${listId}`, JSON.stringify(data));
     } catch (e) {
-      console.error("Failed to save scroll restoration", e);
+      reportError(e, "Failed to save scroll restoration");
     }
   }, [listId]);
 
@@ -70,7 +71,7 @@ export function useScrollRestoration(listId: string) {
     try {
       sessionStorage.removeItem(`${SCROLL_RESTORATION_KEY}-${listId}`);
     } catch (e) {
-      console.error("Failed to reset scroll restoration", e);
+      reportError(e, "Failed to reset scroll restoration");
     }
   }, [listId]);
 

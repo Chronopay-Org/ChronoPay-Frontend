@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { reportError } from "@/app/dashboard/reportError";
 
 export type LivenessPrompt = "blink" | "turn-left" | "turn-right" | "smile";
 
@@ -83,7 +84,7 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
           videoRef.current.srcObject = stream;
         }
       } catch (err) {
-        console.error("Camera access denied or unavailable", err);
+        reportError(err, "Camera access denied or unavailable");
         setTextOnlyMode(true);
       }
     }

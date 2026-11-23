@@ -8,6 +8,7 @@ import {
   type AccessibilityIssue,
 } from "@/lib/wcag-references";
 import { REPO_URL } from "@/lib/site-links";
+import { reportError } from "@/app/dashboard/reportError";
 
 type SeverityFilter = "all" | "critical" | "major" | "minor" | "warning";
 
@@ -165,7 +166,7 @@ export function A11yAuditDashboard() {
       
       setIssues(newIssues.length > 0 ? newIssues : []);
     } catch(e) {
-      console.error(e);
+      reportError(e, "Accessibility audit failed");
     } finally {
       setIsAuditing(false);
     }

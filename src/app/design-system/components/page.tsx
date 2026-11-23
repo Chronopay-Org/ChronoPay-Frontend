@@ -157,7 +157,7 @@ export default function DesignSystemComponentsPage() {
           <div className="rounded-xl border border-white/10 bg-slate-900/50 p-6">
             <CalendarAgendaView
               days={sampleDays}
-              onBook={(date) => console.log('Book:', date)}
+              onBook={() => undefined}
             />
           </div>
           <div className="prose prose-invert prose-sm max-w-none">
@@ -219,8 +219,8 @@ export default function DesignSystemComponentsPage() {
           <div className="rounded-xl border border-white/10 bg-slate-900/50 p-6">
             <ReviewComposer
               criteria={reviewCriteria}
-              onSubmit={(data) => console.log('Submit:', data)}
-              onSaveDraft={(data) => console.log('Draft:', data)}
+              onSubmit={() => undefined}
+              onSaveDraft={() => undefined}
               maxPhotos={5}
               maxCommentLength={500}
             />
