@@ -18,11 +18,17 @@ import { TimelineNode, TimelineItem } from "./timeline-types";
 import { 
   Dispute, 
   DisputeStatus, 
+  DisputeNote,
+  DisputeMetadata,
+  DisputeEvidence,
+  DISPUTE_CATEGORIES,
   DISPUTE_STATUS_LABELS,
   DISPUTE_RESOLUTION_LABELS 
 } from "./dispute-types";
 
-interface DisputeTrackingPanelProps {
+export type { Dispute, DisputeStatus, DisputeNote, DisputeMetadata, DisputeEvidence };
+
+export interface DisputeTrackingPanelProps {
   dispute: Dispute;
   onAddNote?: (content: string) => Promise<void>;
   onViewEvidence?: (evidenceId: string) => void;
@@ -58,12 +64,86 @@ export function DisputeTrackingPanel({
         return "text-rose-400 bg-rose-400/10 border-rose-400/20";
       case "escalated":
         return "text-amber-400 bg-amber-400/10 border-amber-400/20";
+      case "investigating":
+        return "text-purple-400 bg-purple-400/10 border-purple-400/20";
       case "mediator_assigned":
       case "under_review":
         return "text-cyan-400 bg-cyan-400/10 border-cyan-400/20";
       default:
         return "text-slate-300 bg-slate-400/10 border-slate-400/20";
     }
+  };
+
+  const getScanBadge = (scanStatus: DisputeEvidence["scanStatus"]) => {
+    switch (scanStatus) {
+      case "clean":
+        return {
+          label: "Safe",
+          className: "bg-emerald-400/10 text-emerald-400 border border-emerald-400/20"
+        };
+      case "threat_detected":
+      case "infected":
+        return {
+          label: "Threat Detected",
+          className: "bg-rose-400/10 text-rose-400 border border-rose-400/20"
+        };
+      case "failed":
+        return {
+          label: "Scan Failed",
+          className: "bg-amber-400/10 text-amber-400 border border-amber-400/20"
+        };
+      case "scanning":
+        return {
+          label: "Scanning",
+          className: "bg-sky-400/10 text-sky-400 border border-sky-400/20"
+        };
+      default:
+        return {
+          label: "Scan Pending",
+          className: "bg-slate-400/10 text-slate-300 border border-slate-400/20"
+        };
+    }
+  };
+
+  const getUploadBadge = (uploadStatus: DisputeEvidence["uploadStatus"]) => {
+    switch (uploadStatus) {
+      case "completed":
+        return {
+          label: "Uploaded",
+          className: "bg-slate-800 text-slate-300 border border-white/10"
+        };
+      case "failed":
+      case "error":
+        return {
+          label: "Upload Failed",
+          className: "bg-rose-400/10 text-rose-400 border border-rose-400/20"
+        };
+      case "uploading":
+        return {
+          label: "Uploading",
+          className: "bg-sky-400/10 text-sky-400 border border-sky-400/20"
+        };
+      default:
+        return {
+          label: "Pending",
+          className: "bg-slate-800 text-slate-400 border border-white/10"
+        };
+    }
+  };
+
+  const categoryLabel =
+    dispute.category in DISPUTE_CATEGORIES
+      ? DISPUTE_CATEGORIES[dispute.category as keyof typeof DISPUTE_CATEGORIES].label
+      : dispute.category.replace(/_/g, " ");
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(date);
   };
 
   const getPriorityColor = (priority: string) => {
@@ -85,15 +165,18 @@ export function DisputeTrackingPanel({
       <div className="glass-panel rounded-2xl border border-white/10 bg-slate-950/20 p-6 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getStatusColor(dispute.status)}`}>
-                {DISPUTE_STATUS_LABELS[dispute.status]}
+                {DISPUTE_STATUS_LABELS[dispute.status] ?? dispute.status.replace(/_/g, " ")}
               </span>
               {dispute.metadata?.priority && (
                 <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${getPriorityColor(dispute.metadata.priority)}`}>
                   {dispute.metadata.priority} priority
                 </span>
               )}
+              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-slate-300 capitalize">
+                {categoryLabel}
+              </span>
             </div>
             <h2 className="text-xl font-bold text-white">{dispute.reason}</h2>
           </div>
@@ -101,6 +184,10 @@ export function DisputeTrackingPanel({
             <div className="flex items-center gap-1.5 justify-end">
               <Calendar className="h-3.5 w-3.5" />
               <span>Filed {new Date(dispute.createdAt).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center gap-1.5 justify-end text-xs">
+              <Clock className="h-3.5 w-3.5" />
+              <span>Last updated: {formatDateTime(dispute.updatedAt)}</span>
             </div>
             <div className="flex items-center gap-1.5 justify-end">
               <Tag className="h-3.5 w-3.5" />
@@ -174,42 +261,46 @@ export function DisputeTrackingPanel({
             Evidence Files ({dispute.evidence.length})
           </h3>
           <div className="space-y-2">
-            {dispute.evidence.map((evidence) => (
-              <div
-                key={evidence.id}
-                className="flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/40 p-3 hover:border-white/20 transition-colors"
-              >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-800 text-slate-300">
-                    <FileText className="h-4 w-4 text-cyan-400" />
+            {dispute.evidence.map((evidence) => {
+              const scanBadge = getScanBadge(evidence.scanStatus);
+              const uploadBadge = getUploadBadge(evidence.uploadStatus);
+              return (
+                <div
+                  key={evidence.id}
+                  className="flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/40 p-3 hover:border-white/20 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-800 text-slate-300">
+                      <FileText className="h-4 w-4 text-cyan-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-white truncate">{evidence.fileName}</p>
+                      <p className="text-xs text-slate-400">
+                        {(evidence.fileSize / 1024).toFixed(1)} KB • {evidence.fileType}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white truncate">{evidence.fileName}</p>
-                    <p className="text-xs text-slate-400">
-                      {(evidence.fileSize / 1024).toFixed(1)} KB • {evidence.fileType}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${uploadBadge.className}`}>
+                      {uploadBadge.label}
+                    </span>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${scanBadge.className}`}>
+                      {scanBadge.label}
+                    </span>
+                    {onViewEvidence && (
+                      <button
+                        type="button"
+                        onClick={() => onViewEvidence(evidence.id)}
+                        className="rounded p-1.5 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                        aria-label={`View ${evidence.fileName}`}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                    evidence.scanStatus === "clean" 
-                      ? "bg-emerald-400/10 text-emerald-400 border border-emerald-400/20"
-                      : "bg-amber-400/10 text-amber-400 border border-amber-400/20"
-                  }`}>
-                    {evidence.scanStatus === "clean" ? "Safe" : "Scanning"}
-                  </span>
-                  {onViewEvidence && (
-                    <button
-                      onClick={() => onViewEvidence(evidence.id)}
-                      className="rounded p-1.5 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                      aria-label={`View ${evidence.fileName}`}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -264,19 +355,22 @@ export function DisputeTrackingPanel({
         {/* Add Note Form */}
         {onAddNote && dispute.status !== "resolved" && dispute.status !== "rejected" && (
           <div className="border-t border-white/10 pt-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label htmlFor={`note-input-${dispute.id}`} className="block text-sm font-medium text-slate-300 mb-2">
               Add a note
             </label>
             <div className="flex gap-3">
               <textarea
+                id={`note-input-${dispute.id}`}
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Type your message or note here..."
                 rows={3}
+                maxLength={500}
                 className="flex-1 rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
                 disabled={isSubmittingNote}
               />
               <button
+                type="button"
                 onClick={handleAddNote}
                 disabled={!newNote.trim() || isSubmittingNote}
                 className="self-end rounded-xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -321,6 +415,17 @@ function convertDisputeToTimeline(dispute: Dispute): TimelineNode[] {
       status: "pending",
       timestamp: "In progress",
       details: "Dispute is being reviewed by the platform",
+      isCurrent: true
+    });
+  }
+
+  if (dispute.status === "investigating") {
+    items.push({
+      id: "investigating",
+      title: "Investigating",
+      status: "pending",
+      timestamp: "In progress",
+      details: "Platform team is investigating the dispute details",
       isCurrent: true
     });
   }

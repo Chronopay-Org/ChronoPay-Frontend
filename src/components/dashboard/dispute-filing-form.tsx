@@ -18,7 +18,9 @@ import {
   DISPUTE_CATEGORIES 
 } from "./dispute-types";
 
-interface DisputeFilingFormProps {
+export type { DisputeFormData, DisputeCategory };
+
+export interface DisputeFilingFormProps {
   slotId: string;
   onSubmit: (data: DisputeFormData) => Promise<void>;
   onCancel: () => void;
@@ -295,6 +297,8 @@ export function DisputeFilingForm({
         <DisputeEvidenceUploader
           maxFileSizeMB={10}
           maxFiles={5}
+          disabled={isSubmitting}
+          ariaDescribedBy={touched.evidence && errors.evidence ? `${formId}-evidence-error` : undefined}
           onFilesChange={(files) => {
             setEvidenceFiles(files);
             if (touched.evidence) {
@@ -303,7 +307,7 @@ export function DisputeFilingForm({
           }}
         />
         {touched.evidence && errors.evidence && (
-          <p className="flex items-center gap-1.5 text-xs text-rose-400" role="alert">
+          <p id={`${formId}-evidence-error`} className="flex items-center gap-1.5 text-xs text-rose-400" role="alert">
             <AlertCircle className="h-3.5 w-3.5" />
             {errors.evidence}
           </p>

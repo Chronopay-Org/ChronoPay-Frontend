@@ -1,6 +1,6 @@
 import { useEffect, useReducer, type RefObject } from "react";
 import type { GiftDetails } from "@/components/dashboard/gift-purchase-toggle";
-import type { Dispute } from "@/app/components/dispute-tracking-panel";
+import type { Dispute } from "@/components/dashboard/dispute-tracking-panel";
 import { createInitialDisputes } from "./slot-detail-data";
 
 export type BookingPhase =
@@ -323,7 +323,8 @@ export function slotBookingReducer(
         notes: [...state.currentDispute.notes, action.note],
         updatedAt: action.updatedAt,
         metadata: {
-          ...state.currentDispute.metadata,
+          priority: state.currentDispute.metadata?.priority ?? "medium",
+          escalationCount: state.currentDispute.metadata?.escalationCount ?? 0,
           lastActivityAt: action.updatedAt,
         },
       };

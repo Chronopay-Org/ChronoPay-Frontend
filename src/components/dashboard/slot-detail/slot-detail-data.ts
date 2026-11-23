@@ -1,5 +1,5 @@
-import type { Dispute } from "@/app/components/dispute-tracking-panel";
-import type { DisputeFormData } from "@/app/components/dispute-filing-form";
+import type { Dispute } from "@/components/dashboard/dispute-tracking-panel";
+import type { DisputeFormData } from "@/components/dashboard/dispute-filing-form";
 
 export interface SlotSellerMetadata {
   id: string;

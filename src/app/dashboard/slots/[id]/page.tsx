@@ -4,7 +4,7 @@ import { use, useCallback, useEffect, useRef } from "react";
 import { DashboardShell } from "@/app/components/dashboard-shell";
 import { slots as mockSlots } from "@/components/dashboard/dashboard-data";
 import { BookingAbandonmentBanner } from "@/components/dashboard/booking-abandonment-banner";
-import type { DisputeFormData } from "@/app/components/dispute-filing-form";
+import type { DisputeFormData } from "@/components/dashboard/dispute-filing-form";
 import {
   MOCK_WALLET_ADDRESS,
   SlotActionsSection,

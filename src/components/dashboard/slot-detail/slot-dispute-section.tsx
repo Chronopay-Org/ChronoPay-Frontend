@@ -5,11 +5,11 @@ import { FocusTrap } from "@/components/common/FocusTrap";
 import {
   DisputeFilingForm,
   type DisputeFormData,
-} from "@/app/components/dispute-filing-form";
+} from "@/components/dashboard/dispute-filing-form";
 import {
   DisputeTrackingPanel,
   type Dispute,
-} from "@/app/components/dispute-tracking-panel";
+} from "@/components/dashboard/dispute-tracking-panel";
 import { X } from "lucide-react";
 import type { DisputeView } from "./use-slot-booking";
 
