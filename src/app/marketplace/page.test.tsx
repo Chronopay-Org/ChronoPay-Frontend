@@ -1,6 +1,7 @@
 import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Marketplace from "./page";
+import { seedItems } from "./catalogue";
 
 // Mock next/navigation
 const mockSearchParams = {
@@ -93,6 +94,54 @@ describe("Marketplace Page", () => {
 
     // The rail should not appear because no items were seeded
     expect(screen.queryByText("Recently viewed")).not.toBeInTheDocument();
+  });
+
+  it("clears seeding timers on unmount so nothing is added, and seeds once on remount", () => {
+    vi.useFakeTimers();
+    const updateListener = vi.fn();
+    window.addEventListener("chronopay:recently-viewed-updated", updateListener);
+
+    try {
+      const { unmount } = render(<Marketplace />);
+      unmount();
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(updateListener).not.toHaveBeenCalled();
+      expect(localStorage.getItem("chronopay-marketplace-visited")).toBeNull();
+      const storedAfterUnmount = JSON.parse(
+        localStorage.getItem("chronopay-recently-viewed") ?? "[]"
+      );
+      expect(storedAfterUnmount).toHaveLength(0);
+
+      // Remounting should seed exactly once
+      const { unmount: unmountSecond } = render(<Marketplace />);
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(updateListener).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Recently viewed")).toBeInTheDocument();
+      expect(localStorage.getItem("chronopay-marketplace-visited")).toBe("true");
+      const storedAfterRemount = JSON.parse(
+        localStorage.getItem("chronopay-recently-viewed") ?? "[]"
+      );
+      expect(storedAfterRemount).toHaveLength(seedItems.length);
+
+      // A subsequent mount should not seed again
+      unmountSecond();
+      render(<Marketplace />);
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(updateListener).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener("chronopay:recently-viewed-updated", updateListener);
+      vi.useRealTimers();
+    }
   });
 
   it("handles invalid page size in URL gracefully", () => {

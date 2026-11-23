@@ -84,20 +84,32 @@ function MarketplaceGrid() {
 }
 
 export default function Marketplace() {
-  const { addItem } = useRecentlyViewed();
+  const { addItems } = useRecentlyViewed();
 
   // Populate recently-viewed rail on first visit.
   useEffect(() => {
-    const hasVisited = localStorage.getItem("chronopay-marketplace-visited");
-    if (!hasVisited) {
-      seedItems.forEach((item, index) => {
-        setTimeout(() => {
-          addItem(item);
-        }, index * 100);
-      });
-      localStorage.setItem("chronopay-marketplace-visited", "true");
+    let hasVisited: string | null = null;
+    try {
+      hasVisited = localStorage.getItem("chronopay-marketplace-visited");
+    } catch {
+      return;
     }
-  }, [addItem]);
+
+    if (hasVisited) return;
+
+    const timerId = setTimeout(() => {
+      addItems(seedItems);
+      try {
+        localStorage.setItem("chronopay-marketplace-visited", "true");
+      } catch {
+        // Ignore storage errors
+      }
+    }, 0);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [addItems]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
