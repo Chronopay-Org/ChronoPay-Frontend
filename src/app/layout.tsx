@@ -38,6 +38,9 @@ export const themeInitScript = `
 })();
 `;
 
+/** Runs before React hydrates to apply the saved density preference. */
+export const densityInitScript = `(function(){try{var d=localStorage.getItem('chronopay-density');if(d==='comfortable'||d==='balanced'||d==='compact')document.documentElement.dataset.density=d;}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -59,7 +62,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col antialiased">
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{}catch(e){};try{var d=localStorage.getItem('chronopay-density');if(d==='comfortable'||d==='balanced'||d==='compact')document.documentElement.dataset.density=d;}catch(e){}})();`,
+            __html: densityInitScript,
           }}
         />
 

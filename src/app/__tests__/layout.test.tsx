@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import RootLayout, { metadata } from '../layout';
+import RootLayout, { metadata, densityInitScript } from '../layout';
 
 import { vi } from 'vitest';
 
@@ -32,6 +32,38 @@ describe('RootLayout', () => {
       expect(metadata.title).not.toBeNull();
       expect(metadata.description).not.toBe('');
       expect(metadata.description).not.toBeNull();
+    });
+  });
+
+  describe('density init script', () => {
+    const runDensityScript = (stored: string | null) => {
+      document.documentElement.removeAttribute('data-density');
+      const getItem = vi.fn(() => stored);
+      vi.stubGlobal('localStorage', { getItem });
+      // eslint-disable-next-line no-new-func
+      new Function(densityInitScript)();
+      return document.documentElement.dataset.density;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      document.documentElement.removeAttribute('data-density');
+    });
+
+    it('does not contain the dead empty try block', () => {
+      expect(densityInitScript).not.toContain('try{}catch');
+    });
+
+    it.each(['comfortable', 'compact', 'balanced'])('applies valid density "%s"', (value) => {
+      expect(runDensityScript(value)).toBe(value);
+    });
+
+    it.each(['', 'cozy', 'COMFORTABLE', 'null'])('ignores invalid stored value "%s"', (value) => {
+      expect(runDensityScript(value)).toBeUndefined();
+    });
+
+    it('ignores when nothing is stored', () => {
+      expect(runDensityScript(null)).toBeUndefined();
     });
   });
 
