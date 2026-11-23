@@ -51,24 +51,16 @@ function makeSearchParams(params: Record<string, string[]> = {}) {
 }
 
 // ============================================================================
-// Section 1 – Dashboard page smoke tests (existing, preserved)
-// These tests render the FULL page and need all context mocks.
+// Section 1 – Dashboard page smoke tests
+// These tests render the FULL page with I18nProvider and real onboarding store.
 // ============================================================================
 
-// Mock i18n
-vi.mock("@/lib/i18n", () => ({
-  useMessages: () => (key: string) => key,
-}));
-
-// Mock hooks
-vi.mock("@/hooks/use-onboarding-samples", () => ({
-  useOnboardingSamples: () => ({
-    showSamples: true,
-    showTour: false,
-    clearSamples: vi.fn(),
-    dismissTour: vi.fn(),
-  }),
-}));
+import { I18nProvider } from "@/lib/i18n";
+import { __resetOnboardingSamplesStoreForTests } from "@/hooks/use-onboarding-samples";
+import {
+  SAMPLES_CLEARED_STORAGE_KEY,
+  TOUR_DISMISSED_STORAGE_KEY,
+} from "@/components/dashboard/dashboard-data";
 
 vi.mock("@/hooks/use-onboarding-tour", () => ({
   useOnboardingTour: () => ({
@@ -123,20 +115,94 @@ vi.mock("canvas-confetti", () => ({ default: vi.fn() }));
 
 import Dashboard from "@/app/dashboard/page";
 
+function renderDashboard() {
+  return render(
+    <I18nProvider locale="en">
+      <Dashboard />
+    </I18nProvider>
+  );
+}
+
 describe("Dashboard Page – smoke tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
+    __resetOnboardingSamplesStoreForTests();
   });
 
-  it("renders the dashboard when no special params are present", () => {
+  it("renders the dashboard main regions when no special params are present", () => {
     (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(
       makeSearchParams()
     );
 
-    render(<Dashboard />);
+    renderDashboard();
 
-    expect(screen.getByText("dashboard.title")).toBeInTheDocument();
-    expect(screen.getByText("dashboard.marketplaceTitle")).toBeInTheDocument();
+    // Page & marketplace headings (resolved via I18nProvider)
+    expect(
+      screen.getByRole("heading", { name: "Dashboard" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Marketplace Discovery" })
+    ).toBeInTheDocument();
+
+    // Metrics region
+    expect(screen.getByText("Available hours this week")).toBeInTheDocument();
+    expect(screen.getByText("Wallet balance")).toBeInTheDocument();
+    expect(screen.getByText("Bookings in progress")).toBeInTheDocument();
+    expect(screen.getByText("Conversion rate")).toBeInTheDocument();
+    expect(document.querySelectorAll("[data-sample-badge]").length).toBeGreaterThan(0);
+
+    // Wallet area
+    expect(screen.getByRole("heading", { name: "Wallet" })).toBeInTheDocument();
+
+    // KYC timeline
+    expect(
+      screen.getByRole("heading", { name: /KYC Status/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("list", { name: "KYC verification timeline" })
+    ).toBeInTheDocument();
+
+    // Filter sidebar
+    expect(screen.getByRole("complementary")).toBeInTheDocument();
+    expect(screen.getByText("Category")).toBeInTheDocument();
+    expect(screen.getByText("Tags")).toBeInTheDocument();
+  });
+
+  it("hides sample badges when samples are cleared via SAMPLES_CLEARED_STORAGE_KEY", () => {
+    window.localStorage.setItem(SAMPLES_CLEARED_STORAGE_KEY, "1");
+    (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(
+      makeSearchParams()
+    );
+
+    renderDashboard();
+
+    expect(document.querySelectorAll("[data-sample-badge]")).toHaveLength(0);
+    expect(
+      screen.getByText(
+        "Sample metrics cleared. Metrics will appear here once you have live activity."
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("skips the onboarding tour when TOUR_DISMISSED_STORAGE_KEY is set", () => {
+    (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(
+      makeSearchParams()
+    );
+
+    // First verify the tour mounts when not dismissed
+    const { unmount } = renderDashboard();
+    expect(screen.getByTestId("walkthrough-backdrop")).toBeInTheDocument();
+    unmount();
+
+    // Now set the dismissed flag and re-render
+    window.localStorage.setItem(TOUR_DISMISSED_STORAGE_KEY, "1");
+    __resetOnboardingSamplesStoreForTests();
+
+    renderDashboard();
+    expect(
+      screen.queryByTestId("walkthrough-backdrop")
+    ).not.toBeInTheDocument();
   });
 
   it("renders the loading state when ?loading is present", () => {
@@ -145,10 +211,12 @@ describe("Dashboard Page – smoke tests", () => {
       has: (key: string) => key === "loading",
     });
 
-    render(<Dashboard />);
+    renderDashboard();
 
-    expect(screen.getByText("dashboard.loadingMessage")).toBeInTheDocument();
-    expect(screen.queryByText("dashboard.title")).not.toBeInTheDocument();
+    expect(screen.getByText("Loading dashboard…")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Dashboard" })
+    ).not.toBeInTheDocument();
   });
 
   it("renders the error state when ?error is present", () => {
@@ -157,10 +225,14 @@ describe("Dashboard Page – smoke tests", () => {
       has: (key: string) => key === "error",
     });
 
-    render(<Dashboard />);
+    renderDashboard();
 
-    expect(screen.getByText("dashboard.errorMessage")).toBeInTheDocument();
-    expect(screen.queryByText("dashboard.title")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("An error occurred. Please refresh the page.")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Dashboard" })
+    ).not.toBeInTheDocument();
   });
 
   it("renders the empty state when ?empty is present", () => {
@@ -169,10 +241,12 @@ describe("Dashboard Page – smoke tests", () => {
       has: (key: string) => key === "empty",
     });
 
-    render(<Dashboard />);
+    renderDashboard();
 
-    expect(screen.getByText("dashboard.emptyMessage")).toBeInTheDocument();
-    expect(screen.queryByText("dashboard.title")).not.toBeInTheDocument();
+    expect(screen.getByText("No data available.")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Dashboard" })
+    ).not.toBeInTheDocument();
   });
 });
 
