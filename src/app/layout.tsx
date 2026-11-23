@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { Header } from "./components/Header";
 import { ToastProvider } from "@/hooks/use-toast";
-import { NotificationsProvider } from "@/components/dashboard/notifications";
+import { NotificationsProvider } from "@/components/dashboard/notifications/notifications-provider";
 import { ToastContainer } from "@/app/components/ui/toast-container";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
 import { I18nProvider } from "@/lib/i18n";
