@@ -14,8 +14,13 @@ vi.mock('@/app/components/ui/toast-container', () => ({
 vi.mock('@/app/components/navigation/RoleContext', () => ({
   RoleProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="role-provider">{children}</div>,
 }));
+const mockUseMessages = vi.fn((key: string) =>
+  key === 'common.skipToContent' ? 'Localized skip link' : key,
+);
+
 vi.mock('@/lib/i18n', () => ({
   I18nProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="i18n-provider">{children}</div>,
+  useMessages: () => mockUseMessages,
 }));
 
 describe('RootLayout', () => {
@@ -65,6 +70,21 @@ describe('RootLayout', () => {
       expect(getByTestId('toast-provider')).toBeInTheDocument();
       expect(getByTestId('i18n-provider')).toBeInTheDocument();
       expect(getByTestId('role-provider')).toBeInTheDocument();
+    });
+
+    it('renders the skip link inside I18nProvider using localized messages', () => {
+      mockUseMessages.mockClear();
+      const { getByTestId, getByRole } = render(
+        <RootLayout>
+          <div data-testid="child-content">Content</div>
+        </RootLayout>
+      );
+
+      const skipLink = getByRole('link', { name: 'Localized skip link' });
+      expect(skipLink).toHaveAttribute('href', '#main-content');
+      expect(skipLink).toHaveClass('sr-only', 'focus:not-sr-only');
+      expect(getByTestId('i18n-provider')).toContainElement(skipLink);
+      expect(mockUseMessages).toHaveBeenCalledWith('common.skipToContent');
     });
 
     it('handles missing or empty children gracefully (boundary behavior)', () => {
