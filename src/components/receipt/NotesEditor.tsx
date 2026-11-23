@@ -3,7 +3,7 @@
 import { useState, useId } from "react";
 import { FileText, Eye, Loader2, Check, AlertCircle } from "lucide-react";
 import { useReceiptNotes, type SaveStatus } from "@/hooks/use-receipt-notes";
-import { renderMarkdown } from "@/lib/markdown";
+import { renderMarkdownNodes } from "@/lib/markdown";
 
 type NotesEditorProps = {
   receiptId: string;
@@ -91,7 +91,7 @@ export function NotesEditor({ receiptId }: NotesEditorProps) {
             className="notes-preview min-h-[100px] rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-slate-200"
           >
             {text.trim() ? (
-              <div dangerouslySetInnerHTML={{ __html: renderMarkdown(text) }} />
+              <div>{renderMarkdownNodes(text)}</div>
             ) : (
               <p className="text-slate-500 italic">No notes yet.</p>
             )}
