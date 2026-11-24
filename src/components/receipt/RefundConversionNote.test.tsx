@@ -394,11 +394,11 @@ describe("RefundConversionNote", () => {
   });
 
   describe("RTL support", () => {
-    it("wrapper includes ltr:text-left and rtl:text-right classes", () => {
+    it("wrapper includes ltr:text-start and rtl:text-end classes", () => {
       render(<RefundConversionNote conversion={freshConversion} />);
       const wrapper = screen.getByTestId("refund-conversion-note");
-      expect(wrapper.className).toContain("ltr:text-left");
-      expect(wrapper.className).toContain("rtl:text-right");
+      expect(wrapper.className).toContain("ltr:text-start");
+      expect(wrapper.className).toContain("rtl:text-end");
     });
   });
 });

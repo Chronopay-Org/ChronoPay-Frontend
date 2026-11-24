@@ -238,7 +238,7 @@ function StepRow({ step, onClick, labelId, descId }: StepRowProps) {
         >
           {step.label}
           {step.optional && (
-            <span className="ml-1.5 text-xs text-slate-500">(optional)</span>
+            <span className="ms-1.5 text-xs text-slate-500">(optional)</span>
           )}
         </p>
         {step.description && (
@@ -264,7 +264,7 @@ function StepRow({ step, onClick, labelId, descId }: StepRowProps) {
   );
 
   const sharedClasses = clsx(
-    "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left",
+    "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start",
     "transition-colors duration-150",
     isInteractive && [
       "cursor-pointer",

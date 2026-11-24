@@ -255,7 +255,7 @@ export function StatusTimeline({
   return (
     <ol
       aria-label={ariaLabel}
-      className="relative space-y-4 border-l border-slate-700 pl-6"
+      className="relative space-y-4 border-s border-slate-700 ps-6"
     >
       {uniqueItems.map((item) => {
         const tone = STATUS_TIMELINE_TONES[item.tone ?? "neutral"];
@@ -277,7 +277,7 @@ export function StatusTimeline({
           >
             <span
               className={[
-                "absolute -left-[1.65rem] top-1 flex h-3.5 w-3.5 rounded-full ring-4 ring-slate-950 transition-transform",
+                "absolute -start-[1.65rem] top-1 flex h-3.5 w-3.5 rounded-full ring-4 ring-slate-950 transition-transform",
                 tone.dot,
                 isCurrent ? "scale-110" : "",
               ].join(" ")}
@@ -295,7 +295,7 @@ export function StatusTimeline({
                   <p className={["text-sm font-medium", tone.text].join(" ")}>
                     {item.title}
                     {isComplete ? (
-                      <span className="ml-2 text-xs text-emerald-300">Done</span>
+                      <span className="ms-2 text-xs text-emerald-300">Done</span>
                     ) : null}
                   </p>
                   {(item.actor || timestamp) ? (
@@ -447,7 +447,7 @@ export function BookingFlowShell({
                   <li key={step.id ?? `${step.title}-${index}`}>
                     <div
                       className={[
-                        "flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors motion-reduce:transition-none",
+                        "flex items-center gap-3 rounded-xl border px-3 py-2 text-start transition-colors motion-reduce:transition-none",
                         isCurrent
                           ? "border-cyan-400/80 bg-cyan-500/10 text-white"
                           : isComplete
@@ -544,7 +544,7 @@ export function BookingFlowShell({
                   className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3.5 py-2 text-sm font-medium text-slate-100 transition motion-reduce:transition-none hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Back"
                 >
-                  <ArrowLeft size={16} aria-hidden="true" />
+                  <ArrowLeft className="icon-directional" size={16} aria-hidden="true" />
                   Back
                 </button>
 
@@ -555,7 +555,7 @@ export function BookingFlowShell({
                   aria-label={isLastStep ? "Complete booking" : "Next"}
                 >
                   {isLastStep ? "Complete" : "Next"}
-                  {!isLastStep ? <ArrowRight size={16} aria-hidden="true" /> : null}
+                  {!isLastStep ? <ArrowRight className="icon-directional" size={16} aria-hidden="true" /> : null}
                 </button>
               </div>
             </>
@@ -725,7 +725,7 @@ export function RefundTracker({
           triggerLabel="Help: refund tracking"
         />
         {amount ? (
-          <span className="ml-auto rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2.5 py-1 text-xs font-medium text-cyan-100">
+          <span className="ms-auto rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2.5 py-1 text-xs font-medium text-cyan-100">
             Refund of {amount}
           </span>
         ) : null}

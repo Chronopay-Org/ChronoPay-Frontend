@@ -290,7 +290,7 @@ export default function TwoFactorEnroll({ onComplete, adapter }: TwoFactorEnroll
             <span className="text-slate-500 text-xs font-semibold">SCAN WITH AUTHENTICATOR APP</span>
           </div>
 
-          <div className="mb-6 text-left bg-slate-950 p-4 rounded-xl border border-slate-800">
+          <div className="mb-6 text-start bg-slate-950 p-4 rounded-xl border border-slate-800">
             <span className="block text-xs font-medium text-slate-400 mb-1">Manual Setup Key:</span>
             <div className="flex items-center justify-between font-mono text-sm text-cyan-300">
               <span className="tracking-wider">{secret}</span>

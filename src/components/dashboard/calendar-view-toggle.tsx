@@ -92,6 +92,15 @@ export function CalendarViewToggle({
         "inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-1",
         className
       )}
+      aria-label="Calendar view mode"
+    >
+      <div
+        className={clsx(
+          "inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5",
+          className
+        )}
+        role="tablist"
+        aria-label="Calendar view"
     >
       <div
         className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5"

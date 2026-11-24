@@ -1,6 +1,6 @@
 "use client";
 
-import { StatusChip } from "./ui/status-chip";
+import { StatusChip } from "@/components/dashboard/status-chip";
 import { useWallet } from "./useWallet";
 
 function formatAddress(address?: string) {
@@ -30,7 +30,7 @@ export function WalletStatusBadge() {
   if (status === "error") {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <StatusChip tone="danger">Wallet error</StatusChip>
+        <StatusChip tone="critical">Wallet error</StatusChip>
         <button
           type="button"
           onClick={connect}
@@ -61,7 +61,7 @@ export function WalletStatusBadge() {
 
   return (
     <span title={address ? `Connected wallet ${address}` : "Connected wallet"}>
-      <StatusChip tone="success">{formatAddress(address)}</StatusChip>
+      <StatusChip tone="positive">{formatAddress(address)}</StatusChip>
     </span>
   );
 }

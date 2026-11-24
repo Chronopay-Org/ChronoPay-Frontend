@@ -297,7 +297,7 @@ export function OnboardingTour({
           <button
             type="button"
             onClick={onComplete}
-            className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-700/50 p-0 text-slate-300 transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="absolute end-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-700/50 p-0 text-slate-300 transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
             aria-label="Close tour"
           >
             <X className="h-4 w-4" />
@@ -306,7 +306,7 @@ export function OnboardingTour({
           {/* Title */}
           <h2
             id={titleId}
-            className="mb-2 text-lg font-semibold text-white pr-6"
+            className="mb-2 text-lg font-semibold text-white pe-6"
           >
             {currentStep.title}
           </h2>
@@ -365,7 +365,7 @@ export function OnboardingTour({
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-600 px-4 py-2 text-sm font-medium text-white transition hover:from-cyan-600 hover:to-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
             >
               {isLastStep ? "Finish" : "Next"}
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="icon-directional h-4 w-4" />
             </button>
           </div>
         </div>

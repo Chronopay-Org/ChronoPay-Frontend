@@ -3,10 +3,10 @@ import clsx from "clsx";
 import type { NotificationItem as NotificationItemType } from "./types";
 
 const toneBorder: Record<string, string> = {
-  info: "border-l-cyan-400/40",
-  success: "border-l-emerald-400/40",
-  warning: "border-l-amber-400/40",
-  error: "border-l-rose-400/40",
+  info: "border-s-cyan-400/40",
+  success: "border-s-emerald-400/40",
+  warning: "border-s-amber-400/40",
+  error: "border-s-rose-400/40",
 };
 
 const toneBg: Record<string, string> = {
@@ -60,7 +60,7 @@ export function NotificationItem({
         "flex items-start gap-3 rounded-xl border border-white/8 p-3 transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950",
         "cursor-pointer",
-        "border-l-2",
+        "border-s-2",
         toneBorder[notification.tone],
         isSelected ? toneSelectedBg[notification.tone] : toneBg[notification.tone],
         isSelected && "ring-1 ring-inset ring-white/10",

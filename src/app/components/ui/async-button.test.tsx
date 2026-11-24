@@ -13,6 +13,8 @@ const defaultLabels: AsyncButtonLabels = {
 describe("AsyncButton", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    window.localStorage.removeItem("chronopay:offline-queue");
+    Object.defineProperty(navigator, "onLine", { value: true, configurable: true });
   });
 
   afterEach(() => {
@@ -113,6 +115,24 @@ describe("AsyncButton", () => {
       // Wait for the rejection to process
       await waitFor(() => {
         expect(screen.getByText("Failed")).toBeInTheDocument();
+      });
+
+      it("persists an opted-in action instead of running it while offline", () => {
+        Object.defineProperty(navigator, "onLine", { value: false, configurable: true });
+        const onAction = vi.fn().mockResolvedValue(undefined);
+        render(
+          <AsyncButton
+            onAction={onAction}
+            labels={defaultLabels}
+            offlineAction={{ id: "save-booking", label: "Save booking" }}
+          />,
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+        expect(onAction).not.toHaveBeenCalled();
+        expect(screen.getByRole("button", { name: "Queued" })).toBeInTheDocument();
+        expect(window.localStorage.getItem("chronopay:offline-queue")).toContain("Save booking");
       });
 
       // Should be in error state

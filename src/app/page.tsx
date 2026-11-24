@@ -1,4 +1,5 @@
 import { ButtonLink } from "./components/ui/button-link";
+import { DEMO_URL, REPO_URL } from "@/lib/site-links";
 
 const features = [
   {
@@ -48,7 +49,7 @@ export default function Home() {
           <a href="/marketplace" className="hover:text-white">Marketplace</a>
           <a href="/pricing" className="hover:text-white">Pricing</a>
           <a
-            href="https://github.com/Chronopay-Org/ChronoPay-Frontend"
+            href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-full border border-white/15 px-3 py-1 hover:border-white/30 hover:text-white"
@@ -109,7 +110,7 @@ export default function Home() {
         <p className="mt-16 rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm text-amber-200">
           Demo notice: all listings, suppliers, balances and receipts in this
           deployment are sample data. No real payments are processed. Live
-          demo: <a className="underline" href="https://chronopay-frontend-omega.vercel.app">chronopay-frontend-omega.vercel.app</a>.
+          demo: <a className="underline" href={DEMO_URL}>chronopay-frontend-omega.vercel.app</a>.
         </p>
       </main>
     </div>

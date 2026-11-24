@@ -65,12 +65,14 @@ export function CalendarAgendaView({
         Availability Agenda
       </h2>
 
+      <div aria-label="Available days grouped by month">
       <div role="group" aria-label="Available days grouped by month">
         {Object.entries(groupedByMonth).map(([month, monthDays]) => (
           <div key={month} className="mb-6 last:mb-0">
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">
               {month}
             </h3>
+            <ul className="space-y-2" role="list" aria-label={`Days in ${month}`}>
             <ul className="space-y-2" aria-label={`Days in ${month}`}>
               {monthDays.map((day) => {
                 const isBookable = day.status === "available" || day.status === "limited";
@@ -113,7 +115,7 @@ export function CalendarAgendaView({
                     {isBookable ? (
                       <button
                         onClick={() => onBook?.(day.date)}
-                        className="ml-4 rounded-full bg-cyan-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-400 focus-ring-cyan"
+                        className="ms-4 rounded-full bg-cyan-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-400 focus-ring-cyan"
                         aria-label={`Book slots for ${day.dateLabel}`}
                       >
                         Book
@@ -121,7 +123,7 @@ export function CalendarAgendaView({
                     ) : (
                       <button
                         disabled
-                        className="ml-4 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-sm font-medium text-slate-500 opacity-60"
+                        className="ms-4 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-sm font-medium text-slate-500 opacity-60"
                         aria-label={`No slots available for ${day.dateLabel}`}
                       >
                         {day.status === "full" ? "Fully Booked" : "Unavailable"}

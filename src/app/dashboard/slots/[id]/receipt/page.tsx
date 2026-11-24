@@ -161,6 +161,25 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
                     <dd className="font-mono text-white">{networkFeeTotal} {currency}</dd>
                   </div>
 
+                  <div className="ps-4 space-y-2 border-s border-white/10 ms-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <dt className="flex items-center gap-1.5 text-slate-400">
+                        Base Fee
+                        <Tooltip content="The minimum network fee required to include this transaction in a block. Burned by the network.">
+                          <Info className="h-3 w-3 text-slate-500" />
+                        </Tooltip>
+                      </dt>
+                      <dd className="font-mono text-slate-300">{baseFee} {currency}</dd>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <dt className="flex items-center gap-1.5 text-slate-400">
+                        Priority Fee
+                        <Tooltip content="An extra tip paid to validators to process your transaction faster.">
+                          <Info className="h-3 w-3 text-slate-500" />
+                        </Tooltip>
+                      </dt>
+                      <dd className="font-mono text-slate-300">{priorityFee} {currency}</dd>
+                    </div>
                   <div className="flex items-center justify-between text-xs pl-4 border-l border-white/10 ml-2">
                     <dt className="flex items-center gap-1.5 text-slate-400">
                       Base Fee

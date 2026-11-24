@@ -6,6 +6,7 @@ type WizardProgressState = {
   currentIndex: number;
   furthestIndex: number;
   skippedIds: string[];
+  resumed: boolean;
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -28,12 +29,12 @@ function readState(storageKey: string, stepCount: number): WizardProgressState {
         Math.max(stepCount - 1, 0),
       );
       const skippedIds = Array.isArray(parsed.skippedIds) ? parsed.skippedIds : [];
-      return { currentIndex, furthestIndex, skippedIds };
+      return { currentIndex, furthestIndex, skippedIds, resumed: true };
     }
   } catch {
     // sessionStorage may be unavailable (private browsing, storage disabled)
   }
-  return { currentIndex: 0, furthestIndex: 0, skippedIds: [] };
+  return { currentIndex: 0, furthestIndex: 0, skippedIds: [], resumed: false };
 }
 
 /**
@@ -51,7 +52,14 @@ export function useWizardProgress(storageKey: string, stepCount: number) {
     (next: WizardProgressState) => {
       setState(next);
       try {
-        sessionStorage.setItem(storageKey, JSON.stringify(next));
+        sessionStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            currentIndex: next.currentIndex,
+            furthestIndex: next.furthestIndex,
+            skippedIds: next.skippedIds,
+          }),
+        );
       } catch {
         // Ignore sessionStorage write errors
       }
@@ -69,7 +77,14 @@ export function useWizardProgress(storageKey: string, stepCount: number) {
           furthestIndex: Math.max(prev.furthestIndex, clamped),
         };
         try {
-          sessionStorage.setItem(storageKey, JSON.stringify(next));
+          sessionStorage.setItem(
+            storageKey,
+            JSON.stringify({
+              currentIndex: next.currentIndex,
+              furthestIndex: next.furthestIndex,
+              skippedIds: next.skippedIds,
+            }),
+          );
         } catch {
           // Ignore sessionStorage write errors
         }
@@ -95,7 +110,14 @@ export function useWizardProgress(storageKey: string, stepCount: number) {
           : prev.skippedIds.filter((id) => id !== stepId);
         const next = { ...prev, skippedIds: nextSkipped };
         try {
-          sessionStorage.setItem(storageKey, JSON.stringify(next));
+          sessionStorage.setItem(
+            storageKey,
+            JSON.stringify({
+              currentIndex: next.currentIndex,
+              furthestIndex: next.furthestIndex,
+              skippedIds: next.skippedIds,
+            }),
+          );
         } catch {
           // Ignore sessionStorage write errors
         }
@@ -106,13 +128,14 @@ export function useWizardProgress(storageKey: string, stepCount: number) {
   );
 
   const reset = useCallback(() => {
-    persist({ currentIndex: 0, furthestIndex: 0, skippedIds: [] });
+    persist({ currentIndex: 0, furthestIndex: 0, skippedIds: [], resumed: false });
   }, [persist]);
 
   return {
     currentIndex: state.currentIndex,
     furthestIndex: state.furthestIndex,
     skippedIds: state.skippedIds,
+    resumed: state.resumed,
     goToIndex,
     goNext,
     goBack,

@@ -126,7 +126,7 @@ export function UptimeCell({
           relative
           ${
             incidents.length > 0
-              ? "after:absolute after:top-0 after:right-0 after:w-1 after:h-full after:bg-red-300 after:rounded-sm after:opacity-70"
+              ? "after:absolute after:top-0 after:end-0 after:w-1 after:h-full after:bg-red-300 after:rounded-sm after:opacity-70"
               : ""
           }
         `}

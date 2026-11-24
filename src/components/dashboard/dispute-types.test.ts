@@ -11,6 +11,7 @@ describe('Dispute Types & Constants', () => {
       expect(DISPUTE_STATUS_LABELS.draft).toBe('Draft');
       expect(DISPUTE_STATUS_LABELS.submitted).toBe('Submitted');
       expect(DISPUTE_STATUS_LABELS.under_review).toBe('Under Review');
+      expect(DISPUTE_STATUS_LABELS.investigating).toBe('Investigating');
       expect(DISPUTE_STATUS_LABELS.mediator_assigned).toBe('Mediator Assigned');
       expect(DISPUTE_STATUS_LABELS.evidence_review).toBe('Evidence Review');
       expect(DISPUTE_STATUS_LABELS.negotiation).toBe('Negotiation');
@@ -43,6 +44,7 @@ describe('Dispute Types & Constants', () => {
       expect(DISPUTE_CATEGORIES.payment_issue.label).toBe('Payment Issue');
       expect(DISPUTE_CATEGORIES.cancellation_dispute.label).toBe('Cancellation Dispute');
       expect(DISPUTE_CATEGORIES.communication_issue.label).toBe('Communication Issue');
+      expect(DISPUTE_CATEGORIES.incorrect_duration.label).toBe('Incorrect Duration');
       expect(DISPUTE_CATEGORIES.other.label).toBe('Other');
     });
 

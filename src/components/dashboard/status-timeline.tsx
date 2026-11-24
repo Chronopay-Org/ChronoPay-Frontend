@@ -1,11 +1,24 @@
 "use client";
 
 import { useState, useRef, useId, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { TimelineItem, TimelineNode, TimelineBranchGroup, statusToneMap } from "./timeline-types";
 import { StatusChip } from "./status-chip";
-import { KycDocUpload } from "./kyc-doc-upload";
 import { KycLivenessCapture } from "./kyc-liveness-capture";
+import { useKycFlow } from "@/hooks/use-kyc-flow";
 import { Filter, GitFork, GitMerge, MessageSquareText } from "lucide-react";
+
+const KycDocUpload = dynamic(
+  () => import("./kyc-doc-upload").then((module) => module.KycDocUpload),
+  {
+    ssr: false,
+    loading: () => (
+      <div role="status" aria-live="polite" className="rounded-2xl bg-white/5 p-4 text-sm text-slate-300">
+        Loading document upload…
+      </div>
+    ),
+  },
+);
 
 interface StatusTimelineProps {
   items: TimelineNode[];
@@ -60,6 +73,25 @@ function filterMilestoneNodes(nodes: TimelineNode[]): TimelineNode[] {
     .filter(Boolean) as TimelineNode[];
 }
 
+function getKycCaptureStatus(
+  kind: "document" | "liveness",
+  stage: ReturnType<typeof useKycFlow>["stage"],
+  lastCaptureKind: KycCaptureKind,
+): TimelineItem["status"] {
+  if (stage === "rejected") return "failed";
+  if (stage === "verified") return "completed";
+  if (kind === "document") {
+    if (stage === "submitted") return "pending";
+    return stage === "needs_info" && lastCaptureKind === "document"
+      ? "warning"
+      : "completed";
+  }
+  if (stage === "needs_info" && lastCaptureKind === "liveness") {
+    return "warning";
+  }
+  return "pending";
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 //  Main component
 // ═══════════════════════════════════════════════════════════════════════
@@ -70,6 +102,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
   const statusId = useId();
   const listRef = useRef<HTMLOListElement>(null);
   const scrollTopRef = useRef(0);
+  const kycFlow = useKycFlow();
 
 
   // Determine which items to display
@@ -152,7 +185,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
       <ol
         ref={listRef}
         aria-label="Timeline events"
-        className="relative ml-3 max-h-[600px] border-s border-white/10 overflow-y-auto"
+        className="relative ms-3 max-h-[600px] border-s border-white/10 overflow-y-auto"
       >
         {displayedNodes.map((node, index) => {
           if (isBranchGroup(node)) {
@@ -161,6 +194,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
                 key={node.id}
                 group={node}
                 isLast={index === displayedNodes.length - 1}
+                kycFlow={kycFlow}
               />
             );
           }
@@ -169,6 +203,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
               key={(node as TimelineItem).id}
               item={node as TimelineItem}
               isLast={index === displayedNodes.length - 1}
+              kycFlow={kycFlow}
             />
           );
         })}
@@ -195,9 +230,11 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
 function BranchGroupEntry({
   group,
   isLast,
+  kycFlow,
 }: {
   group: TimelineBranchGroup;
   isLast: boolean;
+  kycFlow: ReturnType<typeof useKycFlow>;
 }) {
   const containerRef = useRef<HTMLLIElement>(null);
   const branchLabelsId = useId();
@@ -234,11 +271,11 @@ function BranchGroupEntry({
       role="group"
       aria-label={`Branch group: ${group.label}`}
       aria-labelledby={branchLabelsId}
-      className={`relative mb-10 ml-6 ${isLast ? "mb-0" : ""}`}
+      className={`relative mb-10 ms-6 ${isLast ? "mb-0" : ""}`}
     >
       {/* ── Fork indicator (dot) ───────────────────────────────── */}
       <span
-        className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 ring-8 ring-slate-900"
+        className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 ring-8 ring-slate-900"
         aria-hidden="true"
       >
         <GitFork className="h-3.5 w-3.5 text-white" />
@@ -275,20 +312,20 @@ function BranchGroupEntry({
                 role="group"
                 aria-label={`Branch ${branchIndex + 1}: ${branch.map((i) => i.title).join(", ")}`}
                 className={[
-                  "relative pl-6 mb-4",
+                  "relative ps-6 mb-4",
                   isLastBranch && !hasRejoin ? "mb-0" : "",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded",
                 ].join(" ")}
               >
                 {/* Branch vertical line (lighter than main timeline) */}
                 <span
-                  className="absolute left-0 top-0 bottom-0 w-px bg-white/5"
+                  className="absolute start-0 top-0 bottom-0 w-px bg-white/5"
                   aria-hidden="true"
                 />
 
                 {/* Branch connector (horizontal line from main timeline to branch) */}
                 <span
-                  className="absolute -left-[18px] top-3 h-px w-[18px] bg-white/10"
+                  className="absolute -start-[18px] top-3 h-px w-[18px] bg-white/10"
                   aria-hidden="true"
                 />
 
@@ -304,12 +341,13 @@ function BranchGroupEntry({
                 </div>
 
                 {/* Branch items */}
-                <div className="relative border-l border-white/10 ml-1">
+                <div className="relative border-s border-white/10 ms-1">
                   {branch.map((item, itemIndex) => (
                     <TimelineEntry
                       key={item.id}
                       item={item}
                       isLast={itemIndex === branch.length - 1}
+                      kycFlow={kycFlow}
                     />
                   ))}
                 </div>
@@ -319,20 +357,20 @@ function BranchGroupEntry({
 
           {/* ── Rejoin marker ────────────────────────────────────────── */}
           {group.rejoinLabel && (
-            <div className="relative pl-6 mt-2" role="region" aria-label={`Rejoin: ${group.rejoinLabel}`}>
+            <div className="relative ps-6 mt-2" role="region" aria-label={`Rejoin: ${group.rejoinLabel}`}>
               {/* Horizontal connector from branches back to main line */}
               <span
-                className="absolute -left-[18px] top-3 h-px w-[18px] bg-white/10"
+                className="absolute -start-[18px] top-3 h-px w-[18px] bg-white/10"
                 aria-hidden="true"
               />
               {/* Rejoin dot */}
               <span
-                className="absolute -left-[7px] top-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/80 ring-4 ring-slate-900"
+                className="absolute -start-[7px] top-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/80 ring-4 ring-slate-900"
                 aria-hidden="true"
               >
                 <GitMerge className="h-2.5 w-2.5 text-white" />
               </span>
-              <div className="flex items-center gap-2 ml-1">
+              <div className="flex items-center gap-2 ms-1">
                 <GitMerge className="h-3 w-3 text-emerald-400" aria-hidden="true" />
                 <span className="text-xs font-semibold tracking-wider text-emerald-400">
                   {group.rejoinLabel}
@@ -350,15 +388,45 @@ function BranchGroupEntry({
 //  Timeline entry sub-component
 // ═══════════════════════════════════════════════════════════════════════
 
-function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }) {
+function TimelineEntry({
+  item,
+  isLast,
+  kycFlow,
+}: {
+  item: TimelineItem;
+  isLast: boolean;
+  kycFlow: ReturnType<typeof useKycFlow>;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasDetails = Boolean(item.details || item.actor);
+  const isDocumentCapture = item.id === "kyc-doc-upload";
+  const isLivenessCapture = item.id === "kyc-liveness";
+  const captureStatus =
+    isDocumentCapture || isLivenessCapture
+      ? getKycCaptureStatus(
+          isDocumentCapture ? "document" : "liveness",
+          kycFlow.stage,
+          kycFlow.lastCaptureKind,
+        )
+      : item.status;
+  const displayedItem =
+    isDocumentCapture || isLivenessCapture
+      ? { ...item, status: captureStatus }
+      : item;
+  const canRetryCapture =
+    captureStatus === "warning" ||
+    (captureStatus === "pending" &&
+      (isDocumentCapture ||
+        (isLivenessCapture &&
+          (kycFlow.stage === "reviewing" ||
+            (kycFlow.stage === "needs_info" &&
+              kycFlow.lastCaptureKind === "liveness")))));
 
   return (
     <li className={`ms-6 ${isLast ? "" : "mb-10"}`}>
       <span
         className={`absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full ring-8 ring-slate-950 ${
-          item.status === "completed" ? "bg-emerald-500" : "bg-slate-700"
+          displayedItem.status === "completed" ? "bg-emerald-500" : "bg-slate-700"
         }`}
         aria-hidden="true"
       >
@@ -383,7 +451,7 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
             </h3>
             <p className="text-sm text-slate-400">{item.timestamp}</p>
           </div>
-          <StatusChip tone={statusToneMap[item.status]}>{item.status}</StatusChip>
+          <StatusChip tone={statusToneMap[displayedItem.status]}>{displayedItem.status}</StatusChip>
         </div>
 
         {item.variant === "mediator_assigned" && item.mediator ? (
@@ -396,7 +464,7 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
             onClick={() => setIsExpanded((current) => !current)}
             aria-expanded={isExpanded}
             aria-controls={`details-${item.id}`}
-            className="rounded text-left text-sm text-cyan-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+            className="rounded text-start text-sm text-cyan-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           >
             {isExpanded ? "Hide details" : "Show details"}
           </button>
@@ -412,15 +480,20 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
         >
           {item.actor ? <p>Actor: {item.actor}</p> : null}
           {item.details ? <p className={item.actor ? "mt-1" : ""}>{item.details}</p> : null}
-          {item.id === "kyc-liveness" && item.status === "pending" ? (
+          {isLivenessCapture && canRetryCapture ? (
             <div className="mt-4">
-              <KycLivenessCapture onCaptureComplete={() => {}} />
+              <KycLivenessCapture onCaptureComplete={kycFlow.completeLiveness} />
             </div>
           ) : null}
-          {item.id === "kyc-doc-upload" && item.status === "pending" ? (
+          {isDocumentCapture && canRetryCapture ? (
             <div className="mt-4">
-              <KycDocUpload onCaptureComplete={() => {}} />
+              <KycDocUpload onCaptureComplete={kycFlow.completeDocument} />
             </div>
+          ) : null}
+          {kycFlow.error && (isDocumentCapture || isLivenessCapture) ? (
+            <p className="mt-3 text-sm text-rose-300" role="alert">
+              {kycFlow.error}
+            </p>
           ) : null}
         </div>
       ) : null}

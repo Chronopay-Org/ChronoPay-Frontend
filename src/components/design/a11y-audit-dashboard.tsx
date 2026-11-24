@@ -7,6 +7,7 @@ import {
   SAMPLE_AUDIT_ISSUES,
   type AccessibilityIssue,
 } from "@/lib/wcag-references";
+import { REPO_URL } from "@/lib/site-links";
 
 type SeverityFilter = "all" | "critical" | "major" | "minor" | "warning";
 
@@ -48,7 +49,7 @@ function IssueCard({
       onClick={onClick}
       aria-pressed={isSelected}
       aria-label={`${issue.title}, severity: ${issue.severity}`}
-      className={`w-full text-left rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 p-4 ${severityColors[issue.severity]} ${
+      className={`w-full text-start rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 p-4 ${severityColors[issue.severity]} ${
         isSelected ? "bg-white/10 border-cyan-400/50" : "bg-slate-900/50"
       }`}
     >
@@ -254,7 +255,7 @@ export function A11yAuditDashboard() {
           Remediation Guidance
         </p>
         <p className="text-xs text-slate-400 leading-relaxed">
-          For full remediation guidance, consult the <a href="https://github.com/Chronopay-Org/ChronoPay-Frontend/tree/main/docs" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Accessibility Remediation Docs</a>.
+          For full remediation guidance, consult the <a href={`${REPO_URL}/tree/main/docs`} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Accessibility Remediation Docs</a>.
         </p>
       </div>
     </div>
