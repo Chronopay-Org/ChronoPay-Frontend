@@ -104,7 +104,7 @@ export function StatusCell({
           role="tooltip"
           className={clsx(
             "absolute z-50 w-56 rounded-lg border border-white/10 bg-slate-800 px-3 py-2.5 text-sm shadow-xl",
-            "bottom-full mb-2 left-1/2 -translate-x-1/2",
+            "bottom-full mb-2 start-1/2 -translate-x-1/2",
           )}
         >
           <p className="font-medium text-white">{component.label}</p>
@@ -116,7 +116,7 @@ export function StatusCell({
             </p>
           </div>
           <div
-            className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-0 w-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"
+            className="absolute -bottom-1 start-1/2 -translate-x-1/2 h-0 w-0 border-s-4 border-e-4 border-t-4 border-transparent border-t-slate-800"
             aria-hidden="true"
           />
         </div>

@@ -77,7 +77,7 @@ export function RoleOnboardingDialog() {
                   setAnnouncement(`${meta.label} selected`);
                 }}
                 className={clsx(
-                  "min-h-[240px] rounded-[28px] border p-5 text-left transition duration-200",
+                  "min-h-[240px] rounded-[28px] border p-5 text-start transition duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                   isSelected
                     ? "border-cyan-300/60 bg-cyan-300/10 shadow-[0_20px_70px_-45px_rgba(34,211,238,0.75)]"

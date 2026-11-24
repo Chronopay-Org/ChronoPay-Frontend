@@ -67,13 +67,15 @@ describe("DisputeTrackingPanel", () => {
       />,
     );
 
-    expect(screen.getByText("Service not delivered")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Service not delivered" })).toBeInTheDocument();
     expect(screen.getByText(/high priority/i)).toBeInTheDocument();
     expect(screen.getByText("The provider did not complete the agreed work.")).toBeInTheDocument();
-    expect(screen.getByText("Amina Yusuf")).toBeInTheDocument();
-    expect(screen.getByText("Responds within 24 hours")).toBeInTheDocument();
+    expect(screen.getAllByText("Amina Yusuf").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Responds within 24 hours").length).toBeGreaterThan(0);
     expect(screen.getByText(/evidence files/i)).toBeInTheDocument();
     expect(screen.getByText("proof.pdf")).toBeInTheDocument();
+    expect(screen.getByText("Safe")).toBeInTheDocument();
+    expect(screen.getByText("Uploaded")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /view proof\.pdf/i })).toBeInTheDocument();
     expect(screen.getByText("I need help resolving this issue.")).toBeInTheDocument();
     expect(screen.getByText("Add a note")).toBeInTheDocument();
@@ -120,8 +122,8 @@ describe("DisputeTrackingPanel", () => {
     resolveNote?.();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /send/i })).toBeEnabled();
       expect(textarea).toHaveValue("");
+      expect(screen.getByRole("button", { name: /send/i })).toBeDisabled();
     });
   });
 
@@ -144,5 +146,85 @@ describe("DisputeTrackingPanel", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText("Add a note")).not.toBeInTheDocument();
     expect(screen.getByText(/resolution:/i)).toBeInTheDocument();
+  });
+
+  it("displays scan failure and threat detected states for evidence files", () => {
+    const dispute = createDispute({
+      evidence: [
+        {
+          id: "ev-clean",
+          fileName: "clean.pdf",
+          fileSize: 1024,
+          fileType: "application/pdf",
+          uploadStatus: "completed",
+          scanStatus: "clean",
+          uploadedAt: "2026-06-03T12:00:00.000Z",
+        },
+        {
+          id: "ev-threat",
+          fileName: "infected_attachment.pdf",
+          fileSize: 2048,
+          fileType: "application/pdf",
+          uploadStatus: "completed",
+          scanStatus: "threat_detected",
+          uploadedAt: "2026-06-03T12:01:00.000Z",
+        },
+        {
+          id: "ev-failed",
+          fileName: "corrupt.png",
+          fileSize: 4096,
+          fileType: "image/png",
+          uploadStatus: "failed",
+          scanStatus: "failed",
+          uploadedAt: "2026-06-03T12:02:00.000Z",
+        },
+      ],
+    });
+
+    render(<DisputeTrackingPanel dispute={dispute} />);
+
+    expect(screen.getByText("clean.pdf")).toBeInTheDocument();
+    expect(screen.getByText("Safe")).toBeInTheDocument();
+    expect(screen.getByText("infected_attachment.pdf")).toBeInTheDocument();
+    expect(screen.getByText("Threat Detected")).toBeInTheDocument();
+    expect(screen.getByText("corrupt.png")).toBeInTheDocument();
+    expect(screen.getByText("Scan Failed")).toBeInTheDocument();
+    expect(screen.getByText("Upload Failed")).toBeInTheDocument();
+  });
+
+  it("updates timeline entries as dispute status transitions", () => {
+    const { rerender } = render(
+      <DisputeTrackingPanel
+        dispute={createDispute({
+          status: "submitted",
+          mediator: undefined,
+        })}
+      />,
+    );
+
+    expect(screen.getByText("Dispute Filed")).toBeInTheDocument();
+    expect(screen.getByText("Dispute Submitted")).toBeInTheDocument();
+
+    rerender(
+      <DisputeTrackingPanel
+        dispute={createDispute({
+          status: "evidence_review",
+        })}
+      />,
+    );
+    expect(screen.getByText("Mediator Assigned")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Evidence Review/i })).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
+
+    rerender(
+      <DisputeTrackingPanel
+        dispute={createDispute({
+          status: "escalated",
+        })}
+      />,
+    );
+    expect(screen.getByText("Dispute Escalated")).toBeInTheDocument();
   });
 });

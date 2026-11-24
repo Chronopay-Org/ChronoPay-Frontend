@@ -20,6 +20,7 @@ export type ReviewModerationFlagModalProps = {
   isAlreadyFlagged?: boolean;
   isOffline?: boolean;
   initialReason?: ReviewModerationReason;
+  onSubmit?: (reason: ReviewModerationReason, context: string) => Promise<void> | void;
 };
 
 const reasonOptions: Array<{ value: ReviewModerationReason; label: string; description: string }> = [
@@ -57,6 +58,7 @@ export function ReviewModerationFlagModal({
   isAlreadyFlagged = false,
   isOffline = false,
   initialReason,
+  onSubmit,
 }: ReviewModerationFlagModalProps) {
   const titleId = useId();
   const contextId = useId();
@@ -66,7 +68,12 @@ export function ReviewModerationFlagModal({
   const [context, setContext] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
-  const { toast } = useToast();
+  let toast: ReturnType<typeof useToast>["toast"] | undefined;
+  try {
+    toast = useToast().toast;
+  } catch {
+    toast = undefined;
+  }
 
   useEffect(() => {
     if (!isOpen) return;
@@ -105,7 +112,7 @@ export function ReviewModerationFlagModal({
       setSubmitted(true);
       setValidationMessage(null);
       onClose();
-      toast({
+      toast?.({
         variant: "info",
         title: "Review already flagged",
         description: "This review is already in moderation and no duplicate report was sent.",
@@ -115,7 +122,7 @@ export function ReviewModerationFlagModal({
 
     if (!selectedReason) {
       setValidationMessage("Choose a reason before submitting the report.");
-      toast({
+      toast?.({
         variant: "warning",
         title: "Select a reason",
         description: "Choose a reason before submitting the report.",
@@ -125,8 +132,9 @@ export function ReviewModerationFlagModal({
 
     setSubmitted(true);
     setValidationMessage(null);
+    void onSubmit?.(selectedReason, context.trim());
     onClose();
-    toast({
+    toast?.({
       variant: "success",
       title: "Report submitted",
       description: `We’ve recorded your report for ${reviewId}. Moderators will review it shortly.`,

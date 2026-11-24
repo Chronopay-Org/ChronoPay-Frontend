@@ -49,7 +49,7 @@ function DesktopMatrix({ config }: { config: StatusMatrixConfig }) {
       >
         <div role="rowgroup">
           <div role="row" className="grid" style={{ gridTemplateColumns: `160px repeat(${config.regions.length}, 1fr)` }}>
-            <div role="columnheader" className="pb-3 pr-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <div role="columnheader" className="pb-3 pe-3 text-start text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               Component
             </div>
             {config.regions.map((region) => (
@@ -85,7 +85,7 @@ function DesktopMatrix({ config }: { config: StatusMatrixConfig }) {
             >
               <div
                 role="rowheader"
-                className="flex items-center py-3 pr-3 text-sm font-medium text-slate-300"
+                className="flex items-center py-3 pe-3 text-sm font-medium text-slate-300"
               >
                 {component.label}
               </div>
@@ -129,7 +129,7 @@ function MobileMatrix({ config }: { config: StatusMatrixConfig }) {
               type="button"
               onClick={() => setExpandedId(isExpanded ? null : component.id)}
               aria-expanded={isExpanded}
-              className="flex w-full items-center justify-between px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300 rounded-xl"
+              className="flex w-full items-center justify-between px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300 rounded-xl"
             >
               <span className="text-sm font-medium text-slate-200">{component.label}</span>
               <ChevronDown

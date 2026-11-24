@@ -375,7 +375,7 @@ export function A11yTrendChart({
       {/* ── Tooltip ── */}
       {hoveredIndex !== null && stacked[hoveredIndex] && (
         <div
-          className="absolute top-0 left-0 z-10 -translate-y-full -translate-x-1/2 pointer-events-none"
+          className="absolute top-0 start-0 z-10 -translate-y-full -translate-x-1/2 pointer-events-none"
           style={{
             left: `${MARGIN.left + scaleLinear(hoveredIndex, 0, stacked.length - 1, 0, innerW)}px`,
             top: `${MARGIN.top - 4}px`,

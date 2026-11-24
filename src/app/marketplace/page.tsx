@@ -1,5 +1,8 @@
 "use client";
 
+import { Suspense, useEffect, useMemo } from "react";
+import Image from "next/image";
+import { Suspense, useEffect } from "react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -8,6 +11,11 @@ import {
 } from "./components/recently-viewed-rail";
 import { PanelShell } from "@/components/dashboard/panel-shell";
 import {
+  ResultsPerPageSelector,
+  usePageSize,
+} from "@/components/marketplace/results-per-page-selector";
+import { useListings } from "@/lib/api/hooks";
+import MarketplaceLoading from "./loading";
   FilterSidebar,
   type FilterGroup,
 } from "@/components/dashboard/filter-sidebar";
@@ -62,6 +70,26 @@ function MarketplaceGrid() {
     setPage,
   } = useMarketplaceQuery();
   const { addItem } = useRecentlyViewed();
+  const { data: catalogue, loading, error } = useListings();
+
+  useEffect(() => {
+    if (!catalogue) return;
+
+    try {
+      if (localStorage.getItem("chronopay-marketplace-visited")) return;
+      catalogue.slice(0, 4).forEach((item, index) => {
+        setTimeout(() => {
+          addItem(item);
+        }, index * 100);
+      });
+      localStorage.setItem("chronopay-marketplace-visited", "true");
+    } catch {
+      // Storage can be disabled; listing data remains usable without the rail seed.
+    }
+  }, [addItem, catalogue]);
+
+  if (error) throw error;
+  if (loading || !catalogue) return <MarketplaceLoading />;
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const catalogue = useMemo(() => buildCatalogue(), []);
@@ -254,6 +282,48 @@ function MarketplaceGrid() {
               className="flex min-h-64 flex-col items-center justify-center rounded-lg border border-white/10 bg-zinc-900/40 p-8 text-center"
               data-testid="marketplace-empty-state"
             >
+              {item.image ? (
+                <div
+                  className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-zinc-800"
+                  aria-hidden="true"
+                >
+                  <Image
+                    src={item.image}
+                    alt=""
+                    fill
+                    sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover transition-transform duration-200 group-hover:scale-105"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="flex aspect-video w-full items-center justify-center rounded-t-lg bg-gradient-to-br from-slate-900 to-slate-800 text-sm font-medium uppercase tracking-[0.18em] text-slate-500"
+                  aria-hidden="true"
+                >
+                  Demo
+                </div>
+              )}
+              <div className="p-4">
+                <h3 className="line-clamp-2 text-base font-medium text-white">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm text-zinc-400">{item.price}</p>
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ol>
+
+      {/* Per-page selector lives at the bottom of the results.
+          It owns a single source of truth via `usePageSize` so a future
+          pagination / infinite-scroll consumer can subscribe to the same
+          hook and stay automatically in sync. */}
+      <div className="mt-6 border-t border-white/10 pt-5">
+        <ResultsPerPageSelector
+          value={value}
+          onChange={setValue}
+          totalCount={catalogue.length}
+        />
               <h3 className="text-base font-semibold text-white">
                 No matching listings
               </h3>
@@ -362,20 +432,32 @@ function MarketplaceGrid() {
 }
 
 export default function Marketplace() {
-  const { addItem } = useRecentlyViewed();
+  const { addItems } = useRecentlyViewed();
 
   // Populate recently-viewed rail on first visit.
   useEffect(() => {
-    const hasVisited = localStorage.getItem("chronopay-marketplace-visited");
-    if (!hasVisited) {
-      seedItems.forEach((item, index) => {
-        setTimeout(() => {
-          addItem(item);
-        }, index * 100);
-      });
-      localStorage.setItem("chronopay-marketplace-visited", "true");
+    let hasVisited: string | null = null;
+    try {
+      hasVisited = localStorage.getItem("chronopay-marketplace-visited");
+    } catch {
+      return;
     }
-  }, [addItem]);
+
+    if (hasVisited) return;
+
+    const timerId = setTimeout(() => {
+      addItems(seedItems);
+      try {
+        localStorage.setItem("chronopay-marketplace-visited", "true");
+      } catch {
+        // Ignore storage errors
+      }
+    }, 0);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [addItems]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">

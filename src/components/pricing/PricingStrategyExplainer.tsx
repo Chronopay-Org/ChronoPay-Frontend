@@ -117,7 +117,7 @@ export function PricingStrategyExplainer({
               <div className="p-4 text-sm text-rose-300">
                 {error}
                 <button
-                  className="ml-3 underline"
+                  className="ms-3 underline"
                   onClick={() => {
                     setError(null);
                     setLoading(true);

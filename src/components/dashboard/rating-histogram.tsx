@@ -63,7 +63,7 @@ export function RatingHistogram({
             className="flex items-center gap-3 text-sm"
             aria-label={`${row.stars} stars: ${row.count} reviews, ${row.percentage}%`}
           >
-            <span className="w-12 text-right shrink-0 text-slate-300 tabular-nums">
+            <span className="w-12 text-end shrink-0 text-slate-300 tabular-nums">
               {row.stars} <span className="sr-only">stars</span>
               <span aria-hidden="true">★</span>
             </span>
@@ -73,7 +73,7 @@ export function RatingHistogram({
                 style={{ width: `${row.percentage}%` }}
               />
             </div>
-            <span className="w-12 text-right shrink-0 text-slate-400 tabular-nums">
+            <span className="w-12 text-end shrink-0 text-slate-400 tabular-nums">
               {row.percentage}%
             </span>
           </li>

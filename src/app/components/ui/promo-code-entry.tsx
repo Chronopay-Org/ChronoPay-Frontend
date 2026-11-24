@@ -167,7 +167,7 @@ export function PromoCodeEntry({ baseTotal, onDiscountApplied }: PromoCodeEntryP
       <button
         type="button"
         onClick={handleToggle}
-        className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-left text-sm font-semibold text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+        className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-start text-sm font-semibold text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
         aria-expanded={isOpen}
         aria-controls="promo-code-panel"
       >

@@ -32,7 +32,11 @@ export function useScrollRestoration(listId: string) {
               // Clear badge after 3 seconds
               scrollTimeoutRef.current = setTimeout(() => {
                 setRestoredItemId(null);
-                sessionStorage.removeItem(`${SCROLL_RESTORATION_KEY}-${listId}`);
+                try {
+                  sessionStorage.removeItem(`${SCROLL_RESTORATION_KEY}-${listId}`);
+                } catch (e) {
+                  console.error("Failed to clear scroll restoration", e);
+                }
               }, 3000);
             }
           });
@@ -43,7 +47,7 @@ export function useScrollRestoration(listId: string) {
     }
 
     return () => {
-      if (scrollTimeoutRef.current) {
+      if (scrollTimeoutRef.current !== undefined) {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
@@ -55,11 +59,19 @@ export function useScrollRestoration(listId: string) {
       itemId,
       timestamp: Date.now(),
     };
-    sessionStorage.setItem(`${SCROLL_RESTORATION_KEY}-${listId}`, JSON.stringify(data));
+    try {
+      sessionStorage.setItem(`${SCROLL_RESTORATION_KEY}-${listId}`, JSON.stringify(data));
+    } catch (e) {
+      console.error("Failed to save scroll restoration", e);
+    }
   }, [listId]);
 
   const resetScrollRestoration = useCallback(() => {
-    sessionStorage.removeItem(`${SCROLL_RESTORATION_KEY}-${listId}`);
+    try {
+      sessionStorage.removeItem(`${SCROLL_RESTORATION_KEY}-${listId}`);
+    } catch (e) {
+      console.error("Failed to reset scroll restoration", e);
+    }
   }, [listId]);
 
   return {

@@ -5,7 +5,7 @@ import {
   DisputeTrackingPanel,
   type Dispute,
   type DisputeNote,
-} from "../dispute-tracking-panel";
+} from "@/components/dashboard/dispute-tracking-panel";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -62,7 +62,7 @@ describe("DisputeTrackingPanel — status header", () => {
 
   it.each(cases)("renders the label for status %s", (status, label) => {
     renderPanel(makeDispute({ status }));
-    expect(screen.getByText(label)).toBeInTheDocument();
+    expect(screen.getAllByText(label).length).toBeGreaterThan(0);
   });
 
   it("renders the last-updated line wired to dispute.updatedAt", () => {
@@ -102,7 +102,7 @@ describe("DisputeTrackingPanel — status header", () => {
 describe("DisputeTrackingPanel — evidence", () => {
   it("does not render the Evidence section when there is no evidence", () => {
     renderPanel(makeDispute({ evidence: [] }));
-    expect(screen.queryByText("Evidence")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Evidence Files/i)).not.toBeInTheDocument();
   });
 
   it("renders uploaded and clean-scan evidence", () => {
@@ -121,12 +121,11 @@ describe("DisputeTrackingPanel — evidence", () => {
         ],
       }),
     );
-    expect(screen.getByText("Evidence")).toBeInTheDocument();
+    expect(screen.getByText(/Evidence Files \(1\)/i)).toBeInTheDocument();
     expect(screen.getByText("receipt.pdf")).toBeInTheDocument();
-    expect(screen.getByText("PDF")).toBeInTheDocument();
-    expect(screen.getByText("✓ Clean")).toBeInTheDocument();
+    expect(screen.getByText("Safe")).toBeInTheDocument();
     expect(screen.getByText("Uploaded")).toBeInTheDocument();
-    expect(screen.getByText("2.0 KB")).toBeInTheDocument();
+    expect(screen.getByText(/2\.0 KB/)).toBeInTheDocument();
   });
 
   it("does not show the clean or uploaded badges for pending/failed evidence", () => {
@@ -146,17 +145,52 @@ describe("DisputeTrackingPanel — evidence", () => {
       }),
     );
     expect(screen.getByText("draft.png")).toBeInTheDocument();
-    expect(screen.queryByText("✓ Clean")).not.toBeInTheDocument();
+    expect(screen.queryByText("Safe")).not.toBeInTheDocument();
     expect(screen.queryByText("Uploaded")).not.toBeInTheDocument();
+    expect(screen.getByText("Scan Pending")).toBeInTheDocument();
+    expect(screen.getByText("Pending")).toBeInTheDocument();
+  });
+
+  it("renders scan failure and threat detected statuses for evidence", () => {
+    renderPanel(
+      makeDispute({
+        evidence: [
+          {
+            id: "ev-3",
+            fileName: "virus.pdf",
+            fileSize: 1024,
+            fileType: "application/pdf",
+            uploadStatus: "completed",
+            scanStatus: "threat_detected",
+            uploadedAt: "2026-06-30T09:00:00Z",
+          },
+          {
+            id: "ev-4",
+            fileName: "broken.png",
+            fileSize: 1024,
+            fileType: "image/png",
+            uploadStatus: "failed",
+            scanStatus: "failed",
+            uploadedAt: "2026-06-30T09:00:00Z",
+          },
+        ],
+      }),
+    );
+    expect(screen.getByText("virus.pdf")).toBeInTheDocument();
+    expect(screen.getByText("Threat Detected")).toBeInTheDocument();
+    expect(screen.getByText("broken.png")).toBeInTheDocument();
+    expect(screen.getByText("Scan Failed")).toBeInTheDocument();
+    expect(screen.getByText("Upload Failed")).toBeInTheDocument();
   });
 });
 
-// ─── Notes timeline ──────────────────────────────────────────────────────────
+// ─── Notes & status timeline ─────────────────────────────────────────────────
 
-describe("DisputeTrackingPanel — notes timeline", () => {
-  it("always renders the Activity Timeline heading, even with no notes", () => {
+describe("DisputeTrackingPanel — timeline & notes", () => {
+  it("always renders the Communication & Notes and Status timeline sections, even with no notes", () => {
     renderPanel(makeDispute({ notes: [] }));
-    expect(screen.getByText("Activity Timeline")).toBeInTheDocument();
+    expect(screen.getByText("Communication & Notes")).toBeInTheDocument();
+    expect(screen.getByLabelText("Status timeline")).toBeInTheDocument();
   });
 
   it("renders every note with author, role and content", () => {
@@ -169,11 +203,47 @@ describe("DisputeTrackingPanel — notes timeline", () => {
       }),
     );
     expect(screen.getByText("Buyer One")).toBeInTheDocument();
-    expect(screen.getByText("(buyer)")).toBeInTheDocument();
+    expect(screen.getByText("buyer")).toBeInTheDocument();
     expect(screen.getByText("Please review.")).toBeInTheDocument();
     expect(screen.getByText("Seller One")).toBeInTheDocument();
-    expect(screen.getByText("(seller)")).toBeInTheDocument();
+    expect(screen.getByText("seller")).toBeInTheDocument();
     expect(screen.getByText("Evidence attached.")).toBeInTheDocument();
+  });
+
+  it("updates timeline milestones and active steps as dispute status changes", () => {
+    const { rerender } = renderPanel(makeDispute({ status: "submitted" }));
+    expect(screen.getByText("Dispute Filed")).toBeInTheDocument();
+    expect(screen.getByText("Dispute Submitted")).toBeInTheDocument();
+
+    rerender(
+      <DisputeTrackingPanel
+        dispute={makeDispute({
+          status: "investigating",
+        })}
+        onAddNote={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: /Investigating/i })).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
+
+    rerender(
+      <DisputeTrackingPanel
+        dispute={makeDispute({
+          status: "resolved",
+          resolution: {
+            type: "full_refund",
+            description: "Refund approved by mediator.",
+            resolvedAt: "2026-07-01T10:00:00Z",
+            resolvedBy: "Amina Yusuf",
+          },
+        })}
+        onAddNote={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Dispute Resolved")).toBeInTheDocument();
+    expect(screen.getByText(/Resolution: Full Refund/i)).toBeInTheDocument();
   });
 });
 
@@ -182,8 +252,8 @@ describe("DisputeTrackingPanel — notes timeline", () => {
 describe("DisputeTrackingPanel — add note", () => {
   it("disables the submit button until non-whitespace content is entered", async () => {
     renderPanel(makeDispute());
-    const input = screen.getByPlaceholderText("Type your message...");
-    const button = screen.getByRole("button");
+    const input = screen.getByPlaceholderText("Type your message or note here...");
+    const button = screen.getByRole("button", { name: /send/i });
 
     expect(button).toBeDisabled();
 
@@ -196,8 +266,8 @@ describe("DisputeTrackingPanel — add note", () => {
 
   it("submits the trimmed note, clears the input and re-disables the button", async () => {
     const { onAddNote } = renderPanel(makeDispute());
-    const input = screen.getByPlaceholderText("Type your message...");
-    const button = screen.getByRole("button");
+    const input = screen.getByPlaceholderText("Type your message or note here...");
+    const button = screen.getByRole("button", { name: /send/i });
 
     await userEvent.type(input, "  needs follow up  ");
     await userEvent.click(button);
@@ -208,11 +278,11 @@ describe("DisputeTrackingPanel — add note", () => {
     expect(button).toBeDisabled();
   });
 
-  it("ignores a whitespace-only form submission", async () => {
+  it("ignores a whitespace-only submission", async () => {
     const { onAddNote } = renderPanel(makeDispute());
-    const form = screen.getByRole("button").closest("form") as HTMLFormElement;
+    const button = screen.getByRole("button", { name: /send/i });
 
-    fireEvent.submit(form);
+    fireEvent.click(button);
     await Promise.resolve();
 
     expect(onAddNote).not.toHaveBeenCalled();
@@ -226,15 +296,15 @@ describe("DisputeTrackingPanel — add note", () => {
       }),
     );
     renderPanel(makeDispute(), onAddNote);
-    const input = screen.getByPlaceholderText("Type your message...");
-    const button = screen.getByRole("button");
+    const input = screen.getByPlaceholderText("Type your message or note here...");
+    const button = screen.getByRole("button", { name: /send/i });
 
     await userEvent.type(input, "checking");
     fireEvent.click(button);
 
     expect(onAddNote).toHaveBeenCalledWith("checking");
     await waitFor(() => expect(input).toBeDisabled());
-    expect(button).toBeDisabled();
+    expect(screen.getByRole("button", { name: /sending/i })).toBeDisabled();
 
     await act(async () => {
       resolveNote?.();
@@ -246,7 +316,7 @@ describe("DisputeTrackingPanel — add note", () => {
 
   it("caps the note input at 500 characters", () => {
     renderPanel(makeDispute());
-    const input = screen.getByPlaceholderText("Type your message...");
+    const input = screen.getByPlaceholderText("Type your message or note here...");
     expect(input).toHaveAttribute("maxlength", "500");
   });
 });

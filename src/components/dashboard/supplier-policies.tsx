@@ -22,7 +22,7 @@ export function SupplierPolicies({ policies = DEFAULT_POLICIES, loading = false 
   if (loading) {
     return (
       <PanelShell id="policies" title="Policies" description="Booking and cancellation policies">
-        <div className="flex items-center justify-center py-8 text-slate-400" role="status"><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />Loading policies…</div>
+        <div className="flex items-center justify-center py-8 text-slate-400" role="status"><Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden="true" />Loading policies…</div>
       </PanelShell>
     );
   }

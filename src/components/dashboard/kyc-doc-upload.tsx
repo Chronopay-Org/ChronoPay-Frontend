@@ -24,7 +24,7 @@ export type RetakeReason =
   | "other";
 
 interface KycDocUploadProps {
-  onCaptureComplete: (success: boolean, imageData?: string) => void;
+  onCaptureComplete: (success: boolean, imageData?: string) => void | Promise<void>;
   documentLabel?: string;
 }
 
@@ -71,6 +71,8 @@ export function KycDocUpload({
 }: KycDocUploadProps) {
   const [step, setStep] = useState<"intro" | "capture" | "preview" | "retake" | "complete">("intro");
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [textOnlyMode, setTextOnlyMode] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [retakeReason, setRetakeReason] = useState<RetakeReason | null>(null);
@@ -85,6 +87,16 @@ export function KycDocUpload({
   const descriptionId = useId();
   const feedbackId = useId();
   const retakeHeadingId = useId();
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
 
   const startCamera = useCallback(async () => {
     stopCamera();
@@ -103,17 +115,7 @@ export function KycDocUpload({
       );
       setTextOnlyMode(true);
     }
-  }, []);
-
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  }, []);
+  }, [stopCamera]);
 
   useEffect(() => {
     return () => {
@@ -175,15 +177,28 @@ export function KycDocUpload({
     }
   };
 
-  const handleConfirmImage = () => {
+  const handleConfirmImage = async () => {
     stopCamera();
-    setStep("complete");
-    onCaptureComplete(true, capturedImage ?? undefined);
+    setUploadError(null);
+    setIsSubmitting(true);
+    try {
+      await onCaptureComplete(true, capturedImage ?? undefined);
+      setStep("complete");
+    } catch (error) {
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : "Upload failed. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleUseTextOnly = () => {
     stopCamera();
     setCameraError(null);
+    setUploadError(null);
     setTextOnlyMode(true);
   };
 
@@ -191,6 +206,7 @@ export function KycDocUpload({
     stopCamera();
     setStep("intro");
     setCameraError(null);
+    setUploadError(null);
     setCapturedImage(null);
     setRetakeReason(null);
     setRetakeOtherText("");
@@ -223,7 +239,7 @@ export function KycDocUpload({
               aria-label="Restart document upload"
             >
               <X className="h-3.5 w-3.5 inline-block align-middle" aria-hidden="true" />
-              <span className="ml-1 align-middle">Cancel</span>
+              <span className="ms-1 align-middle">Cancel</span>
             </button>
           )}
         </div>
@@ -280,7 +296,7 @@ export function KycDocUpload({
           className="mb-4 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 text-sm text-purple-200"
           role="alert"
         >
-          <HelpCircle className="h-4 w-4 inline-block align-middle mr-1.5" aria-hidden="true" />
+          <HelpCircle className="h-4 w-4 inline-block align-middle me-1.5" aria-hidden="true" />
           <span className="align-middle">
             Text-only mode active. You can upload a photo file instead of using the camera.
           </span>
@@ -351,15 +367,15 @@ export function KycDocUpload({
                   ].join(" ")}
                 >
                   {/* Corner markers */}
-                  <span className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-cyan-300" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-cyan-300" />
-                  <span className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-cyan-300" />
-                  <span className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-cyan-300" />
+                  <span className="absolute -top-1 -start-1 w-3 h-3 border-t-2 border-s-2 border-cyan-300" />
+                  <span className="absolute -top-1 -end-1 w-3 h-3 border-t-2 border-e-2 border-cyan-300" />
+                  <span className="absolute -bottom-1 -start-1 w-3 h-3 border-b-2 border-s-2 border-cyan-300" />
+                  <span className="absolute -bottom-1 -end-1 w-3 h-3 border-b-2 border-e-2 border-cyan-300" />
                 </div>
 
                 {/* Glare warning overlay */}
                 {glareDetected && (
-                  <div className="absolute top-3 left-3 right-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
+                  <div className="absolute top-3 start-3 end-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     <span>Glare detected — adjust lighting</span>
                   </div>
@@ -367,7 +383,7 @@ export function KycDocUpload({
 
                 {/* Corner warning */}
                 {!cornersVisible && (
-                  <div className="absolute bottom-3 left-3 right-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
+                  <div className="absolute bottom-3 start-3 end-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     <span>Some corners are not visible — adjust position</span>
                   </div>
@@ -394,9 +410,17 @@ export function KycDocUpload({
                       stopCamera();
                       const reader = new FileReader();
                       reader.onload = (ev) => {
-                        const dataUrl = ev.target?.result as string;
-                        setCapturedImage(dataUrl);
+                        const result = ev.target?.result;
+                        if (typeof result !== "string") {
+                          setUploadError("The selected file could not be read. Please choose another image.");
+                          return;
+                        }
+                        setUploadError(null);
+                        setCapturedImage(result);
                         setStep("preview");
+                      };
+                      reader.onerror = () => {
+                        setUploadError("The selected file could not be read. Please choose another image.");
                       };
                       reader.readAsDataURL(file);
                     }
@@ -423,7 +447,7 @@ export function KycDocUpload({
                   aria-pressed={glareDetected}
                   aria-label="Toggle glare detection simulation"
                 >
-                  <Sun className="h-3 w-3 inline-block align-middle mr-1" aria-hidden="true" />
+                  <Sun className="h-3 w-3 inline-block align-middle me-1" aria-hidden="true" />
                   Glare
                 </button>
               )}
@@ -440,7 +464,7 @@ export function KycDocUpload({
                   aria-pressed={!cornersVisible}
                   aria-label="Toggle corner visibility simulation"
                 >
-                  <CornerDownRight className="h-3 w-3 inline-block align-middle mr-1" aria-hidden="true" />
+                  <CornerDownRight className="h-3 w-3 inline-block align-middle me-1" aria-hidden="true" />
                   Corners
                 </button>
               )}
@@ -475,7 +499,7 @@ export function KycDocUpload({
               className="mt-4 w-full p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-200"
               role="alert"
             >
-              <CameraOff className="h-4 w-4 inline-block align-middle mr-1.5" aria-hidden="true" />
+              <CameraOff className="h-4 w-4 inline-block align-middle me-1.5" aria-hidden="true" />
               <span className="align-middle">{cameraError}</span>
             </div>
           )}
@@ -485,6 +509,11 @@ export function KycDocUpload({
       {/* PREVIEW */}
       {step === "preview" && capturedImage && (
         <div className="flex flex-col items-center">
+          {uploadError && (
+            <p className="mb-4 w-full rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200" role="alert">
+              {uploadError}
+            </p>
+          )}
           <div className="relative w-full aspect-[4/3] bg-slate-900 rounded-lg overflow-hidden mb-4 border border-slate-600">
             <img
               src={capturedImage}
@@ -497,10 +526,11 @@ export function KycDocUpload({
             <button
               type="button"
               onClick={handleConfirmImage}
+              disabled={isSubmitting}
               className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-sm"
             >
               <Check className="h-4 w-4" aria-hidden="true" />
-              Confirm {docLabel}
+              {isSubmitting ? "Submitting..." : `Confirm ${docLabel}`}
             </button>
             <button
               type="button"

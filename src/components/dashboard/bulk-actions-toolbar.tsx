@@ -108,7 +108,7 @@ export function BulkActionsToolbar({
         aria-controls={gridId}
         data-testid="bulk-toolbar"
         className={[
-          "fixed bottom-6 left-1/2 z-50",
+          "fixed bottom-6 start-1/2 z-50",
           "-translate-x-1/2",
           "flex items-center gap-2 rounded-2xl",
           "border border-white/12 bg-slate-900/95 px-4 py-3 shadow-2xl backdrop-blur-xl",
@@ -116,7 +116,7 @@ export function BulkActionsToolbar({
         ].join(" ")}
       >
         {/* Selection count badge */}
-        <span className="mr-1 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+        <span className="me-1 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
           {count} selected
         </span>
 
@@ -155,7 +155,7 @@ export function BulkActionsToolbar({
               role="listbox"
               aria-label="Select role"
               className={[
-                "absolute bottom-full mb-2 left-0 z-50",
+                "absolute bottom-full mb-2 start-0 z-50",
                 "w-40 rounded-xl border border-white/10",
                 "bg-slate-900/95 py-1 shadow-xl backdrop-blur-xl",
               ].join(" ")}
@@ -231,7 +231,7 @@ export function BulkActionsToolbar({
               role="dialog"
               aria-label="Send message to selected users"
               className={[
-                "absolute bottom-full mb-2 right-0 z-50",
+                "absolute bottom-full mb-2 end-0 z-50",
                 "w-72 rounded-2xl border border-white/10",
                 "bg-slate-900/95 p-4 shadow-xl backdrop-blur-xl",
               ].join(" ")}
@@ -297,7 +297,7 @@ export function BulkActionsToolbar({
           data-testid="bulk-dismiss"
           onClick={onDismiss}
           className={[
-            "ml-1 rounded-full border border-white/10 p-1.5",
+            "ms-1 rounded-full border border-white/10 p-1.5",
             "text-slate-400 hover:text-slate-200 hover:bg-white/8",
             "transition-colors focus-ring-cyan",
           ].join(" ")}

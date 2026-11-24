@@ -1,3 +1,5 @@
+import type { Tone } from "./types";
+
 export type TimelineItemStatus = "pending" | "completed" | "failed" | "warning";
 
 export type TimelineItemVariant = "default" | "mediator_assigned";
@@ -78,12 +80,12 @@ export type KycTimelineEntry = {
 };
 
 /** Status chip tone for each KYC stage. */
-export const kycStageToneMap: Record<KycStage, "info" | "warning" | "success" | "danger" | "neutral"> = {
+export const kycStageToneMap: Record<KycStage, Tone> = {
   submitted: "neutral",
-  reviewing: "info",
+  reviewing: "neutral",
   needs_info: "warning",
-  rejected: "danger",
-  verified: "success",
+  rejected: "critical",
+  verified: "positive",
 };
 
 export type KycPromptPanel = {

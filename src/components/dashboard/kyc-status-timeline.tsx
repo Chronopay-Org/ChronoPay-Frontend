@@ -3,7 +3,8 @@
 import { useId } from "react";
 import type { KycStage, KycTimelineEntry, KycPromptPanel } from "./timeline-types";
 import { kycStageToneMap } from "./timeline-types";
-import { StatusChip } from "@/app/components/ui/status-chip";
+import { StatusChip } from "./status-chip";
+import type { Tone } from "./types";
 import { ButtonLink } from "@/app/components/ui/button-link";
 import { HelpPopover } from "@/app/components/ui/help-popover";
 import { glossary } from "@/lib/glossary";
@@ -72,17 +73,17 @@ function formatStageLabel(stage: KycStage): string {
 /** Derive the overall status chip tone from entries. */
 function deriveOverallTone(
   entries: KycTimelineEntry[],
-): "info" | "warning" | "success" | "danger" {
+): Tone {
   const hasRejected = entries.some((e) => e.stage === "rejected" && e.isCurrent);
-  if (hasRejected) return "danger";
+  if (hasRejected) return "critical";
 
   const hasNeedsInfo = entries.some((e) => e.stage === "needs_info" && e.isCurrent);
   if (hasNeedsInfo) return "warning";
 
   const lastStage = entries[entries.length - 1]?.stage;
-  if (lastStage === "verified") return "success";
+  if (lastStage === "verified") return "positive";
 
-  return "info";
+  return "neutral";
 }
 
 function deriveOverallLabel(entries: KycTimelineEntry[]): string {

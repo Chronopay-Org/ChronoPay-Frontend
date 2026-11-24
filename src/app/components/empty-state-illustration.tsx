@@ -127,7 +127,7 @@ export function EmptyStateIllustration({
       />
 
       {/* Accent label */}
-      <div className={`absolute left-5 top-5 rounded-full border px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.22em] ${theme.badgeText} ${theme.badgeBg} ${theme.badgeBorder}`}>
+      <div className={`absolute start-5 top-5 rounded-full border px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.22em] ${theme.badgeText} ${theme.badgeBg} ${theme.badgeBorder}`}>
         {accentLabel}
       </div>
 

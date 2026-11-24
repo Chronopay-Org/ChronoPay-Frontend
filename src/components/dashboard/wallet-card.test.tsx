@@ -49,6 +49,7 @@ import {
 } from "./wallet-card";
 import type { WalletSnapshot } from "./types";
 import { ToastProvider } from "@/hooks/use-toast";
+import { I18nProvider } from "@/lib/i18n";
 
 /** Wrap a component in the providers WalletCard depends on. */
 function renderWithProviders(ui: React.ReactElement) {
@@ -607,6 +608,63 @@ describe("WalletCard", () => {
     await user.keyboard("{ArrowRight}");
 
     expect(escrowedTab).toHaveAttribute("aria-selected", "true");
+    expect(escrowedTab).toHaveAttribute("tabindex", "0");
+    expect(availableTab).toHaveAttribute("tabindex", "-1");
+    expect(escrowedTab).toHaveFocus();
+  });
+
+  it("supports Home and End keys to jump to first and last wallet panel tabs", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<WalletCard wallet={connectedWallet} />);
+
+    const availableTab = screen.getByRole("tab", { name: /available/i });
+    const lifetimeTab = screen.getByRole("tab", { name: /lifetime stats/i });
+
+    availableTab.focus();
+    await user.keyboard("{End}");
+
+    expect(lifetimeTab).toHaveAttribute("aria-selected", "true");
+    expect(lifetimeTab).toHaveAttribute("tabindex", "0");
+    expect(availableTab).toHaveAttribute("tabindex", "-1");
+    expect(lifetimeTab).toHaveFocus();
+
+    await user.keyboard("{Home}");
+
+    expect(availableTab).toHaveAttribute("aria-selected", "true");
+    expect(availableTab).toHaveAttribute("tabindex", "0");
+    expect(lifetimeTab).toHaveAttribute("tabindex", "-1");
+    expect(availableTab).toHaveFocus();
+  });
+
+  it("flips arrow key direction in RTL locale", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <I18nProvider locale="ar">
+        <WalletCard wallet={connectedWallet} />
+      </I18nProvider>,
+    );
+
+    const availableTab = screen.getByRole("tab", { name: /available/i });
+    const escrowedTab = screen.getByRole("tab", { name: /escrowed/i });
+    const lifetimeTab = screen.getByRole("tab", { name: /lifetime stats/i });
+
+    availableTab.focus();
+    await user.keyboard("{ArrowLeft}");
+
+    expect(escrowedTab).toHaveAttribute("aria-selected", "true");
+    expect(escrowedTab).toHaveAttribute("tabindex", "0");
+    expect(availableTab).toHaveAttribute("tabindex", "-1");
+    expect(escrowedTab).toHaveFocus();
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(availableTab).toHaveAttribute("aria-selected", "true");
+    expect(availableTab).toHaveFocus();
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(lifetimeTab).toHaveAttribute("aria-selected", "true");
+    expect(lifetimeTab).toHaveFocus();
   });
 });
 

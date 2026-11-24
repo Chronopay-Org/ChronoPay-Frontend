@@ -1,16 +1,22 @@
+import { createElement } from "react";
 import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, act, fireEvent, waitFor, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Marketplace from "./page";
+import { seedItems } from "./catalogue";
 
 // Mock next/navigation
+let currentSearch = "";
 const mockSearchParams = {
-  get: vi.fn(() => null),
+  get: vi.fn((key: string) => new URLSearchParams(currentSearch).get(key)),
   entries: vi.fn(function* () {}),
-  toString: vi.fn(() => ""),
+  toString: vi.fn(() => currentSearch),
 };
 
 const mockRouter = {
-  replace: vi.fn(),
+  replace: vi.fn((href: string) => {
+    currentSearch = href.split("?")[1] ?? "";
+  }),
   push: vi.fn(),
   back: vi.fn(),
 };
@@ -29,6 +35,11 @@ vi.mock("next/link", () => ({
   },
 }));
 
+// Mock next/image to render a plain img while preserving src, alt, sizes, and className
+vi.mock("next/image", () => ({
+  default: ({ fill: _fill, ...props }: any) => createElement("img", props),
+}));
+
 // Mock toast to prevent warnings
 vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({
@@ -40,7 +51,11 @@ describe("Marketplace Page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    mockSearchParams.get.mockReturnValue(null);
+    currentSearch = "";
+    mockSearchParams.get.mockImplementation((key: string) =>
+      new URLSearchParams(currentSearch).get(key),
+    );
+    mockSearchParams.toString.mockImplementation(() => currentSearch);
   });
 
   afterEach(() => {
@@ -55,13 +70,14 @@ describe("Marketplace Page", () => {
 
     // Wait for seeding to complete (if any) or just wait for items to render
     await waitFor(() => {
-      const items = screen.getAllByRole("listitem");
+      const items = within(screen.getByTestId("marketplace-grid")).getAllByRole("listitem");
       expect(items.length).toBe(24);
     });
   });
 
   it("changes the number of visible items when page size is changed", async () => {
     render(<Marketplace />);
+    const grid = await screen.findByTestId("marketplace-grid");
 
     const option12 = screen.getByRole("radio", { name: /^12 results per page/i });
 
@@ -70,7 +86,7 @@ describe("Marketplace Page", () => {
     });
 
     await waitFor(() => {
-      const items = screen.getAllByRole("listitem");
+      const items = within(grid).getAllByRole("listitem");
       expect(items.length).toBe(12);
     });
   });
@@ -95,18 +111,68 @@ describe("Marketplace Page", () => {
     expect(screen.queryByText("Recently viewed")).not.toBeInTheDocument();
   });
 
+  it("clears seeding timers on unmount so nothing is added, and seeds once on remount", () => {
+    vi.useFakeTimers();
+    const updateListener = vi.fn();
+    window.addEventListener("chronopay:recently-viewed-updated", updateListener);
+
+    try {
+      const { unmount } = render(<Marketplace />);
+      unmount();
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(updateListener).not.toHaveBeenCalled();
+      expect(localStorage.getItem("chronopay-marketplace-visited")).toBeNull();
+      const storedAfterUnmount = JSON.parse(
+        localStorage.getItem("chronopay-recently-viewed") ?? "[]"
+      );
+      expect(storedAfterUnmount).toHaveLength(0);
+
+      // Remounting should seed exactly once
+      const { unmount: unmountSecond } = render(<Marketplace />);
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(updateListener).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Recently viewed")).toBeInTheDocument();
+      expect(localStorage.getItem("chronopay-marketplace-visited")).toBe("true");
+      const storedAfterRemount = JSON.parse(
+        localStorage.getItem("chronopay-recently-viewed") ?? "[]"
+      );
+      expect(storedAfterRemount).toHaveLength(seedItems.length);
+
+      // A subsequent mount should not seed again
+      unmountSecond();
+      render(<Marketplace />);
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(updateListener).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener("chronopay:recently-viewed-updated", updateListener);
+      vi.useRealTimers();
+    }
+  });
+
   it("handles invalid page size in URL gracefully", () => {
+  it("handles invalid page size in URL gracefully", async () => {
     // Return an invalid page size
     mockSearchParams.get.mockReturnValue("invalid");
 
     render(<Marketplace />);
 
     // Should fallback to default 24
-    const items = screen.getAllByRole("listitem");
+    const grid = await screen.findByTestId("marketplace-grid");
+    const items = within(grid).getAllByRole("listitem");
     expect(items.length).toBe(24);
   });
 
-  it("renders without crashing if localStorage is disabled or throws", () => {
+  it("renders without crashing if localStorage is disabled or throws", async () => {
     const storageSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error("Storage disabled");
     });
@@ -114,7 +180,8 @@ describe("Marketplace Page", () => {
     render(<Marketplace />);
 
     expect(screen.getByText("Marketplace")).toBeInTheDocument();
-    const items = screen.getAllByRole("listitem");
+    const grid = await screen.findByTestId("marketplace-grid");
+    const items = within(grid).getAllByRole("listitem");
     expect(items.length).toBe(24);
 
     storageSpy.mockRestore();
@@ -123,7 +190,8 @@ describe("Marketplace Page", () => {
   it("links each card to its detail route and records it in recently viewed", async () => {
     render(<Marketplace />);
 
-    const items = await screen.findAllByRole("listitem");
+    const grid = await screen.findByTestId("marketplace-grid");
+    const items = within(grid).getAllByRole("listitem");
     expect(items.length).toBe(24);
 
     const firstItem = items[0];
@@ -141,11 +209,26 @@ describe("Marketplace Page", () => {
     });
 
     await waitFor(() => {
-      const stored = localStorage.getItem("chronopay-marketplace-recently-viewed");
+      const stored = localStorage.getItem("chronopay-recently-viewed");
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored as string);
       expect(Array.isArray(parsed)).toBe(true);
       expect(parsed.some((item: any) => item.id === id)).toBe(true);
     });
+  });
+
+  it("renders listing images with decorative alt, sizes, and 16:9 container", async () => {
+    render(<Marketplace />);
+
+    const grid = await screen.findByTestId("marketplace-grid");
+    const imgs = grid.querySelectorAll("img");
+    expect(imgs.length).toBe(24);
+
+    const firstImg = imgs[0];
+    expect(firstImg.getAttribute("alt")).toBe("");
+    expect(firstImg.getAttribute("src")).toContain("https://images.unsplash.com/");
+    expect(firstImg.getAttribute("sizes")).toBeTruthy();
+    expect(firstImg.parentElement?.className).toContain("relative");
+    expect(firstImg.parentElement?.className).toContain("aspect-video");
   });
 });
