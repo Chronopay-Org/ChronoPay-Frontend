@@ -27,4 +27,16 @@ describe("design tokens documentation", () => {
     expect(css).toContain("--motion-duration-fast:");
     expect(css).toContain("--font-size-md:");
   });
+
+  it("keeps every custom property referenced by the guide defined in globals.css", () => {
+    const css = read("src/app/globals.css");
+    const guide = read("docs/design-tokens.md");
+
+    const documented = Array.from(guide.matchAll(/`(--[a-z0-9-]+)`/g), (match) => match[1]);
+    expect(documented.length).toBeGreaterThan(0);
+
+    for (const token of new Set(documented)) {
+      expect(css).toContain(`${token}:`);
+    }
+  });
 });

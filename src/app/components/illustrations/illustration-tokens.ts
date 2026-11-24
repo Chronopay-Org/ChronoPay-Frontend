@@ -4,47 +4,58 @@
  * Color tokens used across empty booking history illustrations.
  * Supports light and dark mode via CSS variables.
  * 
+ * Source of truth: src/design/tokens.ts (illustration group).
+ * This module re-exports the illustration tokens so existing consumers keep working.
+ * 
  * Usage:
  * - In SVG fills/strokes: fill="var(--illus-primary-light)" className="dark:fill-[var(--illus-primary-dark)]"
  * - In Tailwind: className="fill-[var(--illus-primary-light)] dark:fill-[var(--illus-primary-dark)]"
  */
 
+const illustrationTokens = {
+  primaryLight: 'var(--illus-primary-light)',
+  primaryDark: 'var(--illus-primary-dark)',
+  secondaryLight: 'var(--illus-secondary-light)',
+  secondaryDark: 'var(--illus-secondary-dark)',
+  surfaceLight: 'var(--illus-surface-light)',
+  surfaceDark: 'var(--illus-surface-dark)',
+  textPrimaryLight: 'var(--illus-text-primary-light)',
+  textPrimaryDark: 'var(--illus-text-primary-dark)',
+  textSecondaryLight: 'var(--illus-text-secondary-light)',
+  textSecondaryDark: 'var(--illus-text-secondary-dark)',
+  borderLight: 'var(--illus-border-light)',
+  borderDark: 'var(--illus-border-dark)',
+  calendarAccentLight: 'var(--illus-calendar-accent-light)',
+  calendarAccentDark: 'var(--illus-calendar-accent-dark)',
+  inboxAccentLight: 'var(--illus-inbox-accent-light)',
+  inboxAccentDark: 'var(--illus-inbox-accent-dark)',
+  chartAccentLight: 'var(--illus-chart-accent-light)',
+  chartAccentDark: 'var(--illus-chart-accent-dark)',
+  accentMutedLight: 'var(--illus-accent-muted-light)',
+  accentMutedDark: 'var(--illus-accent-muted-dark)',
+} as const;
+
 export const ILLUSTRATION_TOKENS = {
-  // Primary accent colors (cyan/teal family)
-  PRIMARY_LIGHT: '#0891b2',
-  PRIMARY_DARK: '#67e8f9',
-  
-  // Secondary accent colors (amber/orange family)
-  SECONDARY_LIGHT: '#d97706',
-  SECONDARY_DARK: '#f59e0b',
-  
-  // Surface/fill colors
-  SURFACE_LIGHT: '#f0f5fb',
-  SURFACE_DARK: '#0f172a',
-  
-  // Text colors
-  TEXT_PRIMARY_LIGHT: '#0a1628',
-  TEXT_PRIMARY_DARK: '#f4f7fb',
-  TEXT_SECONDARY_LIGHT: '#4a6080',
-  TEXT_SECONDARY_DARK: '#cbd5e1',
-  
-  // Border colors
-  BORDER_LIGHT: '#cbd5e1',
-  BORDER_DARK: '#334155',
-  
-  // Component-specific colors
-  CALENDAR_ACCENT_LIGHT: '#06b6d4',
-  CALENDAR_ACCENT_DARK: '#22d3ee',
-  
-  INBOX_ACCENT_LIGHT: '#0ea5e9',
-  INBOX_ACCENT_DARK: '#38bdf8',
-  
-  CHART_ACCENT_LIGHT: '#8b5cf6',
-  CHART_ACCENT_DARK: '#a78bfa',
-  
-  // Opacity/muted versions
-  ACCENT_MUTED_LIGHT: 'rgba(8, 145, 178, 0.2)',
-  ACCENT_MUTED_DARK: 'rgba(103, 232, 249, 0.2)',
+  PRIMARY_LIGHT: illustrationTokens.primaryLight,
+  PRIMARY_DARK: illustrationTokens.primaryDark,
+  SECONDARY_LIGHT: illustrationTokens.secondaryLight,
+  SECONDARY_DARK: illustrationTokens.secondaryDark,
+  SURFACE_LIGHT: illustrationTokens.surfaceLight,
+  SURFACE_DARK: illustrationTokens.surfaceDark,
+  TEXT_PRIMARY_LIGHT: illustrationTokens.textPrimaryLight,
+  TEXT_PRIMARY_DARK: illustrationTokens.textPrimaryDark,
+  TEXT_SECONDARY_LIGHT: illustrationTokens.textSecondaryLight,
+  TEXT_SECONDARY_DARK: illustrationTokens.textSecondaryDark,
+  BORDER_LIGHT: illustrationTokens.borderLight,
+  BORDER_DARK: illustrationTokens.borderDark,
+  CALENDAR_ACCENT_LIGHT: illustrationTokens.calendarAccentLight,
+  CALENDAR_ACCENT_DARK: illustrationTokens.calendarAccentDark,
+  INBOX_ACCENT_LIGHT: illustrationTokens.inboxAccentLight,
+  INBOX_ACCENT_DARK: illustrationTokens.inboxAccentDark,
+  CHART_ACCENT_LIGHT: illustrationTokens.chartAccentLight,
+  CHART_ACCENT_DARK: illustrationTokens.chartAccentDark,
+  ACCENT_MUTED_LIGHT: illustrationTokens.accentMutedLight,
+  ACCENT_MUTED_DARK: illustrationTokens.accentMutedDark,
 } as const;
 
 /**
