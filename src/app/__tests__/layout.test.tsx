@@ -1,12 +1,12 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import RootLayout, { metadata, viewport } from '../layout';
+import RootLayout, { metadata, viewport, themeInitScript } from '../layout';
 import { DEMO_URL } from '@/lib/site-links';
 import RootLayout, { metadata } from '../layout';
 import Home from '../page';
 import RootLayout, { metadata, densityInitScript } from '../layout';
 
-import { vi } from 'vitest';
+import { vi, beforeEach, afterEach } from 'vitest';
 
 const mockHeadersGet = vi.fn<(name: string) => string | null>(() => 'test-nonce-123');
 
@@ -174,6 +174,45 @@ describe('RootLayout', () => {
       const htmlElement = container.querySelector('html') || document.querySelector('html');
       expect(htmlElement).not.toBeNull();
       expect(htmlElement).toHaveAttribute('lang', 'en');
+    });
+  });
+
+  describe('themeInitScript', () => {
+    beforeEach(() => {
+      window.localStorage.clear();
+      document.documentElement.removeAttribute('data-theme');
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('migrates legacy chronopay-theme key to chronopay:theme and applies theme before hydration', () => {
+      window.localStorage.setItem('chronopay-theme', 'light');
+
+      new Function(themeInitScript)();
+
+      expect(window.localStorage.getItem('chronopay:theme')).toBe('light');
+      expect(window.localStorage.getItem('chronopay-theme')).toBeNull();
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    });
+
+    it('resolves scheduled mode using theme-schedule boundaries without flash on reload', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2024, 0, 1, 21, 0, 0));
+
+      window.localStorage.setItem('chronopay:theme', 'scheduled');
+      window.localStorage.setItem(
+        'theme-schedule',
+        JSON.stringify({ type: 'custom', lightTime: '06:00', darkTime: '18:00' })
+      );
+
+      new Function(themeInitScript)();
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+
+      vi.setSystemTime(new Date(2024, 0, 1, 10, 0, 0));
+      new Function(themeInitScript)();
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     });
   });
 });

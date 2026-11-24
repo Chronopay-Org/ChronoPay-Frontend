@@ -17,10 +17,6 @@ vi.mock("@/app/components/ui/copy-button", () => ({
   ),
 }));
 
-vi.mock("@/app/components/ui/theme-switcher", () => ({
-  ThemeSwitcher: () => <div data-testid="theme-switcher">ThemeSwitcher</div>,
-}));
-
 describe("DesignTokensPage", () => {
   it("renders the main heading and all tokens by default", () => {
     render(<DesignTokensPage />);
