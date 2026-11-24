@@ -1,34 +1,47 @@
-import Link from "next/link";
+/**
+ * src/app/not-found.test.tsx
+ *
+ * Render tests for the 404 page (NotFound):
+ *  - level-1 heading and "404" text
+ *  - recovery links (/ and /marketplace)
+ *  - main landmark id (skip-link target)
+ */
 
-export default function NotFound() {
-  return (
-    <main
-      id="main-content"
-      className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-6 py-20 text-center"
-    >
-      <p className="text-sm font-medium uppercase tracking-widest text-cyan-400">
-        404
-      </p>
-      <h1 className="mt-3 text-3xl font-bold tracking-tight text-zinc-100">
-        Page not found
-      </h1>
-      <p className="mt-4 text-zinc-400">
-        The page you are looking for does not exist or has moved.
-      </p>
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Link
-          href="/"
-          className="rounded-full bg-cyan-300 px-5 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
-        >
-          Back to home
-        </Link>
-        <Link
-          href="/marketplace"
-          className="rounded-full border border-white/15 px-5 py-2 text-sm font-medium text-zinc-200 hover:border-white/30"
-        >
-          Browse marketplace
-        </Link>
-      </div>
-    </main>
-  );
-}
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+import NotFound from "./not-found";
+
+describe("NotFound", () => {
+  it("renders 'Page not found' as the level-1 heading", () => {
+    render(<NotFound />);
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Page not found" })
+    ).toBeInTheDocument();
+  });
+
+  it("renders the 404 text", () => {
+    render(<NotFound />);
+    expect(screen.getByText("404")).toBeInTheDocument();
+  });
+
+  it("renders the 'Back to home' link pointing to /", () => {
+    render(<NotFound />);
+    expect(screen.getByRole("link", { name: "Back to home" })).toHaveAttribute(
+      "href",
+      "/"
+    );
+  });
+
+  it("renders the 'Browse marketplace' link pointing to /marketplace", () => {
+    render(<NotFound />);
+    expect(
+      screen.getByRole("link", { name: "Browse marketplace" })
+    ).toHaveAttribute("href", "/marketplace");
+  });
+
+  it("renders a main landmark with id 'main-content'", () => {
+    render(<NotFound />);
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
+  });
+});
