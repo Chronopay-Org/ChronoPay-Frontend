@@ -2,6 +2,8 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import RootLayout, { metadata, viewport } from '../layout';
 import { DEMO_URL } from '@/lib/site-links';
+import RootLayout, { metadata } from '../layout';
+import Home from '../page';
 
 import { vi } from 'vitest';
 
@@ -116,6 +118,25 @@ describe('RootLayout', () => {
         children: null,
       });
       const { container } = render(ui);
+    it('renders the home page with one global header and navigation landmark', () => {
+      const { container } = render(
+        <RootLayout>
+          <Home />
+        </RootLayout>
+      );
+
+      expect(container.querySelectorAll('header')).toHaveLength(1);
+      expect(container.querySelectorAll('nav')).toHaveLength(1);
+      expect(container.querySelectorAll('main#main-content')).toHaveLength(1);
+      expect(container.querySelectorAll('h1')).toHaveLength(1);
+    });
+
+    it('handles missing or empty children gracefully (boundary behavior)', () => {
+      const { container } = render(
+        <RootLayout>
+          {null}
+        </RootLayout>
+      );
       
       const htmlElement = container.querySelector('html') || document.querySelector('html');
       expect(htmlElement).not.toBeNull();
