@@ -40,8 +40,6 @@
 import {
   useId,
   useState,
-  useEffect,
-  useRef,
   useCallback,
   type ReactNode,
 } from "react";
@@ -320,33 +318,31 @@ export function BookingChecklist({
   const toggleCollapse = useCallback(() => setIsOpen((o) => !o), []);
 
   // Live announcements when step statuses change
+  const [prevStatuses, setPrevStatuses] = useState<
+    Record<string, ChecklistStepStatus>
+  >(() => Object.fromEntries(steps.map((s) => [s.id, s.status])));
   const [announcement, setAnnouncement] = useState("");
-  const prevStatusRef = useRef<Record<string, ChecklistStepStatus>>({});
 
-  useEffect(() => {
-    const prev = prevStatusRef.current;
+  const hasStatusChange =
+    steps.length !== Object.keys(prevStatuses).length ||
+    steps.some((step) => prevStatuses[step.id] !== step.status);
+
+  if (hasStatusChange) {
     const messages: string[] = [];
 
     for (const step of steps) {
-      const prevStatus = prev[step.id];
+      const prevStatus = prevStatuses[step.id];
       if (prevStatus !== undefined && prevStatus !== step.status) {
-        messages.push(
-          `${step.label}: ${STATUS_LABEL[step.status]}`,
-        );
+        messages.push(`${step.label}: ${STATUS_LABEL[step.status]}`);
       }
     }
 
-    // Update the ref for next comparison
-    prevStatusRef.current = Object.fromEntries(
-      steps.map((s) => [s.id, s.status]),
-    );
+    setPrevStatuses(Object.fromEntries(steps.map((s) => [s.id, s.status])));
 
-    // Set the announcement after the ref update so we never announce on mount
     if (messages.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnnouncement(messages.join(". "));
     }
-  }, [steps]);
+  }
 
   const summary = deriveChecklistSummary(steps);
   const pct = Math.round(summary.progress * 100);

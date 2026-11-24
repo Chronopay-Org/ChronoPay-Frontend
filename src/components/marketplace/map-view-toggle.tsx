@@ -2,11 +2,11 @@
 
 import {
   useCallback,
-  useEffect,
   useId,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -385,6 +385,29 @@ export function MapViewToggle({
 
 // ─── useMapView ───────────────────────────────────────────────────────────────
 
+const mapViewListeners = new Map<string, Set<() => void>>();
+
+function notifyMapViewListeners(storageKey: string) {
+  mapViewListeners.get(storageKey)?.forEach((listener) => listener());
+}
+
+function readStoredViewMode(storageKey: string): ViewMode {
+  if (typeof window === "undefined") return "list";
+  try {
+    const saved = window.localStorage.getItem(storageKey);
+    if (saved === "list" || saved === "map" || saved === "split") {
+      return saved;
+    }
+  } catch {
+    // localStorage may be unavailable
+  }
+  return "list";
+}
+
+function getServerViewMode(): ViewMode {
+  return "list";
+}
+
 /**
  * Hook for managing map/list/split view mode with localStorage persistence.
  *
@@ -394,20 +417,57 @@ export function MapViewToggle({
  * ```
  */
 export function useMapView(storageKey = "chronopay-marketplace-view") {
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const subscribe = useCallback(
+    (listener: () => void) => {
+      let listeners = mapViewListeners.get(storageKey);
+      if (!listeners) {
+        listeners = new Set();
+        mapViewListeners.set(storageKey, listeners);
+      }
+      listeners.add(listener);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved === "list" || saved === "map" || saved === "split") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setViewMode(saved);
-    }
-  }, [storageKey]);
+      if (typeof window === "undefined") {
+        return () => {
+          listeners?.delete(listener);
+        };
+      }
+
+      const onStorage = (event: StorageEvent) => {
+        if (event.key === storageKey || event.key === null) {
+          listener();
+        }
+      };
+      window.addEventListener("storage", onStorage);
+
+      return () => {
+        listeners?.delete(listener);
+        window.removeEventListener("storage", onStorage);
+      };
+    },
+    [storageKey],
+  );
+
+  const getSnapshot = useCallback(
+    () => readStoredViewMode(storageKey),
+    [storageKey],
+  );
+
+  const viewMode = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerViewMode,
+  );
 
   const handleViewModeChange = useCallback(
     (mode: ViewMode) => {
-      setViewMode(mode);
-      localStorage.setItem(storageKey, mode);
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(storageKey, mode);
+        } catch {
+          // localStorage may be unavailable
+        }
+      }
+      notifyMapViewListeners(storageKey);
     },
     [storageKey],
   );
