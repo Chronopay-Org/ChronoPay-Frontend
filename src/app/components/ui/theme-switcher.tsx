@@ -1,4 +1,6 @@
-import { Sun, Moon, Clock } from 'lucide-react';
+"use client";
+
+import { Sun, Moon } from 'lucide-react';
 import { useThemeSchedule } from '@/app/hooks/use-theme-schedule';
 import { ThemePreviewStrip } from './theme-preview-strip';
 

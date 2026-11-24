@@ -21,10 +21,15 @@ export default function LocalePicker() {
       if (saved) {
         const value = saved.split("=")[1];
         const current = locales.find((l) => l.code === value);
-        document.documentElement.lang = value;
-        document.documentElement.dir = current?.dir ?? "ltr";
-        return value;
+        if (current) {
+          document.documentElement.lang = current.code;
+          document.documentElement.dir = current.dir;
+          return current.code;
+        }
       }
+
+      document.documentElement.lang = "en";
+      document.documentElement.dir = "ltr";
     } catch {
       // cookie may be unavailable
     }
@@ -32,14 +37,15 @@ export default function LocalePicker() {
   });
 
   function changeLocale(value: string) {
-    setLocale(value);
-
     const current = locales.find((l) => l.code === value);
+    if (!current) return;
 
-    document.documentElement.lang = value;
-    document.documentElement.dir = current?.dir ?? "ltr";
+    setLocale(current.code);
 
-    document.cookie = `locale=${value}; path=/; max-age=31536000`;
+    document.documentElement.lang = current.code;
+    document.documentElement.dir = current.dir;
+
+    document.cookie = `locale=${current.code}; path=/; max-age=31536000`;
   }
 
   return (

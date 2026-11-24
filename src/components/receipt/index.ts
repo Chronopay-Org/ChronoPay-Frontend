@@ -6,3 +6,4 @@ export * from "./QrBadge";
 export * from "./masking";
 export * from "./types";
 export * from "./RefundConversionNote";
+export * from "./receipt-builder";

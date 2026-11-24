@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CopyButton } from "@/app/components/ui/copy-button";
-import ThemeSwitcher from "@/app/components/ui/theme-switcher";
 
 const tokens = [
   { name: "Primary 500", value: "#06B6D4", category: "Colors" },
@@ -98,7 +97,6 @@ export default function DesignTokensPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <ThemeSwitcher />
             <Link
               href="/design-review"
               className="text-sm text-cyan-400 hover:underline"

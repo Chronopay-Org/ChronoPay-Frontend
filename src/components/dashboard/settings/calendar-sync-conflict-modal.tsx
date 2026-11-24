@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useId, useMemo } from "react";
+import { useState, useCallback, useId, useMemo, useEffect } from "react";
 import { clsx } from "clsx";
 import { X, AlertTriangle, GitBranch, GitMerge } from "lucide-react";
 import { FocusTrap } from "@/components/common/FocusTrap";
@@ -133,21 +133,21 @@ function ConflictRow({
         <table className="w-full text-xs" aria-label={`Field changes for ${conflict.eventTitle}`}>
           <thead>
             <tr className="border-b border-white/6">
-              <th className="text-left py-2 pr-3 font-medium text-slate-400 w-[30%]">Field</th>
-              <th className="text-left py-2 px-3 font-medium text-cyan-300 w-[35%]">Local</th>
-              <th className="text-left py-2 pl-3 font-medium text-amber-300 w-[35%]">Remote</th>
+              <th className="text-start py-2 pe-3 font-medium text-slate-400 w-[30%]">Field</th>
+              <th className="text-start py-2 px-3 font-medium text-cyan-300 w-[35%]">Local</th>
+              <th className="text-start py-2 ps-3 font-medium text-amber-300 w-[35%]">Remote</th>
             </tr>
           </thead>
           <tbody>
             {allChanges.map((change) => (
               <tr key={change.field} className="border-b border-white/4">
-                <td className="py-2 pr-3 align-top text-slate-300 truncate max-w-[120px]">
+                <td className="py-2 pe-3 align-top text-slate-300 truncate max-w-[120px]">
                   {change.field}
                 </td>
                 <td className="py-2 px-3 align-top text-slate-100 break-words max-w-[160px]">
                   {change.localValue}
                 </td>
-                <td className="py-2 pl-3 align-top text-slate-100 break-words max-w-[160px]">
+                <td className="py-2 ps-3 align-top text-slate-100 break-words max-w-[160px]">
                   {change.remoteValue}
                 </td>
               </tr>
@@ -178,6 +178,16 @@ export function CalendarSyncConflictModal({
     });
     return initial;
   });
+  useEffect(() => {
+    setResolutions((previous) => {
+      const next: Record<string, ResolutionStrategy> = {};
+      conflicts.forEach((conflict) => {
+        next[conflict.id] = previous[conflict.id] ?? "merge";
+      });
+      return next;
+    });
+  }, [conflicts]);
+
   const titleId = useId();
   const announcementId = useId();
 
@@ -226,6 +236,12 @@ export function CalendarSyncConflictModal({
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={announcementId}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              handleClose();
+            }
+          }}
           className={clsx(
             "relative w-full max-w-2xl max-h-[85vh] flex flex-col",
             "rounded-[28px] border border-white/10",

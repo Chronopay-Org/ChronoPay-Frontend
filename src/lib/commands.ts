@@ -144,66 +144,16 @@ export const COMMANDS: Command[] = [
     },
   },
 
-  // ── Calendar ────────────────────────────────────────────────────────────────
-  {
-    id: "calendar",
-    label: "Calendar",
-    description: "View your schedule and availability",
-    href: "/dashboard/calendar",
-    icon: "Calendar",
-    keywords: ["schedule", "availability", "dates", "appointments"],
-    routeBoosts: {
-      "/dashboard/calendar": { boost: 3, reason: "You're on the Calendar" },
-    },
-  },
 
-  // ── History ──────────────────────────────────────────────────────────────────
-  {
-    id: "history",
-    label: "History",
-    description: "View your transaction history",
-    href: "/dashboard/history",
-    icon: "History",
-    keywords: ["transactions", "past", "activity", "log"],
-    routeBoosts: {
-      "/dashboard/history": { boost: 3, reason: "You're on the History page" },
-    },
-  },
 
-  // ── Wallet ───────────────────────────────────────────────────────────────────
-  {
-    id: "wallet",
-    label: "Wallet",
-    description: "View your token balance and transactions",
-    href: "/dashboard/wallet",
-    icon: "Wallet",
-    keywords: ["balance", "tokens", "funds", "account"],
-    routeBoosts: {
-      "/dashboard/wallet": { boost: 3, reason: "You're on the Wallet page" },
-    },
-  },
 
-  // ── Transfer ─────────────────────────────────────────────────────────────────
-  {
-    id: "transfer",
-    label: "Transfer",
-    description: "Send tokens to another account",
-    href: "/dashboard/wallet/transfer",
-    icon: "ArrowRightLeft",
-    keywords: ["send", "pay", "move", "funds", "tokens"],
-    routeBoosts: {
-      // Boosted aggressively on wallet routes so it tops the list
-      "/dashboard/wallet":     { boost: 5, reason: "Quick action from Wallet" },
-      "/dashboard/wallet/*":   { boost: 5, reason: "Quick action from Wallet" },
-    },
-  },
 
   // ── Create Availability ──────────────────────────────────────────────────────
   {
     id: "create-availability",
     label: "Create Availability",
     description: "List a new time slot for bookings",
-    href: "/dashboard/availability",
+    href: "/dashboard/onboarding/services",
     icon: "PlusCircle",
     keywords: ["add", "new", "slot", "time", "list", "create"],
     routeBoosts: {
@@ -212,31 +162,7 @@ export const COMMANDS: Command[] = [
     },
   },
 
-  // ── My Bookings ──────────────────────────────────────────────────────────────
-  {
-    id: "bookings",
-    label: "My Bookings",
-    description: "View your active and past bookings",
-    href: "/dashboard/bookings",
-    icon: "CalendarCheck",
-    keywords: ["booked", "reservations", "slots", "scheduled"],
-    routeBoosts: {
-      "/dashboard/bookings": { boost: 3, reason: "You're on the Bookings page" },
-    },
-  },
 
-  // ── Earnings ─────────────────────────────────────────────────────────────────
-  {
-    id: "earnings",
-    label: "Earnings",
-    description: "View your earnings and revenue",
-    href: "/dashboard/earnings",
-    icon: "TrendingUp",
-    keywords: ["revenue", "income", "payouts", "money"],
-    routeBoosts: {
-      "/dashboard/earnings": { boost: 3, reason: "You're on the Earnings page" },
-    },
-  },
 
   // ── Settings ─────────────────────────────────────────────────────────────────
   {
@@ -264,18 +190,6 @@ export const COMMANDS: Command[] = [
     },
   },
 
-  // ── View Transactions ───────────────────────────────────────────────────────
-  {
-    id: "transactions",
-    label: "View Transactions",
-    description: "Review all your token transfers and payments",
-    href: "/dashboard/history",
-    icon: "Receipt",
-    keywords: ["payments", "receipts", "transfers", "activity"],
-    routeBoosts: {
-      "/dashboard/history": { boost: 3, reason: "You're on the History page" },
-    },
-  },
 
   // ── Admin: Users ─────────────────────────────────────────────────────────────
   {
@@ -290,31 +204,7 @@ export const COMMANDS: Command[] = [
     },
   },
 
-  // ── Admin: Analytics ─────────────────────────────────────────────────────────
-  {
-    id: "admin-analytics",
-    label: "Analytics",
-    description: "View platform analytics and metrics",
-    href: "/admin/analytics",
-    icon: "BarChart3",
-    keywords: ["admin", "metrics", "reports", "data", "statistics"],
-    routeBoosts: {
-      "/admin/analytics": { boost: 3, reason: "You're on the Analytics page" },
-    },
-  },
 
-  // ── Admin: System Settings ──────────────────────────────────────────────────
-  {
-    id: "admin-settings",
-    label: "System Settings",
-    description: "Configure system-wide settings",
-    href: "/admin/settings",
-    icon: "Cog",
-    keywords: ["admin", "configure", "options", "preferences", "system"],
-    routeBoosts: {
-      "/admin/settings": { boost: 3, reason: "You're on the System Settings page" },
-    },
-  },
 ];
 
 // ─── Ranking ───────────────────────────────────────────────────────────────────

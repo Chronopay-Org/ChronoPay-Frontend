@@ -3,6 +3,7 @@ import { FocusTrap } from '@/components/common/FocusTrap';
 import { LiveRegion } from '@/components/common/LiveRegion';
 import { StatusChip } from '@/components/dashboard/status-chip';
 import { SigningSkeleton } from '@/components/checkout/SigningSkeleton';
+import type { WalletErrorCode } from '@/lib/wallet/adapter';
 
 export type WalletProvider = {
   id: string;
@@ -12,10 +13,27 @@ export type WalletProvider = {
   recommended?: boolean;
 };
 
-type ConnectionStatus = 'idle' | 'pending' | 'success' | 'error';
-type ConnectionMethod = 'wallet' | 'email';
+export type ConnectionStatus = 'idle' | 'pending' | 'success' | 'error';
+export type ConnectionMethod = 'wallet' | 'email';
 
 const LOCAL_STORAGE_KEY = 'wallet_connect_method';
+
+/**
+ * Distinct, accessible copy per adapter error code so a missing extension and a
+ * rejected request never read the same.
+ */
+const WALLET_ERROR_MESSAGES: Record<WalletErrorCode, string> = {
+  NOT_INSTALLED:
+    'This wallet extension is not installed. Install it, then reload the page and try again.',
+  USER_REJECTED:
+    'You rejected the connection request in your wallet. Approve the request to continue.',
+  WRONG_NETWORK:
+    'Your wallet is on the wrong Stellar network. Switch networks in your wallet and retry.',
+  INVALID_ADDRESS:
+    'Your wallet returned an address that is not a valid Stellar public key.',
+  UNKNOWN:
+    'Unable to connect to your wallet. Please check your extension or try a different one.',
+};
 
 export interface CheckoutData {
   slot: string;
@@ -30,12 +48,14 @@ interface WalletConnectModalProps {
   providers: WalletProvider[];
   status: ConnectionStatus;
   errorMessage?: string;
+  errorCode?: WalletErrorCode;
   onConnect: (providerId: string) => void;
   onRetry?: () => void;
   mode?: 'connect' | 'review' | 'handoff';
   checkoutData?: CheckoutData;
   onSign?: () => void;
   onCancelHandoff?: () => void;
+  initialMethod?: ConnectionMethod;
 }
 
 export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
@@ -44,12 +64,14 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   providers,
   status,
   errorMessage,
+  errorCode,
   onConnect,
   onRetry,
   mode = 'connect',
   checkoutData,
   onSign,
   onCancelHandoff,
+  initialMethod = 'wallet',
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [selectedCaps, setSelectedCaps] = useState<string[]>([]);
@@ -64,11 +86,13 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   const [selectedMethod, setSelectedMethod] = useState<ConnectionMethod | undefined>(() => {
     try {
       if (typeof window !== 'undefined') {
-        return (window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod) ?? undefined;
+        const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null;
+        return stored ?? initialMethod;
       }
     } catch {
-      return undefined;
+      return initialMethod;
     }
+    return initialMethod;
   });
 
   useEffect(() => {
@@ -82,10 +106,14 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const stored = typeof window !== 'undefined' ? window.localStorage.getItem(LOCAL_STORAGE_KEY) as ConnectionMethod | null : null;
-    setSelectedMethod(stored ?? undefined);
-    setEmail('');
-    setShowAlternativeWallets(false);
-  }, [isOpen]);
+    // Reset per-open state (stored method may have changed while closed). The
+    // writes are deferred so they don't run synchronously inside the effect.
+    window.setTimeout(() => {
+      setSelectedMethod(stored ?? initialMethod);
+      setEmail('');
+      setShowAlternativeWallets(false);
+    }, 0);
+  }, [isOpen, initialMethod]);
 
   const allCaps = useMemo(() => {
     const caps = new Set<string>();
@@ -159,6 +187,10 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
 
   const emailValid = email.includes('@') && email.includes('.');
   const selectedProviderName = providers.find(p => p.id === selectedProviderId)?.name || 'wallet';
+  const resolvedErrorMessage =
+    (errorCode ? WALLET_ERROR_MESSAGES[errorCode] : undefined) ??
+    errorMessage ??
+    WALLET_ERROR_MESSAGES.UNKNOWN;
 
   if (!isOpen) return null;
 
@@ -192,7 +224,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
                 ? 'Connecting to wallet…'
                 : null}
             {status === 'success' && 'Wallet connected successfully.'}
-            {status === 'error' && `Connection failed: ${errorMessage || 'Unknown error'}`}
+            {status === 'error' && `Connection failed: ${resolvedErrorMessage}`}
           </LiveRegion>
 
           {/* CHECKOUT REVIEW MODE */}
@@ -266,7 +298,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <button
                 type="button"
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
+                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-start transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
                 onClick={() => handleSelectMethod('wallet')}
                 aria-label="Connect Stellar wallet"
               >
@@ -286,7 +318,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
 
               <button
                 type="button"
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
+                className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 text-start transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 dark:border-slate-700 dark:bg-slate-800/50"
                 onClick={() => handleSelectMethod('email')}
                 aria-label="Continue with email"
               >
@@ -414,7 +446,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
                         )) || <span className="text-xs text-slate-400">-</span>}
                       </div>
 
-                      <div className="mt-2 sm:mt-0 sm:text-right">
+                      <div className="mt-2 sm:mt-0 sm:text-end">
                         <button
                           type="button"
                           onClick={() => handleConnect(p.id)}
@@ -507,7 +539,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           {status === 'error' && (
             <div className="mt-6 flex flex-col items-center gap-4 py-8">
               <StatusChip tone="critical">Connection issue</StatusChip>
-              <p className="text-sm text-slate-700 dark:text-slate-200 text-center">{errorMessage ?? 'Unable to connect to your wallet. Please check your extension or try a different one.'}</p>
+              <p data-error-code={errorCode} className="text-sm text-slate-700 dark:text-slate-200 text-center">{resolvedErrorMessage}</p>
               
               {!showAlternativeWallets ? (
                 <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs mt-2">
@@ -539,12 +571,13 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
                       Back to retry
                     </button>
                   </div>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1" role="list">
+                  <div className="space-y-2 max-h-48 overflow-y-auto pe-1" role="list">
                     {providers.map((p, i) => (
                       <button
                         key={p.id}
                         type="button"
                         autoFocus={i === 0}
+                        aria-label={`Connect to ${p.name}`}
                         onClick={() => {
                            setShowAlternativeWallets(false);
                            onConnect(p.id);
@@ -566,7 +599,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
 
           <button
             type="button"
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="absolute end-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             aria-label="Close modal"
             onClick={onClose}
           >

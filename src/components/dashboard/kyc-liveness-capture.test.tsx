@@ -4,23 +4,28 @@ import { KycLivenessCapture } from './kyc-liveness-capture';
 
 describe('KycLivenessCapture', () => {
   let onCaptureComplete: jest.Mock;
+  let stopMock: jest.Mock;
+  let getUserMediaMock: jest.Mock;
 
   beforeEach(() => {
     onCaptureComplete = jest.fn();
+    stopMock = jest.fn();
+    getUserMediaMock = jest.fn().mockResolvedValue({
+      getTracks: () => [{ stop: stopMock }],
+    });
     // Mock getUserMedia
     Object.defineProperty(global.navigator, 'mediaDevices', {
       value: {
-        getUserMedia: jest.fn().mockResolvedValue({
-          getTracks: () => [{ stop: jest.fn() }]
-        })
+        getUserMedia: getUserMediaMock,
       },
-      configurable: true
+      configurable: true,
     });
     jest.useFakeTimers();
   });
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('renders initial state', () => {
@@ -84,5 +89,73 @@ describe('KycLivenessCapture', () => {
     
     expect(screen.getByText('Verification Failed')).toBeInTheDocument();
     expect(onCaptureComplete).toHaveBeenCalledWith(false);
+  });
+
+  it('stops the camera stream on timeout', async () => {
+    render(<KycLivenessCapture onCaptureComplete={onCaptureComplete} />);
+    fireEvent.click(screen.getByRole('button', { name: /Start Verification/i }));
+
+    await waitFor(() => {
+      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(11000);
+    });
+
+    expect(stopMock).toHaveBeenCalled();
+  });
+
+  it('calls onCaptureComplete(false) only once on timeout', async () => {
+    render(<KycLivenessCapture onCaptureComplete={onCaptureComplete} />);
+    fireEvent.click(screen.getByRole('button', { name: /Start Verification/i }));
+
+    await waitFor(() => {
+      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(11000);
+    });
+
+    expect(onCaptureComplete).toHaveBeenCalledTimes(1);
+    expect(onCaptureComplete).toHaveBeenCalledWith(false);
+  });
+
+  it('opens exactly one stream after timeout and retry', async () => {
+    render(<KycLivenessCapture onCaptureComplete={onCaptureComplete} />);
+    fireEvent.click(screen.getByRole('button', { name: /Start Verification/i }));
+
+    await waitFor(() => {
+      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(1);
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(11000);
+    });
+
+    // Retry and start again.
+    fireEvent.click(screen.getByRole('button', { name: /Try Again/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Start Verification/i }));
+
+    await waitFor(() => {
+      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(2);
+    });
+
+    // The first stream's track was stopped on timeout, so only the second stream is active.
+    expect(stopMock).toHaveBeenCalled();
+  });
+
+  it('stops the camera stream on unmount', async () => {
+    const { unmount } = render(<KycLivenessCapture onCaptureComplete={onCaptureComplete} />);
+    fireEvent.click(screen.getByRole('button', { name: /Start Verification/i }));
+
+    await waitFor(() => {
+      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
+    });
+
+    unmount();
+
+    expect(stopMock).toHaveBeenCalled();
   });
 });

@@ -232,17 +232,43 @@ describe("ExportHistoryModal", () => {
     );
   });
 
-  it("handles custom onExport rejection gracefully", async () => {
-    const onExport = vi.fn().mockRejectedValue(new Error("Export failed"));
+  it(
+    "handles custom onExport rejection gracefully and surfaces the failure message",
+    async () => {
+      const onExport = vi.fn().mockRejectedValue(new Error("Export failed"));
+      render(
+        <ExportHistoryModal isOpen={true} onClose={vi.fn()} onExport={onExport} />,
+      );
+
+      const exportBtn = screen.getByRole("button", { name: /export as csv/i });
+      fireEvent.click(exportBtn);
+
+      await waitFor(() => {
+        expect(screen.getByText("Export transactions")).toBeInTheDocument();
+        expect(
+          screen.getByText("Export failed. Please try again."),
+        ).toBeInTheDocument();
+      });
+    },
+  );
+
+  it("supports a zero-transaction boundary for the complete export path", async () => {
     render(
-      <ExportHistoryModal isOpen={true} onClose={vi.fn()} onExport={onExport} />,
+      <ExportHistoryModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onExport={vi.fn().mockResolvedValue(undefined)}
+        estimatedCount={0}
+      />,
     );
 
-    const exportBtn = screen.getByRole("button", { name: /export as csv/i });
-    fireEvent.click(exportBtn);
+    fireEvent.click(screen.getByRole("button", { name: /export as csv/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Export transactions")).toBeInTheDocument();
+      expect(screen.getByText("0 transactions exported")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /download csv/i }),
+      ).toBeInTheDocument();
     });
   });
 

@@ -85,7 +85,7 @@ export function BreadcrumbOverflow({ items, className }: BreadcrumbOverflowProps
         <ol className="flex flex-wrap items-center gap-2 text-sm">
           <li className="flex items-center gap-1.5 text-slate-200">
             {items[0].icon && <span aria-hidden="true" className="inline-flex items-center">{items[0].icon}</span>}
-            <span>{items[0].label}</span>
+            <span aria-current="page">{items[0].label}</span>
           </li>
         </ol>
       </nav>
@@ -113,7 +113,7 @@ export function BreadcrumbOverflow({ items, className }: BreadcrumbOverflowProps
                     onClick={() => handleOpenChange(!isOpen)}
                     aria-label="Show hidden breadcrumb items"
                   >
-                    <MoreHorizontal className="mr-1 h-4 w-4" aria-hidden="true" />
+                    <MoreHorizontal className="me-1 h-4 w-4" aria-hidden="true" />
                     More
                   </button>
                   {isOpen && (
@@ -146,7 +146,7 @@ export function BreadcrumbOverflow({ items, className }: BreadcrumbOverflowProps
                       ))}
                     </div>
                   )}
-                  <ChevronRight className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                  <ChevronRight className="icon-directional h-4 w-4 text-slate-500" aria-hidden="true" />
                 </>
               ) : (
                 <>
@@ -159,12 +159,15 @@ export function BreadcrumbOverflow({ items, className }: BreadcrumbOverflowProps
                       <span>{item.label}</span>
                     </Link>
                   ) : (
-                    <span className={`inline-flex items-center gap-1.5 ${isLast ? "font-semibold text-white" : "text-slate-300"}`}>
+                    <span 
+                      className={`inline-flex items-center gap-1.5 ${isLast ? "font-semibold text-white" : "text-slate-300"}`}
+                      {...(isLast ? { "aria-current": "page" } : {})}
+                    >
                       {item.icon && <span aria-hidden="true" className="inline-flex items-center">{item.icon}</span>}
                       <span>{item.label}</span>
                     </span>
                   )}
-                  {!isLast && <ChevronRight className="h-4 w-4 text-slate-500" aria-hidden="true" />}
+                  {!isLast && <ChevronRight className="icon-directional h-4 w-4 text-slate-500" aria-hidden="true" />}
                 </>
               )}
             </li>

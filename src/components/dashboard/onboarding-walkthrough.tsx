@@ -9,6 +9,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { X } from "lucide-react";
+import { FocusTrap } from "@/components/common/FocusTrap";
 
 export type WalkthroughStep = {
   id: string;
@@ -94,7 +95,6 @@ export function OnboardingWalkthrough({
 }: OnboardingWalkthroughProps) {
   const titleId = useId();
   const bodyId = useId();
-  const dialogRef = useRef<HTMLDivElement>(null);
   const primaryBtnRef = useRef<HTMLButtonElement>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [spotlight, setSpotlight] = useState<SpotlightRect | null>(null);
@@ -142,26 +142,11 @@ export function OnboardingWalkthrough({
   }, [open, step, refreshSpotlight]);
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    // Escape dismisses the tour. Tab cycling is delegated to <FocusTrap> so all
+    // overlays share one trapping implementation (see FocusTrap.tsx).
     if (event.key === "Escape") {
       event.preventDefault();
       onSkip();
-      return;
-    }
-
-    if (event.key !== "Tab" || !dialogRef.current) return;
-
-    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
     }
   };
 
@@ -197,15 +182,15 @@ export function OnboardingWalkthrough({
         />
       ) : null}
 
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={bodyId}
-        onKeyDown={handleKeyDown}
-        className="absolute inset-x-3 bottom-4 z-[81] w-auto max-w-md rounded-[1.5rem] border border-white/12 bg-slate-950 p-4 shadow-[0_24px_80px_-24px_rgba(15,23,42,0.95)] sm:inset-x-auto sm:start-8 sm:bottom-8 sm:w-[min(100%-2rem,24rem)] sm:p-5"
-      >
+      <FocusTrap>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={bodyId}
+          onKeyDown={handleKeyDown}
+          className="absolute inset-x-3 bottom-4 z-[81] w-auto max-w-md rounded-[1.5rem] border border-white/12 bg-slate-950 p-4 shadow-[0_24px_80px_-24px_rgba(15,23,42,0.95)] sm:inset-x-auto sm:start-8 sm:bottom-8 sm:w-[min(100%-2rem,24rem)] sm:p-5"
+        >
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/70">
@@ -274,6 +259,7 @@ export function OnboardingWalkthrough({
           </div>
         </div>
       </div>
+      </FocusTrap>
 
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}

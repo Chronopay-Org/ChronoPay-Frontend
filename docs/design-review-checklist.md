@@ -11,6 +11,16 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Semantics**: ARIA labels, landmarks (`<header>`, `<main>`, `<nav>`), and alt text are correctly used.
 - [ ] **Skip Link**: The "Skip to content" link is present and functional.
 
+## 🔑 Autocomplete / Password Manager
+- [ ] **Primitive**: Auth/account inputs use the `FormField` primitive in `src/app/components/ui/form-field.tsx` so `autocomplete`/`name`/`inputmode` pairs are enforced.
+- [ ] **Password inputs**: Every existing-password field uses `autocomplete="current-password"`; every new-password field uses `autocomplete="new-password"` — never both on the same input.
+- [ ] **OTP/2FA**: One-time code inputs use `autocomplete="one-time-code"` and `inputMode="numeric"` (e.g. the TOTP field in `two-factor-enroll.tsx`).
+- [ ] **Identity fields**: `name` and `email` fields carry `autocomplete="name"` / `autocomplete="email"` with matching `name` attributes so password managers can map them.
+- [ ] **Non-credential fields**: Search, promo code, and similar non-auth inputs intentionally use `autocomplete="off"` so managers don't save them.
+- [ ] **Labels**: Never rely on placeholder text; every field has an associated `<label>` (WCAG 3.3.2 / 2.4.6).
+- [ ] **Tokens reference**: Supported tokens match `docs/password-manager-guide.md`; the `AutocompleteToken` union is the single source of truth.
+- [ ] **Verified**: Changed forms tested with 1Password, Bitwarden, and browser autofill per the browser matrix in `docs/password-manager-guide.md`.
+
 ## 📱 Responsive & Layout
 - [ ] **Mobile-First**: No horizontal scrolling on small screens; layout adapts to narrow viewports.
 - [ ] **Above-the-Fold**: Critical info (title, wallet, CTA) is visible on 1280x720 laptop viewports.
@@ -40,6 +50,21 @@ You can view the [Live Preview](/design-review) of this checklist in the applica
 - [ ] **Keyboard operable**: Enter/Space opens; Escape closes; Tab/Shift+Tab cycles within the open popover.
 - [ ] **What's this mode**: The `?` shortcut activates a contextual help mode with a cursor change, hover/focus highlight, and descriptive popovers; it respects reduced-motion and remains keyboard accessible.
 - [ ] **Click-outside**: Clicking outside the popover closes it without disrupting other interactions.
+
+## ⌨️ Keyboard Shortcuts Overlay (`?` / Shift+/)
+
+The dashboard ships a discoverable keyboard-shortcuts reference. Pressing **`?` (Shift+/)** anywhere on the shell toggles a modal that lists every binding grouped by surface, so users never have to memorise shortcuts.
+
+- [ ] **Trigger**: `?` (Shift+/) toggles the overlay globally from the shell; the binding is ignored while focus is inside an input, textarea, select, or content-editable element.
+- [ ] **Single source of truth**: All bindings live in `src/lib/shortcuts.ts` as `SHORTCUT_GROUPS` (grouped by surface) and are rendered by `src/app/components/ui/shortcut-overlay.tsx`.
+- [ ] **ARIA correct**: Overlay uses `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` pointing at the visible heading.
+- [ ] **Focus management**: The overlay is wrapped in the shared `<FocusTrap>` so Tab/Shift+Tab stay inside; focus returns to the previously focused element on close.
+- [ ] **Keyboard operable**: Escape closes; the close button is keyboard-reachable with a visible cyan focus ring.
+- [ ] **Backdrop**: A scrim (`bg-black/50 backdrop-blur-sm`) separates the modal; clicking it closes the overlay.
+- [ ] **Bindings accessible**: Each shortcut renders as a proper `<kbd>` element next to a text label — never an icon alone — so every binding has an accessible name.
+- [ ] **Responsive**: The dialog is centered with `max-w-md`, and the list scrolls vertically (`max-h-[70vh] overflow-y-auto`) on short viewports with no horizontal overflow.
+- [ ] **Edge cases**: Empty registry shows a friendly fallback message; dark mode uses the shell's slate/cyan token palette.
+- [ ] **Adding shortcuts**: Extend `SHORTCUT_GROUPS` in `src/lib/shortcuts.ts` — no component changes needed.
 
 ---
 

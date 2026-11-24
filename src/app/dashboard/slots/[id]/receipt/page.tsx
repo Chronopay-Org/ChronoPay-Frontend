@@ -9,11 +9,13 @@
 
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, ShieldCheck, LayoutDashboard, RefreshCw, AlertTriangle, Info } from "lucide-react";
 import { DashboardShell } from "@/app/components/dashboard-shell";
 import { BreadcrumbOverflow } from "@/app/components/ui/breadcrumb-overflow";
 import { StatusChip } from "@/components/dashboard/status-chip";
 import { Tooltip } from "@/app/components/ui/tooltip";
+import { mockSlots } from "@/components/dashboard/dashboard-data";
 
 type SharedReceiptPageProps = {
   params: Promise<{ id: string }>;
@@ -24,8 +26,10 @@ const first = (value: string | string[] | undefined) =>
   (Array.isArray(value) ? value[0] : value) ?? "";
 
 export default function SharedReceiptPage({ params, searchParams }: SharedReceiptPageProps) {
-  use(params);
+  const { id } = use(params);
   const query = use(searchParams);
+
+  if (!mockSlots.some((slot) => slot.id === id)) notFound();
 
   const asset = first(query.asset);
   const tx = first(query.tx);
@@ -157,7 +161,7 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
                     <dd className="font-mono text-white">{networkFeeTotal} {currency}</dd>
                   </div>
 
-                  <div className="pl-4 space-y-2 border-l border-white/10 ml-2">
+                  <div className="ps-4 space-y-2 border-s border-white/10 ms-2">
                     <div className="flex items-center justify-between text-xs">
                       <dt className="flex items-center gap-1.5 text-slate-400">
                         Base Fee

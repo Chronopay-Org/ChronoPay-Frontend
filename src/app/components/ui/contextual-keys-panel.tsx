@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Keyboard } from "lucide-react";
 import { clsx } from "clsx";
@@ -42,21 +41,11 @@ function ShortcutRow({ shortcut }: { shortcut: Shortcut }) {
 
 export function ContextualKeysPanel() {
   const pathname = usePathname();
-  const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    // Basic prefix matching for demo purposes
-    const matchedPath = Object.keys(ROUTE_SHORTCUTS).find(path => pathname?.startsWith(path));
-    if (matchedPath) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShortcuts(ROUTE_SHORTCUTS[matchedPath]);
-      setIsOpen(true);
-    } else {
-      setShortcuts([]);
-      setIsOpen(false);
-    }
-  }, [pathname]);
+  // Basic prefix matching for demo purposes
+  const matchedPath = Object.keys(ROUTE_SHORTCUTS).find((path) =>
+    pathname?.startsWith(path)
+  );
+  const shortcuts = matchedPath ? ROUTE_SHORTCUTS[matchedPath] : [];
 
   if (shortcuts.length === 0) return null;
 
@@ -79,7 +68,7 @@ export function ContextualKeysPanel() {
           aria-live="polite" 
           className="sr-only"
         >
-          {isOpen ? `Contextual keys panel available with ${shortcuts.length} shortcuts.` : ""}
+          {`Contextual keys panel available with ${shortcuts.length} shortcuts.`}
         </span>
       </div>
       

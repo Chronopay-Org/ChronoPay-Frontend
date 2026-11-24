@@ -268,7 +268,6 @@ export function HelpPopover({
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // ── Viewport-aware placement ──────────────────────────────────────────────
@@ -299,8 +298,8 @@ export function HelpPopover({
 
   const placementClasses =
     placement === "top"
-      ? "bottom-full mb-2 left-1/2 -translate-x-1/2"
-      : "top-full mt-2 left-1/2 -translate-x-1/2";
+      ? "bottom-full mb-2 start-1/2 -translate-x-1/2"
+      : "top-full mt-2 start-1/2 -translate-x-1/2";
 
   // ── Tab-trap inside popover ───────────────────────────────────────────────
 
@@ -425,8 +424,8 @@ export function HelpPopover({
           <span
             aria-hidden={true}
             className={[
-              "absolute left-1/2 -translate-x-1/2 w-0 h-0",
-              "border-l-[6px] border-r-[6px] border-transparent",
+              "absolute start-1/2 -translate-x-1/2 w-0 h-0",
+              "border-s-[6px] border-e-[6px] border-transparent",
               placement === "top"
                 ? "top-full border-t-[6px] border-t-zinc-700"
                 : "bottom-full border-b-[6px] border-b-zinc-700",

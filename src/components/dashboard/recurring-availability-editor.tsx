@@ -2,7 +2,7 @@
 
 import { useId, useState, useMemo, useCallback, useRef } from "react";
 import { clsx } from "clsx";
-import { RRule, type Weekday } from "rrule";
+import { RRule, type Options as RRuleOptions, type Weekday } from "rrule";
 import { PanelShell } from "./panel-shell";
 import { formatDate } from "@/lib/formatters";
 
@@ -176,7 +176,7 @@ export function RecurringAvailabilityEditor() {
       ? Array.from(weekdayIndices).map((d) => WEEKDAY_LABELS[d]!.value)
       : undefined;
 
-    const options: Partial<RRule.Options> = {
+    const options: Partial<RRuleOptions> = {
       freq: frequencyToRRuleFreq(frequency),
       interval: interval_,
       dtstart: new Date(),

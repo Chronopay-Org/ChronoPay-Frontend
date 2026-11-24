@@ -1,0 +1,137 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "An error occurred. Please refresh the page.",
+    "empty": "No data available.",
+    "skipToContent": "Skip to content",
+    "language": "Language",
+    "help": "Help"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "marketplace": "Marketplace",
+    "settings": "Settings",
+    "pricing": "Pricing",
+    "admin": "Admin"
+  },
+  "home": {
+    "title": "ChronoPay",
+    "tagline": "Time Economy",
+    "description": "Tokenize your future time slots as tradable digital assets on the Stellar network. Buy, sell, reserve, and redeem time globally.",
+    "ctaDashboard": "Dashboard",
+    "ctaStellar": "Stellar"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Connect your Stellar wallet to mint and trade time tokens.",
+    "marketplaceTitle": "Marketplace Discovery",
+    "marketplaceSubtitle": "Search and filter to find exactly what you need in our marketplace.",
+    "searchPlaceholder": "Search marketplace (UI, Components, Accessibility…)",
+    "loadingMessage": "Loading dashboard…",
+    "errorMessage": "An error occurred. Please refresh the page.",
+    "emptyMessage": "No data available.",
+    "sampleCleared": "Sample metrics cleared. Metrics will appear here once you have live activity."
+  },
+  "wallet": {
+    "title": "Wallet",
+    "connected": "Connected",
+    "disconnected": "Connect a wallet to sync balances.",
+    "balance": "Balance",
+    "pending": "Pending",
+    "nextPayout": "Next payout",
+    "synced": "Synced"
+  },
+  "metrics": {
+    "availableHours": "Available hours this week",
+    "walletBalance": "Wallet balance",
+    "bookingsInProgress": "Bookings in progress",
+    "conversionRate": "Conversion rate"
+  },
+  "bookings": {
+    "title": "Booking Progress",
+    "checklistTitle": "Completion checklist",
+    "checklistEyebrow": "Booking flow",
+    "reserved": "Reserved",
+    "confirmed": "Confirmed",
+    "completed": "Completed"
+  },
+  "security": {
+    "title": "Security Status",
+    "description": "Review your account security settings."
+  },
+  "ratings": {
+    "title": "Rating Breakdown",
+    "description": "Per-criterion average ratings across your recent reviews.",
+    "communication": "Communication",
+    "expertise": "Expertise",
+    "timeliness": "Timeliness",
+    "value": "Value",
+    "clarity": "Clarity"
+  },
+  "pricing": {
+    "title": "Fee Calculator",
+    "description": "Estimate your take-home earnings after platform and network fees.",
+    "platformFee": "Platform fee",
+    "networkFee": "Network fee",
+    "takeHome": "Take-home"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "listSlot": "List new slot",
+    "listSlotDesc": "Open a fresh availability block with default pricing.",
+    "reviewWallet": "Review wallet",
+    "reviewWalletDesc": "Check payout timing, escrow, and pending transfers.",
+    "confirmBookings": "Confirm bookings",
+    "confirmBookingsDesc": "Resolve the three requests waiting on your approval."
+  },
+  "slots": {
+    "title": "Available Time Slots",
+    "statusHealthy": "Healthy",
+    "statusTight": "Tight",
+    "statusBusy": "Busy",
+    "statusSoldOut": "Sold Out",
+    "nextAvailable": "Next available",
+    "interestedBuyers": "interested buyers",
+    "openOffers": "open offers",
+    "waitlistEnabled": "Waitlist enabled",
+    "soldOut": "Sold out"
+  },
+  "trust": {
+    "title": "Trust Metrics",
+    "description": "Response time and booking acceptance rate based on the last 30 days.",
+    "responseTime": "Response time",
+    "acceptanceRate": "Acceptance rate",
+    "responseTimeTooltip": "Median time between receiving a booking request and responding. Lower is better.",
+    "acceptanceRateTooltip": "Percentage of booking requests you accepted over the last 30 days.",
+    "min": "min"
+  },
+  "onboarding": {
+    "title": "Welcome to ChronoPay",
+    "description": "Get started by setting up your first time slot.",
+    "skipTour": "Skip tour",
+    "clearSamples": "Clear samples",
+    "dismiss": "Dismiss"
+  },
+  "kyc": {
+    "title": "Identity Verification",
+    "subtitle": "Verify your identity to unlock full marketplace access."
+  },
+  "mfa": {
+    "title": "Two-Factor Authentication",
+    "enable": "Enable",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "enrollTitle": "Set up two-factor authentication"
+  },
+  "export": {
+    "title": "Export History",
+    "download": "Download",
+    "dateRange": "Date range"
+  },
+  "localePicker": {
+    "label": "Language selector"
+  },
+  "a11y": {
+    "helpTrigger": "Help: what does {term} mean?"
+  }
+}

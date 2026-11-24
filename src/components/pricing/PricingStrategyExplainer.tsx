@@ -14,17 +14,24 @@ export function PricingStrategyExplainer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Simulate a retryable preview data load (deterministic)
+  // Simulate a retryable preview data load (deterministic). State resets are
+  // deferred to a timeout callback so they don't run synchronously inside the
+  // effect body, then a second timer completes the fake load.
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-    setError(null);
-    const t = setTimeout(() => {
+    const resetTimer = setTimeout(() => {
+      setLoading(true);
+      setError(null);
+    }, 0);
+    const doneTimer = setTimeout(() => {
       // deterministic success path
       setLoading(false);
     }, 120);
 
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(resetTimer);
+      clearTimeout(doneTimer);
+    };
   }, [open, strategy]);
 
   return (
@@ -110,7 +117,7 @@ export function PricingStrategyExplainer({
               <div className="p-4 text-sm text-rose-300">
                 {error}
                 <button
-                  className="ml-3 underline"
+                  className="ms-3 underline"
                   onClick={() => {
                     setError(null);
                     setLoading(true);

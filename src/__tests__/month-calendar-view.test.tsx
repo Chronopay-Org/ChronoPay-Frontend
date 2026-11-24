@@ -225,4 +225,85 @@ describe("MonthCalendarView", () => {
     expect(screen.getByRole("button", { name: /previous month/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /next month/i })).toBeInTheDocument();
   });
+
+  describe("month navigation and focus management", () => {
+    it("navigates from Jan 31 to February on Next month without month overflow", () => {
+      render(
+        <MonthCalendarView
+          {...defaultProps}
+          selectedDate={new Date(2026, 0, 31)}
+        />
+      );
+      expect(screen.getByText("January 2026")).toBeInTheDocument();
+
+      const nextBtn = screen.getByRole("button", { name: /next month/i });
+      fireEvent.click(nextBtn);
+
+      expect(screen.getByText("February 2026")).toBeInTheDocument();
+    });
+
+    it("navigates from Mar 31 to February on Previous month without month overflow", () => {
+      render(
+        <MonthCalendarView
+          {...defaultProps}
+          selectedDate={new Date(2026, 2, 31)}
+        />
+      );
+      expect(screen.getByText("March 2026")).toBeInTheDocument();
+
+      const prevBtn = screen.getByRole("button", { name: /previous month/i });
+      fireEvent.click(prevBtn);
+
+      expect(screen.getByText("February 2026")).toBeInTheDocument();
+    });
+
+    it("mounting MonthCalendarView does not change document.activeElement", () => {
+      const outsideButton = document.createElement("button");
+      outsideButton.textContent = "Outside element";
+      document.body.appendChild(outsideButton);
+      outsideButton.focus();
+      expect(document.activeElement).toBe(outsideButton);
+
+      render(<MonthCalendarView {...defaultProps} />);
+
+      expect(document.activeElement).toBe(outsideButton);
+      document.body.removeChild(outsideButton);
+    });
+
+    it("moves focus between days when user navigates with arrow keys", () => {
+      render(
+        <MonthCalendarView
+          {...defaultProps}
+          selectedDate={new Date("2026-07-15")}
+        />
+      );
+
+      const day15 = screen.getByRole("gridcell", {
+        name: /Wednesday, July 15/i,
+      });
+      day15.focus();
+      expect(document.activeElement).toBe(day15);
+
+      fireEvent.keyDown(day15, { key: "ArrowRight" });
+      const day16 = screen.getByRole("gridcell", {
+        name: /Thursday, July 16/i,
+      });
+      expect(document.activeElement).toBe(day16);
+
+      fireEvent.keyDown(day16, { key: "ArrowDown" });
+      const day23 = screen.getByRole("gridcell", {
+        name: /Thursday, July 23/i,
+      });
+      expect(document.activeElement).toBe(day23);
+
+      fireEvent.keyDown(day23, { key: "ArrowLeft" });
+      const day22 = screen.getByRole("gridcell", {
+        name: /Wednesday, July 22/i,
+      });
+      expect(document.activeElement).toBe(day22);
+
+      fireEvent.keyDown(day22, { key: "ArrowUp" });
+      expect(document.activeElement).toBe(day15);
+    });
+  });
 });

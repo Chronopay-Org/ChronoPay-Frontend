@@ -1,3 +1,5 @@
+"use client";
+
 import { ServicesStep } from "@/components/dashboard/services-step";
 import type { ServiceItem } from "@/components/dashboard/types";
 

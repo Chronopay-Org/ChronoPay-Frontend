@@ -12,7 +12,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { COMMANDS, rankCommands, type RankedCommand } from "@/lib/commands";
 
 export interface UseCommandPaletteReturn {
@@ -36,6 +36,7 @@ export function useCommandPalette(): UseCommandPaletteReturn {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isGlobal, setIsGlobal] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // Debounced pathname — avoids flash of re-ranked results during route changes
@@ -68,15 +69,12 @@ export function useCommandPalette(): UseCommandPaletteReturn {
   }, []);
 
   const toggle = useCallback(() => {
-    setIsOpen((prev) => {
-      if (!prev) {
-        previousFocusRef.current = document.activeElement as HTMLElement;
-        setQuery("");
-      }
-      return !prev;
-    });
-    setActiveIndex(-1);
-  }, []);
+    if (isOpen) {
+      close();
+    } else {
+      open();
+    }
+  }, [isOpen, close, open]);
 
   // ── Global mode toggle ────────────────────────────────────────────────────
 
@@ -90,18 +88,22 @@ export function useCommandPalette(): UseCommandPaletteReturn {
   const executeCommand = useCallback(
     (command: RankedCommand) => {
       close();
-      // Use the Next.js router for SPA navigation
-      window.location.href = command.href;
+      const isExternal = /^[a-z][a-z0-9+.-]*:|\/\//i.test(command.href);
+      if (isExternal) {
+        window.location.href = command.href;
+      } else {
+        router.push(command.href);
+      }
     },
-    [close],
+    [close, router],
   );
 
   // ── Global keyboard shortcut ──────────────────────────────────────────────
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K to open
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      // Cmd+K or Ctrl+K to open/close
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
         e.preventDefault();
         toggle();
       }
@@ -109,22 +111,6 @@ export function useCommandPalette(): UseCommandPaletteReturn {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [toggle]);
-
-  // ── Focus trap: prevent Tab from escaping while open ─────────────────────
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleTabTrap = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      // The palette's own input handles up/down/enter/escape;
-      // we prevent Tab from leaving the dialog entirely.
-      e.preventDefault();
-    };
-
-    document.addEventListener("keydown", handleTabTrap);
-    return () => document.removeEventListener("keydown", handleTabTrap);
-  }, [isOpen]);
 
   return {
     isOpen,

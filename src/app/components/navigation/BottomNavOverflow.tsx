@@ -41,6 +41,7 @@ import {
   sortNavByPins,
   writePinnedHrefs,
 } from "./role-nav";
+import { isNavItemActive } from "./is-nav-item-active";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ interface BottomNavOverflowProps {
 
 export function BottomNavOverflow({ items, role, className = "" }: BottomNavOverflowProps) {
   const pathname = usePathname();
+  const allHrefs = items.map((i) => i.href);
 
   // Pin state — initialised from localStorage via lazy initializer
   const [pinnedHrefs, setPinnedHrefs] = useState<string[]>(() =>
@@ -146,15 +148,16 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
       <nav
         aria-label="Mobile bottom navigation"
         className={[
-          "fixed bottom-0 left-0 right-0 z-30 md:hidden",
+          "fixed bottom-0 start-0 end-0 z-30 sm:hidden",
           "bg-slate-900 text-slate-100",
           "flex items-stretch justify-around",
           "shadow-[0_-1px_0_rgba(255,255,255,0.08)]",
+          "pb-[env(safe-area-inset-bottom)]",
           className,
         ].join(" ")}
       >
         {visibleItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive = isNavItemActive(pathname, item.href, allHrefs);
           return (
             <Link
               key={item.href}
@@ -215,7 +218,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
       {/* ── Overflow sheet backdrop + panel ────────────────────────────── */}
       {sheetOpen && (
         <div
-          className="fixed inset-0 z-40 md:hidden"
+          className="fixed inset-0 z-40 sm:hidden"
           aria-hidden="false"
         >
           {/* Scrim */}
@@ -237,10 +240,10 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
               aria-modal="true"
               aria-labelledby="overflow-sheet-title"
               className={[
-                "absolute bottom-0 left-0 right-0",
+                "absolute bottom-0 start-0 end-0",
                 "bg-slate-900 text-slate-100",
                 "rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.4)]",
-                "pb-safe",
+                "pb-[env(safe-area-inset-bottom)]",
                 sheetTransition,
               ].join(" ")}
             >
@@ -293,8 +296,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
               <ul role="list" className="px-2 pb-4">
                 {overflowItems.map((item) => {
                   const isPinned = pinnedHrefs.includes(item.href);
-                  const isActive =
-                    pathname === item.href || pathname.startsWith(item.href + "/");
+                  const isActive = isNavItemActive(pathname, item.href, allHrefs);
 
                   return (
                     <li
@@ -321,7 +323,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
                         </span>
                         <span className="text-sm font-medium">{item.label}</span>
                         {isActive && (
-                          <span className="ml-auto text-xs text-cyan-400">Current</span>
+                          <span className="ms-auto text-xs text-cyan-400">Current</span>
                         )}
                       </Link>
 
@@ -335,7 +337,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
                         aria-pressed={isPinned}
                         onClick={() => togglePin(item)}
                         className={[
-                          "mr-2 rounded-lg p-2",
+                          "me-2 rounded-lg p-2",
                           "min-h-[44px] min-w-[44px] flex items-center justify-center",
                           "focus-visible:outline-none focus-visible:ring-2",
                           "focus-visible:ring-cyan-400 focus-visible:ring-offset-2",

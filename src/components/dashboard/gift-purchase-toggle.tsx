@@ -208,7 +208,7 @@ export function GiftPurchaseToggle({ onChange }: GiftPurchaseToggleProps) {
                 placeholder="Enjoy this time with me — happy booking!"
                 className="w-full resize-none rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2.5 pb-9 text-sm text-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
               />
-              <div className="absolute bottom-2 left-2">
+              <div className="absolute bottom-2 start-2">
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker((v) => !v)}
@@ -224,7 +224,7 @@ export function GiftPurchaseToggle({ onChange }: GiftPurchaseToggleProps) {
                 <div
                   role="menu"
                   aria-label="Emoji picker"
-                  className="absolute bottom-10 left-2 z-10 flex flex-wrap gap-1 rounded-xl border border-white/10 bg-slate-900 p-2 shadow-xl max-w-[180px]"
+                  className="absolute bottom-10 start-2 z-10 flex flex-wrap gap-1 rounded-xl border border-white/10 bg-slate-900 p-2 shadow-xl max-w-[180px]"
                 >
                   {EMOJI_OPTIONS.map((emoji) => (
                     <button
@@ -252,7 +252,7 @@ export function GiftPurchaseToggle({ onChange }: GiftPurchaseToggleProps) {
                 return (
                   <label
                     key={value}
-                    className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-2.5 text-left transition-colors focus-within:ring-2 focus-within:ring-cyan-300 ${
+                    className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-2.5 text-start transition-colors focus-within:ring-2 focus-within:ring-cyan-300 ${
                       active
                         ? "border-cyan-400/40 bg-cyan-400/10"
                         : "border-white/10 bg-slate-900/60 hover:bg-white/5"
@@ -272,7 +272,7 @@ export function GiftPurchaseToggle({ onChange }: GiftPurchaseToggleProps) {
                     <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
                       <Icon className={`h-3.5 w-3.5 ${active ? "text-cyan-300" : "text-slate-400"}`} aria-hidden="true" />
                       {label}
-                      {active && <Check className="h-3 w-3 text-cyan-300 ml-auto" aria-hidden="true" />}
+                      {active && <Check className="h-3 w-3 text-cyan-300 ms-auto" aria-hidden="true" />}
                     </span>
                     <span className="text-[11px] text-slate-400 leading-snug">{description}</span>
                   </label>

@@ -302,4 +302,25 @@ describe("Tooltip Component", () => {
     );
     expect(container.firstChild).toHaveClass("custom-wrapper-class");
   });
+
+  it("tooltip surface includes motion-reduce:transition-none for prefers-reduced-motion", async () => {
+    render(<Tooltip content="Reduced motion test" />);
+    const trigger = screen.getByLabelText("Help information");
+
+    fireEvent.mouseEnter(trigger);
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip.className).toContain("transition-opacity");
+    expect(tooltip.className).toContain("motion-reduce:transition-none");
+  });
+
+  it("trigger button includes motion-reduce:transition-none for prefers-reduced-motion", () => {
+    render(<Tooltip content="Trigger reduced motion" />);
+    const trigger = screen.getByLabelText("Help information");
+    expect(trigger.className).toContain("transition-colors");
+    expect(trigger.className).toContain("motion-reduce:transition-none");
+  });
 });

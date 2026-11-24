@@ -55,6 +55,7 @@ import {
   Info,
   type LucideIcon,
 } from "lucide-react";
+import { FocusTrap } from "@/components/common/FocusTrap";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import type { RankedCommand } from "@/lib/commands";
 
@@ -209,21 +210,26 @@ export function CommandPalette() {
           break;
         }
         case "Escape": {
-          e.preventDefault();
           if (query) {
+            e.preventDefault();
             updateQuery("");
-          } else {
-            close();
           }
-          break;
-        }
-        case "Tab": {
-          e.preventDefault();
           break;
         }
       }
     },
-    [results, activeIndex, query, close, executeCommand, updateQuery, setActiveIndex],
+    [results, activeIndex, query, executeCommand, updateQuery, setActiveIndex],
+  );
+
+  const handleDialogKeyDown = useCallback(
+    (e: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Escape") {
+        if (e.defaultPrevented) return;
+        e.preventDefault();
+        close();
+      }
+    },
+    [close],
   );
 
   // ── Result click handler ──────────────────────────────────────────────────
@@ -238,12 +244,14 @@ export function CommandPalette() {
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] sm:pt-[20vh]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={headingId}
-    >
+    <FocusTrap>
+      <div
+        className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] sm:pt-[20vh]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        onKeyDown={handleDialogKeyDown}
+      >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -411,7 +419,7 @@ export function CommandPalette() {
                         <div
                           role="tooltip"
                           className={[
-                            "absolute right-0 top-full mt-1.5 z-20",
+                            "absolute end-0 top-full mt-1.5 z-20",
                             "w-56 rounded-lg border border-white/10",
                             "bg-zinc-800 px-3 py-2 text-xs text-white",
                             "shadow-lg",
@@ -423,9 +431,9 @@ export function CommandPalette() {
                           <p>{command.boostReason}</p>
                           <div
                             className={[
-                              "absolute -top-1 right-3",
+                              "absolute -top-1 end-3",
                               "h-2 w-2 rotate-45 bg-zinc-800",
-                              "border-l border-t border-white/10",
+                              "border-s border-t border-white/10",
                             ].join(" ")}
                             aria-hidden="true"
                           />
@@ -502,7 +510,8 @@ export function CommandPalette() {
         {announcement}
       </div>
     </div>
-  );
+  </FocusTrap>
+);
 }
 
 // ─── HighlightMatch ───────────────────────────────────────────────────────────

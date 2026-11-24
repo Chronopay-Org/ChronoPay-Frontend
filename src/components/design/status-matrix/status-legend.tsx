@@ -1,11 +1,18 @@
 import { CheckCircle2, AlertTriangle, XCircle, HelpCircle } from "lucide-react";
 import type { Status } from "./types";
 
+export const statusLabels: Record<Status, string> = {
+  operational: "Operational",
+  degraded: "Degraded",
+  outage: "Outage",
+  unknown: "Unknown",
+};
+
 const items: { status: Status; icon: React.ElementType; label: string; bg: string }[] = [
-  { status: "operational", icon: CheckCircle2, label: "Operational", bg: "bg-emerald-500" },
-  { status: "degraded", icon: AlertTriangle, label: "Degraded", bg: "bg-amber-500" },
-  { status: "outage", icon: XCircle, label: "Outage", bg: "bg-rose-500" },
-  { status: "unknown", icon: HelpCircle, label: "Unknown", bg: "bg-slate-500" },
+  { status: "operational", icon: CheckCircle2, label: statusLabels.operational, bg: "bg-emerald-500" },
+  { status: "degraded", icon: AlertTriangle, label: statusLabels.degraded, bg: "bg-amber-500" },
+  { status: "outage", icon: XCircle, label: statusLabels.outage, bg: "bg-rose-500" },
+  { status: "unknown", icon: HelpCircle, label: statusLabels.unknown, bg: "bg-slate-500" },
 ];
 
 export function StatusLegend() {

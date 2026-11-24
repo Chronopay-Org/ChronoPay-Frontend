@@ -8,12 +8,15 @@ export const LiveRegion = ({
   children,
   role = 'status',
   ariaLive = 'polite',
+  id,
 }: {
   children: ReactNode;
   role?: string;
   ariaLive?: 'off' | 'polite' | 'assertive';
+  id?: string;
 }) => (
   <div
+    id={id}
     role={role}
     aria-live={ariaLive}
     aria-atomic="true"

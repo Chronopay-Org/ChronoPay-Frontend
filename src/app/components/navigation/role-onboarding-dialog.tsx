@@ -42,13 +42,13 @@ export function RoleOnboardingDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[80] flex overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
     >
-      <div className="w-full max-w-5xl rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.2),transparent_38%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.98))] p-6 shadow-[0_32px_120px_-40px_rgba(15,23,42,0.95)] sm:p-8">
+      <div className="m-auto w-full max-w-5xl rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.2),transparent_38%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.98))] p-6 shadow-[0_32px_120px_-40px_rgba(15,23,42,0.95)] sm:p-8">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
             First launch setup
@@ -77,7 +77,7 @@ export function RoleOnboardingDialog() {
                   setAnnouncement(`${meta.label} selected`);
                 }}
                 className={clsx(
-                  "min-h-[240px] rounded-[28px] border p-5 text-left transition duration-200",
+                  "min-h-[240px] rounded-[28px] border p-5 text-start transition duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                   isSelected
                     ? "border-cyan-300/60 bg-cyan-300/10 shadow-[0_20px_70px_-45px_rgba(34,211,238,0.75)]"

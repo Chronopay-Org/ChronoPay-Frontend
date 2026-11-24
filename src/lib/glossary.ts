@@ -177,6 +177,46 @@ export const glossary = {
   },
 
   /**
+   * KYC — identity verification before payouts can be received.
+   */
+  kyc: {
+    title: "KYC verification",
+    body: "Know Your Customer (KYC) verification confirms your identity before you can receive payouts. It usually takes a few minutes when your documents are clear.",
+    learnMoreHref: "/docs/settings#kyc",
+    learnMoreLabel: "Learn more about KYC →",
+  },
+
+  /**
+   * KYC resubmission — uploading a new document after a rejection.
+   */
+  kycResubmission: {
+    title: "KYC resubmission",
+    body: "If a document is rejected, you can upload a new one for another review. Most rejections are caused by blurry photos or expired IDs.",
+    learnMoreHref: "/docs/settings#kyc",
+    learnMoreLabel: "Learn more about resubmission →",
+  },
+
+  /**
+   * Holiday hints — upcoming public holidays for the supplier's region.
+   */
+  holidayHints: {
+    title: "Holiday hints",
+    body: "Upcoming public holidays for your region, shown so you can block those days and avoid accidental bookings while you're away.",
+    learnMoreHref: "/docs/glossary#holiday-hints",
+    learnMoreLabel: "Learn more about holiday hints →",
+  },
+
+  /**
+   * Regional holidays — where the holiday list is sourced from.
+   */
+  regionHolidays: {
+    title: "Regional holidays",
+    body: "Holiday hints come from the region you selected in Settings. Change the region there to see a different set of public holidays.",
+    learnMoreHref: "/docs/settings#region",
+    learnMoreLabel: "Learn more about regions →",
+  },
+
+  /**
    * Price preservation credit — account credit used to lock the original
    * booking price when rebooking a more expensive alternative slot.
    */
@@ -185,5 +225,16 @@ export const glossary = {
     body: "When you rebook a slot priced higher than your original, ChronoPay can apply your account credit to cover the difference so you pay the original price. No action is taken until you confirm.",
     learnMoreHref: "/docs/rebooking#price-preservation",
     learnMoreLabel: "Learn more about price preservation →",
+  },
+
+  /**
+   * Refund tracking — the lifecycle of a refund as it flows towards the
+   * buyer's wallet on the Stellar network.
+   */
+  refundTracking: {
+    title: "Refund tracking",
+    body: "Refunds move through four stages — requested, approved, broadcast, and settled. Use the progress chips and the on-chain transaction hash to follow the refund to your wallet.",
+    learnMoreHref: "/docs/refunds#tracking",
+    learnMoreLabel: "Learn more about refunds →",
   },
 } satisfies Record<string, GlossaryTerm>;

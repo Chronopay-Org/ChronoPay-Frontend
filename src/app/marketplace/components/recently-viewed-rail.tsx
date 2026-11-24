@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import type { ToastVariant } from "@/hooks/use-toast";
 
@@ -18,10 +19,22 @@ export interface RecentlyViewedItem {
 const STORAGE_KEY = "chronopay-recently-viewed";
 const MAX_ITEMS = 10;
 
+// Legacy entries stored `href: "/marketplace"`; rewrite them from the id so
+// old storage keeps working after the listing detail route was introduced.
+function normalizeItem(item: RecentlyViewedItem): RecentlyViewedItem {
+  if (!item.href || item.href === "/marketplace") {
+    return { ...item, href: `/marketplace/${item.id}` };
+  }
+  return item;
+}
+
+function normalizeItems(items: RecentlyViewedItem[]): RecentlyViewedItem[] {
+  return items.map(normalizeItem);
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────────
 
 export function RecentlyViewedRail() {
-  const [items, setItems] = useState<RecentlyViewedItem[]>([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,10 +42,11 @@ export function RecentlyViewedRail() {
 
   // Load items from localStorage via lazy initializer
   const [items, setItems] = useState<RecentlyViewedItem[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored) as RecentlyViewedItem[];
+        return normalizeItems(JSON.parse(stored) as RecentlyViewedItem[]);
       }
     } catch (error) {
       console.error("Failed to load recently viewed items:", error);
@@ -41,11 +55,10 @@ export function RecentlyViewedRail() {
   });
 
   // Subscribe to external custom events — legitimate side effect pattern.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const handleUpdate = (e: Event) => {
       const updated = (e as CustomEvent<RecentlyViewedItem[]>).detail;
-      setItems(updated);
+      setItems(normalizeItems(updated));
     };
 
     window.addEventListener("chronopay:recently-viewed-updated", handleUpdate);
@@ -53,7 +66,6 @@ export function RecentlyViewedRail() {
   }, []);
 
   // Synchronize React state to localStorage — valid side effect.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -66,7 +78,10 @@ export function RecentlyViewedRail() {
   const addItem = useCallback((item: Omit<RecentlyViewedItem, "viewedAt">) => {
     setItems((prev: RecentlyViewedItem[]) => {
       const existingIndex = prev.findIndex((i: RecentlyViewedItem) => i.id === item.id);
-      const newItem: RecentlyViewedItem = { ...item, viewedAt: Date.now() };
+      const newItem: RecentlyViewedItem = {
+        ...normalizeItem({ ...item, viewedAt: Date.now() }),
+        viewedAt: Date.now(),
+      };
 
       // Remove existing item if present
       const filtered = existingIndex >= 0 
@@ -111,14 +126,18 @@ export function RecentlyViewedRail() {
         case "ArrowRight":
         case "ArrowDown":
           e.preventDefault();
-          const nextIndex = (index + 1) % items.length;
-          setFocusedIndex(nextIndex);
+          {
+            const nextIndex = (index + 1) % items.length;
+            setFocusedIndex(nextIndex);
+          }
           break;
         case "ArrowLeft":
         case "ArrowUp":
           e.preventDefault();
-          const prevIndex = index === 0 ? items.length - 1 : index - 1;
-          setFocusedIndex(prevIndex);
+          {
+            const prevIndex = index === 0 ? items.length - 1 : index - 1;
+            setFocusedIndex(prevIndex);
+          }
           break;
         case "Home":
           e.preventDefault();
@@ -134,7 +153,13 @@ export function RecentlyViewedRail() {
   );
 
   // Focus the element at focusedIndex
+  const didMountRef = useRef(false);
   useEffect(() => {
+    // Skip the initial mount so the rail does not steal focus or scroll.
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
     if (focusedIndex >= 0 && containerRef.current) {
       const buttons = containerRef.current.querySelectorAll<HTMLAnchorElement>(
         "[data-recently-viewed-item]"
@@ -151,6 +176,13 @@ export function RecentlyViewedRail() {
       }
     }
   }, [focusedIndex]);
+
+  // Keep the rail at its start until the user navigates it.
+  useEffect(() => {
+    if (focusedIndex < 0 && containerRef.current) {
+      containerRef.current.scrollLeft = 0;
+    }
+  }, [items, focusedIndex]);
 
   // Don't render if no items
   if (items.length === 0) {
@@ -201,7 +233,7 @@ export function RecentlyViewedRail() {
         }}
       >
         {items.map((item: RecentlyViewedItem, index: number) => (
-          <a
+          <Link
             key={item.id}
             href={item.href}
             data-recently-viewed-item
@@ -236,7 +268,7 @@ export function RecentlyViewedRail() {
                 <p className="mt-1 text-sm text-zinc-400">{item.price}</p>
               </div>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
 
@@ -259,10 +291,13 @@ export function useRecentlyViewed() {
   const addItem = useCallback((item: Omit<RecentlyViewedItem, "viewedAt">) => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      const existing: RecentlyViewedItem[] = stored ? JSON.parse(stored) : [];
+      const existing: RecentlyViewedItem[] = stored ? normalizeItems(JSON.parse(stored)) : [];
       
       const existingIndex = existing.findIndex((i) => i.id === item.id);
-      const newItem: RecentlyViewedItem = { ...item, viewedAt: Date.now() };
+      const newItem: RecentlyViewedItem = {
+        ...normalizeItem({ ...item, viewedAt: Date.now() }),
+        viewedAt: Date.now(),
+      };
 
       const filtered = existingIndex >= 0 
         ? existing.filter((i) => i.id !== item.id)
@@ -281,5 +316,33 @@ export function useRecentlyViewed() {
     }
   }, []);
 
-  return { addItem };
+  const addItems = useCallback((itemsToAdd: Omit<RecentlyViewedItem, "viewedAt">[]) => {
+    if (itemsToAdd.length === 0) return;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      let updated: RecentlyViewedItem[] = stored ? normalizeItems(JSON.parse(stored)) : [];
+      const now = Date.now();
+
+      itemsToAdd.forEach((item, index) => {
+        const newItem: RecentlyViewedItem = {
+          ...normalizeItem({ ...item, viewedAt: now + index }),
+          viewedAt: now + index,
+        };
+        updated = [newItem, ...updated.filter((i) => i.id !== item.id)];
+      });
+
+      updated = updated.slice(0, MAX_ITEMS);
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+      // Dispatch event for RecentlyViewedRail to update
+      window.dispatchEvent(new CustomEvent("chronopay:recently-viewed-updated", {
+        detail: updated
+      }));
+    } catch (error) {
+      console.error("Failed to add recently viewed items:", error);
+    }
+  }, []);
+
+  return { addItem, addItems };
 }

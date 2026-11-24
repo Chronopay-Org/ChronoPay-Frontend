@@ -11,6 +11,62 @@ function escapeHtml(text: string): string {
   return text.replace(ESCAPE_HTML, (ch) => ESCAPE_MAP[ch]);
 }
 
+function decodeHtmlEntities(str: string): string {
+  let prev = "";
+  let decoded = str;
+  let iterations = 0;
+  while (decoded !== prev && iterations < 10) {
+    prev = decoded;
+    iterations++;
+    decoded = decoded
+      .replace(/&quot;/gi, '"')
+      .replace(/&apos;/gi, "'")
+      .replace(/&#x27;/gi, "'")
+      .replace(/&#39;/gi, "'")
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&colon;/gi, ":")
+      .replace(/&newline;/gi, "\n")
+      .replace(/&tab;/gi, "\t")
+      .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => {
+        try {
+          return String.fromCodePoint(parseInt(hex, 16));
+        } catch {
+          return "";
+        }
+      })
+      .replace(/&#(\d+);?/g, (_, dec) => {
+        try {
+          return String.fromCodePoint(parseInt(dec, 10));
+        } catch {
+          return "";
+        }
+      });
+  }
+  return decoded;
+}
+
+const ALLOWED_SCHEMES = ["http:", "https:", "mailto:"];
+
+function isAllowedUrl(rawUrl: string): boolean {
+  const decoded = decodeHtmlEntities(rawUrl).trim();
+  const stripped = decoded.replace(/[\u0000-\u001F\u007F-\u009F\s]+/g, "");
+  const colonIndex = stripped.indexOf(":");
+  if (colonIndex === -1) {
+    return false;
+  }
+  const scheme = stripped.slice(0, colonIndex + 1).toLowerCase();
+  return ALLOWED_SCHEMES.includes(scheme);
+}
+
+function sanitizeUrlForAttr(url: string): string {
+  return url
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 const INLINE_RULES: Array<{
   pattern: RegExp;
   replacement: (match: string, ...groups: string[]) => string;
@@ -18,8 +74,17 @@ const INLINE_RULES: Array<{
   { pattern: /\*\*(\S(?:(?!\*\*)[\s\S])*\S|\S)\*\*/g, replacement: (_, content) => `<strong>${content}</strong>` },
   { pattern: /\*(\S(?:(?!\*)[\s\S])*\S|\S)\*/g, replacement: (_, content) => `<em>${content}</em>` },
   { pattern: /~~(\S(?:(?!~~)[\s\S])*\S|\S)~~/g, replacement: (_, content) => `<del>${content}</del>` },
-  { pattern: /`([^`]+)`/g, replacement: (_, code) => `<code class="notes-inline-code">${escapeHtml(code)}</code>` },
-  { pattern: /\[([^\]]+)\]\(([^)]+)\)/g, replacement: (_, text, url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${text}</a>` },
+  { pattern: /`([^`]+)`/g, replacement: (_, code) => `<code class="notes-inline-code">${code}</code>` },
+  {
+    pattern: /\[([^\]]+)\]\(([^)]+)\)/g,
+    replacement: (_, text, url) => {
+      if (!isAllowedUrl(url)) {
+        return text;
+      }
+      const decodedUrl = decodeHtmlEntities(url).trim();
+      return `<a href="${sanitizeUrlForAttr(decodedUrl)}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+    },
+  },
 ];
 
 function inline(text: string): string {

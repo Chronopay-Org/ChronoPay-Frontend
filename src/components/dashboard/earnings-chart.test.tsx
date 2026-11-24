@@ -28,7 +28,12 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect } from "vitest";
 import { EarningsChart } from "./earnings-chart";
 
-// EarningsSegment type is used inline in each test as object literals
+import type { EarningsSegment } from "./types";
+
+const TWO_SEGMENTS: EarningsSegment[] = [
+  { id: "base", label: "Base Pay", value: 80, formattedValue: "$80.00", colorClass: "bg-cyan-500" },
+  { id: "tips", label: "Tips", value: 20, formattedValue: "$20.00", colorClass: "bg-amber-500" },
+];
 
 const ONE_SEGMENT: EarningsSegment[] = [
   { id: "base", label: "Base Only", value: 100, formattedValue: "$100.00", colorClass: "bg-cyan-500" },
@@ -48,17 +53,42 @@ const EQUAL_VALUE: EarningsSegment[] = [
   { id: "b", label: "B", value: 50, formattedValue: "$50", colorClass: "bg-amber-500" },
 ];
 
-// ─── Null / empty states ──────────────────────────────────────────────────────
+// ─── Null / empty states & Failure Handling ─────────────────────────────────────
 
-describe("EarningsChart — null states", () => {
-  it("returns null when segments array is empty", () => {
+describe("EarningsChart — null states & failure handling", () => {
+  it("returns null when segments array is empty (segments.length === 0)", () => {
     const { container } = render(<EarningsChart segments={[]} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it("returns null when all segment values are zero", () => {
+  it("returns null when all segment values are zero (total === 0)", () => {
     const { container } = render(<EarningsChart segments={ALL_ZERO} />);
     expect(container.firstChild).toBeNull();
+  });
+
+  it("returns null when multiple segment values sum to zero (total === 0)", () => {
+    const multiZero: EarningsSegment[] = [
+      { id: "s1", label: "Seg 1", value: 0, formattedValue: "$0", colorClass: "bg-red-500" },
+      { id: "s2", label: "Seg 2", value: 0, formattedValue: "$0", colorClass: "bg-blue-500" },
+    ];
+    const { container } = render(<EarningsChart segments={multiZero} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("skips rendering zero-width progressbar when individual segment value is 0 (width === 0)", () => {
+    render(<EarningsChart segments={ZERO_VALUE_SEG} />);
+    // Only the non-zero segment progressbar should be rendered
+    const bars = screen.getAllByRole("progressbar");
+    expect(bars).toHaveLength(1);
+    expect(bars[0]).toHaveAttribute("aria-label", "Base: $100");
+  });
+
+  it("renders progressbar when segment value is small non-zero boundary", () => {
+    const boundarySegs: EarningsSegment[] = [
+      { id: "small", label: "Micro", value: 0.01, formattedValue: "$0.01", colorClass: "bg-emerald-500" },
+    ];
+    render(<EarningsChart segments={boundarySegs} />);
+    expect(screen.getAllByRole("progressbar")).toHaveLength(1);
   });
 });
 

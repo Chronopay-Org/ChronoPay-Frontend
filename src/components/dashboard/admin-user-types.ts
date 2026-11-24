@@ -69,3 +69,21 @@ export interface AdminUserTableState {
   /** Set of selected user IDs. */
   selectedIds: Set<string>;
 }
+
+// ── Filters & Pagination ────────────────────────────────────────────────────
+
+/** Filter criteria for narrowing the AdminUser list. */
+export interface AdminUserFilters {
+  query?: string;
+  role?: UserRole | "all";
+  status?: UserStatus | "all";
+}
+
+/** Record of a bulk message sent to selected users. */
+export interface SentUserMessage {
+  id: string;
+  recipientIds: string[];
+  text: string;
+  sentAt: string;
+}
+

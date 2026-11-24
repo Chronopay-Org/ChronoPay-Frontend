@@ -72,15 +72,14 @@ function readStoredPreferences() {
 }
 
 export function SettingsTabs() {
-  const [activeTab, setActiveTab] = useState<SettingsTabId>("notifications");
-  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  useEffect(() => {
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(() => {
+    if (typeof window === "undefined") return "notifications";
     const hash = window.location.hash.slice(1);
-    if (SETTINGS_TABS.some((tab) => tab.id === hash)) {
-      setActiveTab(hash as SettingsTabId);
-    }
-  }, []);
+    return SETTINGS_TABS.some((tab) => tab.id === hash)
+      ? (hash as SettingsTabId)
+      : "notifications";
+  });
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     const currentIndex = SETTINGS_TABS.findIndex((tab) => tab.id === activeTab);
@@ -246,7 +245,7 @@ export function NotificationPreferencesPanel() {
 
       <div className="mt-6 hidden overflow-hidden rounded-3xl border border-white/10 md:block">
         <table className="w-full border-collapse" dir="ltr">
-          <thead className="bg-white/5 text-left">
+          <thead className="bg-white/5 text-start">
             <tr>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                 Category
@@ -264,7 +263,7 @@ export function NotificationPreferencesPanel() {
           <tbody>
             {categories.map((category) => (
               <tr key={category.id} className="border-t border-white/10">
-                <th scope="row" className="px-4 py-4 text-left align-top">
+                <th scope="row" className="px-4 py-4 text-start align-top">
                   <p className="text-sm font-semibold text-white">{category.label}</p>
                   <p className="mt-1 max-w-sm text-sm leading-6 text-slate-400">
                     {category.description}

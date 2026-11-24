@@ -19,9 +19,11 @@ import {
   buildStellarDeepLink,
   truncateAddress,
   generateQrMatrix,
+  generatePlaceholderQrMatrix,
   QrCode,
   ReceiveTokenPanel,
 } from "./receive-token-panel";
+import { decodeQrSvg } from "@/lib/qr";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -40,14 +42,16 @@ describe("buildStellarDeepLink", () => {
     expect(link).toContain(`destination=${TEST_ADDRESS}`);
   });
 
-  it("includes the network param for mainnet", () => {
+  it("omits network_passphrase param for mainnet (public)", () => {
     const link = buildStellarDeepLink(TEST_ADDRESS, "mainnet");
-    expect(link).toContain("network=mainnet");
+    expect(link).not.toContain("network_passphrase");
+    expect(link).not.toContain("network=");
   });
 
-  it("includes the network param for testnet", () => {
+  it("includes the SEP-0007 compliant network_passphrase for testnet", () => {
     const link = buildStellarDeepLink(TEST_ADDRESS, "testnet");
-    expect(link).toContain("network=testnet");
+    expect(link).toContain("network_passphrase=Test%20SDF%20Network%20%3B%20September%202015");
+    expect(link).not.toContain("network=testnet");
   });
 
   it("uses the web+stellar:pay scheme", () => {
@@ -153,6 +157,13 @@ describe("generateQrMatrix", () => {
       }
     }
   });
+
+  it("generatePlaceholderQrMatrix returns placeholder matrix for design review", () => {
+    const placeholder = generatePlaceholderQrMatrix("review-item", 15);
+    expect(placeholder.length).toBe(15);
+    expect(placeholder[0].length).toBe(15);
+    expect(placeholder[0][0]).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -192,6 +203,15 @@ describe("QrCode", () => {
     const svg = screen.getByTestId("qr-code-svg");
     expect(svg).toHaveAttribute("width", "60");
     expect(svg).toHaveAttribute("height", "60");
+  });
+
+  it("decodes the generated SVG matrix to the original deep link", () => {
+    const deepLink = buildStellarDeepLink(TEST_ADDRESS, "testnet");
+    const { container } = render(<QrCode data={deepLink} />);
+    const svg = container.querySelector("svg[data-testid='qr-code-svg']");
+    expect(svg).not.toBeNull();
+    const decoded = decodeQrSvg(svg!.outerHTML);
+    expect(decoded).toBe(deepLink);
   });
 });
 

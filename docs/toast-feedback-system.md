@@ -41,9 +41,14 @@ immediately because the user needs to act. `critical` toasts are forced to persi
 - **Desktop (md+):** fixed bottom-right, `bottom-6 right-6`
 - **Mobile:** fixed bottom-center, `bottom-4`, full-width up to `max-w-sm`
 - **Stack order:** newest toast appears on top (`flex-col-reverse`)
-- **Max visible:** `TOAST_STACK_LIMIT` = 5 entries (oldest dropped when limit exceeded)
+- **Max visible:** `TOAST_STACK_LIMIT` = 5 entries
+- **Queue:** overflow toasts are held in a FIFO queue and released as slots
+  free up — no toasts are silently dropped during bursts of activity.
+  A queue indicator ("N more notifications queued") appears below the stack
+  when items are waiting.
 - **Gap between toasts:** `gap-2` (8 px)
 - **Clear all:** appears when ≥ 2 entries are visible; dismisses entire stack
+  and queued items
 
 ---
 
@@ -148,6 +153,77 @@ technology. The countdown is static when reduced motion is requested.
 
 ---
 
+## Action Affordances
+
+Beyond the Undo control, toasts can expose a row of **action buttons** for
+follow-up operations. This gives users clear, contextual next steps directly
+from the notification.
+
+```tsx
+toast({
+  variant: "error",
+  title: "Upload failed",
+  description: "Network timeout.",
+  actions: [
+    { label: "Retry", onClick: () => retryUpload() },
+    { label: "View details", onClick: () => openLogs() },
+  ],
+});
+```
+
+### Behaviour
+
+- Action buttons are rendered in a footer row below the toast content, separated
+  by a subtle variant-colored border.
+- Each action is a keyboard-focusable button with a visible focus ring matching
+  the toast variant.
+- Action buttons **pause the auto-dismiss timer** while hovered, giving users
+  time to decide and click.
+- Action buttons are hidden after an Undo is invoked (the toast transitions
+  to its "undone" state).
+- Actions and Undo can coexist on the same toast — the Undo countdown ring
+  appears in the header, while action buttons appear in the footer.
+
+### Accessibility
+
+- Each action button has a descriptive `aria-label` derived from its label.
+- Actions are keyboard-navigable (Tab) and activatable with Enter/Space.
+- The footer uses `role="group"` semantics implicitly through the button row.
+
+---
+
+## Queue Behavior
+
+When the visible stack is full (`TOAST_STACK_LIMIT = 5`), new toasts are placed
+in a **FIFO queue** instead of being silently dropped. This ensures no user
+feedback is lost during bursts of activity.
+
+```
+┌──────────────────────────────────────────┐
+│ ✓  Slot purchased                  [×]  │  ← visible
+│ ✓  Token minted                   [×]  │  ← visible
+│ ⚠  Network slow                   [×]  │  ← visible
+│ ℹ  Syncing data                   [×]  │  ← visible
+│ ✓  Wallet connected               [×]  │  ← visible
+│                                              │
+│  🔲 2 more notifications queued           │  ← queue indicator
+└──────────────────────────────────────────┘
+```
+
+### How it works
+
+1. When `toast()` is called and the stack is full, the new toast enters the
+   queue.
+2. When a visible toast is dismissed (auto-dismiss, manual, or via Clear All),
+   the next queued toast is automatically released into the visible stack.
+3. The queue indicator shows how many toasts are waiting (e.g. "2 more
+   notifications queued").
+4. `dismissAll()` clears both the visible stack and the queue.
+5. Queued toasts retain all their properties (variant, duration, actions, etc.)
+   and are displayed with the same animations as directly-visible toasts.
+
+---
+
 ## Reduced-Motion Behaviour
 
 Framer Motion's `motion.div` respects `prefers-reduced-motion` automatically
@@ -174,7 +250,7 @@ appears/disappears with opacity only — no translate or scale animation.
 ### `useToast()`
 
 ```tsx
-const { toast, dismiss, dismissAll, toasts } = useToast();
+const { toast, dismiss, dismissAll, toasts, queued } = useToast();
 
 // Fire a toast
 const id = toast({
@@ -184,13 +260,19 @@ const id = toast({
   duration: 5000,              // optional, default 5000, 0 = persistent
   category: "transactions",   // optional — toasts with the same category
                                // are grouped into one stacked card
+  actions: [                   // optional — action buttons in footer
+    { label: "Retry", onClick: retry },
+  ],
 });
 
 // Dismiss one entry (or group) by id
 dismiss(id);
 
-// Dismiss every visible entry at once
+// Dismiss every visible entry at once (also clears the queue)
 dismissAll();
+
+// `queued` contains any overflow toasts waiting to be shown
+console.log(queued.length);  // number of toasts in the queue
 ```
 
 Must be called inside a component that is a descendant of `<ToastProvider>`.
@@ -209,6 +291,8 @@ everywhere in the app.
 | `category` | `string?` | Grouping key |
 | `count` | `number` | Messages in group (1 = ungrouped) |
 | `messages` | `ToastMessage[]` | Individual entries shown in expanded panel |
+| `onUndo` | `(() => void)?` | Optional reversible action callback |
+| `actions` | `ToastAction[]?` | Optional action buttons (label + onClick) |
 
 ---
 
@@ -295,12 +379,16 @@ meets AA against the same backgrounds.
 
 | Case | Behaviour |
 |---|---|
-| 6th entry arrives (ungrouped) | Oldest is dropped (reducer caps at `TOAST_STACK_LIMIT = 5`) |
-| Burst of 20+ same-category | All merged into one group; count badge reflects real count |
+| 6th entry arrives (ungrouped) | Queued in FIFO; released when a visible slot opens |
+| Burst of 20+ same-category | All merged into one group; count badge reflects real count; overflow queued |
+| Queue fills up | New toasts wait; queue indicator shows count |
 | User hovers during auto-dismiss | Timer pauses; resumes on mouse-leave |
 | User focuses dismiss button | Timer pauses; resumes on blur |
 | Expanded group | Auto-dismiss paused; resumes when collapsed |
 | `duration: 0` | No auto-dismiss; user must click × |
+| Actions on toast | Rendered in footer; pause timer on hover |
+| Actions + Undo coexist | Undo in header, actions in footer; actions hidden after undo |
+| Empty actions array | No footer rendered |
 | `onAction` throws synchronously | Caught by `handleClick`, sets `error` state |
 | Multiple rapid clicks | `if (state === "pending") return` guard prevents re-entry |
 | Reduced motion | Framer Motion skips translate/scale; opacity-only transition; panel height animation skipped |
@@ -327,3 +415,6 @@ meets AA against the same backgrounds.
 - [x] Reduced-motion: opacity-only transition
 - [x] Contrast ≥ 4.5:1 on all variants (WCAG 2.1 AA)
 - [x] `ToastContainer` has `aria-label="Notifications"` landmark
+- [x] Action buttons are keyboard-focusable with visible focus ring
+- [x] Action buttons use variant-appropriate styling
+- [x] Queue indicator is visible and accessible

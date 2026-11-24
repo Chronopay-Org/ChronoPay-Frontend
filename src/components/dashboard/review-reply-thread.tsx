@@ -24,8 +24,8 @@
  * Responsive & RTL
  * ─────────────────
  * • Threaded indentation uses logical-property utilities (ms-/ps-/border-s)
- *   instead of ml-/pl-/border-l, so the thread indents from the correct
- *   side automatically under dir="rtl".
+ *   instead of physical left-side spacing and borders, so it indents correctly
+ *   under dir="rtl".
  *
  * Supplier badge
  * ──────────────
@@ -192,7 +192,9 @@ export function ReviewReplyThread({
       (!previous || previous.id !== current.id || previous.deleted);
 
     if (isNewLiveReply && current) {
-      setAnnouncement(`New reply from ${current.authorName} posted.`);
+      const message = `New reply from ${current.authorName} posted.`;
+      // Deferred so the live-region write doesn't run synchronously in the effect.
+      window.setTimeout(() => setAnnouncement(message), 0);
       if (justSubmittedRef.current) {
         replyHeadingRef.current?.focus();
       }

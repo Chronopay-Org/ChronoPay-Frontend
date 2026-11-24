@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useId, useCallback } from "react";
+import React, { useState, useRef, useId, useCallback, useEffect } from "react";
 import {
   Camera,
   CameraOff,
@@ -87,6 +87,7 @@ export function KycDocUpload({
   const retakeHeadingId = useId();
 
   const startCamera = useCallback(async () => {
+    stopCamera();
     setCameraError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -114,6 +115,12 @@ export function KycDocUpload({
     }
   }, []);
 
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
+
   const captureFrame = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -131,9 +138,14 @@ export function KycDocUpload({
     setStep("preview");
   }, [stopCamera]);
 
-  const handleStart = async () => {
+  const handleStart = async (options?: { textOnly?: boolean }) => {
+    const useTextOnly = options?.textOnly ?? textOnlyMode;
+    if (useTextOnly) {
+      stopCamera();
+      setTextOnlyMode(true);
+    }
     setStep("capture");
-    if (!textOnlyMode) {
+    if (!useTextOnly) {
       await startCamera();
     }
   };
@@ -147,6 +159,7 @@ export function KycDocUpload({
 
   const handleRetakeConfirm = async () => {
     setStep("capture");
+    stopCamera();
     setCameraError(null);
     if (!textOnlyMode) {
       await startCamera();
@@ -155,6 +168,7 @@ export function KycDocUpload({
 
   const handleRetakeSkip = () => {
     setStep("capture");
+    stopCamera();
     setCameraError(null);
     if (!textOnlyMode) {
       startCamera();
@@ -162,12 +176,14 @@ export function KycDocUpload({
   };
 
   const handleConfirmImage = () => {
+    stopCamera();
     setStep("complete");
     onCaptureComplete(true, capturedImage ?? undefined);
   };
 
   const handleUseTextOnly = () => {
     stopCamera();
+    setCameraError(null);
     setTextOnlyMode(true);
   };
 
@@ -180,6 +196,7 @@ export function KycDocUpload({
     setRetakeOtherText("");
     setTextOnlyMode(false);
     setGlareDetected(false);
+    setCornersVisible(true);
     setCornersVisible(true);
   };
 
@@ -206,7 +223,7 @@ export function KycDocUpload({
               aria-label="Restart document upload"
             >
               <X className="h-3.5 w-3.5 inline-block align-middle" aria-hidden="true" />
-              <span className="ml-1 align-middle">Cancel</span>
+              <span className="ms-1 align-middle">Cancel</span>
             </button>
           )}
         </div>
@@ -263,7 +280,7 @@ export function KycDocUpload({
           className="mb-4 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 text-sm text-purple-200"
           role="alert"
         >
-          <HelpCircle className="h-4 w-4 inline-block align-middle mr-1.5" aria-hidden="true" />
+          <HelpCircle className="h-4 w-4 inline-block align-middle me-1.5" aria-hidden="true" />
           <span className="align-middle">
             Text-only mode active. You can upload a photo file instead of using the camera.
           </span>
@@ -285,7 +302,7 @@ export function KycDocUpload({
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               type="button"
-              onClick={handleStart}
+              onClick={() => handleStart()}
               className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-sm"
             >
               <Camera className="h-4 w-4" aria-hidden="true" />
@@ -293,10 +310,7 @@ export function KycDocUpload({
             </button>
             <button
               type="button"
-              onClick={() => {
-                setTextOnlyMode(true);
-                handleStart();
-              }}
+              onClick={() => handleStart({ textOnly: true })}
               className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-sm"
             >
               <Upload className="h-4 w-4" aria-hidden="true" />
@@ -337,15 +351,15 @@ export function KycDocUpload({
                   ].join(" ")}
                 >
                   {/* Corner markers */}
-                  <span className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-cyan-300" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-cyan-300" />
-                  <span className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-cyan-300" />
-                  <span className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-cyan-300" />
+                  <span className="absolute -top-1 -start-1 w-3 h-3 border-t-2 border-s-2 border-cyan-300" />
+                  <span className="absolute -top-1 -end-1 w-3 h-3 border-t-2 border-e-2 border-cyan-300" />
+                  <span className="absolute -bottom-1 -start-1 w-3 h-3 border-b-2 border-s-2 border-cyan-300" />
+                  <span className="absolute -bottom-1 -end-1 w-3 h-3 border-b-2 border-e-2 border-cyan-300" />
                 </div>
 
                 {/* Glare warning overlay */}
                 {glareDetected && (
-                  <div className="absolute top-3 left-3 right-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
+                  <div className="absolute top-3 start-3 end-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     <span>Glare detected — adjust lighting</span>
                   </div>
@@ -353,7 +367,7 @@ export function KycDocUpload({
 
                 {/* Corner warning */}
                 {!cornersVisible && (
-                  <div className="absolute bottom-3 left-3 right-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
+                  <div className="absolute bottom-3 start-3 end-3 bg-amber-500/20 backdrop-blur-sm rounded px-3 py-1.5 flex items-center gap-2 text-amber-300 text-xs border border-amber-500/30">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     <span>Some corners are not visible — adjust position</span>
                   </div>
@@ -377,6 +391,7 @@ export function KycDocUpload({
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
+                      stopCamera();
                       const reader = new FileReader();
                       reader.onload = (ev) => {
                         const dataUrl = ev.target?.result as string;
@@ -408,7 +423,7 @@ export function KycDocUpload({
                   aria-pressed={glareDetected}
                   aria-label="Toggle glare detection simulation"
                 >
-                  <Sun className="h-3 w-3 inline-block align-middle mr-1" aria-hidden="true" />
+                  <Sun className="h-3 w-3 inline-block align-middle me-1" aria-hidden="true" />
                   Glare
                 </button>
               )}
@@ -425,7 +440,7 @@ export function KycDocUpload({
                   aria-pressed={!cornersVisible}
                   aria-label="Toggle corner visibility simulation"
                 >
-                  <CornerDownRight className="h-3 w-3 inline-block align-middle mr-1" aria-hidden="true" />
+                  <CornerDownRight className="h-3 w-3 inline-block align-middle me-1" aria-hidden="true" />
                   Corners
                 </button>
               )}
@@ -460,7 +475,7 @@ export function KycDocUpload({
               className="mt-4 w-full p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-200"
               role="alert"
             >
-              <CameraOff className="h-4 w-4 inline-block align-middle mr-1.5" aria-hidden="true" />
+              <CameraOff className="h-4 w-4 inline-block align-middle me-1.5" aria-hidden="true" />
               <span className="align-middle">{cameraError}</span>
             </div>
           )}

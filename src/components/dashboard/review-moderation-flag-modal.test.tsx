@@ -9,6 +9,22 @@ function renderWithProviders(ui: React.ReactElement) {
 }
 
 describe("ReviewModerationFlagModal", () => {
+  it("returns null and renders nothing when isOpen is false", () => {
+    const { container } = renderWithProviders(
+      <ReviewModerationFlagModal isOpen={false} onClose={() => undefined} />
+    );
+    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("initializes with the provided initialReason boundary input", () => {
+    renderWithProviders(
+      <ReviewModerationFlagModal isOpen onClose={() => undefined} initialReason="harassment" />
+    );
+    const radio = screen.getByLabelText(/Harassment or abuse/i) as HTMLInputElement;
+    expect(radio.checked).toBe(true);
+  });
+
   beforeEach(() => {
     Object.defineProperty(window, "matchMedia", {
       writable: true,

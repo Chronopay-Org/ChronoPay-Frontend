@@ -63,9 +63,9 @@ describe("KeepOriginalPriceChip", () => {
     vi.restoreAllMocks();
   });
 
-  // ── Null render cases ──────────────────────────────────────────────────────
+  // ── Null render and error cases ────────────────────────────────────────────
 
-  describe("null render conditions", () => {
+  describe("null render and error conditions", () => {
     it("returns null when alternative price equals original price", () => {
       const { container } = setup({ originalPrice: 120, alternativePrice: 120 });
       expect(container.firstChild).toBeNull();
@@ -79,6 +79,25 @@ describe("KeepOriginalPriceChip", () => {
     it("renders when alternative price is higher than original price", () => {
       const { container } = setup({ originalPrice: 120, alternativePrice: 121 });
       expect(container.firstChild).not.toBeNull();
+    });
+
+    it("throws RangeError when originalPrice is negative", () => {
+      // suppress console.error for expected error thrown in react render
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      expect(() => setup({ originalPrice: -10 })).toThrow(RangeError);
+      consoleSpy.mockRestore();
+    });
+
+    it("throws RangeError when alternativePrice is negative", () => {
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      expect(() => setup({ alternativePrice: -150 })).toThrow(RangeError);
+      consoleSpy.mockRestore();
+    });
+
+    it("throws RangeError when availableCredit is negative", () => {
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      expect(() => setup({ availableCredit: -5 })).toThrow(RangeError);
+      consoleSpy.mockRestore();
     });
   });
 

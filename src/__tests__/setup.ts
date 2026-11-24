@@ -15,3 +15,45 @@ if (typeof navigator !== "undefined" && !navigator.clipboard) {
     configurable: true,
   });
 }
+
+// Stub window.matchMedia for jsdom environments (not implemented in jsdom)
+if (typeof window !== "undefined" && !window.matchMedia) {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}
+
+// Stub IntersectionObserver for DOM test environments
+if (typeof window !== "undefined") {
+  class MockIntersectionObserver {
+    readonly root: Element | null = null;
+    readonly rootMargin: string = "";
+    readonly thresholds: ReadonlyArray<number> = [];
+    observe = () => {};
+    unobserve = () => {};
+    disconnect = () => {};
+    takeRecords = () => [];
+  }
+
+  Object.defineProperty(window, "IntersectionObserver", {
+    writable: true,
+    configurable: true,
+    value: MockIntersectionObserver,
+  });
+
+  Object.defineProperty(global, "IntersectionObserver", {
+    writable: true,
+    configurable: true,
+    value: MockIntersectionObserver,
+  });
+}

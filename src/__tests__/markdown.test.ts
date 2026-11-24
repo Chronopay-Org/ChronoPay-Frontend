@@ -77,4 +77,69 @@ describe("renderMarkdown", () => {
     expect(renderMarkdown("")).toBe("");
     expect(renderMarkdown("   ")).toBe("");
   });
+
+  describe("link sanitization and escaping", () => {
+    it("renders javascript:, data:, and vbscript: links without executable hrefs", () => {
+      const cases = [
+        "[x](javascript:alert(1))",
+        "[x](JaVaScRiPt:alert(1))",
+        "[x]( data:text/html,<script>alert(1)</script>)",
+        "[x](javascript:...)",
+        "[x](&NewLine;javascript:alert(1))",
+        "[x](&#x6a;&#x61;vascript:alert(1))",
+        "[x](javascript&colon;alert(1))",
+        "[x](vbscript:msgbox(1))",
+      ];
+
+      for (const input of cases) {
+        const result = renderMarkdown(input);
+        expect(result).not.toContain("href");
+        expect(result).not.toContain("<a ");
+        expect(result).toContain("x");
+      }
+    });
+
+    it("renders inline code with single level of escaping", () => {
+      const result = renderMarkdown("`a<b`");
+      expect(result).toContain('<code class="notes-inline-code">a&lt;b</code>');
+      expect(result).not.toContain("&amp;lt;");
+    });
+
+    it("preserves query strings without corrupting ampersands in href", () => {
+      const result = renderMarkdown("[q](https://x.test/?a=1&b=2)");
+      expect(result).toContain('href="https://x.test/?a=1&b=2"');
+      expect(result).toContain('rel="noopener noreferrer"');
+      expect(result).toContain('target="_blank"');
+    });
+
+    it("allows http, https, and mailto schemes", () => {
+      expect(renderMarkdown("[web](http://example.com)")).toContain('href="http://example.com"');
+      expect(renderMarkdown("[secure](https://example.com)")).toContain('href="https://example.com"');
+      expect(renderMarkdown("[mail](mailto:user@example.com)")).toContain('href="mailto:user@example.com"');
+    });
+
+    it("prevents attribute injection from link text and retains rel attributes", () => {
+      const result = renderMarkdown('[" onfocus="alert(1)](https://example.com)');
+      expect(result).toContain('rel="noopener noreferrer"');
+      expect(result).toContain('&quot; onfocus=&quot;alert(1)');
+    });
+
+    it("produces CSP-safe HTML with no inline event handlers or inline style attributes", () => {
+      const sample = [
+        "# Heading",
+        "Paragraph with **bold**, *italic*, ~~strike~~, `code`, and [link](https://example.com).",
+        "- list item",
+        "1. ordered item",
+        "```",
+        "<img src=x onerror=alert(1) style=\"color:red\">",
+        "```",
+        '<div onclick="alert(1)" style="background:red">raw html</div>',
+      ].join("\n\n");
+
+      const html = renderMarkdown(sample);
+      expect(html).not.toMatch(/<[^>]+?\son[a-z]+\s*=/i);
+      expect(html).not.toMatch(/<[^>]+?\sstyle\s*=/i);
+      expect(html).not.toMatch(/<script\b/i);
+    });
+  });
 });

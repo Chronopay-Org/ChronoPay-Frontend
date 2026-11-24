@@ -36,7 +36,7 @@ export function NotesEditor({ receiptId }: NotesEditorProps) {
     >
       <div className="flex items-center justify-between gap-3">
         <h3 id={`${editorId}-heading`} className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          <FileText className="mr-1.5 inline h-3.5 w-3.5 align-text-top" aria-hidden="true" />
+          <FileText className="me-1.5 inline h-3.5 w-3.5 align-text-top" aria-hidden="true" />
           Notes
         </h3>
         <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export function NotesEditor({ receiptId }: NotesEditorProps) {
                 mode === "preview" ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"
               }`}
             >
-              <Eye className="mr-1 inline h-3 w-3" aria-hidden="true" />
+              <Eye className="me-1 inline h-3 w-3" aria-hidden="true" />
               Preview
             </button>
           </div>

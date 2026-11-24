@@ -9,7 +9,14 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { sortUsers, toggleSort } from "@/components/dashboard/admin-user-data";
+import {
+  filterUsers,
+  paginateUsers,
+  parseSortsParam,
+  serializeSortsParam,
+  sortUsers,
+  toggleSort,
+} from "@/components/dashboard/admin-user-data";
 import type { AdminUser, SortSpec } from "@/components/dashboard/admin-user-types";
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -172,3 +179,82 @@ describe("toggleSort — additive (Shift+click)", () => {
     expect(result).toEqual([]);
   });
 });
+
+// ── filterUsers ───────────────────────────────────────────────────────────────
+
+describe("filterUsers", () => {
+  it("returns all users when no filters are provided", () => {
+    expect(filterUsers(USERS)).toEqual(USERS);
+    expect(filterUsers(USERS, { query: "", role: "all", status: "all" })).toEqual(USERS);
+  });
+
+  it("filters by query matching name or email case-insensitively", () => {
+    expect(filterUsers(USERS, { query: "alice" }).map((u) => u.id)).toEqual(["a"]);
+    expect(filterUsers(USERS, { query: "ZACH" }).map((u) => u.id)).toEqual(["d"]);
+  });
+
+  it("filters by role and status", () => {
+    expect(filterUsers(USERS, { role: "admin" }).map((u) => u.id)).toEqual(["a", "d"]);
+    expect(filterUsers(USERS, { status: "suspended" }).map((u) => u.id)).toEqual(["b"]);
+    expect(
+      filterUsers(USERS, { role: "admin", status: "active", query: "zach" }).map((u) => u.id),
+    ).toEqual(["d"]);
+  });
+});
+
+// ── paginateUsers ─────────────────────────────────────────────────────────────
+
+describe("paginateUsers", () => {
+  it("slices users into pages and reports totalPages", () => {
+    const page1 = paginateUsers(USERS, 1, 2);
+    expect(page1.items.map((u) => u.id)).toEqual(["a", "b"]);
+    expect(page1.page).toBe(1);
+    expect(page1.totalPages).toBe(2);
+    expect(page1.totalItems).toBe(4);
+
+    const page2 = paginateUsers(USERS, 2, 2);
+    expect(page2.items.map((u) => u.id)).toEqual(["c", "d"]);
+    expect(page2.page).toBe(2);
+  });
+
+  it("clamps out-of-range page numbers safely", () => {
+    const tooLow = paginateUsers(USERS, 0, 2);
+    expect(tooLow.page).toBe(1);
+    expect(tooLow.items.map((u) => u.id)).toEqual(["a", "b"]);
+
+    const tooHigh = paginateUsers(USERS, 99, 2);
+    expect(tooHigh.page).toBe(2);
+    expect(tooHigh.items.map((u) => u.id)).toEqual(["c", "d"]);
+  });
+
+  it("handles an empty list gracefully", () => {
+    const empty = paginateUsers([], 1, 10);
+    expect(empty.items).toEqual([]);
+    expect(empty.page).toBe(1);
+    expect(empty.totalPages).toBe(1);
+    expect(empty.totalItems).toBe(0);
+  });
+});
+
+// ── serializeSortsParam / parseSortsParam ─────────────────────────────────────
+
+describe("serializeSortsParam and parseSortsParam", () => {
+  it("round-trips multi-column sort specs", () => {
+    const specs: SortSpec[] = [
+      { key: "name", dir: "asc" },
+      { key: "payouts", dir: "desc" },
+    ];
+    const encoded = serializeSortsParam(specs);
+    expect(encoded).toBe("name:asc,payouts:desc");
+    expect(parseSortsParam(encoded)).toEqual(specs);
+  });
+
+  it("ignores invalid keys, invalid directions, and duplicate columns", () => {
+    expect(parseSortsParam(null)).toEqual([]);
+    expect(parseSortsParam("")).toEqual([]);
+    expect(parseSortsParam("unknown:asc,name:invalid,name:asc,name:desc")).toEqual([
+      { key: "name", dir: "asc" },
+    ]);
+  });
+});
+
