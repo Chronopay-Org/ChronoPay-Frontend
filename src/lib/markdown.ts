@@ -1,3 +1,5 @@
+import { createElement, Fragment, type ReactNode } from "react";
+
 const ESCAPE_HTML = /[&<>"']/g;
 const ESCAPE_MAP: Record<string, string> = {
   "&": "&amp;",
@@ -208,4 +210,198 @@ export function renderMarkdown(text: string): string {
   }
 
   return blocks.join("\n");
+}
+
+type InlineTokenType = "code" | "link" | "bold" | "italic" | "strike";
+
+const INLINE_NODE_RULES: Array<{
+  type: InlineTokenType;
+  pattern: RegExp;
+}> = [
+  { type: "code", pattern: /`([^`]+)`/ },
+  { type: "link", pattern: /\[([^\]]+)\]\(([^)]+)\)/ },
+  { type: "bold", pattern: /\*\*(\S(?:(?!\*\*)[\s\S])*\S|\S)\*\*/ },
+  { type: "italic", pattern: /\*(\S(?:(?!\*)[\s\S])*\S|\S)\*/ },
+  { type: "strike", pattern: /~~(\S(?:(?!~~)[\s\S])*\S|\S)~~/ },
+];
+
+function renderInlineNodes(text: string, keyPrefix = "inline"): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  let remaining = text;
+  let tokenIndex = 0;
+
+  while (remaining.length > 0) {
+    let earliestMatch: {
+      type: InlineTokenType;
+      match: RegExpExecArray;
+    } | null = null;
+
+    for (const rule of INLINE_NODE_RULES) {
+      const match = rule.pattern.exec(remaining);
+      if (match && (earliestMatch === null || match.index < earliestMatch.match.index)) {
+        earliestMatch = { type: rule.type, match };
+      }
+    }
+
+    if (!earliestMatch) {
+      nodes.push(remaining);
+      break;
+    }
+
+    const { type, match } = earliestMatch;
+    if (match.index > 0) {
+      nodes.push(remaining.slice(0, match.index));
+    }
+
+    const key = `${keyPrefix}-${tokenIndex++}`;
+
+    if (type === "code") {
+      nodes.push(createElement("code", { key, className: "notes-inline-code" }, match[1]));
+    } else if (type === "link") {
+      const linkText = match[1];
+      const rawUrl = match[2];
+      const children = renderInlineNodes(linkText, `${key}-text`);
+      if (!isAllowedUrl(rawUrl)) {
+        nodes.push(createElement(Fragment, { key }, ...children));
+      } else {
+        const decodedUrl = decodeHtmlEntities(rawUrl).trim();
+        nodes.push(
+          createElement(
+            "a",
+            {
+              key,
+              href: decodedUrl,
+              target: "_blank",
+              rel: "noopener noreferrer",
+            },
+            ...children
+          )
+        );
+      }
+    } else if (type === "bold") {
+      nodes.push(createElement("strong", { key }, ...renderInlineNodes(match[1], `${key}-b`)));
+    } else if (type === "italic") {
+      nodes.push(createElement("em", { key }, ...renderInlineNodes(match[1], `${key}-i`)));
+    } else if (type === "strike") {
+      nodes.push(createElement("del", { key }, ...renderInlineNodes(match[1], `${key}-s`)));
+    }
+
+    remaining = remaining.slice(match.index + match[0].length);
+  }
+
+  return nodes;
+}
+
+export function renderMarkdownNodes(text: string): ReactNode {
+  if (!text.trim()) return null;
+
+  const blocks: ReactNode[] = [];
+  let i = 0;
+  let blockIndex = 0;
+  const lines = text.split("\n");
+  const total = lines.length;
+
+  while (i < total) {
+    const line = lines[i];
+
+    if (line.trim().startsWith("```")) {
+      const codeLines: string[] = [];
+      i++;
+      while (i < total && !lines[i].trim().startsWith("```")) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++;
+      const code = codeLines.join("\n");
+      const key = `block-${blockIndex++}`;
+      blocks.push(
+        createElement(
+          "pre",
+          { key, className: "notes-code" },
+          createElement("code", null, code)
+        )
+      );
+      continue;
+    }
+
+    if (line.trim() === "") {
+      i++;
+      continue;
+    }
+
+    const liType = isListItem(line);
+    if (liType) {
+      const items: string[] = [];
+      const type = liType;
+
+      const valueMatch = line.match(/^(\d+)\.\s/);
+      const startValue = valueMatch ? valueMatch[1] : null;
+      items.push(listItemContent(line));
+      i++;
+
+      while (i < total) {
+        const next = lines[i];
+        const nextLi = isListItem(next);
+        if (nextLi && nextLi === type) {
+          items.push(listItemContent(next));
+          i++;
+        } else if (nextLi && nextLi !== type) {
+          break;
+        } else if (next.trim() === "") {
+          break;
+        } else {
+          break;
+        }
+      }
+
+      const key = `block-${blockIndex++}`;
+      const listProps: Record<string, unknown> = { key };
+      if (type === "ol" && startValue && startValue !== "1") {
+        listProps.start = Number(startValue);
+      }
+
+      const listItems = items.map((content, itemIdx) =>
+        createElement(
+          "li",
+          { key: `${key}-li-${itemIdx}` },
+          ...renderInlineNodes(content.trim(), `${key}-li-${itemIdx}`)
+        )
+      );
+
+      blocks.push(createElement(type, listProps, ...listItems));
+      continue;
+    }
+
+    if (/^#{1,6}\s/.test(line)) {
+      const level = line.match(/^#{1,6}/)?.[0].length ?? 1;
+      const content = line.replace(/^#+\s*/, "");
+      const key = `block-${blockIndex++}`;
+      blocks.push(
+        createElement(
+          `h${level}`,
+          { key, className: `notes-h${level}` },
+          ...renderInlineNodes(content, key)
+        )
+      );
+      i++;
+      continue;
+    }
+
+    const paraLines: string[] = [line];
+    i++;
+    while (i < total) {
+      const next = lines[i];
+      if (next.trim() === "" || isListItem(next) || next.trim().startsWith("```") || /^#{1,6}\s/.test(next)) {
+        break;
+      }
+      paraLines.push(next);
+      i++;
+    }
+    const key = `block-${blockIndex++}`;
+    blocks.push(
+      createElement("p", { key }, ...renderInlineNodes(paraLines.join(" ").trim(), key))
+    );
+  }
+
+  return createElement(Fragment, null, ...blocks);
 }

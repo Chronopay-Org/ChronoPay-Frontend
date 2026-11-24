@@ -235,8 +235,8 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
           </div>
         </dl>
 
-        {/* QR verification badge — tap to verify on-chain */}
-        <div className="mt-5 flex justify-center receipt-no-print">
+        {/* QR verification badge — tap to verify on-chain, kept visible on print */}
+        <div className="mt-5 flex justify-center">
           <QrBadge explorerUrl={explorerUrl} label={receipt.title} />
         </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Copy, Check, Loader2, QrCode, Sparkles, RefreshCw } from "lucide-react";
 import { FocusTrap } from "@/components/common/FocusTrap";
+import { reportError } from "@/app/dashboard/reportError";
 
 export interface RedeemTokenModalProps {
   isOpen: boolean;
@@ -100,7 +101,7 @@ export function RedeemTokenModal({ isOpen, onClose, tokenCode, onRegenerate }: R
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy", err);
+      reportError(err, "Failed to copy");
     }
   };
 

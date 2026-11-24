@@ -9,6 +9,7 @@
  *       - Recent searches (persisted in localStorage) grouped by Today, Yesterday, Earlier
  *       - "Clear all" recents action with confirmation
  *       - Live suggestion list filtered by current query
+ *       - Saved receipt-note matches grouped under their own heading
  *       - "Did you mean X?" typo suggestion when the query is close to a known term
  *       - Revert chip that keeps the original query after accepting a correction
  *   - Full keyboard navigation (Arrow keys, Enter to submit, Escape to close, Tab to close, Delete to remove recent)
@@ -27,8 +28,10 @@ import {
   useState,
   KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { Search, X, Clock, TrendingUp, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, X, Clock, TrendingUp, ArrowLeft, FileText } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
+import { searchReceiptNotes } from "@/hooks/use-receipt-notes";
 import { EmptyStateCard } from "./empty-state-card";
 import { LiveRegion } from "@/components/common/LiveRegion";
 import { trackDidYouMeanClick } from "@/lib/analytics";
@@ -37,14 +40,16 @@ import { HighlightMatch } from "@/components/common/highlight-match";
 // Types
 
 interface ListItem {
-  kind: "header" | "recent" | "suggestion";
+  kind: "header" | "recent" | "suggestion" | "receipt-note";
   label: string;
   timestamp?: number;
+  receiptId?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function HeaderSearch() {
+  const router = useRouter();
   const {
     query,
     setQuery,
@@ -58,6 +63,10 @@ export function HeaderSearch() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [receiptNoteSearch, setReceiptNoteSearch] = useState<{
+    query: string;
+    results: Array<{ receiptId: string; preview: string }>;
+  }>({ query: "", results: [] });
 
   /**
    * When a did-you-mean suggestion is accepted, `correctedQuery` holds the
@@ -78,7 +87,35 @@ export function HeaderSearch() {
   const listboxId = `${inputId}-listbox`;
 
   const firstSuggestionRef = useRef<HTMLButtonElement>(null);
-  const isZeroState = query.trim() !== "" && suggestions.length === 0;
+  const trimmedQuery = query.trim();
+  const receiptNoteResults = useMemo(
+    () =>
+      receiptNoteSearch.query === trimmedQuery
+        ? receiptNoteSearch.results
+        : [],
+    [receiptNoteSearch, trimmedQuery],
+  );
+  const isReceiptNoteSearchPending =
+    trimmedQuery.length >= 2 && receiptNoteSearch.query !== trimmedQuery;
+
+  useEffect(() => {
+    if (!isOpen || trimmedQuery.length < 2) return;
+
+    const timeout = setTimeout(() => {
+      setReceiptNoteSearch({
+        query: trimmedQuery,
+        results: searchReceiptNotes(trimmedQuery),
+      });
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, [isOpen, trimmedQuery]);
+
+  const isZeroState =
+    trimmedQuery !== "" &&
+    suggestions.length === 0 &&
+    receiptNoteResults.length === 0 &&
+    !isReceiptNoteSearchPending;
 
   useEffect(() => {
     if (isOpen && isZeroState) {
@@ -107,7 +144,21 @@ export function HeaderSearch() {
   // Derived list for keyboard navigation -- memoized to stabilise useCallback deps
   const listItems = useMemo<ListItem[]>(() => {
     if (query.trim() !== "") {
-      return suggestions.map((s) => ({ kind: "suggestion" as const, label: s }));
+      const items: ListItem[] = suggestions.map((s) => ({
+        kind: "suggestion",
+        label: s,
+      }));
+      if (receiptNoteResults.length > 0) {
+        items.push({ kind: "header", label: "Receipt notes" });
+        items.push(
+          ...receiptNoteResults.map((note) => ({
+            kind: "receipt-note" as const,
+            label: note.preview,
+            receiptId: note.receiptId,
+          })),
+        );
+      }
+      return items;
     }
 
     const items: ListItem[] = [];
@@ -133,10 +184,14 @@ export function HeaderSearch() {
     }
 
     return items;
-  }, [query, recentSearches, suggestions, now]);
+  }, [query, recentSearches, suggestions, receiptNoteResults, now]);
 
   const isPanelVisible =
-    isOpen && (recentSearches.length > 0 || suggestions.length > 0 || didYouMeanSuggestion !== null);
+    isOpen &&
+    (recentSearches.length > 0 ||
+      suggestions.length > 0 ||
+      receiptNoteResults.length > 0 ||
+      didYouMeanSuggestion !== null);
 
   const showEmptyHint =
     isOpen && query.trim() === "" && recentSearches.length === 0 && !didYouMeanSuggestion;
@@ -176,6 +231,14 @@ export function HeaderSearch() {
       // In a real app, trigger navigation / search results here.
     },
     [addRecentSearch, close, updateQuery],
+  );
+
+  const selectReceiptNote = useCallback(
+    (receiptId: string) => {
+      close();
+      router.push(`/dashboard/slots/${encodeURIComponent(receiptId)}/receipt`);
+    },
+    [close, router],
   );
 
   /**
@@ -281,8 +344,13 @@ export function HeaderSearch() {
         }
         case "Enter": {
           e.preventDefault();
-          if (activeIndex >= 0 && listItems[activeIndex] && listItems[activeIndex].kind !== "header") {
-            submitSearch(listItems[activeIndex].label);
+          const activeItem = listItems[activeIndex];
+          if (activeIndex >= 0 && activeItem && activeItem.kind !== "header") {
+            if (activeItem.kind === "receipt-note" && activeItem.receiptId) {
+              selectReceiptNote(activeItem.receiptId);
+            } else {
+              submitSearch(activeItem.label);
+            }
           } else if (query.trim()) {
             submitSearch(query);
           }
@@ -313,7 +381,18 @@ export function HeaderSearch() {
         }
       }
     },
-    [isOpen, listItems, activeIndex, query, open, close, submitSearch, updateQuery, removeRecentSearch],
+    [
+      isOpen,
+      listItems,
+      activeIndex,
+      query,
+      open,
+      close,
+      submitSearch,
+      selectReceiptNote,
+      updateQuery,
+      removeRecentSearch,
+    ],
   );
 
   // Derive clamped activeIndex to avoid setState-in-effect
@@ -468,7 +547,11 @@ export function HeaderSearch() {
 
                       return (
                         <li
-                          key={`${item.kind}-${item.label}`}
+                          key={
+                            item.kind === "receipt-note"
+                              ? `receipt-note-${item.receiptId}`
+                              : `${item.kind}-${item.label}`
+                          }
                           id={`${listboxId}-item-${idx}`}
                           role="option"
               aria-selected={idx === clampedActiveIndex}
@@ -482,11 +565,22 @@ export function HeaderSearch() {
                             // Prevent input blur before click fires
                             e.preventDefault();
                           }}
-                          onClick={() => submitSearch(item.label)}
+                          onClick={() => {
+                            if (item.kind === "receipt-note" && item.receiptId) {
+                              selectReceiptNote(item.receiptId);
+                            } else {
+                              submitSearch(item.label);
+                            }
+                          }}
                         >
                           {/* Icon */}
                           {item.kind === "recent" ? (
                             <Clock
+                              className="h-3.5 w-3.5 shrink-0 text-slate-500"
+                              aria-hidden="true"
+                            />
+                          ) : item.kind === "receipt-note" ? (
+                            <FileText
                               className="h-3.5 w-3.5 shrink-0 text-slate-500"
                               aria-hidden="true"
                             />
@@ -499,7 +593,9 @@ export function HeaderSearch() {
 
                           {/* Label with query highlight */}
                           <span className="flex-1 truncate">
-                            {item.kind === "suggestion" && query.trim() ? (
+                            {(item.kind === "suggestion" ||
+                              item.kind === "receipt-note") &&
+                            query.trim() ? (
                               <HighlightMatch
                                 text={item.label}
                                 query={query.trim()}

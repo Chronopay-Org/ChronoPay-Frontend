@@ -108,6 +108,22 @@ function describeBulkAction(pending: PendingBulkAction): {
         summary: `Message: "${preview}"`,
       };
     }
+import type { BulkAction, UserRole } from "@/components/dashboard/admin-user-types";
+import { useAdminUsers } from "@/lib/api/hooks";
+
+export default function AdminUsersPage() {
+  const { data: users, loading, error } = useAdminUsers();
+
+  if (error) throw error;
+
+  function handleBulkAction(
+    action: BulkAction,
+    ids: string[],
+    payload?: { role?: UserRole; text?: string },
+  ) {
+    // In production these would call API endpoints.
+    // For now we log so reviewers can verify the callback fires.
+    console.info("[AdminUsersPage] bulk action", { action, ids, payload });
   }
 }
 
@@ -459,6 +475,13 @@ function AdminUsersPageContent() {
             onPageSizeChange={handlePageSizeChange}
             pageSizeOptions={DEFAULT_ADMIN_PAGE_SIZES}
           />
+          {loading || !users ? (
+            <div role="status" aria-busy="true" className="py-8 text-sm text-slate-400">
+              Loading users…
+            </div>
+          ) : (
+            <AdminUserTable users={users} onBulkAction={handleBulkAction} />
+          )}
         </PanelShell>
 
         {/* Sent messages log (if any messages were dispatched in this session) */}

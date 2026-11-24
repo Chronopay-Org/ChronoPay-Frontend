@@ -5,8 +5,8 @@ export interface Supplier {
   name: string;
   role: string;
   badges: string[];
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export interface SupplierCardProps {
@@ -29,7 +29,7 @@ export function SupplierCard({ supplier, viewMode = "grid" }: SupplierCardProps)
         variant="compact-list"
         interactive
         as="a"
-        href={`/marketplace/suppliers/${supplier.id}`}
+        href={`/dashboard/suppliers/${supplier.id}`}
         // Single tab stop per row for the compact list
         className="flex items-center justify-between p-4 focus-visible:ring-2 focus-visible:ring-cyan-300 focus:outline-none rounded-xl border border-white/10 hover:bg-white/5 transition-colors"
       >
@@ -38,11 +38,14 @@ export function SupplierCard({ supplier, viewMode = "grid" }: SupplierCardProps)
             <div className="font-semibold text-white">{supplier.name}</div>
             <div className="text-sm text-slate-400">{supplier.role}</div>
           </div>
-          <div className="flex-1 text-sm text-slate-300">
-            <span className="sr-only">Rating: </span>
-            <span aria-hidden="true">★ </span>
-            {supplier.rating} ({supplier.reviewCount} reviews)
-          </div>
+          {supplier.rating !== undefined ? (
+            <div className="flex-1 text-sm text-slate-300">
+              <span className="sr-only">Rating: </span>
+              <span aria-hidden="true">★ </span>
+              {supplier.rating}
+              {supplier.reviewCount !== undefined ? ` (${supplier.reviewCount} reviews)` : null}
+            </div>
+          ) : null}
           <div className="flex items-center gap-2 text-sm text-slate-300">
             <span className="sr-only">Trust Badges: </span>
             {supplier.badges.map((badge) => (
@@ -61,7 +64,7 @@ export function SupplierCard({ supplier, viewMode = "grid" }: SupplierCardProps)
     <Card
       interactive
       as="a"
-      href={`/marketplace/suppliers/${supplier.id}`}
+      href={`/dashboard/suppliers/${supplier.id}`}
       className="flex flex-col focus-visible:ring-2 focus-visible:ring-cyan-300 focus:outline-none"
     >
       <CardHeader className="p-4 border-b border-white/5">
@@ -69,11 +72,14 @@ export function SupplierCard({ supplier, viewMode = "grid" }: SupplierCardProps)
         <div className="text-sm text-slate-400">{supplier.role}</div>
       </CardHeader>
       <CardBody className="p-4 space-y-3">
-        <div className="text-sm text-slate-300 flex items-center gap-1">
-          <span className="text-yellow-400" aria-hidden="true">★</span>
-          <span className="sr-only">Rating:</span>
-          {supplier.rating} ({supplier.reviewCount} reviews)
-        </div>
+        {supplier.rating !== undefined ? (
+          <div className="text-sm text-slate-300 flex items-center gap-1">
+            <span className="text-yellow-400" aria-hidden="true">★</span>
+            <span className="sr-only">Rating:</span>
+            {supplier.rating}
+            {supplier.reviewCount !== undefined ? ` (${supplier.reviewCount} reviews)` : null}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {supplier.badges.map((badge) => (
             <span key={badge} className="rounded bg-white/5 px-2 py-1 text-xs text-slate-300">

@@ -9,10 +9,15 @@ import { ThemeSwitcher } from "@/components/dashboard/theme-switcher";
 import { NotificationBell } from "@/components/dashboard/notifications/notification-bell";
 import { useMessages } from "@/lib/i18n";
 import { REPO_URL } from "@/lib/site-links";
+import { FocusTrap } from "@/components/common/FocusTrap";
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const wasOpenRef = useRef(false);
   const t = useMessages();
 
   useEffect(() => {
@@ -25,12 +30,57 @@ export function Header() {
     }
 
     document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
+
+    const parent = headerRef.current?.parentElement;
+    const dialogEl = dialogRef.current;
+    const modified: Array<{
+      el: HTMLElement;
+      prevAriaHidden: string | null;
+      prevInert: boolean;
+    }> = [];
+
+    if (parent) {
+      for (const child of Array.from(parent.children)) {
+        if (
+          child instanceof HTMLElement &&
+          child !== dialogEl &&
+          !child.contains(dialogEl)
+        ) {
+          modified.push({
+            el: child,
+            prevAriaHidden: child.getAttribute("aria-hidden"),
+            prevInert: child.inert,
+          });
+          child.setAttribute("aria-hidden", "true");
+          child.inert = true;
+        }
+      }
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      for (const { el, prevAriaHidden, prevInert } of modified) {
+        if (prevAriaHidden === null) {
+          el.removeAttribute("aria-hidden");
+        } else {
+          el.setAttribute("aria-hidden", prevAriaHidden);
+        }
+        el.inert = prevInert;
+      }
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (wasOpenRef.current && !open) {
+      menuButtonRef.current?.focus();
+    }
+    wasOpenRef.current = open;
   }, [open]);
 
   return (
     <>
       <header
+        ref={headerRef}
         className="sticky top-0 z-30 border-b backdrop-blur-xl"
         style={{
           backgroundColor: "var(--shell-header-bg)",
@@ -115,6 +165,7 @@ export function Header() {
           </div>
 
           <button
+            ref={menuButtonRef}
             type="button"
             className="inline-flex items-center gap-2 rounded-full border border-slate-400/20 px-4 py-2 text-sm font-medium transition hover:bg-slate-500/10 sm:hidden"
             style={{
@@ -132,17 +183,19 @@ export function Header() {
       </header>
 
       {open && (
-        <div
-          id="mobile-menu"
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 overflow-y-auto bg-neutral-900/60 p-6 backdrop-blur-sm"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setOpen(false);
-            }
-          }}
-        >
+        <FocusTrap>
+          <div
+            ref={dialogRef}
+            id="mobile-menu"
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-50 overflow-y-auto bg-neutral-900/60 p-6 backdrop-blur-sm"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                setOpen(false);
+              }
+            }}
+          >
           <div
             className="mx-auto max-w-sm rounded-3xl border p-6 shadow-2xl"
             style={{
@@ -275,6 +328,7 @@ export function Header() {
             </div>
           </div>
         </div>
+        </FocusTrap>
       )}
     </>
   );

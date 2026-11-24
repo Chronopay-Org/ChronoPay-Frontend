@@ -3,6 +3,7 @@
 
 import { useState, useId, useCallback, useEffect } from "react";
 import { Copy, Check } from "lucide-react";
+import { reportError } from "@/app/dashboard/reportError";
 
 interface CopyButtonProps {
   /** Text to copy to clipboard */
@@ -69,9 +70,9 @@ export function CopyButton({
       }
       setIsCopied(true);
       onCopied?.();
-    } catch {
-      // Silently fail — user can manually copy if needed
-      console.error("Failed to copy text to clipboard");
+    } catch (error) {
+      // No UI failure state — the user can still copy manually; just report it.
+      reportError(error, "Failed to copy text to clipboard");
     }
   }, [text, onCopied]);
 

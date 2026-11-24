@@ -295,7 +295,7 @@ describe("SearchTypeahead", () => {
     );
 
     const input = screen.getByLabelText("Search marketplace");
-    expect(input).not.toHaveAttribute("role");
+    expect(input).toHaveAttribute("role", "combobox");
     expect(input).toHaveAttribute("aria-autocomplete", "list");
     expect(input).toHaveAttribute("aria-expanded", "false");
   });

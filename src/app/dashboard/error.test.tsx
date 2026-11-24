@@ -21,22 +21,9 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-// The shell is a large layout tree; this suite targets the error boundary only.
-vi.mock("../components/dashboard-shell", () => ({
-  DashboardShell: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="dashboard-shell">{children}</div>
-  ),
+vi.mock("@/app/components/navigation/RoleContext", () => ({
+  useOptionalRole: () => "buyer",
 }));
-
-class MockIntersectionObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-  takeRecords() {
-    return [];
-  }
-}
-vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
 
 let errorSpy: ReturnType<typeof vi.spyOn>;
 
@@ -56,17 +43,17 @@ describe("DashboardError — rendering", () => {
 
     const alert = screen.getByRole("alert");
     expect(alert).toBeInTheDocument();
-    expect(alert).toHaveAttribute("aria-labelledby", "dashboard-error-title");
-    expect(alert).toHaveAttribute("aria-describedby", "dashboard-error-description");
+    expect(alert).toHaveAttribute("aria-labelledby", "route-error-title");
+    expect(alert).toHaveAttribute("aria-describedby", "route-error-description");
 
     const title = screen.getByText("Oops! Something went wrong.");
-    expect(title).toHaveAttribute("id", "dashboard-error-title");
+    expect(title).toHaveAttribute("id", "route-error-title");
 
     expect(
       screen.getByText(
         "We couldn't load your dashboard. This might be a temporary network glitch.",
       ),
-    ).toHaveAttribute("id", "dashboard-error-description");
+    ).toHaveAttribute("id", "route-error-description");
   });
 
   it("renders the error-state illustration", () => {
@@ -90,7 +77,15 @@ describe("DashboardError — error reporting", () => {
     const error = Object.assign(new Error("dashboard blew up"), { digest: "abc123" });
     render(<DashboardError error={error} reset={vi.fn()} />);
 
-    expect(errorSpy).toHaveBeenCalledWith(error);
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[ChronoPay] dashboard blew up (digest: abc123)",
+      error,
+      {
+        pathname: "/",
+        role: "buyer",
+        digest: "abc123",
+      },
+    );
   });
 
   it("logs again when the error instance changes", () => {
@@ -103,13 +98,17 @@ describe("DashboardError — error reporting", () => {
 
     rerenderError(<DashboardError error={second} reset={vi.fn()} />);
     expect(errorSpy).toHaveBeenCalledTimes(2);
-    expect(errorSpy).toHaveBeenLastCalledWith(second);
+    expect(errorSpy).toHaveBeenLastCalledWith(second, {
+      pathname: "/",
+      role: "buyer",
+      digest: undefined,
+    });
   });
 
-  it("renders and logs undefined when no error prop is supplied", () => {
+  it("renders without reporting when no error prop is supplied", () => {
     render(<DashboardError reset={vi.fn()} />);
     expect(screen.getByRole("alert")).toBeInTheDocument();
-    expect(errorSpy).toHaveBeenCalledWith(undefined);
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 });
 

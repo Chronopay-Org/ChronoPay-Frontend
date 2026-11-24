@@ -80,14 +80,14 @@ const NOTIFICATION_CATEGORIES: readonly ToastCategory[] = ["bookings", "payments
 export function Toast({ toast, onDismiss }: ToastProps) {
   const { id, variant, title, description, count, messages, category, onUndo, actions } = toast;
   const isCritical = variant === "critical";
-  const duration = isCritical ? 0 : (toast.duration ?? 5000);
-  const config = variantConfig[variant];
-  const Icon = config.icon;
-  const isGrouped = count > 1;
   // Derive whether this toast belongs to a persistent notification category.
-  // Must be computed inside the component so it is always defined before use.
   const isPersistentCategory: boolean =
     category !== undefined && NOTIFICATION_CATEGORIES.includes(category);
+  // Persistent notifications have duration 0
+  const duration = (isCritical || isPersistentCategory) ? 0 : (toast.duration ?? 5000);
+  const config = variantConfig[variant] || variantConfig.info;
+  const Icon = config.icon;
+  const isGrouped = count > 1;
   const hasActions = Array.isArray(actions) && actions.length > 0;
   const panelId = `toast-panel-${id}`;
   const reducedMotion = useReducedMotion();
@@ -213,7 +213,6 @@ export function Toast({ toast, onDismiss }: ToastProps) {
             <button type="button" onClick={() => onDismiss(id)} aria-label={`Dismiss: ${title}`} className="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"><X className="h-3.5 w-3.5" aria-hidden="true" /></button>
           </div>
         </div>
-
         {/* Action buttons footer */}
         {hasActions && !undone && (
           <div className={clsx("flex items-center gap-1.5 px-4 py-2", config.actionFooterClass)}>
@@ -237,7 +236,40 @@ export function Toast({ toast, onDismiss }: ToastProps) {
           </div>
         )}
 
-        <AnimatePresence initial={false}>{isGrouped && expanded && <motion.div id={panelId} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden"><ul role="list" aria-label={`${count} ${category ?? variant} notifications`} className="px-4 pb-3">{messages.map((message) => <li key={message.id} className="flex justify-between gap-2 border-t border-white/5 py-2"><span className="text-sm text-slate-200">{message.title}</span><time className="shrink-0 text-xs text-slate-500" dateTime={new Date(message.timestamp).toISOString()}>{relativeTime(message.timestamp)}</time></li>)}</ul></motion.div>}</AnimatePresence>
+        <AnimatePresence initial={false}>
+          {isGrouped && expanded && (
+            <motion.div id={panelId} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              {isPersistentCategory && hasUnread && (
+                <div className="flex justify-end px-4 py-1">
+                  <button type="button" onClick={handleMarkAllAsRead} className="inline-flex items-center gap-1 text-xs font-medium text-cyan-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 rounded px-2 py-1">
+                    <CheckCheck className="h-3.5 w-3.5" /> Mark all as read
+                  </button>
+                </div>
+              )}
+              <ul role="list" aria-label={`${count} ${category ?? variant} notifications`} className="px-4 pb-3">
+                {messages.map((message) => {
+                  const isRead = isPersistentCategory ? readMessageIds.has(message.id) : true;
+                  return (
+                    <li key={message.id} className="flex flex-col gap-1 border-t border-white/5 py-2">
+                      <div className="flex justify-between items-start gap-2">
+                        <span className={clsx("text-sm", isRead ? "text-slate-400" : "text-slate-200 font-semibold")}>{message.title}</span>
+                        <time className="shrink-0 text-xs text-slate-500" dateTime={new Date(message.timestamp).toISOString()}>{relativeTime(message.timestamp)}</time>
+                      </div>
+                      {message.description && <p className="text-xs text-slate-400">{message.description}</p>}
+                      {isPersistentCategory && !isRead && (
+                        <div className="flex justify-start mt-1">
+                          <button type="button" onClick={(e) => handleMarkAsRead(message.id, e)} className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 rounded px-1 py-0.5">
+                            <Check className="h-3 w-3" /> Mark as read
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );

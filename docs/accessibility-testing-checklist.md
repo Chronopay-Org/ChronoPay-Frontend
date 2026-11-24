@@ -348,6 +348,16 @@ Extensions: axe DevTools, WAVE, Lighthouse
 
 ## Automated Testing
 
+### Page-Level Route Matrix (`jest-axe`)
+
+Every `page.tsx` under `src/app` is automatically audited in CI using `jest-axe`:
+- **Suite:** [`src/__tests__/routes-a11y.test.tsx`](../src/__tests__/routes-a11y.test.tsx)
+- **Helper:** [`src/test/axe.ts`](../src/test/axe.ts) (`expectNoA11yViolations(ui)`)
+- **Run Command:**
+  ```bash
+  npx vitest run src/__tests__/routes-a11y.test.tsx
+  ```
+
 ### axe DevTools
 ```
 1. Open page in Chrome

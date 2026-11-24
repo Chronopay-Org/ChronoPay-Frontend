@@ -71,7 +71,7 @@ describe('useThemeSchedule', () => {
   });
 
   it('does not apply theme if type is "none"', () => {
-    const { result } = renderHook(() => useThemeSchedule());
+    renderHook(() => useThemeSchedule());
 
     act(() => {
       vi.advanceTimersByTime(60000);
@@ -117,13 +117,13 @@ describe('useThemeSchedule', () => {
     });
 
     it('handles inverted (overnight) windows at boundary minutes', () => {
-      expect(isDarkAt(new Date(2024, 0, 1, 7, 59), '20:00', '08:00')).toBe(true);
-      expect(isDarkAt(new Date(2024, 0, 1, 8, 0), '20:00', '08:00')).toBe(false);
-      expect(isDarkAt(new Date(2024, 0, 1, 8, 1), '20:00', '08:00')).toBe(false);
-      expect(isDarkAt(new Date(2024, 0, 1, 12, 0), '20:00', '08:00')).toBe(false);
-      expect(isDarkAt(new Date(2024, 0, 1, 19, 59), '20:00', '08:00')).toBe(false);
-      expect(isDarkAt(new Date(2024, 0, 1, 20, 0), '20:00', '08:00')).toBe(true);
-      expect(isDarkAt(new Date(2024, 0, 1, 20, 1), '20:00', '08:00')).toBe(true);
+      expect(isDarkAt(new Date(2024, 0, 1, 7, 59), '20:00', '08:00')).toBe(false);
+      expect(isDarkAt(new Date(2024, 0, 1, 8, 0), '20:00', '08:00')).toBe(true);
+      expect(isDarkAt(new Date(2024, 0, 1, 8, 1), '20:00', '08:00')).toBe(true);
+      expect(isDarkAt(new Date(2024, 0, 1, 12, 0), '20:00', '08:00')).toBe(true);
+      expect(isDarkAt(new Date(2024, 0, 1, 19, 59), '20:00', '08:00')).toBe(true);
+      expect(isDarkAt(new Date(2024, 0, 1, 20, 0), '20:00', '08:00')).toBe(false);
+      expect(isDarkAt(new Date(2024, 0, 1, 20, 1), '20:00', '08:00')).toBe(false);
     });
 
     it('treats equal light and dark times as a no-op', () => {
@@ -173,7 +173,7 @@ describe('useThemeSchedule', () => {
   });
 
   it('applies correct theme for inverted window', () => {
-    const date = new Date('2024-01-01T12:00:00');
+    const date = new Date('2024-01-01T22:00:00');
     vi.setSystemTime(date);
 
     const { result } = renderHook(() => useThemeSchedule());

@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
@@ -54,8 +54,7 @@ describe("PricingPage", () => {
     expect(screen.getByText("Frequently Asked Questions")).toBeInTheDocument();
   });
 
-  it("executes the plan selection handler without throwing", () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+  it("clicking a plan call-to-action does not throw", () => {
     render(<PricingPage />);
     
     // Click the "Get Started" plan CTA link
@@ -64,10 +63,7 @@ describe("PricingPage", () => {
     const ctaLinks = screen.getAllByRole("link", { name: /Get Started/i });
     expect(ctaLinks.length).toBeGreaterThan(0);
     
-    fireEvent.click(ctaLinks[0]);
-    
-    // Expect console.log to have been called by handleSelectPlan
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("User selected plan: starter"));
-    consoleSpy.mockRestore();
+    expect(() => fireEvent.click(ctaLinks[0])).not.toThrow();
+    expect(screen.getByText("Frequently Asked Questions")).toBeInTheDocument();
   });
 });

@@ -144,4 +144,4 @@ This guide is the canonical reference for the design tokens defined in `src/app/
 
 ## Implementation note
 
-The CSS variables in `src/app/globals.css` are the source of truth. This document is meant to make those values discoverable and reviewable during implementation and design QA.
+The typed token source in `src/design/tokens.ts` is the single source of truth. The CSS variables in `src/app/globals.css` are generated from it, and drift tests fail until `globals.css`, the token modules, and this document all match. This document is meant to make those values discoverable and reviewable during implementation and design QA.

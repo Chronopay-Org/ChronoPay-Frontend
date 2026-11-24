@@ -203,13 +203,13 @@ export default function StatusPage() {
 
           <div className="space-y-8">
             <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 md:p-6">
-              <UptimeChart componentName="Marketplace API" days={marketplaceSeries} currentUptimePercent={99.6} />
+              <UptimeChart componentName="Marketplace API" days={marketplaceSeries} currentUptimePercent={99.6} regionLabel="Marketplace API" />
             </div>
             <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 md:p-6">
-              <UptimeChart componentName="Escrow service" days={escrowSeries} currentUptimePercent={99.3} />
+              <UptimeChart componentName="Escrow service" days={escrowSeries} currentUptimePercent={99.3} regionLabel="Escrow service" />
             </div>
             <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4 md:p-6">
-              <UptimeChart componentName="Stellar network" days={stellarSeries} currentUptimePercent={99.5} />
+              <UptimeChart componentName="Stellar network" days={stellarSeries} currentUptimePercent={99.5} regionLabel="Stellar network" />
             </div>
           </div>
         </section>

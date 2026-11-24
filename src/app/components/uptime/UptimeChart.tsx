@@ -22,6 +22,7 @@ export function UptimeChart({
   componentName,
   days,
   currentUptimePercent,
+  regionLabel,
 }: UptimeChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cellsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -95,7 +96,8 @@ export function UptimeChart({
   return (
     <section
       className="space-y-6"
-      aria-labelledby={headingId}
+      aria-labelledby={regionLabel ? undefined : headingId}
+      aria-label={regionLabel}
     >
       {/* Title and summary */}
       <div>
@@ -113,7 +115,7 @@ export function UptimeChart({
         ref={containerRef}
         className="overflow-x-auto pb-4"
         role="region"
-        aria-label="90-day uptime history"
+        aria-label={regionLabel ? `${regionLabel} — 90-day uptime history` : "90-day uptime history"}
       >
         {/* Cell wrapper with flex layout */}
         <div

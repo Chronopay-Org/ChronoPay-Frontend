@@ -1,30 +1,31 @@
-import { render, screen } from '@testing-library/react';
-import { SupplierCard } from './card';
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { SupplierCard } from "./supplier-card";
+
+const supplier = {
+  id: "supplier-1",
+  name: "Test Supplier",
+  role: "Product consultant",
+  badges: ["Verified"],
+};
 
 describe('SupplierCard', () => {
-  it('renders correctly with required props', () => {
-    render(<SupplierCard name="Test Supplier" />);
-    expect(screen.getByText('Test Supplier')).toBeInTheDocument();
+  it("renders a grid card linking to the dashboard supplier profile", () => {
+    render(<SupplierCard supplier={supplier} />);
+
+    expect(screen.getByRole("link", { name: /test supplier/i })).toHaveAttribute(
+      "href",
+      "/dashboard/suppliers/supplier-1",
+    );
+    expect(screen.getByText("Product consultant")).toBeInTheDocument();
+    expect(screen.getByText("Verified")).toBeInTheDocument();
   });
 
-  it('renders with all optional props', () => {
-    render(
-      <SupplierCard
-        name="John Doe"
-        title="Web Developer"
-        priceFloor=""
-        rating={4.8}
-        reviewCount={120}
-        responseTime="1 hr"
-        nextSlot="Tomorrow 3 PM"
-      />
-    );
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('Web Developer')).toBeInTheDocument();
-    expect(screen.getByText('')).toBeInTheDocument();
-    expect(screen.getByText('4.8')).toBeInTheDocument();
-    expect(screen.getByText('(120)')).toBeInTheDocument();
-    expect(screen.getByText('1 hr')).toBeInTheDocument();
-    expect(screen.getByText('Next: Tomorrow 3 PM')).toBeInTheDocument();
+  it("renders the compact-list card linking to the dashboard supplier profile", () => {
+    render(<SupplierCard supplier={supplier} viewMode="compact-list" />);
+
+    const link = screen.getByRole("link", { name: /test supplier/i });
+    expect(link).toHaveAttribute("href", "/dashboard/suppliers/supplier-1");
+    expect(link).toHaveClass("card--compact-list");
   });
 });

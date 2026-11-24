@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import type { ToastVariant } from "@/hooks/use-toast";
+import { reportError } from "@/app/dashboard/reportError";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ function normalizeItem(item: RecentlyViewedItem): RecentlyViewedItem {
 }
 
 function normalizeItems(items: RecentlyViewedItem[]): RecentlyViewedItem[] {
-  return items.map(normalizeItem);
+  return items.slice(0, MAX_ITEMS).map(normalizeItem);
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────────
@@ -49,7 +50,7 @@ export function RecentlyViewedRail() {
         return normalizeItems(JSON.parse(stored) as RecentlyViewedItem[]);
       }
     } catch (error) {
-      console.error("Failed to load recently viewed items:", error);
+      reportError(error, "Failed to load recently viewed items");
     }
     return [];
   });
@@ -70,7 +71,7 @@ export function RecentlyViewedRail() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     } catch (error) {
-      console.error("Failed to save recently viewed items:", error);
+      reportError(error, "Failed to save recently viewed items");
     }
   }, [items]);
 
@@ -272,7 +273,7 @@ export function RecentlyViewedRail() {
         ))}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }
@@ -312,7 +313,7 @@ export function useRecentlyViewed() {
         detail: updated
       }));
     } catch (error) {
-      console.error("Failed to add recently viewed item:", error);
+      reportError(error, "Failed to add recently viewed item");
     }
   }, []);
 
@@ -340,7 +341,7 @@ export function useRecentlyViewed() {
         detail: updated
       }));
     } catch (error) {
-      console.error("Failed to add recently viewed items:", error);
+      reportError(error, "Failed to add recently viewed items");
     }
   }, []);
 

@@ -188,6 +188,55 @@ export function MiniCalendarNavigator({
             })}
           </div>
         ))}
+      <div className="space-y-1" role="grid" aria-label="Calendar days">
+        {Array.from({ length: Math.ceil(days.length / 7) }, (_, weekIdx) => {
+          const weekDays = days.slice(weekIdx * 7, weekIdx * 7 + 7);
+          return (
+            <div key={`week-${weekIdx}`} className="grid grid-cols-7 gap-1" role="row">
+              {weekDays.map((date, dayIdx) => {
+                const index = weekIdx * 7 + dayIdx;
+                if (!date) {
+                  return <div key={`empty-${index}`} className="aspect-square" role="gridcell" aria-hidden="true" />;
+                }
+
+                const selected = isSelected(date);
+                const today = isToday(date);
+                const density = getAvailabilityDensity(date);
+                const dateId = `mini-cal-${date.toISOString().split('T')[0]}`;
+
+                return (
+                  <button
+                    key={dateId}
+                    onClick={() => onDateSelect(date)}
+                    className={clsx(
+                      "relative aspect-square rounded-lg text-xs font-medium transition-all focus-ring-cyan",
+                      selected
+                        ? "bg-cyan-500 text-white shadow-lg shadow-cyan-500/25"
+                        : today
+                        ? "bg-white/10 text-white ring-1 ring-white/20"
+                        : "text-slate-300 hover:bg-white/5",
+                      "flex flex-col items-center justify-center"
+                    )}
+                    aria-label={`${date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}${selected ? ', selected' : ''}${today ? ', today' : ''}`}
+                    aria-selected={selected}
+                    role="gridcell"
+                  >
+                    <span>{date.getDate()}</span>
+                    
+                    {/* Availability Density Dot */}
+                    <span
+                      className={clsx(
+                        "mt-0.5 h-1 w-1 rounded-full",
+                        densityDotClass[density]
+                      )}
+                      aria-hidden="true"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
       {/* Legend */}

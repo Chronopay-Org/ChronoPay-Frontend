@@ -168,6 +168,101 @@ describe("Header", () => {
     expect(menuButton).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+
+  it("moves focus into the drawer on open and wraps Tab and Shift+Tab inside the drawer", () => {
+    render(<Header />);
+
+    const menuButton = screen.getByRole("button", {
+      name: /open navigation menu/i,
+    });
+
+    fireEvent.click(menuButton);
+
+    const dialog = screen.getByRole("dialog");
+    const closeButton = screen.getByRole("button", {
+      name: /close navigation menu/i,
+    });
+
+    expect(document.activeElement).toBe(closeButton);
+
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
+      ),
+    );
+    const firstFocusable = focusable[0];
+    const lastFocusable = focusable[focusable.length - 1];
+
+    expect(firstFocusable).toBe(closeButton);
+    expect(lastFocusable).not.toBe(firstFocusable);
+
+    // Shift+Tab from the first focusable element wraps to the last
+    fireEvent.keyDown(firstFocusable, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(lastFocusable);
+
+    // Tab from the last focusable element wraps back to the first
+    fireEvent.keyDown(lastFocusable, { key: "Tab" });
+    expect(document.activeElement).toBe(firstFocusable);
+  });
+
+  it("returns focus to the menu button when closed via Close button, Escape, or backdrop", () => {
+    render(<Header />);
+
+    const menuButton = screen.getByRole("button", {
+      name: /open navigation menu/i,
+    });
+
+    // Close via Close button
+    fireEvent.click(menuButton);
+    fireEvent.click(
+      screen.getByRole("button", { name: /close navigation menu/i }),
+    );
+    expect(document.activeElement).toBe(menuButton);
+
+    // Close via Escape
+    fireEvent.click(menuButton);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(document.activeElement).toBe(menuButton);
+
+    // Close via backdrop click
+    fireEvent.click(menuButton);
+    fireEvent.click(screen.getByRole("dialog"));
+    expect(document.activeElement).toBe(menuButton);
+  });
+
+  it("marks background content aria-hidden and inert while the drawer is open and restores it on close", () => {
+    const { container } = render(
+      <>
+        <Header />
+        <main>Page content</main>
+      </>,
+    );
+
+    const header = container.querySelector("header")!;
+    const main = container.querySelector("main")!;
+    const menuButton = screen.getByRole("button", {
+      name: /open navigation menu/i,
+    });
+
+    expect(header).not.toHaveAttribute("aria-hidden");
+    expect(header.inert).toBe(false);
+    expect(main).not.toHaveAttribute("aria-hidden");
+    expect(main.inert).toBe(false);
+
+    fireEvent.click(menuButton);
+
+    expect(header).toHaveAttribute("aria-hidden", "true");
+    expect(header.inert).toBe(true);
+    expect(main).toHaveAttribute("aria-hidden", "true");
+    expect(main.inert).toBe(true);
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(header).not.toHaveAttribute("aria-hidden");
+    expect(header.inert).toBe(false);
+    expect(main).not.toHaveAttribute("aria-hidden");
+    expect(main.inert).toBe(false);
+  });
 });
 describe("Header notification bell", () => {
   beforeEach(() => {
@@ -203,6 +298,7 @@ describe("Header notification bell", () => {
 
     const bells = screen.getAllByRole("link", {
       name: /Notifications, 3 unread/i,
+      hidden: true,
     });
     expect(bells).toHaveLength(2);
     for (const bell of bells) {
