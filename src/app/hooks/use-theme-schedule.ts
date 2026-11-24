@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { applyTheme } from '@/hooks/use-theme';
 
 export type ScheduleType = 'none' | 'sun' | 'custom';
@@ -8,6 +8,8 @@ export interface ScheduleConfig {
   lightTime: string;
   darkTime: string;
 }
+
+export const THEME_SCHEDULE_STORAGE_KEY = 'theme-schedule';
 
 const DEFAULT_CONFIG: ScheduleConfig = {
   type: 'none',
@@ -43,6 +45,24 @@ export function parseStoredConfig(raw: string | null): ScheduleConfig {
   }
 }
 
+export function readStoredScheduleConfig(): ScheduleConfig {
+  if (typeof window === 'undefined') return { ...DEFAULT_CONFIG };
+  try {
+    return parseStoredConfig(window.localStorage.getItem(THEME_SCHEDULE_STORAGE_KEY));
+  } catch {
+    return { ...DEFAULT_CONFIG };
+  }
+}
+
+export function resolveScheduledTheme(
+  config: ScheduleConfig,
+  now: Date = new Date()
+): 'light' | 'dark' {
+  const lightTime = config.type === 'sun' ? SUN_LIGHT_TIME : config.lightTime;
+  const darkTime = config.type === 'sun' ? SUN_DARK_TIME : config.darkTime;
+  return isDarkAt(now, lightTime, darkTime) ? 'dark' : 'light';
+}
+
 export function toMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
   return h * 60 + m;
@@ -64,28 +84,30 @@ export function isDarkAt(now: Date, lightTime: string, darkTime: string): boolea
   return current >= dark && current < light;
 }
 
+const scheduleListeners = new Set<(next: ScheduleConfig) => void>();
+
+function notifyScheduleListeners(next: ScheduleConfig) {
+  scheduleListeners.forEach((listener) => listener(next));
+}
+
 export function useThemeSchedule() {
-  const [config, setConfig] = useState<ScheduleConfig>({ ...DEFAULT_CONFIG });
+  const [config, setConfig] = useState<ScheduleConfig>(() => readStoredScheduleConfig());
 
   useEffect(() => {
-    let saved: string | null = null;
-    try {
-      saved = localStorage.getItem('theme-schedule');
-    } catch {
-      saved = null;
-    }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setConfig(parseStoredConfig(saved));
+    const handleUpdate = (next: ScheduleConfig) => {
+      setConfig(next);
+    };
+    scheduleListeners.add(handleUpdate);
+    return () => {
+      scheduleListeners.delete(handleUpdate);
+    };
   }, []);
 
   useEffect(() => {
     if (config.type === 'none') return;
 
-    const lightTime = config.type === 'sun' ? SUN_LIGHT_TIME : config.lightTime;
-    const darkTime = config.type === 'sun' ? SUN_DARK_TIME : config.darkTime;
-
     const checkSchedule = () => {
-      applyTheme(isDarkAt(new Date(), lightTime, darkTime) ? 'dark' : 'light');
+      applyTheme(resolveScheduledTheme(config, new Date()));
     };
 
     checkSchedule();
@@ -93,15 +115,18 @@ export function useThemeSchedule() {
     return () => clearInterval(interval);
   }, [config]);
 
-  const updateConfig = (newConfig: Partial<ScheduleConfig>) => {
-    const next = { ...config, ...newConfig };
-    setConfig(next);
-    try {
-      localStorage.setItem('theme-schedule', JSON.stringify(next));
-    } catch {
-      // Storage unavailable (e.g. Safari private mode, quota); ignore.
-    }
-  };
+  const updateConfig = useCallback((newConfig: Partial<ScheduleConfig>) => {
+    setConfig((prev) => {
+      const next = { ...prev, ...newConfig };
+      try {
+        localStorage.setItem(THEME_SCHEDULE_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Storage unavailable (e.g. Safari private mode, quota); ignore.
+      }
+      notifyScheduleListeners(next);
+      return next;
+    });
+  }, []);
 
   return { config, updateConfig };
 }

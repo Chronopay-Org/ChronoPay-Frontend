@@ -17,7 +17,7 @@
  * - Touch scroll behavior
  */
 
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, beforeEach, afterEach, vi} from "vitest";
 import { RecentlyViewedRail, useRecentlyViewed, type RecentlyViewedItem } from "./recently-viewed-rail";
 
@@ -133,9 +133,11 @@ describe("RecentlyViewedRail", () => {
     const updatedItems: RecentlyViewedItem[] = [{
       id: "3", title: "New Item", price: "10 XLM", href: "/marketplace/3", viewedAt: Date.now()
     }];
-    window.dispatchEvent(new CustomEvent("chronopay:recently-viewed-updated", {
-      detail: updatedItems
-    }));
+    act(() => {
+      window.dispatchEvent(new CustomEvent("chronopay:recently-viewed-updated", {
+        detail: updatedItems
+      }));
+    });
 
     // Assert error was caught and logged
     expect(consoleSpy).toHaveBeenCalledWith(

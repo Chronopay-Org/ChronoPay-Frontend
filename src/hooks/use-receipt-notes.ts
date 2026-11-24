@@ -97,9 +97,19 @@ export function searchReceiptNotes(query: string): Array<{ receiptId: string; pr
       const key = window.localStorage.key(i);
       if (!key || !key.startsWith(STORAGE_PREFIX)) continue;
       const value = window.localStorage.getItem(key) ?? "";
-      if (value.toLowerCase().includes(lowerQuery)) {
+      const matchIndex = value.toLowerCase().indexOf(lowerQuery);
+      if (matchIndex !== -1) {
         const receiptId = key.slice(STORAGE_PREFIX.length);
-        const preview = value.length > 80 ? `${value.slice(0, 80)}…` : value;
+        const previewLength = Math.max(80, lowerQuery.length + 20);
+        const previewStart = Math.max(
+          0,
+          Math.min(matchIndex - 20, value.length - previewLength),
+        );
+        const previewEnd = Math.min(value.length, previewStart + previewLength);
+        const preview = `${previewStart > 0 ? "…" : ""}${value.slice(
+          previewStart,
+          previewEnd,
+        )}${previewEnd < value.length ? "…" : ""}`;
         results.push({ receiptId, preview });
       }
     }

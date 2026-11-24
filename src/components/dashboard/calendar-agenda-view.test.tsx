@@ -111,9 +111,7 @@ describe("CalendarAgendaView", () => {
       expect(within(section).getByRole("heading", { level: 2 })).toHaveTextContent(
         "Availability Agenda"
       );
-      expect(within(section).getByRole("list")).toHaveAccessibleName(
-        "Available days grouped by month"
-      );
+      expect(within(section).getByRole("group", { name: "Available days grouped by month" })).toBeInTheDocument();
     });
 
     it("merges a caller supplied className onto the section", () => {
@@ -312,7 +310,7 @@ describe("CalendarAgendaView", () => {
         />
       );
 
-      const mayGroup = screen.getByRole("group", { name: "Days in May 2026" });
+      const mayGroup = screen.getByRole("list", { name: "Days in May 2026" });
       expect(within(mayGroup).getAllByRole("listitem").map((row) => row.textContent)).toEqual([
         expect.stringContaining("May 10, 2026"),
         expect.stringContaining("May 3, 2026"),
@@ -320,24 +318,24 @@ describe("CalendarAgendaView", () => {
 
       // Month groups appear in order of first appearance in `days`.
       expect(
-        screen.getAllByRole("group").map((group) => group.getAttribute("aria-label"))
+        screen.getAllByRole("list").map((group) => group.getAttribute("aria-label"))
       ).toEqual(["Days in June 2026", "Days in May 2026"]);
     });
 
     it("groups by the date, not by the supplied label", () => {
       render(<CalendarAgendaView days={[mayDay("Jun 1, 2026")]} />);
 
-      const mayGroup = screen.getByRole("group", { name: "Days in May 2026" });
+      const mayGroup = screen.getByRole("list", { name: "Days in May 2026" });
       expect(within(mayGroup).getByText("Jun 1, 2026")).toBeInTheDocument();
-      expect(screen.queryByRole("group", { name: "Days in June 2026" })).toBeNull();
+      expect(screen.queryByRole("list", { name: "Days in June 2026" })).toBeNull();
     });
 
-    it("exposes list semantics for the grouping container", () => {
+    it("exposes group and list semantics for the grouping container", () => {
       render(<CalendarAgendaView days={[mayDay("May 3, 2026")]} />);
 
-      const list = agendaSection().querySelector("[role='list']");
-      expect(list).toHaveAttribute("aria-label", "Available days grouped by month");
-      expect(within(list as HTMLElement).getAllByRole("group")).toHaveLength(1);
+      const group = agendaSection().querySelector("[role='group']");
+      expect(group).toHaveAttribute("aria-label", "Available days grouped by month");
+      expect(within(group as HTMLElement).getAllByRole("list")).toHaveLength(1);
     });
   });
 

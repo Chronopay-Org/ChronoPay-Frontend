@@ -99,20 +99,20 @@ export default function Page({ params }: { params: { id: string } }) {
         </nav>
 
         <div className="space-y-12">
-          <section id="overview" className="scroll-mt-28" aria-labelledby="overview-heading">
+          <div id="overview" className="scroll-mt-28">
             <h2 id="overview-heading" className="sr-only">Overview</h2>
             <PanelShell title="About" description="Supplier bio and expertise">
               <p className="text-sm leading-relaxed text-slate-300">Specializes in Stellar smart contracts, tokenization, and DeFi integrations. Let&apos;s build the future of payments.</p>
             </PanelShell>
-          </section>
+          </div>
 
-          <section id="availability" className="scroll-mt-28" aria-labelledby="availability-heading">
+          <div id="availability" className="scroll-mt-28">
             <h2 id="availability-heading" className="sr-only">Availability</h2>
             <AvailabilityStrip days={days} />
             <div className="mt-4 flex justify-end">
               <ButtonLink href={`/dashboard/slots?supplier=${params.id}`} variant="secondary" size="sm"><CalendarDays className="me-2 h-4 w-4" aria-hidden="true" />View full calendar</ButtonLink>
             </div>
-          </section>
+          </div>
 
           <section id="reviews" className="scroll-mt-28 space-y-6" aria-labelledby="reviews-heading">
             <h2 id="reviews-heading" className="sr-only">Reviews</h2>
@@ -132,11 +132,15 @@ export default function Page({ params }: { params: { id: string } }) {
               onFlag={flagReview}
             />
           </section>
+          <div id="reviews" className="scroll-mt-28">
+            <h2 id="reviews-heading" className="sr-only">Reviews</h2>
+            <ReviewsPanel />
+          </div>
 
-          <section id="policies" className="scroll-mt-28" aria-labelledby="policies-heading">
+          <div id="policies" className="scroll-mt-28">
             <h2 id="policies-heading" className="sr-only">Policies</h2>
             <SupplierPolicies />
-          </section>
+          </div>
         </div>
       </div>
     </DashboardShell>

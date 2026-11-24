@@ -1,16 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import {
+  useThemeSchedule,
+  readStoredScheduleConfig,
+  resolveScheduledTheme,
+  type ScheduleConfig,
+} from "@/app/hooks/use-theme-schedule";
 
-export type ThemeMode = "light" | "dark" | "auto";
+export type ThemeMode = "light" | "dark" | "auto" | "scheduled";
 export type ResolvedTheme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "chronopay:theme";
 export const LEGACY_THEME_STORAGE_KEY = "chronopay-theme";
-const MODES: ThemeMode[] = ["auto", "light", "dark"];
+const MODES: ThemeMode[] = ["auto", "light", "dark", "scheduled"];
 
 function isThemeMode(value: unknown): value is ThemeMode {
-  return value === "light" || value === "dark" || value === "auto";
+  return (
+    value === "light" ||
+    value === "dark" ||
+    value === "auto" ||
+    value === "scheduled"
+  );
 }
 
 function getSystemTheme(): ResolvedTheme {
@@ -21,8 +32,16 @@ function getSystemTheme(): ResolvedTheme {
 }
 
 /** Resolve a user mode to a concrete color scheme. */
-export function resolveTheme(mode: ThemeMode): ResolvedTheme {
-  return mode === "auto" ? getSystemTheme() : mode;
+export function resolveTheme(
+  mode: ThemeMode,
+  scheduleConfig?: ScheduleConfig
+): ResolvedTheme {
+  if (mode === "auto") return getSystemTheme();
+  if (mode === "scheduled") {
+    const config = scheduleConfig ?? readStoredScheduleConfig();
+    return resolveScheduledTheme(config);
+  }
+  return mode;
 }
 
 /** Set the `data-theme` attribute on <html>. Safe to call before hydration. */
@@ -73,16 +92,14 @@ function subscribe(callback: () => void) {
       callback();
     }
   };
-  if (typeof window !== "undefined") {
-    window.addEventListener("storage", handleStorage);
-  }
+  window.addEventListener("storage", handleStorage);
   return () => {
     listeners.delete(callback);
-    if (typeof window !== "undefined") {
-      window.removeEventListener("storage", handleStorage);
-    }
+    window.removeEventListener("storage", handleStorage);
   };
 }
+
+export const getServerSnapshot = (): ThemeMode => "auto";
 
 export function useTheme() {
   // Read theme via useSyncExternalStore to avoid SSR/client hydration mismatch.
@@ -90,13 +107,16 @@ export function useTheme() {
   const mode = useSyncExternalStore(
     subscribe,
     readPersistedTheme,
-    () => "auto" as ThemeMode
+    getServerSnapshot
   );
 
-  // Keep <html> data-theme in sync with the current mode.
+  const { config: scheduleConfig, updateConfig: updateScheduleConfig } =
+    useThemeSchedule();
+
+  // Keep <html> data-theme in sync with the current mode and schedule.
   useEffect(() => {
-    applyTheme(resolveTheme(mode));
-  }, [mode]);
+    applyTheme(resolveTheme(mode, scheduleConfig));
+  }, [mode, scheduleConfig]);
 
   // In Auto mode, follow OS theme changes at runtime.
   useEffect(() => {
@@ -107,11 +127,19 @@ export function useTheme() {
     return () => mq.removeEventListener("change", onChange);
   }, [mode]);
 
-  const changeTheme = useCallback((next: ThemeMode) => {
-    persistTheme(next);
-    applyTheme(resolveTheme(next));
-    notifyThemeListeners();
-  }, []);
+  const changeTheme = useCallback(
+    (next: ThemeMode) => {
+      if (next === "scheduled" && scheduleConfig.type === "none") {
+        updateScheduleConfig({ type: "custom" });
+      } else if (next !== "scheduled" && scheduleConfig.type !== "none") {
+        updateScheduleConfig({ type: "none" });
+      }
+      persistTheme(next);
+      applyTheme(resolveTheme(next, scheduleConfig));
+      notifyThemeListeners();
+    },
+    [scheduleConfig, updateScheduleConfig]
+  );
 
   const cycleTheme = useCallback(() => {
     const idx = MODES.indexOf(mode);
@@ -120,8 +148,10 @@ export function useTheme() {
 
   return {
     mode,
-    resolved: resolveTheme(mode),
+    resolved: resolveTheme(mode, scheduleConfig),
     changeTheme,
     cycleTheme,
+    scheduleConfig,
+    updateScheduleConfig,
   };
 }

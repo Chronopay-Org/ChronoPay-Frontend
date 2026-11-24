@@ -66,12 +66,14 @@ export function CalendarAgendaView({
       </h2>
 
       <div aria-label="Available days grouped by month">
+      <div role="group" aria-label="Available days grouped by month">
         {Object.entries(groupedByMonth).map(([month, monthDays]) => (
           <div key={month} className="mb-6 last:mb-0">
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">
               {month}
             </h3>
             <ul className="space-y-2" role="list" aria-label={`Days in ${month}`}>
+            <ul className="space-y-2" aria-label={`Days in ${month}`}>
               {monthDays.map((day) => {
                 const isBookable = day.status === "available" || day.status === "limited";
                 const dayId = `agenda-${day.dateLabel.replace(/\s+/g, "-").toLowerCase()}`;

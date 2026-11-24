@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, type ElementType, type ReactNode } from "react";
 import { Card, CardHeader, CardBody } from "./card";
 
 export function PanelShell({
@@ -7,6 +7,7 @@ export function PanelShell({
   description,
   action,
   id,
+  as = "section",
   className = "",
   children,
 }: {
@@ -15,6 +16,7 @@ export function PanelShell({
   description?: string;
   action?: ReactNode;
   id?: string;
+  as?: ElementType;
   className?: string;
   children: ReactNode;
 }) {
@@ -24,7 +26,7 @@ export function PanelShell({
 
   return (
     <Card
-      as="section"
+      as={as}
       id={id}
       aria-labelledby={titleId}
       aria-describedby={descriptionId}

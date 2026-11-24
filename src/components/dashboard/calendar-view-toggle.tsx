@@ -87,7 +87,7 @@ export function CalendarViewToggle({
   };
 
   return (
-    <nav
+    <div
       className={clsx(
         "inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-1",
         className
@@ -101,6 +101,11 @@ export function CalendarViewToggle({
         )}
         role="tablist"
         aria-label="Calendar view"
+    >
+      <div
+        className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5"
+        role="tablist"
+        aria-label="Calendar view mode"
       >
         {(Object.entries(viewConfig) as [CalendarViewMode, typeof viewConfig.month][]).map(
           ([mode, config], index) => {
@@ -157,6 +162,6 @@ export function CalendarViewToggle({
           </span>
         </button>
       )}
-    </nav>
+    </div>
   );
 }

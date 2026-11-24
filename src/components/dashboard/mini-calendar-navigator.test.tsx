@@ -49,9 +49,13 @@ describe("MiniCalendarNavigator", () => {
     const grid = screen.getByRole("grid", { name: "Calendar days" });
     // 30 days in April 2026.
     expect(screen.getAllByRole("gridcell")).toHaveLength(30);
-    // Leading blank cells for the days before the 1st, then the days.
+    // Leading blank cells for the days before the 1st, then the days across week rows.
     const expectedLeading = new Date(2026, 3, 1).getDay();
-    expect(grid.children).toHaveLength(expectedLeading + 30);
+    const totalCells = Array.from(grid.querySelectorAll('[role="row"]')).reduce(
+      (sum, row) => sum + row.children.length,
+      0,
+    );
+    expect(totalCells).toBe(expectedLeading + 30);
   });
 
   it("renders weekday column headers", () => {
@@ -70,14 +74,14 @@ describe("MiniCalendarNavigator", () => {
     expect(screen.getAllByRole("gridcell")).toHaveLength(28);
   });
 
-  it("marks the current date as selected via aria-pressed", () => {
+  it("marks the current date as selected via aria-selected", () => {
     renderNav();
     const selected = screen.getByRole("gridcell", { name: /April 15/ });
-    expect(selected).toHaveAttribute("aria-pressed", "true");
+    expect(selected).toHaveAttribute("aria-selected", "true");
     expect(selected).toHaveClass("bg-cyan-500");
 
     const other = screen.getByRole("gridcell", { name: /April 16/ });
-    expect(other).toHaveAttribute("aria-pressed", "false");
+    expect(other).toHaveAttribute("aria-selected", "false");
   });
 
   it("calls onDateSelect with the clicked day", () => {
@@ -161,7 +165,7 @@ describe("MiniCalendarNavigator", () => {
     // April 15 is no longer rendered, but no May day is selected.
     const pressed = screen
       .getAllByRole("gridcell")
-      .filter((cell) => cell.getAttribute("aria-pressed") === "true");
+      .filter((cell) => cell.getAttribute("aria-selected") === "true");
     expect(pressed).toHaveLength(0);
   });
 

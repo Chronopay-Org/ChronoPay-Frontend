@@ -372,24 +372,22 @@ export function PricingCalculator({
               </dd>
             </div>
 
-            <div className="border-t border-[var(--border-subtle)] pt-2.5">
-              <div className="flex items-center justify-between gap-4 text-sm">
-                <dt className="flex items-center gap-1.5 text-[var(--helper-text-color)] font-medium">
-                  <Zap
-                    className="h-3.5 w-3.5 text-[var(--accent)]"
-                    aria-hidden="true"
-                  />
-                  Per-session take-home
-                  <HelpPopover term={glossary.takeHome} />
-                </dt>
-                <dd
-                  className="font-semibold tabular-nums text-[var(--accent)]"
-                  aria-live="polite"
-                  aria-atomic="true"
-                >
-                  {formatXlm(breakdown.perSessionTakeHome)}
-                </dd>
-              </div>
+            <div className="flex items-center justify-between gap-4 border-t border-[var(--border-subtle)] pt-2.5 text-sm">
+              <dt className="flex items-center gap-1.5 text-[var(--helper-text-color)] font-medium">
+                <Zap
+                  className="h-3.5 w-3.5 text-[var(--accent)]"
+                  aria-hidden="true"
+                />
+                Per-session take-home
+                <HelpPopover term={glossary.takeHome} />
+              </dt>
+              <dd
+                className="font-semibold tabular-nums text-[var(--accent)]"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {formatXlm(breakdown.perSessionTakeHome)}
+              </dd>
             </div>
           </dl>
         </div>

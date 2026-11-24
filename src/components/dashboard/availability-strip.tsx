@@ -155,7 +155,7 @@ export function AvailabilityStrip({
           const dayId = `day-${day.dateLabel.replace(/\s+/g, "-").toLowerCase()}`;
 
           return (
-            <article
+            <div
               key={dayId}
               className="rounded-xl border border-white/8 bg-white/4 p-4 transition-colors hover:border-white/12"
               role="listitem"
@@ -213,7 +213,7 @@ export function AvailabilityStrip({
                   {day.status === "full" ? "Fully Booked" : "Unavailable"}
                 </button>
               )}
-            </article>
+            </div>
           );
         })}
       </div>

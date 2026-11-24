@@ -88,4 +88,7 @@ export interface UptimeChartProps {
   
   /** Current uptime percentage to display in summary */
   currentUptimePercent: number;
+
+  /** Optional accessible name override for the section landmark when multiple instances share a componentName */
+  regionLabel?: string;
 }
