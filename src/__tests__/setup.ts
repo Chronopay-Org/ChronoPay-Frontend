@@ -32,3 +32,28 @@ if (typeof window !== "undefined" && !window.matchMedia) {
     })),
   });
 }
+
+// Stub IntersectionObserver for DOM test environments
+if (typeof window !== "undefined") {
+  class MockIntersectionObserver {
+    readonly root: Element | null = null;
+    readonly rootMargin: string = "";
+    readonly thresholds: ReadonlyArray<number> = [];
+    observe = () => {};
+    unobserve = () => {};
+    disconnect = () => {};
+    takeRecords = () => [];
+  }
+
+  Object.defineProperty(window, "IntersectionObserver", {
+    writable: true,
+    configurable: true,
+    value: MockIntersectionObserver,
+  });
+
+  Object.defineProperty(global, "IntersectionObserver", {
+    writable: true,
+    configurable: true,
+    value: MockIntersectionObserver,
+  });
+}

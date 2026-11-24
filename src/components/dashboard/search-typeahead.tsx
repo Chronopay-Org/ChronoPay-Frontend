@@ -196,7 +196,7 @@ export function SearchTypeahead({
     <div className="relative w-full">
       <div className="relative">
         <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500"
+          className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500"
           aria-hidden="true"
         />
         <input
@@ -219,7 +219,7 @@ export function SearchTypeahead({
               : undefined
           }
           className={clsx(
-            "w-full rounded-lg border border-zinc-700 bg-zinc-900/50 py-2.5 pl-10 pr-10 text-sm",
+            "w-full rounded-lg border border-zinc-700 bg-zinc-900/50 py-2.5 ps-10 pe-10 text-sm",
             "placeholder:text-zinc-500 transition-colors",
             "focus:border-cyan-500 focus:bg-zinc-900 focus:ring-2 focus:ring-cyan-400/50 focus:outline-none",
             "hover:border-zinc-600"
@@ -230,7 +230,7 @@ export function SearchTypeahead({
             type="button"
             onClick={handleClear}
             className={clsx(
-              "absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-500",
+              "absolute end-3 top-1/2 -translate-y-1/2 p-1 text-zinc-500",
               "hover:text-zinc-300 transition-colors focus-visible:ring-2",
               "focus-visible:ring-cyan-400 rounded"
             )}
@@ -243,7 +243,7 @@ export function SearchTypeahead({
 
       {/* Loading indicator */}
       {isLoading && inputValue && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+        <div className="absolute end-3 top-1/2 -translate-y-1/2">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-400/30 border-t-cyan-400" />
         </div>
       )}
@@ -254,7 +254,7 @@ export function SearchTypeahead({
           id={listId}
           role="listbox"
           className={clsx(
-            "absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto",
+            "absolute top-full start-0 end-0 z-50 mt-1 max-h-64 overflow-y-auto",
             "rounded-lg border border-zinc-700 bg-zinc-900 shadow-lg"
           )}
         >
@@ -289,7 +289,7 @@ export function SearchTypeahead({
                     )}
                   >
                     <Search className="h-4 w-4 flex-shrink-0 text-zinc-500" aria-hidden="true" />
-                    <span className="flex-1 text-left">{suggestion.label}</span>
+                    <span className="flex-1 text-start">{suggestion.label}</span>
                   </button>
                 );
               })}
@@ -300,7 +300,7 @@ export function SearchTypeahead({
 
       {/* No results message */}
       {isOpen && inputValue && filteredSuggestions.length === 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-3 text-sm text-zinc-400">
+        <div className="absolute top-full start-0 end-0 z-50 mt-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-3 text-sm text-zinc-400">
           No results found for &quot;{inputValue}&quot;
         </div>
       )}

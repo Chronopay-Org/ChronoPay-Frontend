@@ -59,7 +59,7 @@ function PlaceSearchBox({ onSearch, compact = false }: PlaceSearchBoxProps) {
           viewBox="0 0 16 16"
           fill="none"
           aria-hidden="true"
-          className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute start-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
         >
           <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
           <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -73,18 +73,18 @@ function PlaceSearchBox({ onSearch, compact = false }: PlaceSearchBoxProps) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           className={`
-            w-full rounded-full border border-white/10 bg-white/6 pl-8
+            w-full rounded-full border border-white/10 bg-white/6 ps-8
             text-sm text-white placeholder:text-slate-500
             focus:border-cyan-300/40 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300
             transition-colors
-            ${compact ? "h-7 pr-2 text-xs" : "h-9 pr-3"}
+            ${compact ? "h-7 pe-2 text-xs" : "h-9 pe-3"}
           `}
         />
       </div>
       {/* Toast hint */}
       {showHint && (
         <p
-          className="absolute left-0 top-full mt-1 rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200 z-10"
+          className="absolute start-0 top-full mt-1 rounded bg-slate-800 px-2 py-1 text-xs text-slate-300 shadow-lg animate-in fade-in slide-in-from-top-1 duration-200 z-10"
           role="status"
           aria-live="polite"
         >
@@ -210,7 +210,7 @@ function MapArea({
 
       {/* Search this area button */}
       {showSearchArea && supplierCount > 0 && onSearchArea && (
-        <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+        <div className="absolute bottom-4 start-1/2 z-20 -translate-x-1/2">
           <button
             type="button"
             onClick={onSearchArea}
@@ -226,7 +226,7 @@ function MapArea({
       )}
 
       {/* Map attribution */}
-      <p className="absolute bottom-2 right-3 text-[10px] text-slate-600">
+      <p className="absolute bottom-2 end-3 text-[10px] text-slate-600">
         Map placeholder &middot; Integrate map library
       </p>
     </div>

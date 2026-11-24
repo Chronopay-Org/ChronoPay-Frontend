@@ -195,7 +195,7 @@ export function PlanComparison({
               {plan.features.map((f) => (
                 <li key={f.id}>
                   <span className="font-medium text-slate-100">{f.name}</span>
-                  <span className="ml-2 text-slate-400">
+                  <span className="ms-2 text-slate-400">
                     {typeof f.included === "boolean" ? (f.included ? "Included" : "—") : f.included}
                   </span>
                 </li>
@@ -221,11 +221,11 @@ export function PlanComparison({
           <table className="w-full table-fixed border-separate border-spacing-0">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 w-64 bg-slate-950/60 p-4 text-left text-sm font-medium text-slate-300">
+                <th className="sticky start-0 z-10 w-64 bg-slate-950/60 p-4 text-start text-sm font-medium text-slate-300">
                   Features
                 </th>
                 {validatedPlans.map((plan) => (
-                  <th key={plan.id} className="p-4 text-left align-top">
+                  <th key={plan.id} className="p-4 text-start align-top">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-3">
@@ -238,7 +238,7 @@ export function PlanComparison({
                         </div>
                         {plan.tagline && <p className="text-sm text-slate-400">{plan.tagline}</p>}
                       </div>
-                      <div className="text-right">
+                      <div className="text-end">
                         <div className="text-2xl font-bold text-white">
                           {formatMoney(billingYearly ? plan.yearlyPrice : plan.monthlyPrice)}
                         </div>
@@ -263,7 +263,7 @@ export function PlanComparison({
             <tbody>
               {features.map((f) => (
                 <tr key={f.id} className="border-t border-white/6">
-                  <th className="sticky left-0 z-10 w-64 bg-slate-950/60 p-4 text-left align-top text-sm font-medium text-slate-200">
+                  <th className="sticky start-0 z-10 w-64 bg-slate-950/60 p-4 text-start align-top text-sm font-medium text-slate-200">
                     <div>
                       <div className="font-semibold">{f.name}</div>
                       {f.description && (

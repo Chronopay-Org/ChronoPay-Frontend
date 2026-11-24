@@ -17,6 +17,11 @@ function setupMocks(shouldFail = false) {
     value: { getUserMedia: mock },
     configurable: true,
   });
+  Object.defineProperty(HTMLVideoElement.prototype, "srcObject", {
+    configurable: true,
+    get: () => null,
+    set: () => undefined,
+  });
 }
 
 describe("KycDocUpload", () => {
@@ -101,9 +106,11 @@ describe("KycDocUpload", () => {
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: /Open Camera/i }));
       });
+      expect(screen.getByLabelText("Camera feed for document capture")).toBeInTheDocument();
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: /Capture document photo/i }));
       });
+      expect(HTMLCanvasElement.prototype.getContext).toHaveBeenCalledWith("2d");
       expect(screen.getByText("Confirm document")).toBeInTheDocument();
       expect(screen.getByText("Retake")).toBeInTheDocument();
     });
@@ -113,6 +120,7 @@ describe("KycDocUpload", () => {
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: /Open Camera/i }));
       });
+      expect(screen.getByLabelText("Camera feed for document capture")).toBeInTheDocument();
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: /Capture document photo/i }));
       });
@@ -135,6 +143,31 @@ describe("KycDocUpload", () => {
       expect(screen.getByText("document Captured")).toBeInTheDocument();
       expect(screen.getAllByText(/Your document has been uploaded/).length).toBeGreaterThanOrEqual(1);
       expect(onCaptureComplete).toHaveBeenCalledWith(true, expect.any(String));
+    });
+
+    it("keeps the preview available and allows retry when upload fails", async () => {
+      onCaptureComplete.mockRejectedValueOnce(new Error("Upload service unavailable"));
+      render(<KycDocUpload onCaptureComplete={onCaptureComplete} />);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Open Camera/i }));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Capture document photo/i }));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Confirm document/i }));
+      });
+
+      expect(screen.getByRole("alert")).toHaveTextContent("Upload service unavailable");
+      expect(screen.getByAltText("Preview of captured document")).toBeInTheDocument();
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Confirm document/i }));
+      });
+
+      expect(screen.getByText("document Captured")).toBeInTheDocument();
+      expect(onCaptureComplete).toHaveBeenCalledTimes(2);
     });
 
     it("shows final captured image thumbnail on complete", async () => {

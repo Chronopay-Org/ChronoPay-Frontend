@@ -15,25 +15,27 @@ export function DurationChips({
   initial?: number | null;
   onChange?: (minutes: number | null) => void;
 }) {
-  const [selected, setSelected] = useState<number | null>(initial ?? null);
-  const [liveMessage, setLiveMessage] = useState<string>("");
+  const normalizedInitial = initial ?? null;
+  const [selected, setSelected] = useState<number | null>(normalizedInitial);
+  const [prevInitial, setPrevInitial] = useState<number | null>(normalizedInitial);
 
   // Keep internal selection in sync when `initial` changes (e.g. deep links)
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelected(initial ?? null);
-  }, [initial]);
+  if (prevInitial !== normalizedInitial) {
+    setPrevInitial(normalizedInitial);
+    setSelected(normalizedInitial);
+  }
 
   useEffect(() => {
     if (onChange) onChange(selected);
+  }, [selected, onChange]);
+
+  const liveMessage = useMemo(() => {
     if (selected) {
       const n = counts[selected] ?? 0;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLiveMessage(`${selected}-minute filter applied, ${n} result${n === 1 ? "" : "s"}`);
-    } else {
-      setLiveMessage("Duration filter cleared");
+      return `${selected}-minute filter applied, ${n} result${n === 1 ? "" : "s"}`;
     }
-  }, [selected, counts, onChange]);
+    return "Duration filter cleared";
+  }, [selected, counts]);
 
   const buttons = useMemo(() => PRESET_MINUTES, []);
 

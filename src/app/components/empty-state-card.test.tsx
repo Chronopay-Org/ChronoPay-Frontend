@@ -13,7 +13,7 @@ describe("EmptyStateCard", () => {
     accentLabel: "Data",
     status: {
       label: "System Normal",
-      tone: "info" as const,
+      tone: "neutral" as const,
     },
     guidance: ["Check back later.", "Refresh the page."],
   };

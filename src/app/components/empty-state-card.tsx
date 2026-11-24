@@ -2,7 +2,8 @@ import { useId, type ReactNode } from "react";
 import {
   EmptyStateIllustration,
 } from "./empty-state-illustration";
-import { StatusChip } from "./ui/status-chip";
+import { StatusChip } from "@/components/dashboard/status-chip";
+import type { Tone } from "@/components/dashboard/types";
 import { Card, CardHeader, CardBody, CardFooter } from "@/components/dashboard";
 
 type EmptyStateCardProps = {
@@ -14,7 +15,7 @@ type EmptyStateCardProps = {
   alt?: string;
   status: {
     label: string;
-    tone?: "info" | "warning" | "success" | "danger" | "neutral";
+    tone?: Tone;
   };
   guidance: string[];
   actions?: ReactNode;

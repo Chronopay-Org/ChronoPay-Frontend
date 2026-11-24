@@ -96,7 +96,7 @@ export function PasswordStrengthMeter({
           disabled={disabled}
           required={required}
           placeholder="Enter a strong password"
-          className="w-full rounded-lg border border-white/10 bg-white/6 px-3 py-2 pr-10 text-sm text-white placeholder:text-slate-500 focus:border-cyan-300/40 focus:outline-none focus:ring-2 focus:ring-cyan-300/30 transition-colors"
+          className="w-full rounded-lg border border-white/10 bg-white/6 px-3 py-2 pe-10 text-sm text-white placeholder:text-slate-500 focus:border-cyan-300/40 focus:outline-none focus:ring-2 focus:ring-cyan-300/30 transition-colors"
           aria-describedby={[meterId, describedBy].filter(Boolean).join(' ')}
           aria-invalid={describedBy ? true : undefined}
         />
@@ -105,7 +105,7 @@ export function PasswordStrengthMeter({
             type="button"
             onClick={() => setVisible(v => !v)}
             disabled={disabled}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-colors"
+            className="absolute end-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300 transition-colors"
             aria-label={visible ? 'Hide password' : 'Show password'}
           >
             {visible ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}

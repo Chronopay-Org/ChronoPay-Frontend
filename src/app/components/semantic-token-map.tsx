@@ -338,14 +338,14 @@ export function SemanticTokenMap({
         className="card card--panel overflow-x-auto"
       >
         <table
-          className="w-full min-w-[720px] text-left text-sm"
+          className="w-full min-w-[720px] text-start text-sm"
           dir="ltr"
         >
           <thead>
             <tr className="border-b border-white/10">
               <th
                 scope="col"
-                className="px-4 py-3 font-semibold text-slate-300 sticky left-0 bg-slate-900/95 backdrop-blur-sm z-10"
+                className="px-4 py-3 font-semibold text-slate-300 sticky start-0 bg-slate-900/95 backdrop-blur-sm z-10"
               >
                 Semantic Token
               </th>
@@ -400,7 +400,7 @@ export function SemanticTokenMap({
                   key={token.semantic}
                   className="hover:bg-white/4 transition-colors"
                 >
-                  <td className="px-4 py-3 font-mono text-xs text-cyan-200 break-all sticky left-0 bg-slate-900/90 backdrop-blur-sm z-10">
+                  <td className="px-4 py-3 font-mono text-xs text-cyan-200 break-all sticky start-0 bg-slate-900/90 backdrop-blur-sm z-10">
                     {token.semantic}
                   </td>
                   <td className="px-4 py-3">

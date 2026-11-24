@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { trackDidYouMeanClick } from "./header-search";
+import { trackDidYouMeanClick } from "@/lib/analytics";
 
 describe("trackDidYouMeanClick", () => {
   const originalEnv = process.env.NODE_ENV;

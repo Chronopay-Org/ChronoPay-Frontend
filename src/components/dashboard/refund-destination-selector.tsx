@@ -240,7 +240,7 @@ export function RefundDestinationSelector({
               onClick={() => selectDestination(dest.id)}
               onKeyDown={(event) => handleCardKeyDown(event, index)}
               className={clsx(
-                "group relative flex flex-col gap-3 rounded-2xl border p-4 text-left transition-all",
+                "group relative flex flex-col gap-3 rounded-2xl border p-4 text-start transition-all",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                 checked
                   ? "border-cyan-300/50 bg-cyan-300/10 ring-1 ring-cyan-300/30"
@@ -251,7 +251,7 @@ export function RefundDestinationSelector({
               {dest.badge ? (
                 <span
                   className={clsx(
-                    "absolute -top-2.5 right-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]",
+                    "absolute -top-2.5 end-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]",
                     checked
                       ? "bg-cyan-300 text-slate-950"
                       : "bg-cyan-100/90 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300",
@@ -309,7 +309,7 @@ export function RefundDestinationSelector({
               {/* Check indicator for selected card */}
               {checked ? (
                 <span
-                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-300"
+                  className="absolute end-3 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-300"
                   aria-hidden="true"
                 >
                   <svg

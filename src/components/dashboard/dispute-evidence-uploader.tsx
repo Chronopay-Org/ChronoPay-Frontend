@@ -387,7 +387,7 @@ export function DisputeEvidenceUploader({
   };
 
   return (
-    <div className="w-full space-y-4 text-slate-100 rtl:text-right">
+    <div className="w-full space-y-4 text-slate-100 rtl:text-end">
       {/* Drop Zone */}
       <div
         onDragOver={handleDragOver}

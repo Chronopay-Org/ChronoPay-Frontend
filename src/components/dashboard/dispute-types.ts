@@ -1,4 +1,4 @@
-export type DisputeStatus = "draft" | "submitted" | "under_review" | "mediator_assigned" | "evidence_review" | "negotiation" | "resolved" | "rejected" | "escalated";
+export type DisputeStatus = "draft" | "submitted" | "under_review" | "investigating" | "mediator_assigned" | "evidence_review" | "negotiation" | "resolved" | "rejected" | "escalated";
 
 export type DisputeCategory = 
   | "service_not_delivered"
@@ -6,6 +6,7 @@ export type DisputeCategory =
   | "payment_issue"
   | "cancellation_dispute"
   | "communication_issue"
+  | "incorrect_duration"
   | "other";
 
 export type DisputeResolution = "full_refund" | "partial_refund" | "service_redelivery" | "no_action" | "compromise";
@@ -15,8 +16,8 @@ export interface DisputeEvidence {
   fileName: string;
   fileSize: number;
   fileType: string;
-  uploadStatus: "pending" | "uploading" | "completed" | "failed";
-  scanStatus: "pending" | "scanning" | "clean" | "threat_detected" | "failed";
+  uploadStatus: "pending" | "uploading" | "completed" | "failed" | "error";
+  scanStatus: "pending" | "scanning" | "clean" | "threat_detected" | "infected" | "failed";
   uploadedAt: string;
   url?: string;
 }
@@ -30,10 +31,18 @@ export interface MediatorNote {
   isInternal?: boolean;
 }
 
+export type DisputeNote = MediatorNote;
+
+export interface DisputeMetadata {
+  priority: "low" | "medium" | "high" | "urgent";
+  escalationCount: number;
+  lastActivityAt: string;
+}
+
 export interface Dispute {
   id: string;
   slotId: string;
-  category: DisputeCategory;
+  category: DisputeCategory | string;
   reason: string;
   description: string;
   status: DisputeStatus;
@@ -55,11 +64,7 @@ export interface Dispute {
     resolvedAt: string;
     resolvedBy: string;
   };
-  metadata?: {
-    priority: "low" | "medium" | "high" | "urgent";
-    escalationCount: number;
-    lastActivityAt: string;
-  };
+  metadata?: DisputeMetadata;
 }
 
 export interface DisputeFormData {
@@ -90,6 +95,10 @@ export const DISPUTE_CATEGORIES: Record<DisputeCategory, { label: string; descri
     label: "Communication Issue",
     description: "Problems with responsiveness, availability, or professional conduct"
   },
+  incorrect_duration: {
+    label: "Incorrect Duration",
+    description: "The delivered session duration differed from the booked slot length"
+  },
   other: {
     label: "Other",
     description: "Any other issue not covered by the above categories"
@@ -100,6 +109,7 @@ export const DISPUTE_STATUS_LABELS: Record<DisputeStatus, string> = {
   draft: "Draft",
   submitted: "Submitted",
   under_review: "Under Review",
+  investigating: "Investigating",
   mediator_assigned: "Mediator Assigned",
   evidence_review: "Evidence Review",
   negotiation: "Negotiation",

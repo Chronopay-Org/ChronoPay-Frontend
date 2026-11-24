@@ -1,3 +1,5 @@
+import { DEMO_URL, REPO_URL } from "@/lib/site-links";
+
 export function SiteFooter() {
   return (
     <footer
@@ -10,14 +12,14 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
         <p>ChronoPay is a demo with sample data. No real payments are processed.</p>
         <a
-          href="https://chronopay-frontend-omega.vercel.app"
+          href={DEMO_URL}
           className="font-medium hover:underline"
           style={{ color: "var(--accent)" }}
         >
           Live demo
         </a>
         <a
-          href="https://github.com/Chronopay-Org/ChronoPay-Frontend"
+          href={REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="font-medium hover:underline"

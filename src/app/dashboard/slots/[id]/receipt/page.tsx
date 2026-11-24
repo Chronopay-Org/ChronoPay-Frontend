@@ -161,7 +161,7 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
                     <dd className="font-mono text-white">{networkFeeTotal} {currency}</dd>
                   </div>
 
-                  <div className="pl-4 space-y-2 border-l border-white/10 ml-2">
+                  <div className="ps-4 space-y-2 border-s border-white/10 ms-2">
                     <div className="flex items-center justify-between text-xs">
                       <dt className="flex items-center gap-1.5 text-slate-400">
                         Base Fee

@@ -4,10 +4,18 @@ import { DashboardShell } from "../../../components/dashboard-shell";
 import { PanelShell } from "@/components/dashboard/panel-shell";
 import { AvailabilityStrip, type DayAvailability } from "@/components/dashboard/availability-strip";
 import { ReviewsPanel } from "@/components/dashboard/reviews-panel";
+import { ReviewComposer, type ReviewCriterion } from "@/components/dashboard/review-composer";
 import { SupplierPolicies } from "@/components/dashboard/supplier-policies";
 import { ButtonLink } from "@/app/components/ui/button-link";
+import { useReviews } from "@/hooks/use-reviews";
 import { BadgeCheck, CalendarDays, MapPin, MessageSquare, ShieldCheck, Star, User, Clock } from "lucide-react";
 import clsx from "clsx";
+
+const SUPPLIER_REVIEW_CRITERIA: ReviewCriterion[] = [
+  { id: "expertise", label: "Expertise", description: "Technical depth and domain knowledge" },
+  { id: "communication", label: "Communication", description: "Clarity and responsiveness" },
+  { id: "punctuality", label: "Punctuality", description: "On-time delivery and slot adherence" },
+];
 
 const TABS = [
   { id: "overview", label: "Overview", icon: <User className="h-4 w-4" aria-hidden="true" /> },
@@ -36,6 +44,15 @@ function getDays(): DayAvailability[] {
 
 export default function Page({ params }: { params: { id: string } }) {
   const [active, setActive] = useState("overview");
+  const {
+    reviews,
+    pendingVotes,
+    isOffline,
+    addReview,
+    voteReview,
+    replyToReview,
+    flagReview,
+  } = useReviews({ supplierName: "Alex Rivera" });
   useEffect(() => {
     const onHash = () => {
       const h = window.location.hash.slice(1);
@@ -93,13 +110,27 @@ export default function Page({ params }: { params: { id: string } }) {
             <h2 id="availability-heading" className="sr-only">Availability</h2>
             <AvailabilityStrip days={days} />
             <div className="mt-4 flex justify-end">
-              <ButtonLink href={`/dashboard/slots?supplier=${params.id}`} variant="secondary" size="sm"><CalendarDays className="mr-2 h-4 w-4" aria-hidden="true" />View full calendar</ButtonLink>
+              <ButtonLink href={`/dashboard/slots?supplier=${params.id}`} variant="secondary" size="sm"><CalendarDays className="me-2 h-4 w-4" aria-hidden="true" />View full calendar</ButtonLink>
             </div>
           </section>
 
-          <section id="reviews" className="scroll-mt-28" aria-labelledby="reviews-heading">
+          <section id="reviews" className="scroll-mt-28 space-y-6" aria-labelledby="reviews-heading">
             <h2 id="reviews-heading" className="sr-only">Reviews</h2>
-            <ReviewsPanel />
+            <ReviewComposer
+              criteria={SUPPLIER_REVIEW_CRITERIA}
+              onSubmit={async (submission) => {
+                await addReview(submission);
+              }}
+            />
+            <ReviewsPanel
+              reviews={reviews}
+              pendingVotes={pendingVotes}
+              isOffline={isOffline}
+              canReply
+              onVote={voteReview}
+              onReply={replyToReview}
+              onFlag={flagReview}
+            />
           </section>
 
           <section id="policies" className="scroll-mt-28" aria-labelledby="policies-heading">

@@ -16,6 +16,7 @@ import { RoleChip } from "@/app/components/ui/RoleChip";
 import { OfflineQueueIndicator } from "@/app/components/offline-queue-indicator";
 import { ContextualKeysPanel } from "@/app/components/ui/contextual-keys-panel";
 import { CommandPalette } from "@/app/components/command-palette";
+import { useOfflineQueue } from "@/hooks/use-offline-queue";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
 
@@ -181,6 +182,7 @@ export function BottomNav({ items, pathname }: { items: NavItem[]; pathname: str
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { role } = useRole();
+  const offlineQueue = useOfflineQueue();
   const [isRailOpen, setIsRailOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [liveAnnouncement, setLiveAnnouncement] = useState("");
@@ -367,11 +369,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               >
                 <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span>Search…</span>
-                <kbd className="ml-1 hidden rounded border border-slate-300/30 dark:border-white/10 bg-slate-500/10 px-1 py-0.5 font-mono text-[10px] leading-none text-slate-500 dark:text-slate-400 sm:inline">
+                <kbd className="ms-1 hidden rounded border border-slate-300/30 dark:border-white/10 bg-slate-500/10 px-1 py-0.5 font-mono text-[10px] leading-none text-slate-500 dark:text-slate-400 sm:inline">
                   ⌘K
                 </kbd>
               </button>
-              <OfflineQueueIndicator />
+              <OfflineQueueIndicator
+                state={offlineQueue.state}
+                onRetry={offlineQueue.retry}
+                onCancel={offlineQueue.cancel}
+              />
               <button
                 type="button"
                 aria-label="Keyboard shortcuts"

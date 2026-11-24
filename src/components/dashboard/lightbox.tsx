@@ -209,7 +209,7 @@ export function Lightbox({
                   "sm:start-4",
                 )}
               >
-                <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                <ChevronLeft className="icon-directional h-5 w-5" aria-hidden="true" />
               </button>
             )}
 
@@ -240,7 +240,7 @@ export function Lightbox({
                   "sm:end-4",
                 )}
               >
-                <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                <ChevronRight className="icon-directional h-5 w-5" aria-hidden="true" />
               </button>
             )}
           </div>

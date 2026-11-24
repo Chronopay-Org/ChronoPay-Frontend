@@ -26,17 +26,20 @@
  *   />
  */
 
-import { useState, useId } from "react";
+import { useState, useId, useEffect } from "react";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import clsx from "clsx";
+import { useOfflineQueue } from "@/hooks/use-offline-queue";
+import { registerOfflineExecutor } from "@/lib/offline-queue";
 
-export type AsyncButtonState = "idle" | "pending" | "confirmed" | "error";
+export type AsyncButtonState = "idle" | "pending" | "confirmed" | "error" | "queued";
 
 export interface AsyncButtonLabels {
   idle: string;
   pending: string;
   confirmed: string;
   error: string;
+  queued?: string;
 }
 
 interface AsyncButtonProps {
@@ -52,6 +55,8 @@ interface AsyncButtonProps {
   describedBy?: string;
   /** Called when onAction throws, after state is set to "error". */
   onError?: (err: unknown) => void;
+  /** Enables persistence and retry while offline. Give `id` a stable value when possible. */
+  offlineAction?: { id?: string; label: string };
 }
 
 const variantClasses: Record<"primary" | "secondary", string> = {
@@ -76,12 +81,27 @@ export function AsyncButton({
   className = "",
   describedBy,
   onError,
+  offlineAction,
 }: AsyncButtonProps) {
   const [state, setState] = useState<AsyncButtonState>("idle");
   const statusId = useId();
+  const offlineActionId = offlineAction?.id ?? statusId;
+  const offlineQueue = useOfflineQueue();
+
+  useEffect(() => {
+    if (!offlineAction) return;
+    return registerOfflineExecutor(offlineActionId, async () => onAction());
+  }, [offlineAction, offlineActionId, onAction]);
 
   async function handleClick() {
     if (state === "pending") return;
+    if (offlineAction && typeof navigator !== "undefined" && !navigator.onLine) {
+      offlineQueue.enqueue({ id: offlineActionId, label: offlineAction.label });
+      setState("queued");
+      setTimeout(() => setState("idle"), confirmedDuration);
+      return;
+    }
+
     setState("pending");
     try {
       await onAction();
@@ -134,7 +154,7 @@ export function AsyncButton({
       )}
 
       {/* Label */}
-      <span>{labels[state]}</span>
+      <span>{state === "queued" ? labels.queued ?? "Queued" : labels[state]}</span>
 
       {/* Hidden live region for screen readers */}
       <span
@@ -146,6 +166,7 @@ export function AsyncButton({
         {state === "pending" ? labels.pending : ""}
         {state === "confirmed" ? labels.confirmed : ""}
         {state === "error" ? labels.error : ""}
+        {state === "queued" ? labels.queued ?? "Queued for when online" : ""}
       </span>
     </button>
   );
