@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { renderMarkdown } from "@/lib/markdown";
+import { renderToStaticMarkup } from "react-dom/server";
+import { renderMarkdown, renderMarkdownNodes } from "@/lib/markdown";
 
 describe("renderMarkdown", () => {
   it("renders bold text", () => {
@@ -137,6 +138,160 @@ describe("renderMarkdown", () => {
       ].join("\n\n");
 
       const html = renderMarkdown(sample);
+      expect(html).not.toMatch(/<[^>]+?\son[a-z]+\s*=/i);
+      expect(html).not.toMatch(/<[^>]+?\sstyle\s*=/i);
+      expect(html).not.toMatch(/<script\b/i);
+    });
+  });
+});
+
+function renderNodesToHtml(input: string): string {
+  return renderToStaticMarkup(renderMarkdownNodes(input));
+}
+
+describe("renderMarkdownNodes", () => {
+  it("renders bold text", () => {
+    expect(renderNodesToHtml("**bold**")).toContain("<strong>bold</strong>");
+  });
+
+  it("renders italic text", () => {
+    expect(renderNodesToHtml("*italic*")).toContain("<em>italic</em>");
+  });
+
+  it("renders strikethrough text", () => {
+    expect(renderNodesToHtml("~~strikethrough~~")).toContain("<del>strikethrough</del>");
+  });
+
+  it("renders a link", () => {
+    const result = renderNodesToHtml("[text](https://example.com)");
+    expect(result).toContain('<a href="https://example.com"');
+    expect(result).toContain(">text</a>");
+  });
+
+  it("renders inline code", () => {
+    expect(renderNodesToHtml("`code`")).toContain("<code");
+    expect(renderNodesToHtml("`code`")).toContain(">code</code>");
+  });
+
+  it("renders a code block", () => {
+    const result = renderNodesToHtml("```\nconst x = 1;\n```");
+    expect(result).toContain("<pre");
+    expect(result).toContain("<code>");
+    expect(result).toContain("const x = 1;");
+  });
+
+  it("renders headers", () => {
+    expect(renderNodesToHtml("# H1")).toContain('<h1 class="notes-h1">H1</h1>');
+    expect(renderNodesToHtml("## H2")).toContain('<h2 class="notes-h2">H2</h2>');
+    expect(renderNodesToHtml("###### H6")).toContain('<h6 class="notes-h6">H6</h6>');
+  });
+
+  it("renders unordered list items", () => {
+    const result = renderNodesToHtml("- item 1\n- item 2");
+    expect(result).toContain("<li>item 1</li>");
+    expect(result).toContain("<li>item 2</li>");
+  });
+
+  it("wraps list items in ul tags", () => {
+    const result = renderNodesToHtml("- a\n- b");
+    expect(result).toContain("<ul>");
+    expect(result).toContain("</ul>");
+  });
+
+  it("renders ordered list items", () => {
+    const result = renderNodesToHtml("1. first\n2. second");
+    expect(result).toContain("<li>first</li>");
+    expect(result).toContain("<li>second</li>");
+    expect(result).toContain("<ol>");
+  });
+
+  it("renders ordered list with custom start attribute", () => {
+    const result = renderNodesToHtml("3. third\n4. fourth");
+    expect(result).toContain('<ol start="3">');
+    expect(result).toContain("<li>third</li>");
+    expect(result).toContain("<li>fourth</li>");
+  });
+
+  it("renders paragraphs for plain text", () => {
+    expect(renderNodesToHtml("hello world")).toContain("<p>hello world</p>");
+  });
+
+  it("separates paragraphs with newlines", () => {
+    const result = renderNodesToHtml("para one\n\npara two");
+    expect(result).toContain("<p>para one</p>");
+    expect(result).toContain("<p>para two</p>");
+  });
+
+  it("escapes HTML in input", () => {
+    const result = renderNodesToHtml("<script>alert('xss')</script>");
+    expect(result).not.toContain("<script>");
+    expect(result).toContain("&lt;script&gt;");
+  });
+
+  it("returns null for empty input", () => {
+    expect(renderMarkdownNodes("")).toBeNull();
+    expect(renderMarkdownNodes("   ")).toBeNull();
+  });
+
+  describe("link sanitization and escaping", () => {
+    it("renders javascript:, data:, and vbscript: links without executable hrefs", () => {
+      const cases = [
+        "[x](javascript:alert(1))",
+        "[x](JaVaScRiPt:alert(1))",
+        "[x]( data:text/html,<script>alert(1)</script>)",
+        "[x](javascript:...)",
+        "[x](&NewLine;javascript:alert(1))",
+        "[x](&#x6a;&#x61;vascript:alert(1))",
+        "[x](javascript&colon;alert(1))",
+        "[x](vbscript:msgbox(1))",
+      ];
+
+      for (const input of cases) {
+        const result = renderNodesToHtml(input);
+        expect(result).not.toContain("href");
+        expect(result).not.toContain("<a ");
+        expect(result).toContain("x");
+      }
+    });
+
+    it("renders inline code with single level of escaping", () => {
+      const result = renderNodesToHtml("`a<b`");
+      expect(result).toContain('<code class="notes-inline-code">a&lt;b</code>');
+      expect(result).not.toContain("&amp;lt;");
+    });
+
+    it("preserves query strings in href", () => {
+      const result = renderNodesToHtml("[q](https://x.test/?a=1&b=2)");
+      expect(result).toContain('href="https://x.test/?a=1&amp;b=2"');
+      expect(result).toContain('rel="noopener noreferrer"');
+      expect(result).toContain('target="_blank"');
+    });
+
+    it("allows http, https, and mailto schemes", () => {
+      expect(renderNodesToHtml("[web](http://example.com)")).toContain('href="http://example.com"');
+      expect(renderNodesToHtml("[secure](https://example.com)")).toContain('href="https://example.com"');
+      expect(renderNodesToHtml("[mail](mailto:user@example.com)")).toContain('href="mailto:user@example.com"');
+    });
+
+    it("prevents attribute injection from link text and retains rel attributes", () => {
+      const result = renderNodesToHtml('[" onfocus="alert(1)](https://example.com)');
+      expect(result).toContain('rel="noopener noreferrer"');
+      expect(result).toContain('&quot; onfocus=&quot;alert(1)');
+    });
+
+    it("produces CSP-safe HTML with no inline event handlers or inline style attributes", () => {
+      const sample = [
+        "# Heading",
+        "Paragraph with **bold**, *italic*, ~~strike~~, `code`, and [link](https://example.com).",
+        "- list item",
+        "1. ordered item",
+        "```",
+        "<img src=x onerror=alert(1) style=\"color:red\">",
+        "```",
+        '<div onclick="alert(1)" style="background:red">raw html</div>',
+      ].join("\n\n");
+
+      const html = renderNodesToHtml(sample);
       expect(html).not.toMatch(/<[^>]+?\son[a-z]+\s*=/i);
       expect(html).not.toMatch(/<[^>]+?\sstyle\s*=/i);
       expect(html).not.toMatch(/<script\b/i);
