@@ -1,0 +1,177 @@
+{
+  "common": {
+    "loading": "Cargando…",
+    "error": "Ocurrió un error. Por favor, recarga la página.",
+    "empty": "No hay datos disponibles.",
+    "skipToContent": "Saltar al contenido",
+    "language": "Idioma",
+    "help": "Ayuda"
+  },
+  "nav": {
+    "primary": "Principal",
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "marketplace": "Mercado",
+    "settings": "Configuración",
+    "pricing": "Precios",
+    "status": "Estado",
+    "stellar": "Stellar",
+    "github": "GitHub",
+    "admin": "Administración",
+    "menu": "Menú",
+    "close": "Cerrar",
+    "openMenu": "Abrir menú de navegación",
+    "closeMenu": "Cerrar menú de navegación"
+  },
+  "footer": {
+    "demoNotice": "ChronoPay es una demostración con datos de ejemplo. No se procesan pagos reales.",
+    "liveDemo": "Demo en vivo",
+    "sourceOnGithub": "Código fuente en GitHub"
+  },
+  "home": {
+    "title": "ChronoPay",
+    "tagline": "Economía del Tiempo",
+    "description": "Tokeniza tus franjas horarias futuras como activos digitales negociables en la red Stellar. Compra, vende, reserva y canjea tiempo a nivel global.",
+    "ctaDashboard": "Panel",
+    "ctaStellar": "Stellar",
+    "heroTitle": "Reserva, paga y obtén recibos de tiempo en Stellar.",
+    "heroDescription": "ChronoPay convierte franjas horarias futuras en activos digitales negociables. Los proveedores publican disponibilidad, los compradores reservan y pagan, y ambas partes obtienen un recibo e historial claros.",
+    "openDashboard": "Abrir panel",
+    "browseMarketplace": "Explorar mercado",
+    "featuresHeading": "Qué puedes hacer",
+    "demoNoticePrefix": "Aviso de demostración: todos los listados, proveedores, saldos y recibos en este despliegue son datos de ejemplo. No se procesan pagos reales. Demo en vivo:",
+    "features": {
+      "tokenizedSlotsTitle": "Franjas horarias tokenizadas",
+      "tokenizedSlotsBody": "Los proveedores publican disponibilidad como franjas reservables; los compradores las reservan, retienen y canjean. Incluye disponibilidad recurrente y programación con zonas horarias.",
+      "tokenizedSlotsCta": "Explorar mercado",
+      "stellarPaymentsTitle": "Pagos en Stellar",
+      "stellarPaymentsBody": "Conexión de billetera, precios en XLM, configuración de cobros y selección de destino de reembolso para un registro financiero claro.",
+      "stellarPaymentsCta": "Configurar cobros",
+      "receiptsTitle": "Recibos e historial",
+      "receiptsBody": "Cada reserva incluye una línea de tiempo de estado y una página de recibo con notas, además de exportación del historial de reservas.",
+      "receiptsCta": "Ver un recibo de ejemplo",
+      "dashboardTitle": "Panel de comprador y proveedor",
+      "dashboardBody": "Métricas generales, estado de la billetera, reservas, perfiles de proveedores, calificaciones y reseñas, notificaciones y configuración.",
+      "dashboardCta": "Abrir panel",
+      "pricingTitle": "Precios transparentes",
+      "pricingBody": "Comparación de planes y guía de estrategia de precios para que los proveedores sepan exactamente cuánto ganan.",
+      "pricingCta": "Ver precios",
+      "accessibilityTitle": "Accesible por diseño",
+      "accessibilityBody": "Enlaces para saltar contenido, trampas de foco, atajos de teclado (pulsa ?), temas claro/oscuro y un sistema de diseño documentado.",
+      "accessibilityCta": "Sistema de diseño"
+    }
+  },
+  "dashboard": {
+    "title": "Panel",
+    "subtitle": "Conecta tu billetera Stellar para acuñar e intercambiar tokens de tiempo.",
+    "marketplaceTitle": "Exploración del mercado",
+    "marketplaceSubtitle": "Busca y filtra para encontrar exactamente lo que necesitas en nuestro mercado.",
+    "searchPlaceholder": "Buscar en el mercado (UI, Componentes, Accesibilidad…)",
+    "loadingMessage": "Cargando panel…",
+    "errorMessage": "Ocurrió un error. Por favor, recarga la página.",
+    "emptyMessage": "No hay datos disponibles.",
+    "sampleCleared": "Métricas de ejemplo eliminadas. Las métricas aparecerán aquí cuando tengas actividad real."
+  },
+  "wallet": {
+    "title": "Billetera",
+    "connected": "Conectada",
+    "disconnected": "Conecta una billetera para sincronizar saldos.",
+    "balance": "Saldo",
+    "pending": "Pendiente",
+    "nextPayout": "Próximo cobro",
+    "synced": "Sincronizada"
+  },
+  "metrics": {
+    "availableHours": "Horas disponibles esta semana",
+    "walletBalance": "Saldo de la billetera",
+    "bookingsInProgress": "Reservas en curso",
+    "conversionRate": "Tasa de conversión"
+  },
+  "bookings": {
+    "title": "Progreso de reservas",
+    "checklistTitle": "Lista de verificación",
+    "checklistEyebrow": "Flujo de reserva",
+    "reserved": "Reservada",
+    "confirmed": "Confirmada",
+    "completed": "Completada"
+  },
+  "security": {
+    "title": "Estado de seguridad",
+    "description": "Revisa la configuración de seguridad de tu cuenta."
+  },
+  "ratings": {
+    "title": "Desglose de calificaciones",
+    "description": "Calificaciones promedio por criterio en tus reseñas recientes.",
+    "communication": "Comunicación",
+    "expertise": "Experiencia",
+    "timeliness": "Puntualidad",
+    "value": "Valor",
+    "clarity": "Claridad"
+  },
+  "pricing": {
+    "title": "Calculadora de tarifas",
+    "description": "Estima tus ganancias netas después de las tarifas de plataforma y red.",
+    "platformFee": "Tarifa de plataforma",
+    "networkFee": "Tarifa de red",
+    "takeHome": "Ganancia neta"
+  },
+  "quickActions": {
+    "title": "Acciones rápidas",
+    "listSlot": "Publicar nueva franja",
+    "listSlotDesc": "Abre un nuevo bloque de disponibilidad con el precio predeterminado.",
+    "reviewWallet": "Revisar billetera",
+    "reviewWalletDesc": "Consulta fechas de cobro, custodia y transferencias pendientes.",
+    "confirmBookings": "Confirmar reservas",
+    "confirmBookingsDesc": "Resuelve las tres solicitudes pendientes de tu aprobación."
+  },
+  "slots": {
+    "title": "Franjas horarias disponibles",
+    "statusHealthy": "Disponible",
+    "statusTight": "Limitado",
+    "statusBusy": "Ocupado",
+    "statusSoldOut": "Agotado",
+    "nextAvailable": "Próxima disponible",
+    "interestedBuyers": "compradores interesados",
+    "openOffers": "ofertas abiertas",
+    "waitlistEnabled": "Lista de espera activa",
+    "soldOut": "Agotado"
+  },
+  "trust": {
+    "title": "Métricas de confianza",
+    "description": "Tiempo de respuesta y tasa de aceptación de reservas en los últimos 30 días.",
+    "responseTime": "Tiempo de respuesta",
+    "acceptanceRate": "Tasa de aceptación",
+    "responseTimeTooltip": "Tiempo mediano entre recibir una solicitud de reserva y responder. Menor es mejor.",
+    "acceptanceRateTooltip": "Porcentaje de solicitudes de reserva aceptadas durante los últimos 30 días.",
+    "min": "min"
+  },
+  "onboarding": {
+    "title": "Bienvenido a ChronoPay",
+    "description": "Comienza configurando tu primera franja horaria.",
+    "skipTour": "Omitir recorrido",
+    "clearSamples": "Borrar ejemplos",
+    "dismiss": "Descartar"
+  },
+  "kyc": {
+    "title": "Verificación de identidad",
+    "subtitle": "Verifica tu identidad para desbloquear el acceso completo al mercado."
+  },
+  "mfa": {
+    "title": "Autenticación de dos factores",
+    "enable": "Activar",
+    "enabled": "Activada",
+    "disabled": "Desactivada",
+    "enrollTitle": "Configurar autenticación de dos factores"
+  },
+  "export": {
+    "title": "Exportar historial",
+    "download": "Descargar",
+    "dateRange": "Rango de fechas"
+  },
+  "localePicker": {
+    "label": "Selector de idioma"
+  },
+  "a11y": {
+    "helpTrigger": "Ayuda: ¿qué significa {term}?"
+  }
+}

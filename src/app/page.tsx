@@ -1,106 +1,125 @@
+"use client";
+
 import { ButtonLink } from "./components/ui/button-link";
+import { useMessages, type MessageKey } from "@/lib/i18n";
 import { DEMO_URL, REPO_URL } from "@/lib/site-links";
 
-const features = [
+interface FeatureItem {
+  titleKey: MessageKey;
+  bodyKey: MessageKey;
+  href: string;
+  ctaKey: MessageKey;
+}
+
+const features: FeatureItem[] = [
   {
-    title: "Tokenized time slots",
-    body: "Suppliers publish availability as bookable slots; buyers reserve, hold and redeem them. Recurring availability and timezone-aware scheduling are built in.",
+    titleKey: "home.features.tokenizedSlotsTitle",
+    bodyKey: "home.features.tokenizedSlotsBody",
     href: "/marketplace",
-    cta: "Browse marketplace",
+    ctaKey: "home.features.tokenizedSlotsCta",
   },
   {
-    title: "Payments on Stellar",
-    body: "Wallet connection, XLM pricing, payout onboarding and refund-destination selection for a clear money trail.",
+    titleKey: "home.features.stellarPaymentsTitle",
+    bodyKey: "home.features.stellarPaymentsBody",
     href: "/dashboard/onboarding/payout",
-    cta: "Payout setup",
+    ctaKey: "home.features.stellarPaymentsCta",
   },
   {
-    title: "Receipts and history",
-    body: "Every booking has a status timeline and a receipt page with notes, plus export of booking history.",
+    titleKey: "home.features.receiptsTitle",
+    bodyKey: "home.features.receiptsBody",
     href: "/dashboard/slots/demo-1/receipt?asset=Product%20strategy%20call%20(1.5h)&tx=GA7Q...K2XD&buyer=A.R.&seller=S.J.&total=50.00%20XLM&settled=2026-04-01%2011%3A30%20UTC",
-    cta: "View a demo receipt",
+    ctaKey: "home.features.receiptsCta",
   },
   {
-    title: "Buyer and supplier dashboard",
-    body: "Overview metrics, wallet status, bookings, supplier profiles, ratings and reviews, notifications and settings.",
+    titleKey: "home.features.dashboardTitle",
+    bodyKey: "home.features.dashboardBody",
     href: "/dashboard",
-    cta: "Open dashboard",
+    ctaKey: "home.features.dashboardCta",
   },
   {
-    title: "Transparent pricing",
-    body: "Plan comparison and a pricing-strategy explainer so suppliers know what they earn.",
+    titleKey: "home.features.pricingTitle",
+    bodyKey: "home.features.pricingBody",
     href: "/pricing",
-    cta: "See pricing",
+    ctaKey: "home.features.pricingCta",
   },
   {
-    title: "Accessible by design",
-    body: "Skip links, focus traps, keyboard shortcuts (press ?), light/dark themes and a documented design system.",
+    titleKey: "home.features.accessibilityTitle",
+    bodyKey: "home.features.accessibilityBody",
     href: "/design-system/components",
-    cta: "Design system",
+    ctaKey: "home.features.accessibilityCta",
   },
 ];
 
 export default function Home() {
+  const t = useMessages();
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
       <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 pt-6">
-        <span className="text-lg font-semibold tracking-tight">ChronoPay</span>
-        <nav aria-label="Primary" className="flex items-center gap-5 text-sm text-zinc-300">
-          <a href="/marketplace" className="hover:text-white">Marketplace</a>
-          <a href="/pricing" className="hover:text-white">Pricing</a>
+        <span className="text-lg font-semibold tracking-tight">
+          {t("home.title")}
+        </span>
+        <nav
+          aria-label={t("nav.primary")}
+          className="flex items-center gap-5 text-sm text-zinc-300"
+        >
+          <a href="/marketplace" className="hover:text-white">
+            {t("nav.marketplace")}
+          </a>
+          <a href="/pricing" className="hover:text-white">
+            {t("nav.pricing")}
+          </a>
           <a
             href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-full border border-white/15 px-3 py-1 hover:border-white/30 hover:text-white"
           >
-            GitHub
+            {t("nav.github")}
           </a>
         </nav>
       </header>
       <main id="main-content" className="mx-auto max-w-5xl px-6 pb-20 pt-12">
         <p className="text-sm font-medium uppercase tracking-widest text-cyan-400">
-          Time Economy
+          {t("home.tagline")}
         </p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-          Book, pay for and receipt time, on Stellar.
+          {t("home.heroTitle")}
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-300">
-          ChronoPay turns future time slots into tradable digital assets. Suppliers
-          list availability, buyers book and pay, and both sides get a clear
-          receipt and history.
+          {t("home.heroDescription")}
         </p>
         <div className="mt-10 flex flex-wrap gap-4">
           <ButtonLink href="/dashboard" variant="primary">
-            Open dashboard
+            {t("home.openDashboard")}
           </ButtonLink>
           <ButtonLink href="/marketplace" variant="secondary">
-            Browse marketplace
+            {t("home.browseMarketplace")}
           </ButtonLink>
           <ButtonLink href="/pricing" variant="secondary">
-            Pricing
+            {t("nav.pricing")}
           </ButtonLink>
         </div>
 
         <section aria-labelledby="features" className="mt-20">
           <h2 id="features" className="text-2xl font-semibold">
-            What you can do
+            {t("home.featuresHeading")}
           </h2>
           <ul className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
               <li
-                key={f.title}
+                key={f.titleKey}
                 className="flex flex-col rounded-2xl border border-white/10 bg-zinc-900 p-6"
               >
-                <h3 className="text-lg font-semibold">{f.title}</h3>
+                <h3 className="text-lg font-semibold">{t(f.titleKey)}</h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-zinc-400">
-                  {f.body}
+                  {t(f.bodyKey)}
                 </p>
                 <a
                   href={f.href}
                   className="mt-4 text-sm font-medium text-cyan-400 hover:text-cyan-300"
                 >
-                  {f.cta} &rarr;
+                  {t(f.ctaKey)} &rarr;
                 </a>
               </li>
             ))}
@@ -108,9 +127,11 @@ export default function Home() {
         </section>
 
         <p className="mt-16 rounded-xl border border-amber-400/30 bg-amber-400/5 p-4 text-sm text-amber-200">
-          Demo notice: all listings, suppliers, balances and receipts in this
-          deployment are sample data. No real payments are processed. Live
-          demo: <a className="underline" href={DEMO_URL}>chronopay-frontend-omega.vercel.app</a>.
+          {t("home.demoNoticePrefix")}{" "}
+          <a className="underline" href={DEMO_URL}>
+            chronopay-frontend-omega.vercel.app
+          </a>
+          .
         </p>
       </main>
     </div>

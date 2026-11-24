@@ -1,70 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-const locales = [
-  { code: "en", label: "English", dir: "ltr" },
-  { code: "es", label: "Español", dir: "ltr" },
-  { code: "fr", label: "Français", dir: "ltr" },
-  { code: "de", label: "Deutsch", dir: "ltr" },
-  { code: "ar", label: "العربية", dir: "rtl" },
-  { code: "he", label: "עברית", dir: "rtl" },
-  { code: "hi", label: "हिन्दी", dir: "ltr" },
-];
+import {
+  LOCALE_COOKIE_NAME,
+  LOCALE_DIR,
+  LOCALE_LABELS,
+  SUPPORTED_LOCALES,
+  isSupportedLocale,
+  useLocale,
+  useMessages,
+} from "@/lib/i18n";
 
 export default function LocalePicker() {
-  const [locale, setLocale] = useState(() => {
-    try {
-      const saved = document.cookie
-        .split("; ")
-        .find((c) => c.startsWith("locale="));
-      if (saved) {
-        const value = saved.split("=")[1];
-        const current = locales.find((l) => l.code === value);
-        if (current) {
-          document.documentElement.lang = current.code;
-          document.documentElement.dir = current.dir;
-          return current.code;
-        }
-      }
-
-      document.documentElement.lang = "en";
-      document.documentElement.dir = "ltr";
-    } catch {
-      // cookie may be unavailable
-    }
-    return "en";
-  });
+  const { locale, setLocale } = useLocale();
+  const t = useMessages();
 
   function changeLocale(value: string) {
-    const current = locales.find((l) => l.code === value);
-    if (!current) return;
+    if (!isSupportedLocale(value)) return;
 
-    setLocale(current.code);
+    setLocale(value);
 
-    document.documentElement.lang = current.code;
-    document.documentElement.dir = current.dir;
-
-    document.cookie = `locale=${current.code}; path=/; max-age=31536000`;
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = value;
+      document.documentElement.dir = LOCALE_DIR[value];
+      document.cookie = `${LOCALE_COOKIE_NAME}=${value}; path=/; max-age=31536000; samesite=lax`;
+    }
   }
 
   return (
-    <label className="flex items-center gap-2 text-sm">
-      <span>Language</span>
+    <label className="inline-flex items-center gap-2 text-sm">
+      <span className="sr-only">{t("common.language")}</span>
 
       <select
-        aria-label="Language selector"
+        aria-label={t("localePicker.label")}
         value={locale}
         onChange={(e) => changeLocale(e.target.value)}
-        className="rounded border border-slate-700 bg-slate-900 px-3 py-2"
+        className="rounded-full border px-3 py-1.5 text-sm transition hover:bg-slate-500/10"
+        style={{
+          backgroundColor: "var(--surface)",
+          borderColor: "var(--border-subtle)",
+          color: "var(--foreground)",
+        }}
       >
-        {locales.map((item) => (
-          <option
-            key={item.code}
-            value={item.code}
-            lang={item.code}
-          >
-            {item.label}
+        {SUPPORTED_LOCALES.map((code) => (
+          <option key={code} value={code} lang={code}>
+            {LOCALE_LABELS[code]}
           </option>
         ))}
       </select>

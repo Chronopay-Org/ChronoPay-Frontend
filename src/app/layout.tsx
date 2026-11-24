@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import "./globals.css";
 import { Header } from "./components/Header";
 import { ToastProvider } from "@/hooks/use-toast";
@@ -7,6 +7,7 @@ import { NotificationsProvider } from "@/components/dashboard/notifications/noti
 import { ToastContainer } from "@/app/components/ui/toast-container";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
 import { I18nProvider } from "@/lib/i18n";
+import { LOCALE_COOKIE_NAME, LOCALE_DIR, resolveLocale } from "@/lib/i18n-config";
 import { SiteFooter } from "@/app/components/SiteFooter";
 import { DEMO_URL } from "@/lib/site-links";
 
@@ -95,9 +96,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
-  // Determine text direction from locale (defaults to LTR)
-  const dir = "ltr"; // TODO: Make dynamic based on locale cookie/header
-  const lang = "en"; // TODO: Make dynamic based on locale selection
+  const cookieStore = await cookies();
+  const lang = resolveLocale(cookieStore.get(LOCALE_COOKIE_NAME)?.value);
+  const dir = LOCALE_DIR[lang];
   
   return (
     <html lang={lang} dir={dir} suppressHydrationWarning>
@@ -119,7 +120,7 @@ export default function RootLayout({
 
         <ToastProvider>
           <NotificationsProvider>
-            <I18nProvider>
+            <I18nProvider locale={lang}>
               <RoleProvider initialRole="buyer">
                 <Header />
                 {children}
