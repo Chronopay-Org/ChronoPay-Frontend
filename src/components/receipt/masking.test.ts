@@ -4,6 +4,7 @@ import {
   maskName,
   buildShareLink,
   maskRecoveryCode,
+  parseVerifyParams,
 } from "./masking";
 import { buildReceipt } from "./receipt-builder";
 
@@ -66,11 +67,11 @@ describe("buildShareLink", () => {
     txHash: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
   });
 
-  it("encodes the asset, truncated tx, masked parties, total and settlement under the receipt path", () => {
+  it("encodes the asset, truncated tx, masked parties, total and settlement under /receipt/verify", () => {
     const link = buildShareLink(receipt, "https://chronopay.app");
     const url = new URL(link);
 
-    expect(url.pathname).toBe("/dashboard/slots/slot-1/receipt");
+    expect(url.pathname).toBe("/receipt/verify");
     expect(url.searchParams.get("asset")).toBe("CHRONO-SLOT-1");
     expect(url.searchParams.get("tx")).toBe("012345...abcdef");
     expect(url.searchParams.get("buyer")).toBe("Y.");
@@ -85,5 +86,50 @@ describe("buildShareLink", () => {
     expect(link).not.toContain(receipt.buyer.name);
     expect(link).not.toContain("Alex");
     expect(link).not.toContain("Rivera");
+  });
+});
+
+describe("parseVerifyParams", () => {
+  const validQuery = {
+    asset: "CHRONO-SLOT-1",
+    tx: "012345...abcdef",
+    buyer: "Y.",
+    seller: "A. R.",
+    total: "182.70 XLM",
+    settled: "Apr 1, 2026 · 10:00 UTC",
+  };
+
+  it("accepts valid masked query params", () => {
+    const result = parseVerifyParams(validQuery);
+    expect(result).toEqual({ ok: true, data: validQuery });
+  });
+
+  it("rejects missing required params", () => {
+    const result = parseVerifyParams({ asset: "CHRONO-SLOT-1" });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects unmasked buyer or seller names", () => {
+    const result = parseVerifyParams({
+      ...validQuery,
+      seller: "Alex Rivera",
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects a full unmasked transaction hash", () => {
+    const result = parseVerifyParams({
+      ...validQuery,
+      tx: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects malformed asset codes", () => {
+    const result = parseVerifyParams({
+      ...validQuery,
+      asset: "<script>alert(1)</script>",
+    });
+    expect(result.ok).toBe(false);
   });
 });

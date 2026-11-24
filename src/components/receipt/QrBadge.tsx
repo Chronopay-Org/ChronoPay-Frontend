@@ -21,8 +21,8 @@
  */
 
 import { useId, useState, useCallback, useMemo } from "react";
-import { ExternalLink } from "lucide-react";
-import { generateQrMatrix } from "@/lib/qr";
+import { Download, ExternalLink } from "lucide-react";
+import { generateQrMatrix, renderQrSvg } from "@/lib/qr";
 
 interface QrBadgeProps {
   /** The URL to encode in the QR and open on tap. */
@@ -33,7 +33,7 @@ interface QrBadgeProps {
 
 export function QrBadge({ explorerUrl, label = "transaction" }: QrBadgeProps) {
   const statusId = useId();
-  const [navigating, setNavigating] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const matrix = useMemo(() => {
     try {
@@ -46,11 +46,37 @@ export function QrBadge({ explorerUrl, label = "transaction" }: QrBadgeProps) {
   const moduleCount = matrix.length;
 
   const handleVerify = useCallback(() => {
-    setNavigating(true);
+    setStatusMessage(`Opening explorer for ${label}.`);
     window.open(explorerUrl, "_blank", "noopener,noreferrer");
-    // Reset after a moment so the announcement is fresh
-    window.setTimeout(() => setNavigating(false), 1000);
-  }, [explorerUrl]);
+    window.setTimeout(() => setStatusMessage(""), 1000);
+  }, [explorerUrl, label]);
+
+  const handleDownload = useCallback(() => {
+    try {
+      const svg = renderQrSvg(explorerUrl, {
+        size: 240,
+        ecc: "M",
+        "aria-label": `QR code for ${label}`,
+      });
+      const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const slug = label
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") || "receipt";
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `chronopay-qr-${slug}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setStatusMessage(`Downloaded QR code for ${label}.`);
+      window.setTimeout(() => setStatusMessage(""), 1500);
+    } catch {
+      setStatusMessage("Unable to download QR code.");
+    }
+  }, [explorerUrl, label]);
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -94,7 +120,7 @@ export function QrBadge({ explorerUrl, label = "transaction" }: QrBadgeProps) {
         {/* Hover overlay hint */}
         <span
           aria-hidden={true}
-          className="absolute inset-0 flex items-center justify-center rounded-xl bg-slate-950/70 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+          className="receipt-no-print absolute inset-0 flex items-center justify-center rounded-xl bg-slate-950/70 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
         >
           <span className="flex items-center gap-1.5 rounded-full border border-cyan-300/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-300 backdrop-blur-sm">
             <ExternalLink className="h-3.5 w-3.5" aria-hidden={true} />
@@ -103,9 +129,22 @@ export function QrBadge({ explorerUrl, label = "transaction" }: QrBadgeProps) {
         </span>
       </button>
 
-      <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
-        Tap to verify
-      </p>
+      <div className="receipt-no-print flex items-center gap-3">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+          Tap to verify
+        </p>
+        {moduleCount > 0 && (
+          <button
+            type="button"
+            onClick={handleDownload}
+            aria-label={`Download QR code for ${label}`}
+            className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-medium text-slate-300 transition-colors hover:border-cyan-300/30 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+          >
+            <Download className="h-3 w-3" aria-hidden={true} />
+            Download QR
+          </button>
+        )}
+      </div>
 
       <span
         id={statusId}
@@ -114,7 +153,7 @@ export function QrBadge({ explorerUrl, label = "transaction" }: QrBadgeProps) {
         aria-atomic="true"
         className="sr-only"
       >
-        {navigating ? `Opening explorer for ${label}.` : ""}
+        {statusMessage}
       </span>
     </div>
   );
