@@ -497,9 +497,17 @@ export function AdminUserTable({
         onKeyDown={handleGridKeyDown}
         className="overflow-x-auto rounded-2xl border border-white/10"
         style={{ maxHeight, overflowY: "auto" }}
-        data-testid="admin-user-grid"
       >
-        <table className="w-full border-collapse text-sm" style={{ minWidth: "720px" }}>
+        <table
+          id={gridId}
+          role="grid"
+          aria-label="User management"
+          aria-rowcount={sortedUsers.length + 1}
+          aria-colcount={COLUMNS.length + 1}
+          className="w-full border-collapse text-sm"
+          style={{ minWidth: "720px" }}
+          data-testid="admin-user-grid"
+        >
           {/* ── Sticky header ──────────────────────────────────────────────── */}
           <thead className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur">
             <tr role="row">

@@ -408,9 +408,9 @@ describe("DashboardShell", () => {
     expect(banner).toBeInTheDocument();
   });
 
-  it("the left rail has a navigation role", () => {
+  it("the left rail is a complementary landmark", () => {
     renderShell();
-    expect(screen.getByLabelText("Module navigation")).toHaveAttribute("role", "navigation");
+    expect(screen.getByLabelText("Module navigation").tagName).toBe("ASIDE");
   });
 
   it("the left rail contains a navigation landmark for role modules", () => {

@@ -194,7 +194,7 @@ export function A11yAuditDashboard() {
       </div>
       
       {/* Hidden iframe for staged routes */}
-      <iframe ref={iframeRef} src="/" className="hidden" title="Staged Route" />
+      <iframe ref={iframeRef} className="hidden" title="Staged Route" />
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {filterOptions.map((option) => (

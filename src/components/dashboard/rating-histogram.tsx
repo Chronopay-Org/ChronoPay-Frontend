@@ -67,7 +67,14 @@ export function RatingHistogram({
               {row.stars} <span className="sr-only">stars</span>
               <span aria-hidden="true">★</span>
             </span>
-            <div className="flex-1 h-3 rounded-full bg-slate-800 overflow-hidden" role="progressbar" aria-valuenow={row.percentage} aria-valuemin={0} aria-valuemax={100}>
+            <div
+              className="flex-1 h-3 rounded-full bg-slate-800 overflow-hidden"
+              role="progressbar"
+              aria-label={`${row.stars} stars percentage`}
+              aria-valuenow={row.percentage}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
               <div
                 className="h-full bg-amber-400 rounded-full"
                 style={{ width: `${row.percentage}%` }}

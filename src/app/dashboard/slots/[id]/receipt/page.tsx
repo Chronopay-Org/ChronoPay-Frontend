@@ -127,14 +127,14 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
               {/* Gas / Network Fee Breakdown */}
               <div className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-white flex items-center gap-2">
                     Fee Breakdown
                     {isStale && (
                       <Tooltip content="Estimate may be outdated due to network volatility.">
                         <AlertTriangle className="h-4 w-4 text-amber-400" />
                       </Tooltip>
                     )}
-                  </h3>
+                  </h2>
                   <button
                     onClick={handleRefresh}
                     className="group flex items-center gap-1.5 text-xs font-medium text-cyan-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 rounded"
@@ -180,13 +180,30 @@ export default function SharedReceiptPage({ params, searchParams }: SharedReceip
                       </dt>
                       <dd className="font-mono text-slate-300">{priorityFee} {currency}</dd>
                     </div>
+                  <div className="flex items-center justify-between text-xs pl-4 border-l border-white/10 ml-2">
+                    <dt className="flex items-center gap-1.5 text-slate-400">
+                      Base Fee
+                      <Tooltip content="The minimum network fee required to include this transaction in a block. Burned by the network.">
+                        <Info className="h-3 w-3 text-slate-500" />
+                      </Tooltip>
+                    </dt>
+                    <dd className="font-mono text-slate-300">{baseFee} {currency}</dd>
+                  </div>
+                  <div className="flex items-center justify-between text-xs pl-4 border-l border-white/10 ml-2">
+                    <dt className="flex items-center gap-1.5 text-slate-400">
+                      Priority Fee
+                      <Tooltip content="An extra tip paid to validators to process your transaction faster.">
+                        <Info className="h-3 w-3 text-slate-500" />
+                      </Tooltip>
+                    </dt>
+                    <dd className="font-mono text-slate-300">{priorityFee} {currency}</dd>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+                    <dt className="font-semibold text-white">Total Settled</dt>
+                    <dd className="font-mono font-bold text-cyan-300">{totalCost} {currency}</dd>
                   </div>
                 </dl>
-
-                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
-                  <dt className="font-semibold text-white">Total Settled</dt>
-                  <dd className="font-mono font-bold text-cyan-300">{totalCost} {currency}</dd>
-                </div>
               </div>
             </div>
           ) : (

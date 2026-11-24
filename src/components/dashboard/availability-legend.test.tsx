@@ -50,7 +50,7 @@ describe("AvailabilityLegend", () => {
 
       const legend = getLegend(container);
 
-      expect(legend).toHaveAttribute("role", "legend");
+      expect(legend).toHaveAttribute("role", "group");
       expect(legend).toHaveAttribute("aria-label", "Availability status legend");
     });
 

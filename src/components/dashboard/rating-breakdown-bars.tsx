@@ -91,7 +91,7 @@ export function RatingBreakdownBars({
             id={headingId}
             className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400"
           >
-            Rating breakdown
+            Rating breakdown<span className="sr-only"> summary</span>
           </span>
           <span className="mx-2 h-4 w-px bg-white/10" aria-hidden="true" />
           <span
