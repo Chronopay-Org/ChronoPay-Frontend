@@ -11,3 +11,4 @@ export default function MarketplaceError({
 }) {
   return <DashboardError error={error} reset={reset} />;
 }
+export { RouteError as default } from "@/app/components/route-error";
