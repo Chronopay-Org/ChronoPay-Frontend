@@ -758,7 +758,7 @@ export function ExportHistoryModal({
                     <EyeOff className="h-4 w-4 text-cyan-300" aria-hidden="true" />
                     Privacy applied
                   </p>
-                  <ul className="ml-6 list-disc space-y-1 text-slate-400">
+                  <ul className="ms-6 list-disc space-y-1 text-slate-400">
                     {maskNames && (
                       <li>
                         Counterparty names masked (e.g.{" "}

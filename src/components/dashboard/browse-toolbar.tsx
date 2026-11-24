@@ -36,7 +36,7 @@ interface BrowseToolbarProps {
 export function BrowseToolbar({ viewMode, onViewModeChange }: BrowseToolbarProps) {
   return (
     <div className="flex items-center gap-2 border-b border-white/10 pb-4 mb-4">
-      <h2 className="text-lg font-medium text-slate-200 mr-auto">Browse Suppliers</h2>
+      <h2 className="text-lg font-medium text-slate-200 me-auto">Browse Suppliers</h2>
       
       <div 
         role="group" 

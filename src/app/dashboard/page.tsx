@@ -6,6 +6,7 @@ import { DashboardShell } from "../components/dashboard-shell";
 import {
   BookingChecklist,
   BookingProgress,
+  MeetChecklistCard,
   MetricCard,
   OnboardingWidget,
   OnboardingWalkthrough,
@@ -272,6 +273,8 @@ export default function Dashboard() {
   }
 
   const suggestedAlternatives = slots.slice(0, 3);
+  const nextUpcomingSlot =
+    slots.find((slot) => slot.isNextAvailable) ?? slots[0];
 
   return (
     <DashboardShell>
@@ -304,15 +307,16 @@ export default function Dashboard() {
 
         {/* Metrics */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {metrics.map((metric) => (
-            <MetricCard key={metric.label} metric={metric} />
-          ))}
-          {!showSamples ? (
+          {showSamples ? (
+            metrics.map((metric) => (
+              <MetricCard key={metric.label} metric={metric} />
+            ))
+          ) : (
             <p className="text-sm text-slate-400 md:col-span-2 lg:col-span-4">
               Sample metrics cleared. Metrics will appear here once you have live
               activity.
             </p>
-          ) : null}
+          )}
         </div>
 
         {/* KYC Status Timeline */}
@@ -424,6 +428,15 @@ export default function Dashboard() {
             suggestedAlternatives={suggestedAlternatives}
           />
         </PanelShell>
+
+        {nextUpcomingSlot && (
+          <MeetChecklistCard
+            slotId={nextUpcomingSlot.id}
+            meetingTime={`${nextUpcomingSlot.dateLabel}, ${nextUpcomingSlot.timeRange}`}
+            locationLabel={nextUpcomingSlot.title}
+            defaultCollapsed
+          />
+        )}
 
         {/* Marketplace Search and Filters */}
         <div className="space-y-6">

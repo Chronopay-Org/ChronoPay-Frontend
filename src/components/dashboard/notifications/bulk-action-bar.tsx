@@ -19,7 +19,7 @@ export function BulkActionBar({
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
       className={clsx(
-        "fixed bottom-0 left-0 right-0 z-50",
+        "fixed bottom-0 start-0 end-0 z-50",
         "border-t border-white/10",
         "bg-slate-950/90 backdrop-blur-xl",
         "pb-[env(safe-area-inset-bottom,0px)]",

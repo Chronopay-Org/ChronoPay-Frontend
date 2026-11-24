@@ -42,7 +42,7 @@ export function EarningsChart({ segments, className }: EarningsChartProps) {
             <div
               key={seg.id}
               className={clsx(
-                "group relative h-full transition-all duration-300 ease-in-out motion-reduce:transition-none cursor-pointer border-r border-[var(--background)] last:border-r-0",
+                "group relative h-full transition-all duration-300 ease-in-out motion-reduce:transition-none cursor-pointer border-e border-[var(--background)] last:border-e-0",
                 seg.colorClass,
                 isDimmed ? "opacity-40" : "opacity-100"
               )}
@@ -61,7 +61,7 @@ export function EarningsChart({ segments, className }: EarningsChartProps) {
       {/* Tooltip */}
               {isHovered && (
                 <div
-                  className="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 rounded border px-2.5 py-1.5 text-xs shadow-lg z-10 animate-in fade-in zoom-in-95 duration-200 rtl:translate-x-1/2"
+                  className="absolute bottom-full start-1/2 mb-2 w-max -translate-x-1/2 rounded border px-2.5 py-1.5 text-xs shadow-lg z-10 animate-in fade-in zoom-in-95 duration-200 rtl:translate-x-1/2"
                   style={{
                     backgroundColor: "var(--chart-tooltip-bg)",
                     borderColor: "var(--chart-tooltip-border)",
@@ -71,7 +71,7 @@ export function EarningsChart({ segments, className }: EarningsChartProps) {
                 >
                   <span className="font-medium">{seg.label}</span>: {seg.formattedValue}
                   <div
-                    className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-4 border-transparent"
+                    className="absolute start-1/2 top-full -mt-px -translate-x-1/2 border-4 border-transparent"
                     style={{ borderTopColor: "var(--chart-tooltip-bg)" }}
                   />
                 </div>

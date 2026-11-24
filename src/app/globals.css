@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+:where([dir="rtl"] .icon-directional, .icon-directional[dir="rtl"]) {
+  transform: scaleX(-1);
+}
+
 /* Focus ring utilities — plain CSS nesting (Tailwind v4 does not support variant
    prefixes inside @apply, so we use native :focus-visible selectors instead). */
 @layer utilities {
@@ -557,8 +561,7 @@ body {
 /* Mobile bottom navigation — shown below 640px only. */
 .bottom-nav {
   position: fixed;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   bottom: 0;
   z-index: 50;
   display: flex;
@@ -605,7 +608,7 @@ body {
   content: "";
   position: absolute;
   top: 0;
-  left: 50%;
+  inset-inline-start: 50%;
   width: 2rem;
   height: 2px;
   border-radius: 0 0 2px 2px;
@@ -693,7 +696,7 @@ body {
     content: "ChronoPay — On-chain Receipt";
     position: fixed;
     bottom: 0.6cm;
-    right: 1.5cm;
+    inset-inline-end: 1.5cm;
     font-size: 7pt;
     color: #94a3b8;
     letter-spacing: 0.15em;

@@ -233,7 +233,7 @@ export function ReviewComposer({
         />
         <div
           id="comment-char-count"
-          className="mt-1 text-right text-xs text-slate-500"
+          className="mt-1 text-end text-xs text-slate-500"
         >
           {comment.length}/{maxCommentLength}
         </div>

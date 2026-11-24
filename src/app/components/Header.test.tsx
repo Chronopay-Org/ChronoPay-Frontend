@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Header } from "./Header";
+import { ToastProvider } from "@/hooks/use-toast";
+import { NotificationsProvider } from "@/components/dashboard/notifications/notifications-provider";
 
 vi.mock("next/link", () => ({
   default: ({
@@ -164,5 +166,46 @@ describe("Header", () => {
 
     expect(menuButton).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});
+describe("Header notification bell", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  function renderWithProviders() {
+    return render(
+      <ToastProvider>
+        <NotificationsProvider>
+          <Header />
+        </NotificationsProvider>
+      </ToastProvider>,
+    );
+  }
+
+  it("shows the unread badge in the desktop header", () => {
+    renderWithProviders();
+
+    const bell = screen.getByRole("link", {
+      name: /Notifications, 3 unread/i,
+    });
+    expect(bell).toHaveAttribute("href", "/dashboard/notifications");
+    expect(screen.getByText("3")).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("shows the bell in the mobile menu too", () => {
+    renderWithProviders();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /open navigation menu/i }),
+    );
+
+    const bells = screen.getAllByRole("link", {
+      name: /Notifications, 3 unread/i,
+    });
+    expect(bells).toHaveLength(2);
+    for (const bell of bells) {
+      expect(bell).toHaveAttribute("href", "/dashboard/notifications");
+    }
   });
 });

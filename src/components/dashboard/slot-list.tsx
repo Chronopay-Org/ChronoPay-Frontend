@@ -37,6 +37,8 @@ import type { Slot } from "./types";
 import { EmptyStateCard } from "../../app/components/empty-state-card";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { CalendarView } from "./calendar-view";
+import type { CalendarViewMode } from "./calendar-view-toggle";
+import { addDays, toISODateKey } from "./use-calendar-state";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,10 +86,13 @@ interface SlotListProps {
 
 // ─── Local default data ────────────────────────────────────────────────────────
 
+const todayDate = new Date();
+
 const localDefaultSlots: Slot[] = [
   {
     id: "slot-1",
     title: "1-on-1 Architecture Consultation",
+    date: toISODateKey(todayDate),
     dateLabel: "Today",
     timeRange: "14:00 - 15:00 UTC",
     status: "Healthy",
@@ -98,6 +103,7 @@ const localDefaultSlots: Slot[] = [
   {
     id: "slot-2",
     title: "Code Review & Optimization",
+    date: toISODateKey(addDays(todayDate, 1)),
     dateLabel: "Tomorrow",
     timeRange: "10:00 - 11:30 UTC",
     status: "Tight",
@@ -108,6 +114,7 @@ const localDefaultSlots: Slot[] = [
   {
     id: "slot-3",
     title: "Pair Programming Session",
+    date: toISODateKey(addDays(todayDate, 3)),
     dateLabel: "Fri, Aug 14",
     timeRange: "16:00 - 17:30 UTC",
     status: "Busy",
@@ -282,7 +289,7 @@ export const SlotList = ({
   const router = useRouter();
   const pathname = usePathname();
   const viewParam = searchParams.get("view");
-  const viewMode = (viewParam === "month" || viewParam === "week" || viewParam === "day") ? viewParam : "list";
+  const viewMode = (viewParam === "month" || viewParam === "week" || viewParam === "day" || viewParam === "agenda") ? viewParam : "list";
   
   const setViewMode = (mode: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -620,7 +627,7 @@ export const SlotList = ({
                       >
                         <span
                           id={`conflict-${slot.id}`}
-                          className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
+                          className="absolute end-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-700/90 px-3 py-1.5 text-xs font-medium text-white"
                         >
                           {conflicts[slot.id]}
                         </span>
@@ -683,7 +690,7 @@ export const SlotList = ({
 
                   {/* Rebooking trigger for cancelled / rescheduled tokens */}
                   {isRebookable(slot) ? (
-                    <div className="flex flex-wrap items-center gap-2 pl-1">
+                    <div className="flex flex-wrap items-center gap-2 ps-1">
                       <span className="text-xs text-slate-400">
                         This time-token was {slot.status.toLowerCase()}.
                       </span>
@@ -708,7 +715,11 @@ export const SlotList = ({
           </ul>
           </>
         ) : (
-          <CalendarView slots={slots} viewMode={viewMode as "month" | "week" | "day"} />
+          <CalendarView
+            slots={slots}
+            viewMode={viewMode as CalendarViewMode}
+            onViewModeChange={setViewMode}
+          />
         )}
 
         </>

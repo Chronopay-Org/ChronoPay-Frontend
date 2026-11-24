@@ -219,7 +219,7 @@ function WalletConnectTestModal({ onClose }: { onClose: () => void }) {
             <div>
               <span className="text-sm font-medium text-white">{p.name}</span>
               {p.recommended && (
-                <span className="ml-2 rounded bg-cyan-900/30 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                <span className="ms-2 rounded bg-cyan-900/30 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-300">
                   Recommended
                 </span>
               )}

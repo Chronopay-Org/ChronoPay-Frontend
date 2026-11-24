@@ -109,7 +109,7 @@ export function Receipt({ receipt, loading = false, error = null }: ReceiptProps
           </h2>
           <p className="helper-text helper-text--muted">{receipt.title}</p>
         </div>
-        <div className="flex flex-col items-end gap-1.5 text-right">
+        <div className="flex flex-col items-end gap-1.5 text-end">
           <StatusChip tone={statusTone[receipt.status]}>
             {statusLabel[receipt.status]}
           </StatusChip>

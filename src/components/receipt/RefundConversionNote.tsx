@@ -140,7 +140,7 @@ export function RefundConversionNote({
         "rounded-lg border border-cyan-400/15 bg-cyan-400/5 px-3 py-2",
         "text-xs text-slate-300",
         // RTL support: text direction follows document but layout flips
-        "ltr:text-left rtl:text-right",
+        "ltr:text-start rtl:text-end",
         className,
       ]
         .filter(Boolean)

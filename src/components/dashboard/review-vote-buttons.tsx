@@ -57,6 +57,7 @@ export function ReviewVoteButtons({
   );
   const [isPending, setIsPending] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  const isPendingRef = useRef(false);
 
   const groupId = useId();
 
@@ -70,7 +71,7 @@ export function ReviewVoteButtons({
   }
 
   const handleVote = async (targetVote: "helpful" | "unhelpful") => {
-    if (disabled || isPending) return;
+    if (disabled || isPending || isPendingRef.current) return;
 
     const prevVote = userVote;
     const prevHelpful = helpfulCount;
@@ -149,6 +150,7 @@ export function ReviewVoteButtons({
     // Invoke async onVote handler if supplied
     if (onVote) {
       try {
+        isPendingRef.current = true;
         setIsPending(true);
         await onVote(newVote, prevVote);
       } catch (error) {
@@ -162,6 +164,7 @@ export function ReviewVoteButtons({
           });
         }
       } finally {
+        isPendingRef.current = false;
         setIsPending(false);
       }
     }

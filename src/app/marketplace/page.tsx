@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   RecentlyViewedRail,
@@ -40,13 +41,15 @@ function MarketplaceGrid() {
             >
               {item.image ? (
                 <div
-                  className="aspect-video w-full overflow-hidden rounded-t-lg bg-zinc-800"
+                  className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-zinc-800"
                   aria-hidden="true"
                 >
-                  <img
+                  <Image
                     src={item.image}
                     alt=""
-                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    fill
+                    sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover transition-transform duration-200 group-hover:scale-105"
                   />
                 </div>
               ) : (
@@ -84,20 +87,32 @@ function MarketplaceGrid() {
 }
 
 export default function Marketplace() {
-  const { addItem } = useRecentlyViewed();
+  const { addItems } = useRecentlyViewed();
 
   // Populate recently-viewed rail on first visit.
   useEffect(() => {
-    const hasVisited = localStorage.getItem("chronopay-marketplace-visited");
-    if (!hasVisited) {
-      seedItems.forEach((item, index) => {
-        setTimeout(() => {
-          addItem(item);
-        }, index * 100);
-      });
-      localStorage.setItem("chronopay-marketplace-visited", "true");
+    let hasVisited: string | null = null;
+    try {
+      hasVisited = localStorage.getItem("chronopay-marketplace-visited");
+    } catch {
+      return;
     }
-  }, [addItem]);
+
+    if (hasVisited) return;
+
+    const timerId = setTimeout(() => {
+      addItems(seedItems);
+      try {
+        localStorage.setItem("chronopay-marketplace-visited", "true");
+      } catch {
+        // Ignore storage errors
+      }
+    }, 0);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [addItems]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">

@@ -3,7 +3,44 @@
  * In production these would come from an API.
  */
 
-import type { AdminUser, SortSpec } from "./admin-user-types";
+import type {
+  AdminUser,
+  AdminUserFilters,
+  SortSpec,
+  UserRole,
+  UserStatus,
+} from "./admin-user-types";
+
+export const VALID_ADMIN_USER_KEYS: ReadonlyArray<keyof AdminUser> = [
+  "id",
+  "name",
+  "email",
+  "role",
+  "status",
+  "joinedAt",
+  "lastSeen",
+  "payouts",
+  "bookings",
+  "verified",
+];
+
+export const VALID_USER_ROLES: ReadonlyArray<UserRole> = [
+  "admin",
+  "supplier",
+  "buyer",
+  "moderator",
+  "support",
+];
+
+export const VALID_USER_STATUSES: ReadonlyArray<UserStatus> = [
+  "active",
+  "suspended",
+  "pending",
+  "banned",
+];
+
+export const DEFAULT_ADMIN_PAGE_SIZES = [5, 10, 25, 50] as const;
+export const DEFAULT_ADMIN_PAGE_SIZE = 10;
 
 // ── Sample rows ──────────────────────────────────────────────────────────────
 
@@ -173,3 +210,97 @@ export function toggleSort(
   if (nextDir === "none") return without;
   return [...without, { key, dir: nextDir }];
 }
+
+// ── Filter, Pagination & URL Serialization utilities ─────────────────────────
+
+/**
+ * Filter an array of AdminUsers by free-text query (name or email), role, and status.
+ */
+export function filterUsers(
+  users: AdminUser[],
+  filters?: AdminUserFilters,
+): AdminUser[] {
+  if (!filters) return [...users];
+  const q = filters.query?.trim().toLowerCase() ?? "";
+  const roleFilter = filters.role && filters.role !== "all" ? filters.role : null;
+  const statusFilter =
+    filters.status && filters.status !== "all" ? filters.status : null;
+
+  if (!q && !roleFilter && !statusFilter) return [...users];
+
+  return users.filter((u) => {
+    if (roleFilter && u.role !== roleFilter) return false;
+    if (statusFilter && u.status !== statusFilter) return false;
+    if (q) {
+      const matchesName = u.name.toLowerCase().includes(q);
+      const matchesEmail = u.email.toLowerCase().includes(q);
+      if (!matchesName && !matchesEmail) return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Paginate an array of AdminUsers using a 1-based page index and pageSize.
+ * Clamps page into `[1, totalPages]`.
+ */
+export function paginateUsers(
+  users: AdminUser[],
+  page: number,
+  pageSize: number,
+): {
+  items: AdminUser[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+} {
+  const safeSize = Math.max(1, Math.floor(pageSize) || DEFAULT_ADMIN_PAGE_SIZE);
+  const totalItems = users.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / safeSize));
+  const safePage = Math.min(Math.max(1, Math.floor(page) || 1), totalPages);
+  const start = (safePage - 1) * safeSize;
+  return {
+    items: users.slice(start, start + safeSize),
+    page: safePage,
+    pageSize: safeSize,
+    totalItems,
+    totalPages,
+  };
+}
+
+/**
+ * Serialize a SortSpec stack to a compact URL param value (e.g. "name:asc,payouts:desc").
+ */
+export function serializeSortsParam(sorts: SortSpec[]): string {
+  return sorts
+    .filter((s) => s.dir === "asc" || s.dir === "desc")
+    .map((s) => `${String(s.key)}:${s.dir}`)
+    .join(",");
+}
+
+/**
+ * Parse a URL param string (e.g. "name:asc,payouts:desc") into validated SortSpecs.
+ */
+export function parseSortsParam(raw: string | null | undefined): SortSpec[] {
+  if (!raw || !raw.trim()) return [];
+  const specs: SortSpec[] = [];
+  const seen = new Set<keyof AdminUser>();
+
+  for (const token of raw.split(",")) {
+    const [rawKey, rawDir] = token.trim().split(":");
+    const key = rawKey as keyof AdminUser;
+    const dir = rawDir === "desc" ? "desc" : rawDir === "asc" ? "asc" : null;
+    if (
+      key &&
+      dir &&
+      VALID_ADMIN_USER_KEYS.includes(key) &&
+      !seen.has(key)
+    ) {
+      seen.add(key);
+      specs.push({ key, dir });
+    }
+  }
+  return specs;
+}
+

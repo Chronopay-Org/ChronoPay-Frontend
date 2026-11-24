@@ -366,3 +366,120 @@ describe("AdminUserTable — bulk-actions toolbar integration", () => {
     );
   });
 });
+
+// ── Pagination & Page-Size Selector ──────────────────────────────────────────
+
+describe("AdminUserTable — pagination and page-size selector", () => {
+  const SIX_USERS: AdminUser[] = [
+    ...USERS,
+    {
+      id: "u4",
+      name: "David",
+      email: "david@example.com",
+      role: "moderator",
+      status: "active",
+      joinedAt: "2023-07-01",
+      lastSeen: "2024-07-10",
+      payouts: 15,
+      bookings: 8,
+      verified: true,
+    },
+    {
+      id: "u5",
+      name: "Eve",
+      email: "eve@example.com",
+      role: "support",
+      status: "active",
+      joinedAt: "2023-08-01",
+      lastSeen: "2024-07-12",
+      payouts: 0,
+      bookings: 1,
+      verified: false,
+    },
+    {
+      id: "u6",
+      name: "Frank",
+      email: "frank@example.com",
+      role: "buyer",
+      status: "banned",
+      joinedAt: "2023-09-01",
+      lastSeen: "2024-07-14",
+      payouts: 2,
+      bookings: 3,
+      verified: false,
+    },
+  ];
+
+  it("renders only the current page slice and navigates pages", () => {
+    render(
+      <AdminUserTable
+        users={SIX_USERS}
+        pageSize={5}
+        pageSizeOptions={[5, 10, 25]}
+      />,
+    );
+
+    expect(screen.getByTestId("pagination-status")).toHaveTextContent("Page 1 of 2");
+    expect(screen.getByTestId("row-u1")).toBeInTheDocument();
+    expect(screen.getByTestId("row-u5")).toBeInTheDocument();
+    expect(screen.queryByTestId("row-u6")).toBeNull();
+    expect(screen.getByTestId("pagination-prev")).toBeDisabled();
+    expect(screen.getByTestId("pagination-next")).not.toBeDisabled();
+
+    fireEvent.click(screen.getByTestId("pagination-next"));
+
+    expect(screen.getByTestId("pagination-status")).toHaveTextContent("Page 2 of 2");
+    expect(screen.queryByTestId("row-u1")).toBeNull();
+    expect(screen.getByTestId("row-u6")).toBeInTheDocument();
+    expect(screen.getByTestId("pagination-next")).toBeDisabled();
+    expect(screen.getByTestId("pagination-prev")).not.toBeDisabled();
+  });
+
+  it("updates page size via selector and resets to page 1", () => {
+    render(
+      <AdminUserTable
+        users={SIX_USERS}
+        pageSizeOptions={[2, 5, 10]}
+      />,
+    );
+
+    const select = screen.getByTestId("page-size-select") as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: "2" } });
+
+    expect(screen.getByTestId("pagination-status")).toHaveTextContent("Page 1 of 3");
+    expect(screen.getByTestId("row-u1")).toBeInTheDocument();
+    expect(screen.getByTestId("row-u2")).toBeInTheDocument();
+    expect(screen.queryByTestId("row-u3")).toBeNull();
+
+    // Advance to page 2, then change page size back to 10 -> resets to page 1
+    fireEvent.click(screen.getByTestId("pagination-next"));
+    expect(screen.getByTestId("pagination-status")).toHaveTextContent("Page 2 of 3");
+
+    fireEvent.change(select, { target: { value: "10" } });
+    expect(screen.getByTestId("pagination-status")).toHaveTextContent("Page 1 of 1");
+    expect(screen.getByTestId("row-u6")).toBeInTheDocument();
+  });
+
+  it("filters rows by search query, role, and status", () => {
+    render(<AdminUserTable users={SIX_USERS} />);
+
+    fireEvent.change(screen.getByTestId("filter-role"), {
+      target: { value: "buyer" },
+    });
+    expect(screen.getByTestId("row-u2")).toBeInTheDocument();
+    expect(screen.getByTestId("row-u6")).toBeInTheDocument();
+    expect(screen.queryByTestId("row-u1")).toBeNull();
+
+    fireEvent.change(screen.getByTestId("filter-status"), {
+      target: { value: "banned" },
+    });
+    expect(screen.getByTestId("row-u6")).toBeInTheDocument();
+    expect(screen.queryByTestId("row-u2")).toBeNull();
+
+    fireEvent.change(screen.getByTestId("filter-search"), {
+      target: { value: "nonexistent" },
+    });
+    expect(screen.getByText(/no users found/i)).toBeInTheDocument();
+  });
+});
+

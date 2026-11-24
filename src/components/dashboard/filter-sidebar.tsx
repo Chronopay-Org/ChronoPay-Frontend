@@ -112,7 +112,7 @@ export function FilterSidebar({
               type="button"
               onClick={() => toggleGroup(group.id)}
               className={clsx(
-                "flex w-full items-center justify-between text-left transition-colors",
+                "flex w-full items-center justify-between text-start transition-colors",
                 "hover:text-zinc-200 focus-visible:ring-2 focus-visible:ring-cyan-400 rounded px-2 py-1 -mx-2 -my-1"
               )}
               aria-expanded={isExpanded}
