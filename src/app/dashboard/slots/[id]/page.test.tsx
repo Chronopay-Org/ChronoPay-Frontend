@@ -106,7 +106,6 @@ describe("SlotDetailPage", () => {
     // It should fallback to the first slot and render properly
     expect(await screen.findByText(/Deep dive into your product roadmap/i)).toBeInTheDocument();
   });
-
   it("traps focus within checkout dialog and passes axe accessibility audit", async () => {
     const user = userEvent.setup();
     const { container } = render(<SlotDetailPage params={defaultParams} />);

@@ -20,7 +20,7 @@ const KycDocUpload = dynamic(
   },
 );
 
-interface StatusTimelineProps {
+export interface StatusTimelineProps {
   items: TimelineNode[];
   /**
    * When provided, a GraceBanner is rendered above the timeline entries
@@ -31,6 +31,24 @@ interface StatusTimelineProps {
   onNotifySupplier?: () => void;
   /** Called when the grace window expires */
   onGraceExpired?: () => void;
+}
+
+/**
+ * Safely format a timeline timestamp. Returns null for missing or invalid
+ * values so callers can omit the `<time>` element entirely.
+ */
+export function formatTimelineTimestamp(value?: Date | string | null): string | null {
+  if (value === undefined || value === null || value === "") return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
+  } catch {
+    return date.toISOString();
+  }
 }
 
 // ─── Helper: flatten all TimelineItems from a TimelineNode[] ─────────────
@@ -113,6 +131,17 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
   // Check whether any items have milestones (across all branches)
   const flatItems = flattenItems(items);
   const hasMilestones = flatItems.some((item) => item.isMilestone);
+  const assignedMediator = flatItems.find(
+    (item) => item.variant === "mediator_assigned" && item.mediator,
+  )?.mediator;
+  const mediatorAnnouncement = assignedMediator
+    ? `Mediator ${assignedMediator.name} assigned.${
+        assignedMediator.responseSlaLabel
+          ? ` Response SLA ${assignedMediator.responseSlaLabel}.`
+          : ""
+      }`
+    : "";
+  const liveAnnouncement = announcement || mediatorAnnouncement;
 
   function handleToggle() {
     if (listRef.current) {
@@ -217,7 +246,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
         aria-atomic="true"
         className="sr-only"
       >
-        {announcement}
+        {liveAnnouncement}
       </div>
     </section>
   );
