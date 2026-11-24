@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { reportError } from "@/app/dashboard/reportError";
 
 export interface Action {
   id: string;
@@ -16,7 +17,7 @@ export function useCommandPaletteStorage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (savedPinned) setPinned(JSON.parse(savedPinned));
     } catch (e) {
-      console.error('Failed to parse cp-pinned from localStorage', e);
+      reportError(e, 'Failed to parse cp-pinned from localStorage');
     }
 
     try {
@@ -24,7 +25,7 @@ export function useCommandPaletteStorage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (savedRecent) setRecent(JSON.parse(savedRecent));
     } catch (e) {
-      console.error('Failed to parse cp-recent from localStorage', e);
+      reportError(e, 'Failed to parse cp-recent from localStorage');
     }
   }, []);
 
@@ -34,7 +35,7 @@ export function useCommandPaletteStorage() {
     try {
       localStorage.setItem('cp-pinned', JSON.stringify(next));
     } catch (e) {
-      console.error('Failed to save cp-pinned to localStorage', e);
+      reportError(e, 'Failed to save cp-pinned to localStorage');
     }
   };
 
@@ -45,7 +46,7 @@ export function useCommandPaletteStorage() {
     try {
       localStorage.setItem('cp-recent', JSON.stringify(next));
     } catch (e) {
-      console.error('Failed to save cp-recent to localStorage', e);
+      reportError(e, 'Failed to save cp-recent to localStorage');
     }
   };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { reportError } from "@/app/dashboard/reportError";
 
 export type LivenessPrompt = "blink" | "turn-left" | "turn-right" | "smile";
 
@@ -98,6 +99,7 @@ export function KycLivenessCapture({ onCaptureComplete }: KycLivenessCaptureProp
             ? "Camera permission was denied. You can continue in text-only mode or retry camera access."
             : "Camera is unavailable. You can continue in text-only mode or retry camera access.",
         );
+        reportError(err, "Camera access denied or unavailable");
         setTextOnlyMode(true);
       }
     }

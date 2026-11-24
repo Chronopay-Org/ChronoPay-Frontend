@@ -114,24 +114,18 @@ describe("DesignSystemComponentsPage", () => {
     expect(viewToggle).toHaveAttribute("data-mode", "week");
   });
 
-  it("handles console.logs for sample callbacks without crashing", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+  it("handles sample callbacks without crashing", async () => {
     render(<DesignSystemComponentsPage />);
-    
+
     const user = userEvent.setup();
-    
+
     await user.click(screen.getByText("Book Slot"));
-    expect(consoleSpy).toHaveBeenCalledWith("Book:", expect.any(Date));
-
     await user.click(screen.getByText("Submit"));
-    expect(consoleSpy).toHaveBeenCalledWith("Submit:", { text: "Submit" });
-
     await user.click(screen.getByText("Draft"));
-    expect(consoleSpy).toHaveBeenCalledWith("Draft:", { text: "Draft" });
-    
-    consoleSpy.mockRestore();
+
+    expect(screen.getByText("Book Slot")).toBeInTheDocument();
   });
-  
+
   it("handles state update for date select", async () => {
     // Just ensuring we don't crash when onDateSelect is called
     render(<DesignSystemComponentsPage />);

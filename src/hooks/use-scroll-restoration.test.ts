@@ -122,7 +122,7 @@ describe("useScrollRestoration", () => {
       act(() => result.current.markItemAsViewed(itemId));
     }).not.toThrow();
     expect(consoleError).toHaveBeenCalledWith(
-      "Failed to save scroll restoration",
+      expect.stringContaining("Failed to save scroll restoration"),
       error,
     );
   });
@@ -140,7 +140,7 @@ describe("useScrollRestoration", () => {
       act(() => result.current.resetScrollRestoration());
     }).not.toThrow();
     expect(consoleError).toHaveBeenCalledWith(
-      "Failed to reset scroll restoration",
+      expect.stringContaining("Failed to reset scroll restoration"),
       error,
     );
   });
@@ -179,7 +179,7 @@ describe("useScrollRestoration", () => {
       });
     }).not.toThrow();
     expect(consoleError).toHaveBeenCalledWith(
-      "Failed to clear scroll restoration",
+      expect.stringContaining("Failed to clear scroll restoration"),
       error,
     );
   });

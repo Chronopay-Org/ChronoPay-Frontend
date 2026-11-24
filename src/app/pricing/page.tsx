@@ -241,11 +241,6 @@ const PRICING_PLANS: PricingPlan[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 export default function PricingPage() {
-  const handleSelectPlan = (planId: string) => {
-    // This callback can be used for analytics tracking
-    console.log(`User selected plan: ${planId}`);
-  };
-
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
       {/* Skip link for accessibility */}
@@ -286,7 +281,6 @@ export default function PricingPage() {
           monthlyLabel="Monthly Billing"
           yearlyLabel="Annual Billing"
           savingsLabel="Save {savings}%"
-          onSelectPlan={handleSelectPlan}
         />
 
         {/* FAQ section */}
