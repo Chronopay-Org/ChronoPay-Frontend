@@ -1,6 +1,12 @@
 # StatusTimeline Component API
 
-The `StatusTimeline` component provides a vertical, accessible, and collapsible timeline for tracking lifecycle stages in bookings and escrows. It includes a **Milestones mode** toggle that filters to show only high-signal events, useful for auditors and quick-scan reviews, and **branching support** for parallel events (e.g., dispute + refund proceeding independently) with rejoin markers when they converge.
+The canonical `StatusTimeline` component lives in `src/components/dashboard/status-timeline.tsx` (and is re-exported from `src/components/dashboard/index.ts`). It provides a vertical, accessible, and collapsible timeline for tracking lifecycle stages in bookings and escrows. It includes a **Milestones mode** toggle that filters to show only high-signal events, useful for auditors and quick-scan reviews, and **branching support** for parallel events (e.g., dispute + refund proceeding independently) with rejoin markers when they converge.
+
+## Utilities
+
+### `formatTimelineTimestamp(value?: Date | string | null): string | null`
+
+Exported alongside `StatusTimeline` from `src/components/dashboard/status-timeline.tsx`. Safely formats a `Date` or ISO date string using `Intl.DateTimeFormat` (`dateStyle: "medium"`, `timeStyle: "short"`), falling back to `date.toISOString()` if the runtime formatter throws, and returning `null` for missing or invalid values.
 
 ## Props
 

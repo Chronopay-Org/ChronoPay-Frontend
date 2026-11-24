@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { axe } from "jest-axe";
 import { describe, expect, it } from "vitest";
-import { StatusTimeline } from "./status-timeline";
+import { StatusTimeline, formatTimelineTimestamp } from "./status-timeline";
 import {
   TimelineItem,
   TimelineNode,
@@ -200,6 +200,40 @@ const branchWithMilestones: TimelineNode[] = [
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
+describe("formatTimelineTimestamp", () => {
+  it("returns null for missing and invalid values", () => {
+    expect(formatTimelineTimestamp(undefined)).toBeNull();
+    expect(formatTimelineTimestamp(null)).toBeNull();
+    expect(formatTimelineTimestamp("")).toBeNull();
+    expect(formatTimelineTimestamp("not-a-date")).toBeNull();
+  });
+
+  it("formats valid Date and ISO string values deterministically", () => {
+    const date = new Date("2025-02-03T15:45:00Z");
+    const expected = new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
+
+    expect(formatTimelineTimestamp(date)).toBe(expected);
+    expect(formatTimelineTimestamp("2025-02-03T15:45:00Z")).toBe(expected);
+  });
+
+  it("falls back to ISO output if the runtime formatter throws", () => {
+    const original = Intl.DateTimeFormat;
+    Intl.DateTimeFormat = (() => {
+      throw new Error("formatter unavailable");
+    }) as typeof Intl.DateTimeFormat;
+
+    try {
+      const date = new Date("2025-02-03T15:45:00Z");
+      expect(formatTimelineTimestamp(date)).toBe(date.toISOString());
+    } finally {
+      Intl.DateTimeFormat = original;
+    }
+  });
+});
+
 describe("StatusTimeline", () => {
   it("renders the mediator-assigned timeline block with SLA and direct message action", () => {
     render(<StatusTimeline items={allItems} />);
@@ -221,9 +255,9 @@ describe("StatusTimeline", () => {
 
     it("expands details when clicked", () => {
       render(<StatusTimeline items={allItems} />);
-      const showButtons = screen.getAllByText("Show Details");
+      const showButtons = screen.getAllByText("Show details");
       fireEvent.click(showButtons[0]);
-      expect(screen.getByText("Hide Details")).toBeInTheDocument();
+      expect(screen.getByText("Hide details")).toBeInTheDocument();
       expect(screen.getByText("Actor: Buyer")).toBeInTheDocument();
       expect(
         screen.getByText("Slot reserved for 30 minutes."),
