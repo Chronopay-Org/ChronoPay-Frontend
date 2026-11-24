@@ -60,6 +60,10 @@ export const themeInitScript = `
 `;
 
 export default async function RootLayout({
+/** Runs before React hydrates to apply the saved density preference. */
+export const densityInitScript = `(function(){try{var d=localStorage.getItem('chronopay-density');if(d==='comfortable'||d==='balanced'||d==='compact')document.documentElement.dataset.density=d;}catch(e){}})();`;
+
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -83,7 +87,7 @@ export default async function RootLayout({
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{}catch(e){};try{var d=localStorage.getItem('chronopay-density');if(d==='comfortable'||d==='balanced'||d==='compact')document.documentElement.dataset.density=d;}catch(e){}})();`,
+            __html: densityInitScript,
           }}
         />
 
