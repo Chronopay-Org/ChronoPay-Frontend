@@ -4,17 +4,18 @@ import { useState, useEffect } from "react";
 import { LayoutGrid, List } from "lucide-react";
 
 export function useViewMode(storageKey = "supplier-view-mode") {
-  const [viewMode, setViewMode] = useState<"grid" | "compact-list">(() => {
+  const [viewMode, setViewMode] = useState<"grid" | "compact-list">("grid");
+
+  useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved === "grid" || saved === "compact-list") {
-        return saved;
+        setViewMode(saved);
       }
     } catch {
       // localStorage may be unavailable
     }
-    return "grid";
-  });
+  }, [storageKey]);
 
   const toggleViewMode = (mode: "grid" | "compact-list") => {
     setViewMode(mode);
