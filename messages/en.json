@@ -8,18 +8,58 @@
     "help": "Help"
   },
   "nav": {
+    "primary": "Primary",
+    "home": "Home",
     "dashboard": "Dashboard",
     "marketplace": "Marketplace",
     "settings": "Settings",
     "pricing": "Pricing",
-    "admin": "Admin"
+    "status": "Status",
+    "stellar": "Stellar",
+    "github": "GitHub",
+    "admin": "Admin",
+    "menu": "Menu",
+    "close": "Close",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu"
+  },
+  "footer": {
+    "demoNotice": "ChronoPay is a demo with sample data. No real payments are processed.",
+    "liveDemo": "Live demo",
+    "sourceOnGithub": "Source on GitHub"
   },
   "home": {
     "title": "ChronoPay",
     "tagline": "Time Economy",
     "description": "Tokenize your future time slots as tradable digital assets on the Stellar network. Buy, sell, reserve, and redeem time globally.",
     "ctaDashboard": "Dashboard",
-    "ctaStellar": "Stellar"
+    "ctaStellar": "Stellar",
+    "heroTitle": "Book, pay for and receipt time, on Stellar.",
+    "heroDescription": "ChronoPay turns future time slots into tradable digital assets. Suppliers list availability, buyers book and pay, and both sides get a clear receipt and history.",
+    "openDashboard": "Open dashboard",
+    "browseMarketplace": "Browse marketplace",
+    "featuresHeading": "What you can do",
+    "demoNoticePrefix": "Demo notice: all listings, suppliers, balances and receipts in this deployment are sample data. No real payments are processed. Live demo:",
+    "features": {
+      "tokenizedSlotsTitle": "Tokenized time slots",
+      "tokenizedSlotsBody": "Suppliers publish availability as bookable slots; buyers reserve, hold and redeem them. Recurring availability and timezone-aware scheduling are built in.",
+      "tokenizedSlotsCta": "Browse marketplace",
+      "stellarPaymentsTitle": "Payments on Stellar",
+      "stellarPaymentsBody": "Wallet connection, XLM pricing, payout onboarding and refund-destination selection for a clear money trail.",
+      "stellarPaymentsCta": "Payout setup",
+      "receiptsTitle": "Receipts and history",
+      "receiptsBody": "Every booking has a status timeline and a receipt page with notes, plus export of booking history.",
+      "receiptsCta": "View a demo receipt",
+      "dashboardTitle": "Buyer and supplier dashboard",
+      "dashboardBody": "Overview metrics, wallet status, bookings, supplier profiles, ratings and reviews, notifications and settings.",
+      "dashboardCta": "Open dashboard",
+      "pricingTitle": "Transparent pricing",
+      "pricingBody": "Plan comparison and a pricing-strategy explainer so suppliers know what they earn.",
+      "pricingCta": "See pricing",
+      "accessibilityTitle": "Accessible by design",
+      "accessibilityBody": "Skip links, focus traps, keyboard shortcuts (press ?), light/dark themes and a documented design system.",
+      "accessibilityCta": "Design system"
+    }
   },
   "dashboard": {
     "title": "Dashboard",

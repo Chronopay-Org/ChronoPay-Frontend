@@ -16,10 +16,35 @@ import {
   createContext,
   useContext,
   useCallback,
+  useEffect,
   useMemo,
+  useState,
   type ReactNode,
 } from "react";
 import enMessages from "../../messages/en.json";
+import esMessages from "../../messages/es.json";
+import arMessages from "../../messages/ar.json";
+import {
+  SUPPORTED_LOCALES,
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE_NAME,
+  LOCALE_DIR,
+  LOCALE_LABELS,
+  isSupportedLocale,
+  resolveLocale,
+  type SupportedLocale,
+} from "./i18n-config";
+
+export {
+  SUPPORTED_LOCALES,
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE_NAME,
+  LOCALE_DIR,
+  LOCALE_LABELS,
+  isSupportedLocale,
+  resolveLocale,
+  type SupportedLocale,
+};
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -49,44 +74,6 @@ export type MessageKey = Paths<typeof enMessages>;
 type FlatMessages = Record<string, string>;
 
 /* -------------------------------------------------------------------------- */
-/*  Supported locales                                                         */
-/* -------------------------------------------------------------------------- */
-
-export const SUPPORTED_LOCALES = [
-  "en",
-  "es",
-  "fr",
-  "de",
-  "ar",
-  "he",
-  "hi",
-] as const;
-
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
-
-export const DEFAULT_LOCALE: SupportedLocale = "en";
-
-export const LOCALE_DIR: Record<SupportedLocale, "ltr" | "rtl"> = {
-  en: "ltr",
-  es: "ltr",
-  fr: "ltr",
-  de: "ltr",
-  ar: "rtl",
-  he: "rtl",
-  hi: "ltr",
-};
-
-export const LOCALE_LABELS: Record<SupportedLocale, string> = {
-  en: "English",
-  es: "Español",
-  fr: "Français",
-  de: "Deutsch",
-  ar: "العربية",
-  he: "עברית",
-  hi: "हिन्दी",
-};
-
-/* -------------------------------------------------------------------------- */
 /*  Flatten helper                                                            */
 /* -------------------------------------------------------------------------- */
 
@@ -108,11 +95,17 @@ function flatten(obj: Record<string, unknown>, prefix = ""): FlatMessages {
 /* -------------------------------------------------------------------------- */
 
 const enFlat = flatten(enMessages);
+const esFlat = flatten(esMessages);
+const arFlat = flatten(arMessages);
 
-/** Currently only `en` ships full strings; add new locale imports here. */
 const registry: Record<string, FlatMessages> = {
   en: enFlat,
+  es: esFlat,
+  ar: arFlat,
 };
+
+/** Locale codes that ship a full message catalogue in `registry`. */
+export const REGISTERED_LOCALES = Object.keys(registry) as SupportedLocale[];
 
 /**
  * Return the flat string map for a locale, falling back to `en` if the
@@ -159,12 +152,15 @@ interface I18nContextValue {
   dir: "ltr" | "rtl";
   /** Flat string map for the active locale. */
   messages: FlatMessages;
+  /** Switch the active locale, updating `<html>` attributes and the cookie. */
+  setLocale: (next: SupportedLocale) => void;
 }
 
 const I18nContext = createContext<I18nContextValue>({
   locale: DEFAULT_LOCALE,
   dir: "ltr",
   messages: enFlat,
+  setLocale: () => {},
 });
 
 /* -------------------------------------------------------------------------- */
@@ -185,14 +181,30 @@ export interface I18nProviderProps {
  * ```
  */
 export function I18nProvider({
-  locale = DEFAULT_LOCALE,
+  locale: initialLocale = DEFAULT_LOCALE,
   children,
 }: I18nProviderProps) {
+  const [locale, setLocaleState] = useState<SupportedLocale>(initialLocale);
+
+  useEffect(() => {
+    setLocaleState(initialLocale);
+  }, [initialLocale]);
+
+  const setLocale = useCallback((next: SupportedLocale) => {
+    const resolved = resolveLocale(next);
+    setLocaleState(resolved);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = resolved;
+      document.documentElement.dir = LOCALE_DIR[resolved];
+      document.cookie = `${LOCALE_COOKIE_NAME}=${resolved}; path=/; max-age=31536000; samesite=lax`;
+    }
+  }, []);
+
   const value = useMemo<I18nContextValue>(() => {
     const dir = LOCALE_DIR[locale] ?? "ltr";
     const messages = getMessages(locale);
-    return { locale, dir, messages };
-  }, [locale]);
+    return { locale, dir, messages, setLocale };
+  }, [locale, setLocale]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
@@ -233,10 +245,14 @@ export function useMessages(): (key: MessageKey) => string {
 /*  useLocale hook                                                            */
 /* -------------------------------------------------------------------------- */
 
-/** Return the current locale and text-direction. */
-export function useLocale(): { locale: SupportedLocale; dir: "ltr" | "rtl" } {
-  const { locale, dir } = useContext(I18nContext);
-  return { locale, dir };
+/** Return the current locale, text-direction, and setter. */
+export function useLocale(): {
+  locale: SupportedLocale;
+  dir: "ltr" | "rtl";
+  setLocale: (next: SupportedLocale) => void;
+} {
+  const { locale, dir, setLocale } = useContext(I18nContext);
+  return { locale, dir, setLocale };
 }
 
 /* -------------------------------------------------------------------------- */

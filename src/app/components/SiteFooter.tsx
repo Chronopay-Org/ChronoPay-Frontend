@@ -1,6 +1,11 @@
+"use client";
+
+import { useMessages } from "@/lib/i18n";
 import { DEMO_URL, REPO_URL } from "@/lib/site-links";
 
 export function SiteFooter() {
+  const t = useMessages();
+
   return (
     <footer
       className="mt-auto border-t px-6 py-6 pb-24 text-sm sm:pb-6"
@@ -10,13 +15,13 @@ export function SiteFooter() {
       }}
     >
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
-        <p>ChronoPay is a demo with sample data. No real payments are processed.</p>
+        <p>{t("footer.demoNotice")}</p>
         <a
           href={DEMO_URL}
           className="font-medium hover:underline"
           style={{ color: "var(--accent)" }}
         >
-          Live demo
+          {t("footer.liveDemo")}
         </a>
         <a
           href={REPO_URL}
@@ -25,7 +30,7 @@ export function SiteFooter() {
           className="font-medium hover:underline"
           style={{ color: "var(--accent)" }}
         >
-          Source on GitHub
+          {t("footer.sourceOnGithub")}
         </a>
       </div>
     </footer>

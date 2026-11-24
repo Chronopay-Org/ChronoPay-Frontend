@@ -1,0 +1,177 @@
+{
+  "common": {
+    "loading": "جارٍ التحميل…",
+    "error": "حدث خطأ. يرجى تحديث الصفحة.",
+    "empty": "لا توجد بيانات متاحة.",
+    "skipToContent": "تخطي إلى المحتوى",
+    "language": "اللغة",
+    "help": "مساعدة"
+  },
+  "nav": {
+    "primary": "التنقل الرئيسي",
+    "home": "الرئيسية",
+    "dashboard": "لوحة التحكم",
+    "marketplace": "السوق",
+    "settings": "الإعدادات",
+    "pricing": "الأسعار",
+    "status": "الحالة",
+    "stellar": "Stellar",
+    "github": "GitHub",
+    "admin": "الإدارة",
+    "menu": "القائمة",
+    "close": "إغلاق",
+    "openMenu": "فتح قائمة التنقل",
+    "closeMenu": "إغلاق قائمة التنقل"
+  },
+  "footer": {
+    "demoNotice": "ChronoPay هو عرض تجريبي ببيانات عينة. لا تتم معالجة أي مدفوعات حقيقية.",
+    "liveDemo": "العرض المباشر",
+    "sourceOnGithub": "الكود المصدري على GitHub"
+  },
+  "home": {
+    "title": "ChronoPay",
+    "tagline": "اقتصاد الوقت",
+    "description": "حوّل فتراتك الزمنية المستقبلية إلى أصول رقمية قابلة للتداول على شبكة Stellar. اشترِ وبِع واحجز واسترد الوقت عالمياً.",
+    "ctaDashboard": "لوحة التحكم",
+    "ctaStellar": "Stellar",
+    "heroTitle": "احجز وادفع واستلم إيصال الوقت على Stellar.",
+    "heroDescription": "يحول ChronoPay الفترات الزمنية المستقبلية إلى أصول رقمية قابلة للتداول. ينشر المزودون الأوقات المتاحة، ويحجز المشترون ويدفعون، ويحصل الطرفان على إيصال وسجل واضحين.",
+    "openDashboard": "فتح لوحة التحكم",
+    "browseMarketplace": "تصفح السوق",
+    "featuresHeading": "ما يمكنك فعله",
+    "demoNoticePrefix": "ملاحظة تجريبية: جميع القوائم والمزودين والأرصدة والإيصالات في هذا النشر هي بيانات تجريبية. لا تتم معالجة أي مدفوعات حقيقية. العرض المباشر:",
+    "features": {
+      "tokenizedSlotsTitle": "فترات زمنية مرمّزة",
+      "tokenizedSlotsBody": "ينشر المزودون الأوقات المتاحة كفترات قابلة للحجز؛ ويقوم المشترون بالحجز والاحتفاظ والاسترداد. تتوفر الجدولة المتكررة ودعم المناطق الزمنية مدمجة.",
+      "tokenizedSlotsCta": "تصفح السوق",
+      "stellarPaymentsTitle": "مدفوعات على Stellar",
+      "stellarPaymentsBody": "ربط المحفظة، التسعير بعملة XLM، إعداد الدفعات، واختيار وجهة الاسترداد لمسار مالي واضح.",
+      "stellarPaymentsCta": "إعداد الدفعات",
+      "receiptsTitle": "الإيصالات والسجل",
+      "receiptsBody": "يتضمن كل حجز جدولاً زمنياً للحالة وصفحة إيصال مع ملاحظات، بالإضافة إلى تصدير سجل الحجوزات.",
+      "receiptsCta": "عرض إيصال تجريبي",
+      "dashboardTitle": "لوحة تحكم المشتري والمزود",
+      "dashboardBody": "مؤشرات عامة، حالة المحفظة، الحجوزات، ملفات المزودين، التقييمات والمراجعات، الإشعارات والإعدادات.",
+      "dashboardCta": "فتح لوحة التحكم",
+      "pricingTitle": "تسعير شفاف",
+      "pricingBody": "مقارنة الخطط وشرح استراتيجية التسعير ليعرف المزودون بالضبط ما يكسبونه.",
+      "pricingCta": "عرض الأسعار",
+      "accessibilityTitle": "إتاحة شاملة بالتصميم",
+      "accessibilityBody": "روابط التخطي، حصر التركيز، اختصارات لوحة المفاتيح (اضغط ?)، الوضع الفاتح والداكن ونظام تصميم موثّق.",
+      "accessibilityCta": "نظام التصميم"
+    }
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "subtitle": "اربط محفظة Stellar الخاصة بك لسك وتداول رموز الوقت.",
+    "marketplaceTitle": "استكشاف السوق",
+    "marketplaceSubtitle": "ابحث وصفّ للعثور على ما تحتاجه بالضبط في سوقنا.",
+    "searchPlaceholder": "ابحث في السوق (واجهات، مكونات، إتاحة…)",
+    "loadingMessage": "جارٍ تحميل لوحة التحكم…",
+    "errorMessage": "حدث خطأ. يرجى تحديث الصفحة.",
+    "emptyMessage": "لا توجد بيانات متاحة.",
+    "sampleCleared": "تم مسح المؤشرات التجريبية. ستظهر المؤشرات هنا بمجرد وجود نشاط فعلي."
+  },
+  "wallet": {
+    "title": "المحفظة",
+    "connected": "متصلة",
+    "disconnected": "اربط محفظة لمزامنة الأرصدة.",
+    "balance": "الرصيد",
+    "pending": "قيد الانتظار",
+    "nextPayout": "الدفعة التالية",
+    "synced": "متزامنة"
+  },
+  "metrics": {
+    "availableHours": "الساعات المتاحة هذا الأسبوع",
+    "walletBalance": "رصيد المحفظة",
+    "bookingsInProgress": "الحجوزات الجارية",
+    "conversionRate": "معدل التحويل"
+  },
+  "bookings": {
+    "title": "تقدم الحجز",
+    "checklistTitle": "قائمة الإنجاز",
+    "checklistEyebrow": "مسار الحجز",
+    "reserved": "محجوز",
+    "confirmed": "مؤكد",
+    "completed": "مكتمل"
+  },
+  "security": {
+    "title": "حالة الأمان",
+    "description": "راجع إعدادات أمان حسابك."
+  },
+  "ratings": {
+    "title": "تفاصيل التقييم",
+    "description": "متوسط التقييمات لكل معيار عبر مراجعاتك الأخيرة.",
+    "communication": "التواصل",
+    "expertise": "الخبرة",
+    "timeliness": "الالتزام بالوقت",
+    "value": "القيمة",
+    "clarity": "الوضوح"
+  },
+  "pricing": {
+    "title": "حاسبة الرسوم",
+    "description": "احسب صافي أرباحك بعد رسوم المنصة والشبكة.",
+    "platformFee": "رسوم المنصة",
+    "networkFee": "رسوم الشبكة",
+    "takeHome": "صافي الأرباح"
+  },
+  "quickActions": {
+    "title": "إجراءات سريعة",
+    "listSlot": "إضافة فترة جديدة",
+    "listSlotDesc": "افتح فترة توفر جديدة بالتسعير الافتراضي.",
+    "reviewWallet": "مراجعة المحفظة",
+    "reviewWalletDesc": "تحقق من مواعيد الدفع والضمان والتحويلات المعلقة.",
+    "confirmBookings": "تأكيد الحجوزات",
+    "confirmBookingsDesc": "اعرض الطلبات الثلاثة التي تنتظر موافقتك."
+  },
+  "slots": {
+    "title": "الفترات الزمنية المتاحة",
+    "statusHealthy": "متاح",
+    "statusTight": "محدود",
+    "statusBusy": "مشغول",
+    "statusSoldOut": "نفد",
+    "nextAvailable": "أقرب موعد متاح",
+    "interestedBuyers": "مشترون مهتمون",
+    "openOffers": "عروض مفتوحة",
+    "waitlistEnabled": "قائمة الانتظار مفعّلة",
+    "soldOut": "نفد"
+  },
+  "trust": {
+    "title": "مؤشرات الثقة",
+    "description": "وقت الاستجابة ومعدل قبول الحجوزات خلال آخر 30 يوماً.",
+    "responseTime": "وقت الاستجابة",
+    "acceptanceRate": "معدل القبول",
+    "responseTimeTooltip": "الوقت الوسيط بين استلام طلب الحجز والرد عليه. الأقل أفضل.",
+    "acceptanceRateTooltip": "نسبة طلبات الحجز التي قبلتها خلال آخر 30 يوماً.",
+    "min": "دقيقة"
+  },
+  "onboarding": {
+    "title": "مرحباً بك في ChronoPay",
+    "description": "ابدأ بإعداد أول فترة زمنية لك.",
+    "skipTour": "تخطي الجولة",
+    "clearSamples": "مسح العينات",
+    "dismiss": "إغلاق"
+  },
+  "kyc": {
+    "title": "التحقق من الهوية",
+    "subtitle": "تحقق من هويتك لفتح الوصول الكامل إلى السوق."
+  },
+  "mfa": {
+    "title": "المصادقة الثنائية",
+    "enable": "تفعيل",
+    "enabled": "مفعّلة",
+    "disabled": "معطّلة",
+    "enrollTitle": "إعداد المصادقة الثنائية"
+  },
+  "export": {
+    "title": "تصدير السجل",
+    "download": "تنزيل",
+    "dateRange": "النطاق الزمني"
+  },
+  "localePicker": {
+    "label": "محدد اللغة"
+  },
+  "a11y": {
+    "helpTrigger": "مساعدة: ماذا يعني {term}؟"
+  }
+}

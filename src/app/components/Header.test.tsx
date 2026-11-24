@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Header } from "./Header";
+import { I18nProvider } from "@/lib/i18n";
 import { ToastProvider } from "@/hooks/use-toast";
 import { NotificationsProvider } from "@/components/dashboard/notifications/notifications-provider";
 
@@ -207,5 +208,35 @@ describe("Header notification bell", () => {
     for (const bell of bells) {
       expect(bell).toHaveAttribute("href", "/dashboard/notifications");
     }
+  });
+});
+
+describe("Header locale picker", () => {
+  it("renders LocalePicker in desktop header and mobile drawer, and switches to Arabic RTL", () => {
+    render(
+      <I18nProvider locale="en">
+        <Header />
+      </I18nProvider>,
+    );
+
+    const desktopPicker = screen.getByRole("combobox", {
+      name: /language selector/i,
+    });
+    expect(desktopPicker).toHaveValue("en");
+
+    fireEvent.change(desktopPicker, { target: { value: "ar" } });
+
+    expect(document.documentElement.lang).toBe("ar");
+    expect(document.documentElement.dir).toBe("rtl");
+    expect(document.cookie).toContain("locale=ar");
+    expect(screen.getByText("الرئيسية")).toBeInTheDocument();
+    expect(screen.getByText("لوحة التحكم")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "فتح قائمة التنقل" }),
+    );
+    const pickers = screen.getAllByRole("combobox", { name: "محدد اللغة" });
+    expect(pickers).toHaveLength(2);
+    expect(pickers[1]).toHaveValue("ar");
   });
 });

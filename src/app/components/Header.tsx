@@ -4,13 +4,16 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { WalletStatusBadge } from "./WalletStatusBadge";
 import { AccountMenu } from "./AccountMenu";
+import LocalePicker from "./ui/locale-picker";
 import { ThemeSwitcher } from "@/components/dashboard/theme-switcher";
 import { NotificationBell } from "@/components/dashboard/notifications/notification-bell";
+import { useMessages } from "@/lib/i18n";
 import { REPO_URL } from "@/lib/site-links";
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const t = useMessages();
 
   useEffect(() => {
     if (!open) return;
@@ -41,7 +44,7 @@ export function Header() {
               className="text-lg font-semibold tracking-tight"
               style={{ color: "var(--foreground)" }}
             >
-              ChronoPay
+              {t("home.title")}
             </Link>
             <div
               className="hidden sm:flex flex-wrap items-center gap-3 text-sm"
@@ -52,35 +55,35 @@ export function Header() {
                 className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
                 style={{ color: "var(--foreground)" }}
               >
-                Home
+                {t("nav.home")}
               </Link>
               <Link
                 href="/dashboard"
                 className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
                 style={{ color: "var(--foreground)" }}
               >
-                Dashboard
+                {t("nav.dashboard")}
               </Link>
               <Link
                 href="/marketplace"
                 className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
                 style={{ color: "var(--foreground)" }}
               >
-                Marketplace
+                {t("nav.marketplace")}
               </Link>
               <Link
                 href="/pricing"
                 className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
                 style={{ color: "var(--foreground)" }}
               >
-                Pricing
+                {t("nav.pricing")}
               </Link>
               <Link
                 href="/status"
                 className="rounded-full px-3 py-2 hover:bg-slate-500/10 transition duration-200 ease-in-out"
                 style={{ color: "var(--foreground)" }}
               >
-                Status
+                {t("nav.status")}
               </Link>
               <a
                 href="https://stellar.org"
@@ -89,7 +92,7 @@ export function Header() {
                 className="rounded-full border border-slate-400/20 px-3 py-2 hover:border-slate-400/40 hover:bg-slate-500/10 transition duration-200 ease-in-out"
                 style={{ color: "var(--foreground)" }}
               >
-                Stellar
+                {t("nav.stellar")}
               </a>
               <a
                 href={REPO_URL}
@@ -98,12 +101,13 @@ export function Header() {
                 className="rounded-full border border-slate-400/20 px-3 py-2 hover:border-slate-400/40 hover:bg-slate-500/10 transition duration-200 ease-in-out"
                 style={{ color: "var(--foreground)" }}
               >
-                GitHub
+                {t("nav.github")}
               </a>
             </div>
           </div>
 
           <div className="hidden sm:flex flex-wrap items-center gap-3">
+            <LocalePicker />
             <NotificationBell />
             <ThemeSwitcher />
             <WalletStatusBadge />
@@ -120,9 +124,9 @@ export function Header() {
             onClick={() => setOpen(true)}
             aria-expanded={open}
             aria-controls="mobile-menu"
-            aria-label="Open navigation menu"
+            aria-label={t("nav.openMenu")}
           >
-            Menu
+            {t("nav.menu")}
           </button>
         </nav>
       </header>
@@ -150,10 +154,10 @@ export function Header() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.24em]" style={{ color: "var(--muted)" }}>
-                  Menu
+                  {t("nav.menu")}
                 </p>
                 <h2 className="mt-2 text-xl font-semibold" style={{ color: "var(--foreground)" }}>
-                  ChronoPay
+                  {t("home.title")}
                 </h2>
               </div>
               <button
@@ -165,9 +169,9 @@ export function Header() {
                   color: "var(--foreground)",
                 }}
                 onClick={() => setOpen(false)}
-                aria-label="Close navigation menu"
+                aria-label={t("nav.closeMenu")}
               >
-                Close
+                {t("nav.close")}
               </button>
             </div>
 
@@ -182,7 +186,7 @@ export function Header() {
                 }}
                 onClick={() => setOpen(false)}
               >
-                Home
+                {t("nav.home")}
               </Link>
               <Link
                 href="/dashboard"
@@ -194,7 +198,7 @@ export function Header() {
                 }}
                 onClick={() => setOpen(false)}
               >
-                Dashboard
+                {t("nav.dashboard")}
               </Link>
               <Link
                 href="/marketplace"
@@ -206,7 +210,7 @@ export function Header() {
                 }}
                 onClick={() => setOpen(false)}
               >
-                Marketplace
+                {t("nav.marketplace")}
               </Link>
               <Link
                 href="/pricing"
@@ -218,7 +222,7 @@ export function Header() {
                 }}
                 onClick={() => setOpen(false)}
               >
-                Pricing
+                {t("nav.pricing")}
               </Link>
               <Link
                 href="/status"
@@ -230,7 +234,7 @@ export function Header() {
                 }}
                 onClick={() => setOpen(false)}
               >
-                Status
+                {t("nav.status")}
               </Link>
               <a
                 href="https://stellar.org"
@@ -244,7 +248,7 @@ export function Header() {
                 }}
                 onClick={() => setOpen(false)}
               >
-                Stellar
+                {t("nav.stellar")}
               </a>
               <a
                 href={REPO_URL}
@@ -258,11 +262,12 @@ export function Header() {
                 }}
                 onClick={() => setOpen(false)}
               >
-                GitHub
+                {t("nav.github")}
               </a>
             </div>
 
             <div className="mt-6 space-y-4">
+              <LocalePicker />
               <NotificationBell />
               <ThemeSwitcher />
               <WalletStatusBadge />

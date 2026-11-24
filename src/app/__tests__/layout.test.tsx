@@ -6,10 +6,14 @@ import { DEMO_URL } from '@/lib/site-links';
 import { vi } from 'vitest';
 
 const mockHeadersGet = vi.fn<(name: string) => string | null>(() => 'test-nonce-123');
+const mockCookiesGet = vi.fn<(name: string) => { name: string; value: string } | undefined>(() => undefined);
 
 vi.mock('next/headers', () => ({
   headers: vi.fn(async () => ({
     get: mockHeadersGet,
+  })),
+  cookies: vi.fn(async () => ({
+    get: mockCookiesGet,
   })),
 }));
 
@@ -25,7 +29,17 @@ vi.mock('@/app/components/navigation/RoleContext', () => ({
   RoleProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="role-provider">{children}</div>,
 }));
 vi.mock('@/lib/i18n', () => ({
-  I18nProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="i18n-provider">{children}</div>,
+  I18nProvider: ({
+    children,
+    locale,
+  }: {
+    children: React.ReactNode;
+    locale?: string;
+  }) => (
+    <div data-testid="i18n-provider" data-locale={locale ?? 'en'}>
+      {children}
+    </div>
+  ),
 }));
 
 describe('RootLayout', () => {
@@ -106,6 +120,7 @@ describe('RootLayout', () => {
 
     it('handles missing or empty children gracefully (boundary behavior)', async () => {
       mockHeadersGet.mockReturnValue(null);
+      mockCookiesGet.mockReturnValue(undefined);
 
       const ui = await RootLayout({
         children: null,
@@ -115,6 +130,37 @@ describe('RootLayout', () => {
       const htmlElement = container.querySelector('html') || document.querySelector('html');
       expect(htmlElement).not.toBeNull();
       expect(htmlElement).toHaveAttribute('lang', 'en');
+      expect(htmlElement).toHaveAttribute('dir', 'ltr');
+    });
+
+    it('sets lang="ar" and dir="rtl" when the locale cookie is "ar"', async () => {
+      mockHeadersGet.mockReturnValue('test-nonce-123');
+      mockCookiesGet.mockReturnValue({ name: 'locale', value: 'ar' });
+
+      const ui = await RootLayout({
+        children: <div data-testid="child-content">Content</div>,
+      });
+      const { container, getByTestId } = render(ui);
+
+      const htmlElement = container.querySelector('html') || document.querySelector('html');
+      expect(htmlElement).toHaveAttribute('lang', 'ar');
+      expect(htmlElement).toHaveAttribute('dir', 'rtl');
+      expect(getByTestId('i18n-provider')).toHaveAttribute('data-locale', 'ar');
+    });
+
+    it('falls back to lang="en" and dir="ltr" when the locale cookie is unsupported', async () => {
+      mockHeadersGet.mockReturnValue('test-nonce-123');
+      mockCookiesGet.mockReturnValue({ name: 'locale', value: 'xx' });
+
+      const ui = await RootLayout({
+        children: <div data-testid="child-content">Content</div>,
+      });
+      const { container, getByTestId } = render(ui);
+
+      const htmlElement = container.querySelector('html') || document.querySelector('html');
+      expect(htmlElement).toHaveAttribute('lang', 'en');
+      expect(htmlElement).toHaveAttribute('dir', 'ltr');
+      expect(getByTestId('i18n-provider')).toHaveAttribute('data-locale', 'en');
     });
   });
 });
