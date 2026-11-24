@@ -4,9 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useId,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -51,21 +51,56 @@ export function readPersistedNetwork(): StellarNetwork {
   return "mainnet";
 }
 
+const networkListeners = new Set<() => void>();
+let fallbackNetwork: StellarNetwork | null = null;
+
+function subscribeToNetwork(listener: () => void): () => void {
+  networkListeners.add(listener);
+  if (typeof window === "undefined") {
+    return () => {
+      networkListeners.delete(listener);
+    };
+  }
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEY || event.key === null) {
+      listener();
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    networkListeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function getNetworkSnapshot(): StellarNetwork {
+  if (typeof window === "undefined") return "mainnet";
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw === "mainnet" || raw === "testnet") return raw;
+  } catch {
+    if (fallbackNetwork !== null) return fallbackNetwork;
+  }
+  return "mainnet";
+}
+
+function getServerNetworkSnapshot(): StellarNetwork {
+  return "mainnet";
+}
+
 /**
  * Provider that reads the initial network from localStorage and keeps it
  * in sync. Wrap near the app root or the checkout subtree.
  */
 export function NetworkProvider({ children }: { children: ReactNode }) {
-  const [network, setNetworkState] = useState<StellarNetwork>("mainnet");
-
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setNetworkState(readPersistedNetwork());
-  }, []);
+  const network = useSyncExternalStore(
+    subscribeToNetwork,
+    getNetworkSnapshot,
+    getServerNetworkSnapshot,
+  );
 
   const setNetwork = useCallback((next: StellarNetwork) => {
-    setNetworkState(next);
+    fallbackNetwork = next;
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(STORAGE_KEY, next);
@@ -73,6 +108,7 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
         // localStorage may be unavailable
       }
     }
+    networkListeners.forEach((listener) => listener());
   }, []);
 
   return (
