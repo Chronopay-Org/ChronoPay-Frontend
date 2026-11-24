@@ -18,7 +18,7 @@ Web app for **ChronoPay**, a time-economy marketplace on the Stellar network: su
 
 ## Quickstart
 
-Requires Node.js 20+ (CI uses 22).
+Requires Node.js 20.9+ (CI uses 22; `.nvmrc` pins 22).
 
 ```bash
 npm install
