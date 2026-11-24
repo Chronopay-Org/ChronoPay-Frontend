@@ -29,7 +29,7 @@ function normalizeItem(item: RecentlyViewedItem): RecentlyViewedItem {
 }
 
 function normalizeItems(items: RecentlyViewedItem[]): RecentlyViewedItem[] {
-  return items.map(normalizeItem);
+  return items.slice(0, MAX_ITEMS).map(normalizeItem);
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────────

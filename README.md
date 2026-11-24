@@ -42,7 +42,11 @@ npm run dev      # http://localhost:3000
 
 ## Environment variables
 
-None are required to run the demo.
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | Optional base URL for the typed API client. Leave unset to use relative API paths. |
+
+Marketplace listings, admin users, and dashboard notifications use mock data by default. To connect a backend, wrap the application with `ApiSourcesProvider` from `src/lib/api/provider.tsx` and pass the fetch-backed `fetchSources` from `src/lib/api/sources.ts`. Components continue consuming the same typed hooks; the fetch source requests `/listings`, `/users`, and `/notifications` relative to the configured API base URL.
 
 ## Deploy
 

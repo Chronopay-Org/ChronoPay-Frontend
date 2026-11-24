@@ -1,18 +1,22 @@
 import { createElement } from "react";
 import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, act, fireEvent, waitFor, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Marketplace from "./page";
 import { seedItems } from "./catalogue";
 
 // Mock next/navigation
+let currentSearch = "";
 const mockSearchParams = {
-  get: vi.fn(() => null),
+  get: vi.fn((key: string) => new URLSearchParams(currentSearch).get(key)),
   entries: vi.fn(function* () {}),
-  toString: vi.fn(() => ""),
+  toString: vi.fn(() => currentSearch),
 };
 
 const mockRouter = {
-  replace: vi.fn(),
+  replace: vi.fn((href: string) => {
+    currentSearch = href.split("?")[1] ?? "";
+  }),
   push: vi.fn(),
   back: vi.fn(),
 };
@@ -47,7 +51,11 @@ describe("Marketplace Page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    mockSearchParams.get.mockReturnValue(null);
+    currentSearch = "";
+    mockSearchParams.get.mockImplementation((key: string) =>
+      new URLSearchParams(currentSearch).get(key),
+    );
+    mockSearchParams.toString.mockImplementation(() => currentSearch);
   });
 
   afterEach(() => {
@@ -62,13 +70,14 @@ describe("Marketplace Page", () => {
 
     // Wait for seeding to complete (if any) or just wait for items to render
     await waitFor(() => {
-      const items = screen.getAllByRole("listitem");
+      const items = within(screen.getByTestId("marketplace-grid")).getAllByRole("listitem");
       expect(items.length).toBe(24);
     });
   });
 
   it("changes the number of visible items when page size is changed", async () => {
     render(<Marketplace />);
+    const grid = await screen.findByTestId("marketplace-grid");
 
     const option12 = screen.getByRole("radio", { name: /^12 results per page/i });
 
@@ -77,7 +86,7 @@ describe("Marketplace Page", () => {
     });
 
     await waitFor(() => {
-      const items = screen.getAllByRole("listitem");
+      const items = within(grid).getAllByRole("listitem");
       expect(items.length).toBe(12);
     });
   });
@@ -151,17 +160,19 @@ describe("Marketplace Page", () => {
   });
 
   it("handles invalid page size in URL gracefully", () => {
+  it("handles invalid page size in URL gracefully", async () => {
     // Return an invalid page size
     mockSearchParams.get.mockReturnValue("invalid");
 
     render(<Marketplace />);
 
     // Should fallback to default 24
-    const items = screen.getAllByRole("listitem");
+    const grid = await screen.findByTestId("marketplace-grid");
+    const items = within(grid).getAllByRole("listitem");
     expect(items.length).toBe(24);
   });
 
-  it("renders without crashing if localStorage is disabled or throws", () => {
+  it("renders without crashing if localStorage is disabled or throws", async () => {
     const storageSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error("Storage disabled");
     });
@@ -169,7 +180,8 @@ describe("Marketplace Page", () => {
     render(<Marketplace />);
 
     expect(screen.getByText("Marketplace")).toBeInTheDocument();
-    const items = screen.getAllByRole("listitem");
+    const grid = await screen.findByTestId("marketplace-grid");
+    const items = within(grid).getAllByRole("listitem");
     expect(items.length).toBe(24);
 
     storageSpy.mockRestore();
@@ -178,7 +190,8 @@ describe("Marketplace Page", () => {
   it("links each card to its detail route and records it in recently viewed", async () => {
     render(<Marketplace />);
 
-    const items = await screen.findAllByRole("listitem");
+    const grid = await screen.findByTestId("marketplace-grid");
+    const items = within(grid).getAllByRole("listitem");
     expect(items.length).toBe(24);
 
     const firstItem = items[0];
@@ -196,7 +209,7 @@ describe("Marketplace Page", () => {
     });
 
     await waitFor(() => {
-      const stored = localStorage.getItem("chronopay-marketplace-recently-viewed");
+      const stored = localStorage.getItem("chronopay-recently-viewed");
       expect(stored).toBeTruthy();
       const parsed = JSON.parse(stored as string);
       expect(Array.isArray(parsed)).toBe(true);
