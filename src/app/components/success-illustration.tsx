@@ -80,7 +80,7 @@ export function SuccessIllustration({ variant, alt }: SuccessIllustrationProps) 
 
       {/* Accent label */}
       <div
-        className="absolute left-5 top-5 rounded-full border px-3 py-1 text-[var(--font-size-xs)] font-[var(--font-weight-semibold)] uppercase tracking-[0.22em]"
+        className="absolute start-5 top-5 rounded-full border px-3 py-1 text-[var(--font-size-xs)] font-[var(--font-weight-semibold)] uppercase tracking-[0.22em]"
         style={{
           color: "var(--success)",
           backgroundColor: "rgba(52, 211, 153, 0.12)",

@@ -27,10 +27,23 @@
  */
 
 import { useState, useId } from "react";
+import dynamic from "next/dynamic";
 import clsx from "clsx";
 import { ImageOff } from "lucide-react";
 import { PanelShell } from "./panel-shell";
-import { Lightbox, type LightboxImage } from "./lightbox";
+import type { LightboxImage } from "./lightbox";
+
+const Lightbox = dynamic(
+  () => import("./lightbox").then((module) => module.Lightbox),
+  {
+    ssr: false,
+    loading: () => (
+      <div role="status" aria-live="polite" className="fixed inset-0 z-50 grid place-items-center bg-slate-950/90 px-4 text-sm text-slate-200">
+        Loading image viewer…
+      </div>
+    ),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -203,12 +216,14 @@ export function PortfolioGallery({
       )}
 
       {/* Lightbox */}
-      <Lightbox
-        images={images}
-        currentIndex={lightboxIndex}
-        onClose={closeLightbox}
-        onNavigate={setLightboxIndex}
-      />
+      {lightboxIndex !== null ? (
+        <Lightbox
+          images={images}
+          currentIndex={lightboxIndex}
+          onClose={closeLightbox}
+          onNavigate={setLightboxIndex}
+        />
+      ) : null}
     </>
   );
 

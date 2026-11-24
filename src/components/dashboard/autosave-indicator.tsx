@@ -334,7 +334,7 @@ export function AutosaveIndicator({
         >
           Last saved: {formatExactTimestamp(lastSavedAt)}
           <span
-            className="absolute -top-1 start-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-l border-t border-zinc-600 bg-zinc-800"
+            className="absolute -top-1 start-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-s border-t border-zinc-600 bg-zinc-800"
             aria-hidden="true"
           />
         </span>

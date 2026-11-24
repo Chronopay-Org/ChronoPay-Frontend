@@ -186,7 +186,7 @@ export function SupplierCard({
               {title ? <p className="text-slate-400 text-sm truncate" title={title}>{title}</p> : null}
             </div>
             {priceFloor ? (
-              <div className="text-right shrink-0">
+              <div className="text-end shrink-0">
                 <span className="text-xs text-slate-400">from</span>
                 <div className="font-semibold text-white">{priceFloor}</div>
               </div>

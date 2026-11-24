@@ -36,6 +36,10 @@ export default defineConfig({
         "src/components/dashboard/rebooking-utils.ts",
         "src/components/dashboard/rebooking-dialog.tsx",
         "src/components/dashboard/slot-list.tsx",
+        "src/hooks/use-theme.ts",
+        "src/lib/markdown.ts",
+        "src/lib/formatters.ts",
+        "src/lib/qr.ts",
       ],
       thresholds: {
         lines: 95,

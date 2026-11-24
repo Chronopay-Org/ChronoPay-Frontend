@@ -148,7 +148,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
       <nav
         aria-label="Mobile bottom navigation"
         className={[
-          "fixed bottom-0 left-0 right-0 z-30 sm:hidden",
+          "fixed bottom-0 start-0 end-0 z-30 sm:hidden",
           "bg-slate-900 text-slate-100",
           "flex items-stretch justify-around",
           "shadow-[0_-1px_0_rgba(255,255,255,0.08)]",
@@ -240,7 +240,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
               aria-modal="true"
               aria-labelledby="overflow-sheet-title"
               className={[
-                "absolute bottom-0 left-0 right-0",
+                "absolute bottom-0 start-0 end-0",
                 "bg-slate-900 text-slate-100",
                 "rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.4)]",
                 "pb-[env(safe-area-inset-bottom)]",
@@ -323,7 +323,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
                         </span>
                         <span className="text-sm font-medium">{item.label}</span>
                         {isActive && (
-                          <span className="ml-auto text-xs text-cyan-400">Current</span>
+                          <span className="ms-auto text-xs text-cyan-400">Current</span>
                         )}
                       </Link>
 
@@ -337,7 +337,7 @@ export function BottomNavOverflow({ items, role, className = "" }: BottomNavOver
                         aria-pressed={isPinned}
                         onClick={() => togglePin(item)}
                         className={[
-                          "mr-2 rounded-lg p-2",
+                          "me-2 rounded-lg p-2",
                           "min-h-[44px] min-w-[44px] flex items-center justify-center",
                           "focus-visible:outline-none focus-visible:ring-2",
                           "focus-visible:ring-cyan-400 focus-visible:ring-offset-2",

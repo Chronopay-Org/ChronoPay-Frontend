@@ -104,6 +104,27 @@ describe("DashboardShell", () => {
     expect(screen.getByText("Page content")).toBeInTheDocument();
   });
 
+  it("loads persisted queued actions into the offline queue indicator", async () => {
+    window.localStorage.setItem(
+      "chronopay:offline-queue",
+      JSON.stringify([
+        {
+          id: "persisted-action",
+          executorId: "save-booking",
+          label: "Save booking",
+          status: "pending",
+          queuedAt: new Date().toISOString(),
+        },
+      ]),
+    );
+    renderShell();
+
+    const indicator = screen.getByRole("button", { name: /online/i });
+    expect(indicator).toHaveTextContent("1");
+    fireEvent.click(indicator);
+    expect(await screen.findByText("Save booking")).toBeInTheDocument();
+  });
+
   it("renders a skip-to-content target with id main-content", () => {
     renderShell();
     expect(document.getElementById("main-content")).toBeInTheDocument();

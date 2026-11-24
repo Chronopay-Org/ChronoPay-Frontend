@@ -446,7 +446,7 @@ export const AvailabilityConflictDetector: React.FC<AvailabilityConflictDetector
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Stepper if multiple conflicts exist */}
           {activeConflicts.length > 1 && (
-            <div className="flex items-center gap-1 mr-1 text-xs text-slate-400" role="group" aria-label="Conflict pagination">
+            <div className="flex items-center gap-1 me-1 text-xs text-slate-400" role="group" aria-label="Conflict pagination">
               <button
                 type="button"
                 onClick={handlePrev}
@@ -454,7 +454,7 @@ export const AvailabilityConflictDetector: React.FC<AvailabilityConflictDetector
                 aria-label="Previous conflict"
                 className="rounded-lg border border-white/10 bg-white/5 p-1 text-slate-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
               >
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                <ChevronLeft className="icon-directional h-4 w-4" aria-hidden="true" />
               </button>
               <span className="px-1 text-slate-300 font-medium">
                 {activeConflictIndex + 1}/{activeConflicts.length}
@@ -466,7 +466,7 @@ export const AvailabilityConflictDetector: React.FC<AvailabilityConflictDetector
                 aria-label="Next conflict"
                 className="rounded-lg border border-white/10 bg-white/5 p-1 text-slate-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
               >
-                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                <ChevronRight className="icon-directional h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           )}
@@ -486,7 +486,7 @@ export const AvailabilityConflictDetector: React.FC<AvailabilityConflictDetector
       {/* Collision Details Breakdown */}
       <div className="mt-4 rounded-xl border border-white/10 bg-slate-900/60 p-3.5 space-y-2.5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="space-y-1 border-b sm:border-b-0 sm:border-r border-white/10 pb-2 sm:pb-0 sm:pr-3">
+          <div className="space-y-1 border-b sm:border-b-0 sm:border-e border-white/10 pb-2 sm:pb-0 sm:pe-3">
             <span className="font-semibold text-rose-300 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-rose-400" aria-hidden="true" />
               New Incoming Block
@@ -533,7 +533,7 @@ export const AvailabilityConflictDetector: React.FC<AvailabilityConflictDetector
             type="button"
             onClick={() => handleResolve("shift")}
             aria-label={`Shift block to ${currentConflict.suggestedShiftTimeRange ?? "next open slot"}`}
-            className="group flex flex-col items-start justify-between rounded-xl border border-cyan-400/30 bg-cyan-950/40 p-3 text-left transition-all hover:border-cyan-400 hover:bg-cyan-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="group flex flex-col items-start justify-between rounded-xl border border-cyan-400/30 bg-cyan-950/40 p-3 text-start transition-all hover:border-cyan-400 hover:bg-cyan-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
           >
             <div className="flex items-center gap-2 text-cyan-300 font-semibold text-xs group-hover:text-cyan-200">
               <Clock className="h-4 w-4 shrink-0 text-cyan-400" aria-hidden="true" />
@@ -551,7 +551,7 @@ export const AvailabilityConflictDetector: React.FC<AvailabilityConflictDetector
             type="button"
             onClick={() => handleResolve("split")}
             aria-label={`Split block around ${currentConflict.collidingTitle}`}
-            className="group flex flex-col items-start justify-between rounded-xl border border-amber-400/30 bg-amber-950/40 p-3 text-left transition-all hover:border-amber-400 hover:bg-amber-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+            className="group flex flex-col items-start justify-between rounded-xl border border-amber-400/30 bg-amber-950/40 p-3 text-start transition-all hover:border-amber-400 hover:bg-amber-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
           >
             <div className="flex items-center gap-2 text-amber-300 font-semibold text-xs group-hover:text-amber-200">
               <Scissors className="h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
@@ -569,7 +569,7 @@ export const AvailabilityConflictDetector: React.FC<AvailabilityConflictDetector
             type="button"
             onClick={() => handleResolve("cancel")}
             aria-label={`Cancel incoming block ${currentConflict.incomingBlockTitle}`}
-            className="group flex flex-col items-start justify-between rounded-xl border border-rose-400/30 bg-rose-950/40 p-3 text-left transition-all hover:border-rose-400 hover:bg-rose-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+            className="group flex flex-col items-start justify-between rounded-xl border border-rose-400/30 bg-rose-950/40 p-3 text-start transition-all hover:border-rose-400 hover:bg-rose-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
           >
             <div className="flex items-center gap-2 text-rose-300 font-semibold text-xs group-hover:text-rose-200">
               <XCircle className="h-4 w-4 shrink-0 text-rose-400" aria-hidden="true" />

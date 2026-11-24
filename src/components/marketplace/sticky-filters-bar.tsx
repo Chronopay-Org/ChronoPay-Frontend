@@ -185,7 +185,7 @@ export function StickyFiltersBar({
               <div className="relative flex-1 overflow-hidden">
                 {/* Left fade */}
                 {showLeftFade && (
-                  <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-slate-950 to-transparent z-10" />
+                  <div className="pointer-events-none absolute inset-y-0 start-0 w-6 bg-gradient-to-r from-slate-950 to-transparent z-10" />
                 )}
 
                 <div
@@ -198,21 +198,21 @@ export function StickyFiltersBar({
                     <span
                       key={filter.id}
                       role="listitem"
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-cyan-200/20 bg-cyan-400/10 pl-2.5 pr-1 py-0.5 text-xs font-medium text-cyan-300"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-cyan-200/20 bg-cyan-400/10 ps-2.5 pe-1 py-0.5 text-xs font-medium text-cyan-300"
                     >
                       <span className="truncate max-w-[120px]">{filter.label}</span>
                       {filter.count !== undefined && (
                         <FacetCountBadge
                           count={filter.count}
                           tone="active"
-                          className="ml-0.5"
+                          className="ms-0.5"
                         />
                       )}
                       <button
                         type="button"
                         aria-label={`Remove filter: ${filter.label}`}
                         onClick={() => onRemoveFilter(filter.id)}
-                        className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-cyan-400/60 transition-colors hover:bg-cyan-400/20 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
+                        className="ms-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-cyan-400/60 transition-colors hover:bg-cyan-400/20 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
                       >
                         <svg viewBox="0 0 10 10" fill="none" aria-hidden="true" className="h-2.5 w-2.5">
                           <path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -224,7 +224,7 @@ export function StickyFiltersBar({
 
                 {/* Right fade */}
                 {showRightFade && (
-                  <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-slate-950 to-transparent z-10" />
+                  <div className="pointer-events-none absolute inset-y-0 end-0 w-6 bg-gradient-to-l from-slate-950 to-transparent z-10" />
                 )}
               </div>
 

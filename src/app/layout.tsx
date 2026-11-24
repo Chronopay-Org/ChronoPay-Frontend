@@ -1,15 +1,36 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { Header } from "./components/Header";
 import { ToastProvider } from "@/hooks/use-toast";
+import { NotificationsProvider } from "@/components/dashboard/notifications/notifications-provider";
 import { ToastContainer } from "@/app/components/ui/toast-container";
 import { RoleProvider } from "@/app/components/navigation/RoleContext";
 import { I18nProvider } from "@/lib/i18n";
 import { SiteFooter } from "@/app/components/SiteFooter";
+import { DEMO_URL } from "@/lib/site-links";
+
+const SITE_TITLE = "ChronoPay - Time Economy";
+const SITE_DESCRIPTION = "Tokenize and trade human time on the Stellar network.";
 
 export const metadata: Metadata = {
-  title: "ChronoPay - Time Economy",
-  description: "Tokenize and trade human time on the Stellar network.",
+  metadataBase: new URL(DEMO_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#07111f",
 };
 
 /** Runs before React hydrates to set the theme and avoid FOUC. */
@@ -38,11 +59,12 @@ export const themeInitScript = `
 })();
 `;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   // Determine text direction from locale (defaults to LTR)
   const dir = "ltr"; // TODO: Make dynamic based on locale cookie/header
   const lang = "en"; // TODO: Make dynamic based on locale selection
@@ -51,6 +73,7 @@ export default function RootLayout({
     <html lang={lang} dir={dir} suppressHydrationWarning>
       <head>
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: themeInitScript,
           }}
@@ -58,27 +81,23 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col antialiased">
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `(function(){try{}catch(e){};try{var d=localStorage.getItem('chronopay-density');if(d==='comfortable'||d==='balanced'||d==='compact')document.documentElement.dataset.density=d;}catch(e){}})();`,
           }}
         />
 
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:inset-inline-start-4 focus:top-4 focus:z-50 focus:rounded focus:bg-cyan-500 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-        >
-          Skip to content
-        </a>
-
         <ToastProvider>
-          <I18nProvider>
-            <RoleProvider initialRole="buyer">
-              <Header />
-              {children}
-              <SiteFooter />
-              <ToastContainer />
-            </RoleProvider>
-          </I18nProvider>
+          <NotificationsProvider>
+            <I18nProvider>
+              <RoleProvider initialRole="buyer">
+                <Header />
+                {children}
+                <SiteFooter />
+                <ToastContainer />
+              </RoleProvider>
+            </I18nProvider>
+          </NotificationsProvider>
         </ToastProvider>
       </body>
     </html>

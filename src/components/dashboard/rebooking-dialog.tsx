@@ -384,7 +384,7 @@ export function RebookingDialog({
               {priceText}
             </span>
           ) : null}
-          <StatusChip tone="warning" className="ml-auto">
+          <StatusChip tone="warning" className="ms-auto">
             Cancelled
           </StatusChip>
         </div>

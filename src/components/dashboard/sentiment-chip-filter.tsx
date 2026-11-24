@@ -289,7 +289,7 @@ export function SentimentChipFilter({
               <span
                 aria-hidden="true"
                 className={clsx(
-                  "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums",
+                  "ms-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums",
                   isActive
                     ? "bg-white/20 text-white"
                     : "bg-white/8 text-slate-400",

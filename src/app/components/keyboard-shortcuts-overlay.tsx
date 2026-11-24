@@ -7,41 +7,11 @@
  * available in the ChronoPay dashboard. Addresses issue #315: "Design a
  * keyboard shortcut overlay searchable command index".
  *
- * Behaviour
- * ─────────
- * - Opened via the "Keyboard shortcuts" button in the dashboard header, or the
- *   global Ctrl+/ shortcut registered in `dashboard-shell.tsx`.
- * - A search box filters shortcuts by description or key label as the user
- *   types.
- * - Category filter chips (All / Navigation / Search / Actions / General)
- *   narrow the list further; search and category combine (AND).
- * - Arrow Up/Down move a roving highlight through the visible results
- *   (`aria-activedescendant`), so keyboard users can scan matches without
- *   leaving the search field. The first result is highlighted automatically
- *   whenever the result set changes.
- * - No matches renders a descriptive empty state instead of an empty list.
- *
- * Accessibility (WCAG 2.1 AA)
- * ───────────────────────────
- * - `role="dialog"` `aria-modal="true"` `aria-labelledby` on the panel.
- * - `FocusTrap` keeps Tab/Shift+Tab cycling inside the dialog while open, and
- *   restores focus to the previously-focused element (the trigger) on close.
- * - Escape closes the dialog.
- * - Category chips are a `role="group"` with `aria-pressed` per chip and
- *   arrow-key roving focus (Left/Right/Home/End), matching the
- *   `SentimentChipFilter` convention used elsewhere in the dashboard.
- * - Search input uses the combobox/listbox pattern (`aria-controls`,
- *   `aria-activedescendant`, `aria-expanded`) consistent with `HeaderSearch`
- *   and `AccountSwitcher`.
- * - Result count and filter changes are announced via a polite live region.
- * - Colour is never the only differentiator — the active chip and highlighted
- *   row both carry a border/background change plus retained text contrast.
- *
- * Responsive
- * ──────────
- * - Panel is a centered, max-width dialog on desktop and a full-width sheet
- *   with safe margins on narrow viewports; chips wrap; the list scrolls
- *   independently of the header/search/chip row.
+ * Data source
+ * ───────────
+ * All shortcut data comes from `KEYBOARD_SHORTCUTS` in `@/lib/keyboard-shortcuts`,
+ * which is the single source of truth shared with `SHORTCUT_GROUPS` in
+ * `@/lib/shortcuts`. Do not duplicate bindings in this component.
  */
 
 import {
@@ -97,10 +67,7 @@ export function KeyboardShortcutsOverlay({
   );
 
   // Reset the roving highlight whenever the result set changes so the first
-  // match is always the active one ("focus first result"). Adjusting state
-  // during render (guarded by a snapshot of the previous key in state) is
-  // the documented React pattern and avoids the extra render + cascading
-  // update that doing this in an effect would cause.
+  // match is always the active one.
   const resultsKey = `${category}|${query}`;
   const [lastResultsKey, setLastResultsKey] = useState(resultsKey);
   if (lastResultsKey !== resultsKey) {
@@ -108,8 +75,7 @@ export function KeyboardShortcutsOverlay({
     if (activeIndex !== 0) setActiveIndex(0);
   }
 
-  // Reset transient state each time the dialog transitions from closed to
-  // open. Same render-time-adjustment pattern as above.
+  // Reset transient state each time the dialog transitions from closed to open.
   const [wasOpen, setWasOpen] = useState(isOpen);
   if (wasOpen !== isOpen) {
     setWasOpen(isOpen);
@@ -120,8 +86,7 @@ export function KeyboardShortcutsOverlay({
     }
   }
 
-  // Focus the search field once the dialog has opened (DOM side effect, so
-  // an effect is appropriate here).
+  // Focus the search field once the dialog has opened.
   useEffect(() => {
     if (!isOpen) return;
     const id = requestAnimationFrame(() => inputRef.current?.focus());
@@ -244,7 +209,7 @@ export function KeyboardShortcutsOverlay({
             </label>
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
                 aria-hidden="true"
               />
               <input
@@ -262,7 +227,7 @@ export function KeyboardShortcutsOverlay({
                 aria-autocomplete="list"
                 aria-controls={listboxId}
                 aria-activedescendant={activeItemId}
-                className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-slate-500 focus:border-cyan-300/40 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 focus:ring-offset-slate-950"
+                className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 ps-9 pe-9 text-sm text-white placeholder:text-slate-500 focus:border-cyan-300/40 focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 focus:ring-offset-slate-950"
               />
               {query && (
                 <button
@@ -272,7 +237,7 @@ export function KeyboardShortcutsOverlay({
                     setQuery("");
                     inputRef.current?.focus();
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
+                  className="absolute end-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300"
                 >
                   <X className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
@@ -302,7 +267,7 @@ export function KeyboardShortcutsOverlay({
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                     isActive
                       ? "border-cyan-300/50 bg-cyan-300/15 text-cyan-100"
-                      : "border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10 hover:text-white",
+                      : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10",
                   ].join(" ")}
                 >
                   {cat}
@@ -312,67 +277,50 @@ export function KeyboardShortcutsOverlay({
           </div>
 
           {/* Results */}
-          <div className="px-2 py-3">
-            {results.length > 0 ? (
+          <div className="max-h-[50vh] overflow-y-auto px-5 pb-5 pt-3">
+            {results.length === 0 ? (
+              <p className="py-8 text-center text-sm text-slate-400">
+                No shortcuts match your search. Try a different term or clear
+                the category filter.
+              </p>
+            ) : (
               <ul
                 ref={listRef}
                 id={listboxId}
                 role="listbox"
-                aria-label="Keyboard shortcuts"
-                className="max-h-80 overflow-y-auto px-1"
+                aria-label="Matching keyboard shortcuts"
+                className="space-y-1"
               >
-                {results.map((shortcut, index) => (
-                  <li
-                    key={shortcut.id}
-                    id={`${listboxId}-item-${index}`}
-                    role="option"
-                    aria-selected={index === activeIndex}
-                    className={[
-                      "flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                      index === activeIndex
-                        ? "bg-cyan-500/10 text-white"
-                        : "text-slate-300",
-                    ].join(" ")}
-                  >
-                    <span className="flex-1">{shortcut.description}</span>
-                    <span className="flex shrink-0 items-center gap-1">
-                      {shortcut.keys.map((key, keyIndex) => (
-                        <kbd
-                          key={keyIndex}
-                          className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-slate-300"
-                        >
-                          {key}
-                        </kbd>
-                      ))}
-                    </span>
-                  </li>
-                ))}
+                {results.map((shortcut, index) => {
+                  const isActive = index === activeIndex;
+                  return (
+                    <li
+                      key={shortcut.id}
+                      id={`${listboxId}-item-${index}`}
+                      role="option"
+                      aria-selected={isActive}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      className={[
+                        "flex items-center justify-between gap-4 rounded-lg border px-3 py-2 text-sm",
+                        isActive
+                          ? "border-cyan-300/40 bg-cyan-300/10 text-white"
+                          : "border-transparent text-slate-300",
+                      ].join(" ")}
+                    >
+                      <span>{shortcut.description}</span>
+                      <kbd className="shrink-0 rounded border border-white/15 bg-white/5 px-2 py-0.5 font-mono text-xs text-slate-200">
+                        {shortcut.keys}
+                      </kbd>
+                    </li>
+                  );
+                })}
               </ul>
-            ) : (
-              <div className="px-5 py-10 text-center">
-                <p className="text-sm font-medium text-white">
-                  No shortcuts found
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Try a different search term or choose another category.
-                </p>
-              </div>
             )}
           </div>
 
-          {/* Footer hint */}
-          <div className="border-t border-white/10 px-5 py-2.5">
-            <p className="text-xs text-slate-600">
-              <kbd className="font-mono">↑↓</kbd> navigate
-              &nbsp;&middot;&nbsp;
-              <kbd className="font-mono">Esc</kbd> close
-            </p>
-          </div>
+          <LiveRegion>{resultCountLabel}</LiveRegion>
         </div>
       </FocusTrap>
-
-      {/* Screen-reader announcement of result count on every filter change */}
-      <LiveRegion ariaLive="polite">{resultCountLabel}</LiveRegion>
     </div>
   );
 }

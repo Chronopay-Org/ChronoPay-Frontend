@@ -127,7 +127,7 @@ export function ActiveFiltersChips({
                 handleRemoveFilter(filter.groupId, filter.optionId)
               }
               className={clsx(
-                "ml-1 inline-flex items-center justify-center rounded-full p-0.5",
+                "ms-1 inline-flex items-center justify-center rounded-full p-0.5",
                 "hover:bg-cyan-500/20 transition-colors",
                 "focus-visible:ring-2 focus-visible:ring-cyan-400",
                 "h-4 w-4"

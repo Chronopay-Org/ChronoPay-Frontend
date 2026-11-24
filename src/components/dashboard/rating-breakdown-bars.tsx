@@ -129,7 +129,7 @@ export function RatingBreakdownBars({
               {/* Score */}
               <span
                 className={clsx(
-                  "w-[3ch] shrink-0 text-right text-sm font-medium tabular-nums text-white transition-opacity duration-200 motion-reduce:transition-none",
+                  "w-[3ch] shrink-0 text-end text-sm font-medium tabular-nums text-white transition-opacity duration-200 motion-reduce:transition-none",
                   isDimmed ? "opacity-40" : "opacity-100",
                 )}
               >
@@ -173,7 +173,7 @@ export function RatingBreakdownBars({
                 {/* Tooltip */}
                 {isActive && (
                   <div
-                    className="absolute bottom-full left-1/2 mb-2 w-max -translate-x-1/2 rounded border px-2.5 py-1.5 text-xs shadow-lg z-20 animate-in fade-in zoom-in-95 duration-200 rtl:translate-x-1/2"
+                    className="absolute bottom-full start-1/2 mb-2 w-max -translate-x-1/2 rounded border px-2.5 py-1.5 text-xs shadow-lg z-20 animate-in fade-in zoom-in-95 duration-200 rtl:translate-x-1/2"
                     style={{
                       backgroundColor: "var(--chart-tooltip-bg)",
                       borderColor: "var(--chart-tooltip-border)",
@@ -189,7 +189,7 @@ export function RatingBreakdownBars({
                       {criterion.count === 1 ? "review" : "reviews"}
                     </span>
                     <div
-                      className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-4 border-transparent"
+                      className="absolute start-1/2 top-full -mt-px -translate-x-1/2 border-4 border-transparent"
                       style={{ borderTopColor: "var(--chart-tooltip-bg)" }}
                     />
                   </div>

@@ -93,9 +93,15 @@ export function CalendarViewToggle({
         className
       )}
       aria-label="Calendar view mode"
-      role="tablist"
     >
-      <div className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5" role="group" aria-label="Calendar view">
+      <div
+        className={clsx(
+          "inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5",
+          className
+        )}
+        role="tablist"
+        aria-label="Calendar view"
+      >
         {(Object.entries(viewConfig) as [CalendarViewMode, typeof viewConfig.month][]).map(
           ([mode, config], index) => {
             const Icon = config.icon;

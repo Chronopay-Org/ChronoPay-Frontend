@@ -7,6 +7,7 @@ import { CopyButton } from "@/app/components/ui/copy-button";
 import { Card, CardBody, CardFooter, CardHeader } from "./card";
 import { StatusChip } from "./status-chip";
 import { generateQrMatrix as generateRealQrMatrix } from "@/lib/qr";
+import { truncateMiddle } from "@/lib/format-address";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -59,8 +60,7 @@ export function buildStellarDeepLink(
  * Shows first 8 + "…" + last 6 chars.
  */
 export function truncateAddress(address: string): string {
-  if (address.length <= 16) return address;
-  return `${address.slice(0, 8)}…${address.slice(-6)}`;
+  return truncateMiddle(address, 8, 6);
 }
 
 // ---------------------------------------------------------------------------

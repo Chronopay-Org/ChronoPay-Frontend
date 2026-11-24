@@ -1,6 +1,9 @@
+import { createElement } from "react";
+import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 import { render, screen, act, fireEvent, waitFor, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Marketplace from "./page";
+import { seedItems } from "./catalogue";
 
 // Mock next/navigation
 let currentSearch = "";
@@ -30,6 +33,11 @@ vi.mock("next/link", () => ({
     const { prefetch: _prefetch, ...rest } = props;
     return <a  {...rest} />;
   },
+}));
+
+// Mock next/image to render a plain img while preserving src, alt, sizes, and className
+vi.mock("next/image", () => ({
+  default: ({ fill: _fill, ...props }: any) => createElement("img", props),
 }));
 
 // Mock toast to prevent warnings
@@ -103,6 +111,55 @@ describe("Marketplace Page", () => {
     expect(screen.queryByText("Recently viewed")).not.toBeInTheDocument();
   });
 
+  it("clears seeding timers on unmount so nothing is added, and seeds once on remount", () => {
+    vi.useFakeTimers();
+    const updateListener = vi.fn();
+    window.addEventListener("chronopay:recently-viewed-updated", updateListener);
+
+    try {
+      const { unmount } = render(<Marketplace />);
+      unmount();
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(updateListener).not.toHaveBeenCalled();
+      expect(localStorage.getItem("chronopay-marketplace-visited")).toBeNull();
+      const storedAfterUnmount = JSON.parse(
+        localStorage.getItem("chronopay-recently-viewed") ?? "[]"
+      );
+      expect(storedAfterUnmount).toHaveLength(0);
+
+      // Remounting should seed exactly once
+      const { unmount: unmountSecond } = render(<Marketplace />);
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(updateListener).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("Recently viewed")).toBeInTheDocument();
+      expect(localStorage.getItem("chronopay-marketplace-visited")).toBe("true");
+      const storedAfterRemount = JSON.parse(
+        localStorage.getItem("chronopay-recently-viewed") ?? "[]"
+      );
+      expect(storedAfterRemount).toHaveLength(seedItems.length);
+
+      // A subsequent mount should not seed again
+      unmountSecond();
+      render(<Marketplace />);
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(updateListener).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener("chronopay:recently-viewed-updated", updateListener);
+      vi.useRealTimers();
+    }
+  });
+
+  it("handles invalid page size in URL gracefully", () => {
   it("handles invalid page size in URL gracefully", async () => {
     // Return an invalid page size
     mockSearchParams.get.mockReturnValue("invalid");
@@ -158,5 +215,20 @@ describe("Marketplace Page", () => {
       expect(Array.isArray(parsed)).toBe(true);
       expect(parsed.some((item: any) => item.id === id)).toBe(true);
     });
+  });
+
+  it("renders listing images with decorative alt, sizes, and 16:9 container", async () => {
+    render(<Marketplace />);
+
+    const grid = await screen.findByTestId("marketplace-grid");
+    const imgs = grid.querySelectorAll("img");
+    expect(imgs.length).toBe(24);
+
+    const firstImg = imgs[0];
+    expect(firstImg.getAttribute("alt")).toBe("");
+    expect(firstImg.getAttribute("src")).toContain("https://images.unsplash.com/");
+    expect(firstImg.getAttribute("sizes")).toBeTruthy();
+    expect(firstImg.parentElement?.className).toContain("relative");
+    expect(firstImg.parentElement?.className).toContain("aspect-video");
   });
 });

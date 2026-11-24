@@ -14,6 +14,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/react";
 import { StatusChip } from "@/app/components/ui/status-chip";
+import type { Tone } from "@/components/dashboard/types";
 
 const BASE_CLASSES = [
   "inline-flex",
@@ -23,18 +24,18 @@ const BASE_CLASSES = [
   "px-3",
   "py-1",
   "text-xs",
-  "font-medium",
-  "tracking-[0.14em]",
+  "font-semibold",
+  "tracking-[0.18em]",
   "uppercase",
 ];
 
-const TONE_CLASSES = {
-  info: ["border-cyan-300/25", "bg-cyan-300/12", "text-cyan-100"],
-  warning: ["border-amber-300/25", "bg-amber-300/12", "text-amber-100"],
-  success: ["border-emerald-300/25", "bg-emerald-300/12", "text-emerald-100"],
-  danger: ["border-rose-300/25", "bg-rose-300/12", "text-rose-100"],
-  neutral: ["border-white/10", "bg-white/6", "text-slate-200"],
-} as const;
+const TONE_CLASSES: Record<Tone, string[]> = {
+  neutral: ["border-sky-400/30", "bg-sky-400/10", "text-sky-100"],
+  positive: ["border-emerald-400/30", "bg-emerald-400/10", "text-emerald-100"],
+  warning: ["border-amber-400/30", "bg-amber-400/10", "text-amber-100"],
+  critical: ["border-rose-400/30", "bg-rose-400/10", "text-rose-100"],
+  muted: ["border-slate-500/30", "bg-slate-500/10", "text-slate-300"],
+};
 
 /** Renders a chip and returns the underlying <span>. */
 function renderChip(props: Parameters<typeof StatusChip>[0]) {
@@ -80,30 +81,28 @@ describe("StatusChip", () => {
     });
 
     it("applies the layout classes before the tone classes", () => {
-      const className = renderChip({ tone: "info", children: "x" }).className;
-      expect(className.indexOf("inline-flex")).toBeLessThan(className.indexOf("text-cyan-100"));
+      const className = renderChip({ tone: "neutral", children: "x" }).className;
+      expect(className.indexOf("inline-flex")).toBeLessThan(className.indexOf("text-sky-100"));
     });
   });
 
   describe("tone mapping", () => {
-    for (const [tone, classes] of Object.entries(TONE_CLASSES)) {
-      it(`maps tone="${tone}" to its token set`, () => {
-        expect(renderChip({ tone: tone as keyof typeof TONE_CLASSES, children: "x" })).toHaveClass(
-          ...classes,
-        );
-      });
-    }
+    it("maps every canonical tone to its token set", () => {
+      for (const tone of Object.keys(TONE_CLASSES) as Tone[]) {
+        expect(renderChip({ tone, children: "x" })).toHaveClass(...TONE_CLASSES[tone]);
+      }
+    });
 
     it("defaults to neutral when no tone is given", () => {
       const span = renderChip({ children: "x" });
       expect(span).toHaveClass(...TONE_CLASSES.neutral);
-      expect(span).not.toHaveClass(...TONE_CLASSES.danger);
+      expect(span).not.toHaveClass(...TONE_CLASSES.critical);
     });
 
     it("applies exactly one tone's tokens at a time", () => {
-      const span = renderChip({ tone: "success", children: "x" });
+      const span = renderChip({ tone: "positive", children: "x" });
       const others = Object.entries(TONE_CLASSES)
-        .filter(([name]) => name !== "success")
+        .filter(([name]) => name !== "positive")
         .flatMap(([, classes]) => classes);
       expect(span).not.toHaveClass(...others);
     });
@@ -130,10 +129,11 @@ describe("StatusChip", () => {
     });
 
     it("appends caller classes after the tone classes", () => {
-      const span = renderChip({ tone: "danger", className: "ml-2", children: "x" });
+      const span = renderChip({ tone: "danger", className: "ms-2", children: "x" });
+      const span = renderChip({ tone: "critical", className: "ml-2", children: "x" });
       const className = span.className;
-      expect(className).toMatch(/ml-2$/);
-      expect(className.indexOf("text-rose-100")).toBeLessThan(className.indexOf("ml-2"));
+      expect(className).toMatch(/ms-2$/);
+      expect(className.indexOf("text-rose-100")).toBeLessThan(className.indexOf("ms-2"));
     });
 
     it("adds no extra whitespace-free token when className is omitted", () => {
@@ -149,9 +149,9 @@ describe("StatusChip", () => {
     });
 
     it("emits a single class attribute (className is not forwarded twice)", () => {
-      const span = renderChip({ className: "ml-2", children: "x" });
+      const span = renderChip({ className: "ms-2", children: "x" });
       expect(span.getAttribute("class")).toBe(span.className);
-      expect(span.className.match(/ml-2/g)).toHaveLength(1);
+      expect(span.className.match(/ms-2/g)).toHaveLength(1);
     });
   });
 
@@ -180,7 +180,7 @@ describe("StatusChip", () => {
     });
 
     it("still renders the computed class list when a className is also forwarded", () => {
-      const span = renderChip({ className: "ml-2", children: "x" });
+      const span = renderChip({ className: "ms-2", children: "x" });
       expect(span).toHaveClass(...BASE_CLASSES);
     });
   });
