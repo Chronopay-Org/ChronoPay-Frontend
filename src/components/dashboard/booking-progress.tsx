@@ -104,6 +104,7 @@ export function BookingProgress({
         ) : null}
       </div>
 
+      <div role="list" aria-label="Booking stages" className="space-y-5">
       {stages.map((stage, index) => {
         const labelId = `booking-label-${index}`;
         const valueId = `booking-value-${index}`;
@@ -131,6 +132,7 @@ export function BookingProgress({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

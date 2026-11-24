@@ -591,7 +591,7 @@ export const SlotList = ({
                   draggable
                   tabIndex={0}
                   aria-label={`availability slot: ${slot.title}, ${slot.dateLabel} ${slot.timeRange}`}
-                  aria-pressed={isSelected}
+                  aria-current={isSelected ? "true" : undefined}
                   onDragStart={(e) => handleDragStart(slot, e)}
                   onDragOver={(e) => handleDragOver(slot, e)}
                   onDrop={(e) => handleDrop(slot, e)}

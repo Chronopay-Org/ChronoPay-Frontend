@@ -18,17 +18,17 @@ function StateCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-3">
+    <section aria-label={label} className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-800 text-[10px] font-bold text-slate-300">
           S
         </span>
-        <h3 className="text-sm font-semibold text-slate-200">{label}</h3>
+        <h2 className="text-sm font-semibold text-slate-200">{label}</h2>
       </div>
       <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-5 backdrop-blur-md">
         {children}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -88,6 +88,7 @@ export function PayoutStepShowcase() {
       {/* Idle state */}
       <StateCard label="Idle — default form">
         <PayoutStep
+          as="div"
           preview={demoPreview}
           onSave={handleSaveIdle}
           draftStatus="saved"
@@ -98,6 +99,7 @@ export function PayoutStepShowcase() {
       {/* Pending/saving state */}
       <StateCard label="Pending — saving in progress">
         <PayoutStep
+          as="div"
           preview={demoPreview}
           onSave={showPending ? handleSavePending : handleSaveIdle}
           status={showPending ? "pending" : "idle"}
@@ -119,10 +121,11 @@ export function PayoutStepShowcase() {
       {/* Success state */}
       <StateCard label="Success — payouts configured">
         {showSuccess ? (
-          <PayoutStep {...successProps} />
+          <PayoutStep as="div" {...successProps} />
         ) : (
           <div className="space-y-3">
             <PayoutStep
+              as="div"
               preview={demoPreview}
               onSave={handleSaveSuccess}
               status="success"
@@ -141,10 +144,11 @@ export function PayoutStepShowcase() {
       {/* Error state */}
       <StateCard label="Error — connection failure">
         {showError ? (
-          <PayoutStep {...errorProps} />
+          <PayoutStep as="div" {...errorProps} />
         ) : (
           <div className="space-y-3">
             <PayoutStep
+              as="div"
               preview={demoPreview}
               onSave={handleSaveError}
               status="error"
@@ -164,6 +168,7 @@ export function PayoutStepShowcase() {
       {/* Without preview — no wallet connected */}
       <StateCard label="No wallet — no payout preview">
         <PayoutStep
+          as="div"
           preview={null}
           onSave={handleSaveIdle}
         />

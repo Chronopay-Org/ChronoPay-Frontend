@@ -9,7 +9,6 @@ const renderWithToast = (ui: React.ReactElement) => render(<ToastProvider>{ui}</
 describe("ServicesOnboardingPage", () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    vi.spyOn(console, "log").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -40,10 +39,13 @@ describe("ServicesOnboardingPage", () => {
     // Click save
     await user.click(saveButton);
 
-    // It should log and finish
+    // The save runs (button busy), then finishes and returns to idle
     await waitFor(() => {
-      expect(console.log).toHaveBeenCalledWith("Saved services", 2);
-    }, { timeout: 2000 });
+      expect(saveButton).toHaveAttribute("data-state", "busy");
+    });
+    await waitFor(() => {
+      expect(saveButton).toHaveAttribute("data-state", "idle");
+    }, { timeout: 2500 });
   });
 
   it("handles validation and prevents saving invalid state", async () => {

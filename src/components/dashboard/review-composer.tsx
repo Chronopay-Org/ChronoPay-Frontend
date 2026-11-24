@@ -257,16 +257,6 @@ export function ReviewComposer({
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
-          role="button"
-          tabIndex={0}
-          aria-label="Drop photos here or click to upload"
-          onClick={() => fileInputRef.current?.click()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              fileInputRef.current?.click();
-            }
-          }}
         >
           <input
             ref={fileInputRef}
@@ -275,15 +265,24 @@ export function ReviewComposer({
             multiple
             onChange={handleFileSelect}
             className="hidden"
+            tabIndex={-1}
             aria-hidden="true"
           />
-          <Upload className="mx-auto mb-2 h-8 w-8 text-slate-500" aria-hidden="true" />
-          <p className="text-sm text-slate-400">
-            Drag and drop photos here, or click to browse
-          </p>
-          <p className="mt-1 text-xs text-slate-500">
-            {photos.length}/{maxPhotos} photos uploaded
-          </p>
+          <button
+            type="button"
+            disabled={photos.length >= maxPhotos}
+            aria-label="Drop photos here or click to upload"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full rounded focus-ring-cyan"
+          >
+            <Upload className="mx-auto mb-2 h-8 w-8 text-slate-500" aria-hidden="true" />
+            <p className="text-sm text-slate-400">
+              Drag and drop photos here, or click to browse
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {photos.length}/{maxPhotos} photos uploaded
+            </p>
+          </button>
         </div>
 
         {/* Photo Previews with Alt Text */}

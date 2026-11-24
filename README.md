@@ -18,7 +18,7 @@ Web app for **ChronoPay**, a time-economy marketplace on the Stellar network: su
 
 ## Quickstart
 
-Requires Node.js 20+ (CI uses 22).
+Requires Node.js 20.9+ (CI uses 22; `.nvmrc` pins 22).
 
 ```bash
 npm install
@@ -33,6 +33,8 @@ npm run dev      # http://localhost:3000
 | `npm run build` | Production build |
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript type check (`tsc --noEmit`) |
+| `npm test` | Run lint, unit tests, and production build |
 | `npm run test:unit` | Vitest unit tests |
 | `npm run test:coverage` | Vitest unit tests with coverage |
 
@@ -42,7 +44,11 @@ npm run dev      # http://localhost:3000
 
 ## Environment variables
 
-None are required to run the demo.
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | Optional base URL for the typed API client. Leave unset to use relative API paths. |
+
+Marketplace listings, admin users, and dashboard notifications use mock data by default. To connect a backend, wrap the application with `ApiSourcesProvider` from `src/lib/api/provider.tsx` and pass the fetch-backed `fetchSources` from `src/lib/api/sources.ts`. Components continue consuming the same typed hooks; the fetch source requests `/listings`, `/users`, and `/notifications` relative to the configured API base URL.
 
 ## Deploy
 

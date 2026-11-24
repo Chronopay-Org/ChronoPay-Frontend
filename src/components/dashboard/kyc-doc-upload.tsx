@@ -24,7 +24,7 @@ export type RetakeReason =
   | "other";
 
 interface KycDocUploadProps {
-  onCaptureComplete: (success: boolean, imageData?: string) => void;
+  onCaptureComplete: (success: boolean, imageData?: string) => void | Promise<void>;
   documentLabel?: string;
 }
 
@@ -71,6 +71,8 @@ export function KycDocUpload({
 }: KycDocUploadProps) {
   const [step, setStep] = useState<"intro" | "capture" | "preview" | "retake" | "complete">("intro");
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [textOnlyMode, setTextOnlyMode] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [retakeReason, setRetakeReason] = useState<RetakeReason | null>(null);
@@ -85,6 +87,16 @@ export function KycDocUpload({
   const descriptionId = useId();
   const feedbackId = useId();
   const retakeHeadingId = useId();
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
 
   const startCamera = useCallback(async () => {
     stopCamera();
@@ -103,17 +115,7 @@ export function KycDocUpload({
       );
       setTextOnlyMode(true);
     }
-  }, []);
-
-  const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  }, []);
+  }, [stopCamera]);
 
   useEffect(() => {
     return () => {
@@ -175,15 +177,28 @@ export function KycDocUpload({
     }
   };
 
-  const handleConfirmImage = () => {
+  const handleConfirmImage = async () => {
     stopCamera();
-    setStep("complete");
-    onCaptureComplete(true, capturedImage ?? undefined);
+    setUploadError(null);
+    setIsSubmitting(true);
+    try {
+      await onCaptureComplete(true, capturedImage ?? undefined);
+      setStep("complete");
+    } catch (error) {
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : "Upload failed. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleUseTextOnly = () => {
     stopCamera();
     setCameraError(null);
+    setUploadError(null);
     setTextOnlyMode(true);
   };
 
@@ -191,6 +206,7 @@ export function KycDocUpload({
     stopCamera();
     setStep("intro");
     setCameraError(null);
+    setUploadError(null);
     setCapturedImage(null);
     setRetakeReason(null);
     setRetakeOtherText("");
@@ -394,9 +410,17 @@ export function KycDocUpload({
                       stopCamera();
                       const reader = new FileReader();
                       reader.onload = (ev) => {
-                        const dataUrl = ev.target?.result as string;
-                        setCapturedImage(dataUrl);
+                        const result = ev.target?.result;
+                        if (typeof result !== "string") {
+                          setUploadError("The selected file could not be read. Please choose another image.");
+                          return;
+                        }
+                        setUploadError(null);
+                        setCapturedImage(result);
                         setStep("preview");
+                      };
+                      reader.onerror = () => {
+                        setUploadError("The selected file could not be read. Please choose another image.");
                       };
                       reader.readAsDataURL(file);
                     }
@@ -485,6 +509,11 @@ export function KycDocUpload({
       {/* PREVIEW */}
       {step === "preview" && capturedImage && (
         <div className="flex flex-col items-center">
+          {uploadError && (
+            <p className="mb-4 w-full rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200" role="alert">
+              {uploadError}
+            </p>
+          )}
           <div className="relative w-full aspect-[4/3] bg-slate-900 rounded-lg overflow-hidden mb-4 border border-slate-600">
             <img
               src={capturedImage}
@@ -497,10 +526,11 @@ export function KycDocUpload({
             <button
               type="button"
               onClick={handleConfirmImage}
+              disabled={isSubmitting}
               className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 text-sm"
             >
               <Check className="h-4 w-4" aria-hidden="true" />
-              Confirm {docLabel}
+              {isSubmitting ? "Submitting..." : `Confirm ${docLabel}`}
             </button>
             <button
               type="button"

@@ -35,6 +35,197 @@ import {
   type PayoutStepProps,
   type PayoutStepStatus,
 } from "./types";
+import { Wallet, CheckCircle, AlertTriangle } from "lucide-react";
+import type { DraftStatus, Tone } from "../types";
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+export type PayoutCurrency = "XLM" | "USDC" | "EURC";
+
+export interface PayoutConsent {
+  accepted: boolean;
+  acceptedAt: Date | null;
+}
+
+export interface PayoutPreview {
+  walletAddress: string;
+  walletLabel: string;
+  network: string;
+}
+
+export type PayoutStepStatus = "idle" | "pending" | "success" | "error";
+
+export interface PayoutStepProps {
+  preview?: PayoutPreview | null;
+  onSave: (currency: PayoutCurrency, consent: PayoutConsent) => Promise<void>;
+  onBack?: () => void;
+  /** Called when the user advances past the payout step after a successful save. */
+  onNext?: () => void;
+  status?: PayoutStepStatus;
+  errorMessage?: string;
+  onRetry?: () => void;
+  initialCurrency?: PayoutCurrency;
+  draftStatus?: DraftStatus;
+  lastSavedLabel?: string;
+  /** Optional element type for the outer PanelShell wrapper. */
+  as?: React.ElementType;
+}
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+
+/** Ordered onboarding steps; the payout step is followed by review. */
+export const PAYOUT_STEPS = ["payout", "review"] as const;
+
+const CURRENCIES: {
+  value: PayoutCurrency;
+  label: string;
+  network: string;
+  description: string;
+}[] = [
+  {
+    value: "XLM",
+    label: "XLM (Lumens)",
+    network: "Stellar",
+    description: "Native Stellar asset — low fees, fast settlement.",
+  },
+  {
+    value: "USDC",
+    label: "USDC",
+    network: "Stellar",
+    description: "USD-pegged stablecoin on the Stellar network.",
+  },
+  {
+    value: "EURC",
+    label: "EURC",
+    network: "Stellar",
+    description: "EUR-pegged stablecoin on the Stellar network.",
+  },
+];
+
+const STATUS_TONE: Record<DraftStatus, Tone> = {
+  saved: "positive",
+  saving: "warning",
+  offline: "neutral",
+};
+
+const STATUS_LABEL: Record<DraftStatus, string> = {
+  saved: "Saved as draft",
+  saving: "Saving…",
+  offline: "Offline — changes local only",
+};
+
+const CONSENT_TEXT =
+  "I authorise ChronoPay to send payout funds to the connected wallet address using the selected currency. I understand that payout timing depends on network conditions and that I can update my payout settings at any time from my account settings.";
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function truncateAddress(address: string, chars = 6): string {
+  if (address.length <= chars * 2 + 3) return address;
+  return `${address.slice(0, chars)}...${address.slice(-chars)}`;
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+
+function CurrencyOption({
+  value,
+  label,
+  network,
+  description,
+  selected,
+  onSelect,
+}: {
+  value: PayoutCurrency;
+  label: string;
+  network: string;
+  description: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const id = useId();
+  return (
+    <label
+      htmlFor={id}
+      className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${
+        selected
+          ? "border-cyan-300/40 bg-cyan-300/10"
+          : "border-white/10 bg-white/5 hover:border-white/20"
+      }`}
+    >
+      <input
+        id={id}
+        type="radio"
+        name="payout-currency"
+        value={value}
+        checked={selected}
+        onChange={onSelect}
+        className="mt-1 h-4 w-4 shrink-0 accent-cyan-300"
+      />
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold text-white">{label}</span>
+          <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300">
+            {network}
+          </span>
+        </div>
+        <p className="mt-0.5 text-xs leading-relaxed text-slate-400">
+          {description}
+        </p>
+      </div>
+      {selected && (
+        <span className="ml-auto shrink-0 text-cyan-300" aria-hidden="true">
+          <CheckCircle className="h-5 w-5" />
+        </span>
+      )}
+    </label>
+  );
+}
+
+function PayoutAccountPreview({
+  preview,
+  currency,
+}: {
+  preview: PayoutPreview;
+  currency: PayoutCurrency;
+}) {
+  const currencyMeta = CURRENCIES.find((c) => c.value === currency);
+  return (
+    <div
+      className="rounded-2xl border border-cyan-300/20 bg-cyan-950/20 p-4"
+      aria-label="Payout destination preview"
+    >
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-300/20 text-cyan-300">
+          <Wallet className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+            Payout destination
+          </p>
+          <p className="text-sm font-medium text-white">{preview.walletLabel}</p>
+          <p className="font-mono text-xs text-slate-400">
+            {truncateAddress(preview.walletAddress)}
+          </p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+              Connected
+            </span>
+            <span className="inline-flex items-center rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-300">
+              {preview.network}
+            </span>
+            {currencyMeta && (
+              <span className="inline-flex items-center rounded-full bg-cyan-900/30 px-2 py-0.5 text-[10px] font-medium text-cyan-300">
+                {currencyMeta.label}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 
 export function PayoutStep({
   preview = null,
@@ -51,6 +242,7 @@ export function PayoutStep({
   storageKey,
   draftStatus = "saved",
   lastSavedLabel,
+  as = "section",
 }: PayoutStepProps) {
   const {
     draft,
@@ -233,6 +425,7 @@ export function PayoutStep({
   if (status === "success") {
     return (
       <PanelShell
+        as={as}
         eyebrow="Step 3 of 4"
         title="Payout account"
         description="Your payout account is configured and ready."
@@ -288,6 +481,7 @@ export function PayoutStep({
   if (status === "error") {
     return (
       <PanelShell
+        as={as}
         eyebrow="Step 3 of 4"
         title="Payout account"
         description="We ran into an issue while saving your payout settings."
@@ -341,6 +535,7 @@ export function PayoutStep({
 
   return (
     <PanelShell
+      as={as}
       eyebrow="Step 3 of 4"
       title="Payout account"
       description="Connect a payout account to receive payments from your bookings. Choose your preferred currency, review the destination, and confirm consent."

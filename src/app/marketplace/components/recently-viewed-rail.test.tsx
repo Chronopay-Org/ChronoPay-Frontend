@@ -17,7 +17,7 @@
  * - Touch scroll behavior
  */
 
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, beforeEach, afterEach, vi} from "vitest";
 import { RecentlyViewedRail, useRecentlyViewed, type RecentlyViewedItem } from "./recently-viewed-rail";
 
@@ -93,7 +93,7 @@ describe("RecentlyViewedRail", () => {
 
     // Assert error contract
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to load recently viewed items:",
+      expect.stringContaining("Failed to load recently viewed items"),
       expect.any(Error)
     );
     // Assert returned value is null due to empty items
@@ -133,13 +133,15 @@ describe("RecentlyViewedRail", () => {
     const updatedItems: RecentlyViewedItem[] = [{
       id: "3", title: "New Item", price: "10 XLM", href: "/marketplace/3", viewedAt: Date.now()
     }];
-    window.dispatchEvent(new CustomEvent("chronopay:recently-viewed-updated", {
-      detail: updatedItems
-    }));
+    act(() => {
+      window.dispatchEvent(new CustomEvent("chronopay:recently-viewed-updated", {
+        detail: updatedItems
+      }));
+    });
 
     // Assert error was caught and logged
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to save recently viewed items:",
+      expect.stringContaining("Failed to save recently viewed items"),
       expect.any(Error)
     );
 
@@ -432,7 +434,7 @@ describe("useRecentlyViewed hook", () => {
     fireEvent.click(button);
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Failed to add recently viewed item:",
+      expect.stringContaining("Failed to add recently viewed item"),
       expect.any(Error)
     );
 

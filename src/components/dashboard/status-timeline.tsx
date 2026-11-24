@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { TimelineItem, TimelineNode, TimelineBranchGroup, statusToneMap } from "./timeline-types";
 import { StatusChip } from "./status-chip";
 import { KycLivenessCapture } from "./kyc-liveness-capture";
+import { useKycFlow } from "@/hooks/use-kyc-flow";
 import { Filter, GitFork, GitMerge, MessageSquareText } from "lucide-react";
 
 const KycDocUpload = dynamic(
@@ -72,6 +73,25 @@ function filterMilestoneNodes(nodes: TimelineNode[]): TimelineNode[] {
     .filter(Boolean) as TimelineNode[];
 }
 
+function getKycCaptureStatus(
+  kind: "document" | "liveness",
+  stage: ReturnType<typeof useKycFlow>["stage"],
+  lastCaptureKind: KycCaptureKind,
+): TimelineItem["status"] {
+  if (stage === "rejected") return "failed";
+  if (stage === "verified") return "completed";
+  if (kind === "document") {
+    if (stage === "submitted") return "pending";
+    return stage === "needs_info" && lastCaptureKind === "document"
+      ? "warning"
+      : "completed";
+  }
+  if (stage === "needs_info" && lastCaptureKind === "liveness") {
+    return "warning";
+  }
+  return "pending";
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 //  Main component
 // ═══════════════════════════════════════════════════════════════════════
@@ -82,6 +102,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
   const statusId = useId();
   const listRef = useRef<HTMLOListElement>(null);
   const scrollTopRef = useRef(0);
+  const kycFlow = useKycFlow();
 
 
   // Determine which items to display
@@ -173,6 +194,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
                 key={node.id}
                 group={node}
                 isLast={index === displayedNodes.length - 1}
+                kycFlow={kycFlow}
               />
             );
           }
@@ -181,6 +203,7 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
               key={(node as TimelineItem).id}
               item={node as TimelineItem}
               isLast={index === displayedNodes.length - 1}
+              kycFlow={kycFlow}
             />
           );
         })}
@@ -207,9 +230,11 @@ export function StatusTimeline({ items }: StatusTimelineProps) {
 function BranchGroupEntry({
   group,
   isLast,
+  kycFlow,
 }: {
   group: TimelineBranchGroup;
   isLast: boolean;
+  kycFlow: ReturnType<typeof useKycFlow>;
 }) {
   const containerRef = useRef<HTMLLIElement>(null);
   const branchLabelsId = useId();
@@ -322,6 +347,7 @@ function BranchGroupEntry({
                       key={item.id}
                       item={item}
                       isLast={itemIndex === branch.length - 1}
+                      kycFlow={kycFlow}
                     />
                   ))}
                 </div>
@@ -362,15 +388,45 @@ function BranchGroupEntry({
 //  Timeline entry sub-component
 // ═══════════════════════════════════════════════════════════════════════
 
-function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }) {
+function TimelineEntry({
+  item,
+  isLast,
+  kycFlow,
+}: {
+  item: TimelineItem;
+  isLast: boolean;
+  kycFlow: ReturnType<typeof useKycFlow>;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasDetails = Boolean(item.details || item.actor);
+  const isDocumentCapture = item.id === "kyc-doc-upload";
+  const isLivenessCapture = item.id === "kyc-liveness";
+  const captureStatus =
+    isDocumentCapture || isLivenessCapture
+      ? getKycCaptureStatus(
+          isDocumentCapture ? "document" : "liveness",
+          kycFlow.stage,
+          kycFlow.lastCaptureKind,
+        )
+      : item.status;
+  const displayedItem =
+    isDocumentCapture || isLivenessCapture
+      ? { ...item, status: captureStatus }
+      : item;
+  const canRetryCapture =
+    captureStatus === "warning" ||
+    (captureStatus === "pending" &&
+      (isDocumentCapture ||
+        (isLivenessCapture &&
+          (kycFlow.stage === "reviewing" ||
+            (kycFlow.stage === "needs_info" &&
+              kycFlow.lastCaptureKind === "liveness")))));
 
   return (
     <li className={`ms-6 ${isLast ? "" : "mb-10"}`}>
       <span
         className={`absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full ring-8 ring-slate-950 ${
-          item.status === "completed" ? "bg-emerald-500" : "bg-slate-700"
+          displayedItem.status === "completed" ? "bg-emerald-500" : "bg-slate-700"
         }`}
         aria-hidden="true"
       >
@@ -395,7 +451,7 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
             </h3>
             <p className="text-sm text-slate-400">{item.timestamp}</p>
           </div>
-          <StatusChip tone={statusToneMap[item.status]}>{item.status}</StatusChip>
+          <StatusChip tone={statusToneMap[displayedItem.status]}>{displayedItem.status}</StatusChip>
         </div>
 
         {item.variant === "mediator_assigned" && item.mediator ? (
@@ -424,15 +480,20 @@ function TimelineEntry({ item, isLast }: { item: TimelineItem; isLast: boolean }
         >
           {item.actor ? <p>Actor: {item.actor}</p> : null}
           {item.details ? <p className={item.actor ? "mt-1" : ""}>{item.details}</p> : null}
-          {item.id === "kyc-liveness" && item.status === "pending" ? (
+          {isLivenessCapture && canRetryCapture ? (
             <div className="mt-4">
-              <KycLivenessCapture onCaptureComplete={() => {}} />
+              <KycLivenessCapture onCaptureComplete={kycFlow.completeLiveness} />
             </div>
           ) : null}
-          {item.id === "kyc-doc-upload" && item.status === "pending" ? (
+          {isDocumentCapture && canRetryCapture ? (
             <div className="mt-4">
-              <KycDocUpload onCaptureComplete={() => {}} />
+              <KycDocUpload onCaptureComplete={kycFlow.completeDocument} />
             </div>
+          ) : null}
+          {kycFlow.error && (isDocumentCapture || isLivenessCapture) ? (
+            <p className="mt-3 text-sm text-rose-300" role="alert">
+              {kycFlow.error}
+            </p>
           ) : null}
         </div>
       ) : null}

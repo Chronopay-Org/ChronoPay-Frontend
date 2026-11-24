@@ -29,6 +29,7 @@ import {
   EXPERIMENTAL_FEATURE_STORAGE_KEY,
   loadExperimentalFeatureConfig,
 } from "./experimental-feature-config";
+import { reportError } from "@/app/dashboard/reportError";
 
 type SettingsTabId = "account" | "security" | "notifications" | "appearance" | "wallets" | "developer";
 
@@ -129,8 +130,8 @@ function CopyableItem({ label, value, copyLabel = "Copy" }: CopyableItemProps) {
       await navigator.clipboard.writeText(value);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 1500);
-    } catch {
-      console.error("Failed to copy to clipboard");
+    } catch (error) {
+      reportError(error, "Failed to copy to clipboard");
     }
   }, [value]);
 
@@ -236,8 +237,8 @@ export function DeveloperSettings() {
       try {
         const state = Object.fromEntries(next.map((f) => [f.id, f.enabled]));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      } catch {
-        console.error("Failed to save experimental feature state");
+      } catch (error) {
+        reportError(error, "Failed to save experimental feature state");
       }
       return next;
     });
@@ -247,8 +248,8 @@ export function DeveloperSettings() {
     setBannerDismissed(true);
     try {
       localStorage.setItem(BANNER_DISMISS_KEY, "true");
-    } catch {
-      console.error("Failed to save banner dismissal state");
+    } catch (error) {
+      reportError(error, "Failed to save banner dismissal state");
     }
   }, []);
 
@@ -280,7 +281,7 @@ export function DeveloperSettings() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Failed to export logs:", error);
+      reportError(error, "Failed to export logs");
     } finally {
       setIsExporting(false);
     }

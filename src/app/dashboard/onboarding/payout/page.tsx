@@ -1,6 +1,6 @@
 "use client";
 
-import { PAYOUT_STEPS, PayoutStep } from "@/components/dashboard/payout-step";
+import { PayoutStep } from "@/components/dashboard/payout-step";
 import type { PayoutCurrency, PayoutConsent } from "@/components/dashboard/payout-step";
 
 function DemoShell({ children }: { children: React.ReactNode }) {
@@ -33,11 +33,13 @@ const demoPreview = {
 export default function PayoutOnboardingPage() {
   const handleSave = async (currency: PayoutCurrency, consent: PayoutConsent) => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log("Saved payout settings", { currency, consent });
+    // Demo step: nothing is persisted yet.
+    void currency;
+    void consent;
   };
 
   const handleNext = () => {
-    console.log("Payout step completed; advancing to", PAYOUT_STEPS[1]);
+    // Demo step: navigation to PAYOUT_STEPS[1] is not wired up yet.
   };
 
   return (

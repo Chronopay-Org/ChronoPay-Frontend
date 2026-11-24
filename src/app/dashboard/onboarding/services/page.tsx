@@ -58,8 +58,8 @@ export default function ServicesOnboardingPage() {
   const handleSave = async (items: ServiceItem[]) => {
     await new Promise((resolve) => setTimeout(resolve, 1200));
     // The toast inside ServicesStep surfaces success/failure; this demo
-    // doesn't persist anywhere, so we simply log for inspection.
-    console.log("Saved services", items.length);
+    // doesn't persist anywhere.
+    void items;
   };
 
   return (

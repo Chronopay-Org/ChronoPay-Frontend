@@ -28,7 +28,7 @@ export function PricingStrategyPreview({ strategy }: PreviewProps) {
   return (
     <div className="w-full rounded-lg border border-white/6 bg-slate-800/60 p-3">
       <div className="flex items-center justify-between mb-2">
-        <h4 className="text-sm font-medium text-white">Preview</h4>
+        <h3 className="text-sm font-medium text-white">Preview</h3>
         <div className="text-xs text-slate-300">Strategy: {strategy}</div>
       </div>
 

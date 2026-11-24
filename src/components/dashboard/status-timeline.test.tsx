@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { axe } from "jest-axe";
 import { describe, expect, it } from "vitest";
 import { StatusTimeline } from "./status-timeline";
@@ -540,5 +540,43 @@ describe("StatusTimeline", () => {
       ];
       render(<StatusTimeline items={emptyBranch} />);
       expect(screen.getByText("Empty Branch")).toBeInTheDocument();
+    });
+
+    it("updates KYC timeline status when a document capture completes", async () => {
+      const kycItems: TimelineNode[] = [
+        {
+          id: "kyc-doc-upload",
+          title: "Identity document",
+          status: "pending",
+          timestamp: "Now",
+          details: "Upload an identity document.",
+        },
+        {
+          id: "kyc-liveness",
+          title: "Liveness check",
+          status: "pending",
+          timestamp: "Next",
+          details: "Complete the liveness check.",
+        },
+      ];
+      render(<StatusTimeline items={kycItems} />);
+
+      fireEvent.click(screen.getAllByRole("button", { name: "Show details" })[0]);
+      fireEvent.click(screen.getByRole("button", { name: /Upload a File/i }));
+      fireEvent.change(screen.getByLabelText("Select document image file"), {
+        target: {
+          files: [new File(["document"], "identity.jpg", { type: "image/jpeg" })],
+        },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByAltText("Preview of captured document")).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole("button", { name: /Confirm document/i }));
+
+      await waitFor(() => {
+        expect(screen.getAllByText("completed")).toHaveLength(1);
+      });
+      expect(screen.getByText("pending")).toBeInTheDocument();
     });
 });

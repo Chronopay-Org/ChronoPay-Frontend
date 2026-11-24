@@ -84,7 +84,7 @@ describe('useCommandPaletteStorage', () => {
     expect(result.current.recent).toEqual([]);
     
     // Should log errors
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to parse cp-pinned from localStorage', expect.any(Error));
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to parse cp-recent from localStorage', expect.any(Error));
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to parse cp-pinned from localStorage'), expect.any(Error));
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to parse cp-recent from localStorage'), expect.any(Error));
   });
 });

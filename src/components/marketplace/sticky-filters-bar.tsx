@@ -81,7 +81,7 @@ export function StickyFiltersBar({
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    if (!sentinel || typeof IntersectionObserver === "undefined") return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -113,12 +113,13 @@ export function StickyFiltersBar({
 
     updateFades();
     el.addEventListener("scroll", updateFades, { passive: true });
-    const resizeObserver = new ResizeObserver(updateFades);
-    resizeObserver.observe(el);
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateFades) : null;
+    resizeObserver?.observe(el);
 
     return () => {
       el.removeEventListener("scroll", updateFades);
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
     };
   }, [updateFades, activeFilters.length]);
 

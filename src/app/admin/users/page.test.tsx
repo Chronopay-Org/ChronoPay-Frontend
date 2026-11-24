@@ -45,6 +45,11 @@ function renderAdminPage(role: NavRole = "admin", initialQuery = "") {
   );
 }
 
+async function renderPage() {
+  render(<AdminUsersPage />);
+  await screen.findByTestId(`row-${SAMPLE_ADMIN_USERS[0].id}`);
+}
+
 describe("AdminUsersPage", () => {
   beforeEach(() => {
     navState.search = "";
@@ -74,6 +79,8 @@ describe("AdminUsersPage", () => {
 
   it("renders the page landmark, heading, and panel chrome for admin role", () => {
     renderAdminPage("admin");
+  it("renders the page landmark, heading, and panel chrome", async () => {
+    await renderPage();
 
     const main = screen.getByRole("main");
     expect(main).toHaveAttribute("id", "main-content");
@@ -89,6 +96,8 @@ describe("AdminUsersPage", () => {
 
   it("renders every sample user as a row in the grid on default page size (10)", () => {
     renderAdminPage("admin");
+  it("renders every sample user as a row in the grid", async () => {
+    await renderPage();
 
     const grid = screen.getByRole("grid", { name: /user management/i });
     expect(grid).toHaveAttribute("aria-rowcount", String(SAMPLE_ADMIN_USERS.length + 1));
@@ -104,6 +113,7 @@ describe("AdminUsersPage", () => {
   it("shows no bulk toolbar until a row is selected, then reflects the selection count", async () => {
     const user = userEvent.setup();
     renderAdminPage("admin");
+    await renderPage();
 
     expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
 
@@ -117,6 +127,7 @@ describe("AdminUsersPage", () => {
   it("supports select-all via the header checkbox and reports the full count", async () => {
     const user = userEvent.setup();
     renderAdminPage("admin");
+    await renderPage();
 
     await user.click(screen.getByTestId("select-all-checkbox"));
 
@@ -134,6 +145,7 @@ describe("AdminUsersPage", () => {
   it("changes user role after confirmation and reverts on undo", async () => {
     const user = userEvent.setup();
     renderAdminPage("admin");
+    await renderPage();
 
     // Target u2 (Bob Okafor, initially "supplier")
     const target = SAMPLE_ADMIN_USERS[1];
@@ -163,6 +175,7 @@ describe("AdminUsersPage", () => {
   it("suspends selected users after confirmation and reverts on undo", async () => {
     const user = userEvent.setup();
     renderAdminPage("admin");
+    await renderPage();
 
     // Target u1 (Alice Chen, initially "active")
     const target = SAMPLE_ADMIN_USERS[0];
@@ -184,6 +197,7 @@ describe("AdminUsersPage", () => {
   it("sends a bulk message after confirmation, records it in state, and reverts on undo", async () => {
     const user = userEvent.setup();
     renderAdminPage("admin");
+    await renderPage();
 
     const target = SAMPLE_ADMIN_USERS[2];
     await user.click(screen.getByTestId(`checkbox-${target.id}`));
@@ -224,6 +238,7 @@ describe("AdminUsersPage", () => {
   it("keeps the 'Send' message action disabled for whitespace-only input", async () => {
     const user = userEvent.setup();
     renderAdminPage("admin");
+    await renderPage();
 
     const target = SAMPLE_ADMIN_USERS[0];
     await user.click(screen.getByTestId(`checkbox-${target.id}`));
@@ -243,6 +258,16 @@ describe("AdminUsersPage", () => {
   it("dismissing the toolbar clears the selection without opening a confirm dialog", async () => {
     const user = userEvent.setup();
     renderAdminPage("admin");
+  it("does not surface a bulk toolbar or fire the handler when no rows are selected", async () => {
+    await renderPage();
+
+    expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
+    expect(infoSpy).not.toHaveBeenCalled();
+  });
+
+  it("dismissing the toolbar clears the selection without invoking the bulk handler", async () => {
+    const user = userEvent.setup();
+    await renderPage();
 
     await user.click(screen.getByTestId("select-all-checkbox"));
     await screen.findByRole("toolbar");
@@ -258,6 +283,7 @@ describe("AdminUsersPage", () => {
   it("persists sort and pagination changes in URL search params and restores state from URL", async () => {
     const user = userEvent.setup();
     const { unmount } = renderAdminPage("admin");
+    await renderPage();
 
     const grid = screen.getByRole("grid", { name: /user management/i });
     await user.click(screen.getByTestId("sort-name"));

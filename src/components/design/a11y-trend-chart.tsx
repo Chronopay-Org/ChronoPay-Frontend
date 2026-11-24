@@ -260,7 +260,6 @@ export function A11yTrendChart({
       {/* ── SVG Chart ── */}
       <svg
         ref={svgRef}
-        role="img"
         aria-label={`${tableCaption}. ${stacked.length > 0 ? `Most recent period: ${stacked[stacked.length - 1].period} — critical: ${stacked[stacked.length - 1].critical}, serious: ${stacked[stacked.length - 1].serious}, moderate: ${stacked[stacked.length - 1].moderate}.` : "No data available."}`}
         width={width}
         height={height}

@@ -8,6 +8,7 @@ import {
   type AccessibilityIssue,
 } from "@/lib/wcag-references";
 import { REPO_URL } from "@/lib/site-links";
+import { reportError } from "@/app/dashboard/reportError";
 
 type SeverityFilter = "all" | "critical" | "major" | "minor" | "warning";
 
@@ -165,7 +166,7 @@ export function A11yAuditDashboard() {
       
       setIssues(newIssues.length > 0 ? newIssues : []);
     } catch(e) {
-      console.error(e);
+      reportError(e, "Accessibility audit failed");
     } finally {
       setIsAuditing(false);
     }
@@ -194,7 +195,7 @@ export function A11yAuditDashboard() {
       </div>
       
       {/* Hidden iframe for staged routes */}
-      <iframe ref={iframeRef} src="/" className="hidden" title="Staged Route" />
+      <iframe ref={iframeRef} className="hidden" title="Staged Route" />
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {filterOptions.map((option) => (

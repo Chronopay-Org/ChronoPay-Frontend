@@ -352,7 +352,7 @@ export function HelpPopover({
 
   return (
     <span className={`relative inline-block ${className}`}>
-      <div
+      <span
         role="status"
         aria-live="polite"
         className="sr-only"
@@ -360,7 +360,7 @@ export function HelpPopover({
         {activeHelpMode
           ? "What's this mode is on. Hover or focus a labeled region to learn more."
           : "What's this mode is off."}
-      </div>
+      </span>
 
       {/* Trigger button */}
       <button
