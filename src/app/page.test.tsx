@@ -75,13 +75,15 @@ describe("Home landing page", () => {
     const header = screen.getByRole("banner");
     const nav = within(header).getByRole("navigation", { name: /primary/i });
 
-    expect(
-      within(nav).getByRole("link", { name: "Marketplace" }),
-    ).toHaveAttribute("href", "/marketplace");
-    expect(within(nav).getByRole("link", { name: "Pricing" })).toHaveAttribute(
-      "href",
-      "/pricing",
-    );
+    const marketplaceLink = within(nav).getByRole("link", {
+      name: "Marketplace",
+    });
+    expect(marketplaceLink).toHaveAttribute("href", "/marketplace");
+    expect(marketplaceLink).not.toHaveAttribute("target");
+
+    const pricingLink = within(nav).getByRole("link", { name: "Pricing" });
+    expect(pricingLink).toHaveAttribute("href", "/pricing");
+    expect(pricingLink).not.toHaveAttribute("target");
 
     const githubLink = within(nav).getByRole("link", { name: "GitHub" });
     expect(githubLink).toHaveAttribute(
