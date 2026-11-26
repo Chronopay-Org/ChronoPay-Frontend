@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ButtonLink } from "./components/ui/button-link";
 import { useMessages, type MessageKey } from "@/lib/i18n";
 import { DEMO_URL, REPO_URL } from "@/lib/site-links";
@@ -63,12 +64,12 @@ export default function Home() {
           aria-label={t("nav.primary")}
           className="flex items-center gap-5 text-sm text-zinc-300"
         >
-          <a href="/marketplace" className="hover:text-white">
+          <Link href="/marketplace" className="hover:text-white">
             {t("nav.marketplace")}
-          </a>
-          <a href="/pricing" className="hover:text-white">
+          </Link>
+          <Link href="/pricing" className="hover:text-white">
             {t("nav.pricing")}
-          </a>
+          </Link>
           <a
             href={REPO_URL}
             target="_blank"
