@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type ReactNode } from "react";
 import { AlertCircle, Check, ChevronLeft, SkipForward } from "lucide-react";
 import { Card, CardBody, CardFooter, CardHeader } from "./card";
 import { ResumedBadge } from "@/app/components/ui/resumed-badge";
@@ -67,7 +67,6 @@ export function SupplierOnboardingWizard({
   const baseId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
-  const isFirstRender = useRef(true);
 
   const { currentIndex, furthestIndex, skippedIds, resumed, goToIndex, goNext, goBack, toggleSkip } =
     useWizardProgress(storageKey, steps.length);
@@ -80,16 +79,19 @@ export function SupplierOnboardingWizard({
   const isSkipped = currentStep ? skippedIds.includes(currentStep.id) : false;
   const canAdvance = currentStep ? isSkipped || currentStep.isComplete : false;
 
+  const currentStepId = currentStep?.id;
+  const previousStep = useRef({ index: safeIndex, id: currentStepId });
+  const notifyStepChange = useEffectEvent((id: string) => onStepChange?.(id));
+
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    const previous = previousStep.current;
+    if (previous.index === safeIndex && previous.id === currentStepId) return;
+
+    previousStep.current = { index: safeIndex, id: currentStepId };
     headingRef.current?.focus();
     setAttemptedAdvance(false);
-    if (currentStep) onStepChange?.(currentStep.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [safeIndex]);
+    if (currentStepId !== undefined) notifyStepChange(currentStepId);
+  }, [safeIndex, currentStepId]);
 
   useEffect(() => {
     if (attemptedAdvance && !canAdvance) {

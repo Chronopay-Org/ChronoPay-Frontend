@@ -143,6 +143,23 @@ describe("GraceBanner", () => {
     expect(onExpired).toHaveBeenCalledOnce();
   });
 
+  it("uses the replacement clock and latest expiry callback after rerender", () => {
+    const firstCallback = vi.fn();
+    const nextCallback = vi.fn();
+    const { rerender } = render(
+      <GraceBanner graceExpiresAt={3000} now={fixedNow(0)} onExpired={firstCallback} />
+    );
+
+    rerender(
+      <GraceBanner graceExpiresAt={3000} now={fixedNow(3000)} onExpired={nextCallback} />
+    );
+    act(() => { vi.advanceTimersByTime(1000); });
+
+    expect(screen.queryByTestId("grace-countdown")).not.toBeInTheDocument();
+    expect(firstCallback).not.toHaveBeenCalled();
+    expect(nextCallback).toHaveBeenCalledOnce();
+  });
+
   // ── Notify action ─────────────────────────────────────────────────────────
 
   it("calls onNotifySupplier when button is clicked", () => {

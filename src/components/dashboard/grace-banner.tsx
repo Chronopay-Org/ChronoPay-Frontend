@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Clock } from "lucide-react";
 
 export interface GraceBannerProps {
@@ -50,54 +50,47 @@ export function GraceBanner({
   className = "",
   now = Date.now,
 }: GraceBannerProps) {
-  const getRemainingSeconds = () =>
-    Math.max(0, Math.round((graceExpiresAt - now()) / 1000));
-
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(
-    getRemainingSeconds
+  const [remainingSeconds, setRemainingSeconds] = useState(() =>
+    Math.max(0, Math.round((graceExpiresAt - now()) / 1000))
   );
   const [notified, setNotified] = useState(false);
-  const [expired, setExpired] = useState(remainingSeconds === 0);
+  const expired = remainingSeconds === 0;
+  const expiryAnnounced = useRef(expired);
 
   // Track last announced minute for the AT polite region
   const lastAnnouncedMinuteRef = useRef<number | null>(null);
   const [minuteAnnouncement, setMinuteAnnouncement] = useState("");
 
-  const onExpiredRef = useRef(onExpired);
-  useEffect(() => {
-    onExpiredRef.current = onExpired;
-  });
+  const notifyExpired = useEffectEvent(() => onExpired?.());
 
   useEffect(() => {
-    if (remainingSeconds === 0) return;
-
     const id = setInterval(() => {
-      const secs = getRemainingSeconds();
+      const secs = Math.max(0, Math.round((graceExpiresAt - now()) / 1000));
       setRemainingSeconds(secs);
-
-      const currentMinute = Math.ceil(secs / 60);
-
-      // Announce once per minute change
-      if (currentMinute !== lastAnnouncedMinuteRef.current) {
-        lastAnnouncedMinuteRef.current = currentMinute;
-        if (secs > 0) {
-          setMinuteAnnouncement(
-            `Grace window: ${currentMinute} minute${currentMinute !== 1 ? "s" : ""} remaining.`
-          );
-        }
-      }
 
       if (secs === 0) {
         clearInterval(id);
-        setExpired(true);
-        setMinuteAnnouncement("Grace window has expired.");
-        onExpiredRef.current?.();
+        if (!expiryAnnounced.current) {
+          expiryAnnounced.current = true;
+          lastAnnouncedMinuteRef.current = null;
+          setMinuteAnnouncement("Grace window has expired.");
+          notifyExpired();
+        }
+        return;
+      }
+
+      expiryAnnounced.current = false;
+      const currentMinute = Math.ceil(secs / 60);
+      if (currentMinute !== lastAnnouncedMinuteRef.current) {
+        lastAnnouncedMinuteRef.current = currentMinute;
+        setMinuteAnnouncement(
+          `Grace window: ${currentMinute} minute${currentMinute !== 1 ? "s" : ""} remaining.`
+        );
       }
     }, 1000);
 
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graceExpiresAt]);
+  }, [graceExpiresAt, now]);
 
   function handleNotify() {
     setNotified(true);

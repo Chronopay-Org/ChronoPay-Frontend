@@ -136,6 +136,25 @@ describe("SupplierOnboardingWizard", () => {
     expect(onStepChange).toHaveBeenCalledWith("branding");
   });
 
+  it("reports a replacement step at the same index to the latest callback", () => {
+    const earlier = vi.fn();
+    const latest = vi.fn();
+    const steps = buildSteps();
+    const { rerender } = render(
+      <SupplierOnboardingWizard steps={steps} storageKey="updated-steps" onStepChange={earlier} />,
+    );
+    rerender(
+      <SupplierOnboardingWizard
+        steps={[{ ...steps[0], id: "replacement" }, ...steps.slice(1)]}
+        storageKey="updated-steps"
+        onStepChange={latest}
+      />,
+    );
+
+    expect(earlier).not.toHaveBeenCalled();
+    expect(latest).toHaveBeenCalledExactlyOnceWith("replacement");
+  });
+
   it("navigates back to the previous step", async () => {
     const user = userEvent.setup();
     render(
