@@ -1,5 +1,4 @@
 import { createElement } from "react";
-import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 import { render, screen, act, fireEvent, waitFor, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Marketplace from "./page";
@@ -159,7 +158,6 @@ describe("Marketplace Page", () => {
     }
   });
 
-  it("handles invalid page size in URL gracefully", () => {
   it("handles invalid page size in URL gracefully", async () => {
     // Return an invalid page size
     mockSearchParams.get.mockReturnValue("invalid");

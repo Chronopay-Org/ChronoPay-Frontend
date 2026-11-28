@@ -30,6 +30,21 @@ describe("useHeatmapPreference", () => {
     expect(result.current.enabled).toBe(false);
   });
 
+  it("loads legacy unversioned plain \"true\" values (migration compat)", () => {
+    // Pre-versioning deployments stored the raw boolean string, not an envelope.
+    localStorage.setItem(storageKey, "true");
+
+    const { result } = renderHook(() => useHeatmapPreference(storageKey));
+
+    expect(result.current.enabled).toBe(true);
+
+    act(() => {
+      result.current.toggle(false);
+    });
+
+    expect(result.current.enabled).toBe(false);
+  });
+
   it("reads saved value from localStorage on initial render", () => {
     localStorage.setItem(storageKey, "true");
 

@@ -58,4 +58,16 @@ describe("TimezoneRibbon Component", () => {
     expect(localStorage.getItem("chronopay_tz_pref_supplier-123")).toBe("supplier");
     expect(onTimezoneChange).toHaveBeenCalledWith("supplier", "America/New_York");
   });
+
+  it("loads legacy unversioned plain mode values (migration compat)", () => {
+    // Pre-migration deployments stored raw "viewer"/"supplier" strings.
+    localStorage.setItem("chronopay_tz_pref_supplier-123", "supplier");
+
+    render(<TimezoneRibbon {...defaultProps} />);
+
+    const supplierTimeBtn = screen.getByRole("radio", { name: /Sarah time/i });
+    const myTimeBtn = screen.getByRole("radio", { name: /My time/i });
+    expect(supplierTimeBtn).toHaveAttribute("aria-checked", "true");
+    expect(myTimeBtn).toHaveAttribute("aria-checked", "false");
+  });
 });

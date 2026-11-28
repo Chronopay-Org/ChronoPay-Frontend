@@ -21,3 +21,30 @@ Browser storage can fail transiently because of privacy controls, sandboxing, or
 ## Validation
 
 Focused unit coverage lives in `src/components/dashboard/settings/experimental-feature-config.test.ts` and covers the normal load path, transient recovery, exhausted retries, malformed persisted data, invalid known values, and missing configuration.
+
+## Storage key registry
+
+To unify scattered `localStorage`/`sessionStorage` access behind a single, versioned accessor, all persisted keys are registered centrally in `src/lib/storage-keys.ts`. New code should read key names from this registry rather than hard-coding strings.
+
+The registry exports:
+
+- `STORAGE_KEYS` — keys owned by `useStoredState` and therefore versioned where a structured shape requires it. Each entry records the `key`/prefix, the `owner` hook, the `area` (`localStorage`, `sessionStorage`, or `cookie`), and the storage `format`.
+- `REGISTERED_STORAGE_KEYS` — the remaining application keys that are still written outside `useStoredState`; recorded here for auditability so they can be migrated incrementally.
+- `ALL_STORAGE_KEYS` — the union of both lists, for exhaustiveness checks.
+- `receiptNoteKey(id)`, `timezoneModeKey(id)`, `scrollRestorationKey(listId)` — helpers for prefixed/keyed entries.
+
+### Version envelope
+
+`useStoredState` supports optional `version` and `migrate` options. When a `version` is supplied, values are persisted as a JSON envelope:
+
+```json
+{ "v": 1, "data": "<serialized payload>" }
+```
+
+Reading is backwards compatible:
+
+- An un-enveloped legacy value is handed to `migrate(raw, 0)` when a `migrate` function is provided, otherwise parsed directly. This keeps pre-migration data alive.
+- An envelope written by a newer version (`v` greater than the hook's `version`) is ignored in favor of the default.
+- Corrupt JSON or blocked storage never throws; it falls back to the default value.
+
+Keys that store plain scalar values (e.g. `"true"`/`"false"` flags) intentionally omit `version` and keep their legacy byte format, so no rewrite or migration is required to adopt `useStoredState`.

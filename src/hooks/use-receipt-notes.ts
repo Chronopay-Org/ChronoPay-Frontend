@@ -1,29 +1,37 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import {
+  readStoredValue,
+  scanStoredEntries,
+  writeStoredValue,
+} from "@/hooks/use-stored-state";
+import { STORAGE_KEYS, receiptNoteKey } from "@/lib/storage-keys";
 
 const AUTOSAVE_DELAY_MS = 1500;
-const STORAGE_PREFIX = "chronopay:receipt-notes:";
+const STORAGE_PREFIX = STORAGE_KEYS.receiptNotes.key;
 
 export type SaveStatus = "saved" | "saving" | "unsaved" | "error";
 
+/**
+ * Receipt notes are stored as plain text under the registry prefix
+ * `STORAGE_KEYS.receiptNotes` (one key per receipt). Reads and writes go
+ * through the storage primitives so this module never touches Web Storage
+ * directly; `searchReceiptNotes` scans the same prefix.
+ */
+
 function loadNotes(receiptId: string): string {
-  if (typeof window === "undefined") return "";
-  try {
-    return window.localStorage.getItem(`${STORAGE_PREFIX}${receiptId}`) ?? "";
-  } catch {
-    return "";
-  }
+  return (
+    readStoredValue<string>(receiptNoteKey(receiptId), {
+      parse: (raw) => raw,
+    }) ?? ""
+  );
 }
 
 function persistNotes(receiptId: string, text: string): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    window.localStorage.setItem(`${STORAGE_PREFIX}${receiptId}`, text);
-    return true;
-  } catch {
-    return false;
-  }
+  return writeStoredValue<string>(receiptNoteKey(receiptId), text, {
+    serialize: (value) => value,
+  });
 }
 
 export interface UseReceiptNotesReturn {
@@ -40,7 +48,7 @@ export function useReceiptNotes(receiptId: string): UseReceiptNotesReturn {
   const latestRef = useRef(text);
   const receiptIdRef = useRef(receiptId);
 
-  // Syncing external (localStorage) state into React when receiptId changes
+  // Syncing external (stored) state into React when receiptId changes
   // is a legitimate synchronization pattern. eslint rule is too strict here.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
@@ -92,29 +100,22 @@ export function searchReceiptNotes(query: string): Array<{ receiptId: string; pr
   if (typeof window === "undefined" || !query.trim()) return [];
   const results: Array<{ receiptId: string; preview: string }> = [];
   const lowerQuery = query.toLowerCase().trim();
-  try {
-    for (let i = 0; i < window.localStorage.length; i++) {
-      const key = window.localStorage.key(i);
-      if (!key || !key.startsWith(STORAGE_PREFIX)) continue;
-      const value = window.localStorage.getItem(key) ?? "";
-      const matchIndex = value.toLowerCase().indexOf(lowerQuery);
-      if (matchIndex !== -1) {
-        const receiptId = key.slice(STORAGE_PREFIX.length);
-        const previewLength = Math.max(80, lowerQuery.length + 20);
-        const previewStart = Math.max(
-          0,
-          Math.min(matchIndex - 20, value.length - previewLength),
-        );
-        const previewEnd = Math.min(value.length, previewStart + previewLength);
-        const preview = `${previewStart > 0 ? "…" : ""}${value.slice(
-          previewStart,
-          previewEnd,
-        )}${previewEnd < value.length ? "…" : ""}`;
-        results.push({ receiptId, preview });
-      }
+  for (const { key, value } of scanStoredEntries("localStorage", STORAGE_PREFIX)) {
+    const matchIndex = value.toLowerCase().indexOf(lowerQuery);
+    if (matchIndex !== -1) {
+      const receiptId = key.slice(STORAGE_PREFIX.length);
+      const previewLength = Math.max(80, lowerQuery.length + 20);
+      const previewStart = Math.max(
+        0,
+        Math.min(matchIndex - 20, value.length - previewLength),
+      );
+      const previewEnd = Math.min(value.length, previewStart + previewLength);
+      const preview = `${previewStart > 0 ? "…" : ""}${value.slice(
+        previewStart,
+        previewEnd,
+      )}${previewEnd < value.length ? "…" : ""}`;
+      results.push({ receiptId, preview });
     }
-  } catch {
-    // localStorage may be unavailable
   }
   return results;
 }

@@ -14,6 +14,8 @@
  */
 
 import { useState, useCallback, useMemo } from "react";
+import { readStoredValue, useStoredState } from "@/hooks/use-stored-state";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 export interface RecentSearchItem {
   term: string;
@@ -22,8 +24,11 @@ export interface RecentSearchItem {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-export const STORAGE_KEY = "chronopay:recent-searches";
+export const STORAGE_KEY = STORAGE_KEYS.recentSearches.key;
 export const MAX_RECENTS = 6;
+
+/** Schema version for persisted recents (see STORAGE_KEYS.recentSearches). */
+const RECENTS_VERSION = STORAGE_KEYS.recentSearches.version;
 
 /**
  * Static suggestion catalogue — represents searchable entities in ChronoPay.
@@ -134,50 +139,62 @@ export function isRecentSearchItem(item: unknown): item is RecentSearchItem {
   );
 }
 
-export function loadRecents(): RecentSearchItem[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
+/**
+ * Normalizes a decoded recents payload: maps legacy plain strings to
+ * timestamp 0, drops invalid/blank entries, dedupes case-insensitively
+ * (keeping the newest), and caps the list at MAX_RECENTS. Returns
+ * `undefined` when the payload is not an array.
+ */
+function normalizeRecents(parsed: unknown): RecentSearchItem[] | undefined {
+  if (!Array.isArray(parsed)) return undefined;
 
-    const deduped = new Map<string, RecentSearchItem>();
+  const deduped = new Map<string, RecentSearchItem>();
 
-    for (const item of parsed) {
-      let normalized: RecentSearchItem | null = null;
+  for (const item of parsed) {
+    let normalized: RecentSearchItem | null = null;
 
-      if (typeof item === "string") {
-        const trimmed = item.trim();
-        if (trimmed.length > 0) {
-          normalized = { term: trimmed, timestamp: 0 };
-        }
-      } else if (isRecentSearchItem(item)) {
-        normalized = { term: item.term.trim(), timestamp: item.timestamp };
+    if (typeof item === "string") {
+      const trimmed = item.trim();
+      if (trimmed.length > 0) {
+        normalized = { term: trimmed, timestamp: 0 };
       }
-
-      if (!normalized) continue;
-
-      const key = normalized.term.toLowerCase();
-      const existing = deduped.get(key);
-      if (!existing || normalized.timestamp > existing.timestamp) {
-        deduped.set(key, normalized);
-      }
+    } else if (isRecentSearchItem(item)) {
+      normalized = { term: item.term.trim(), timestamp: item.timestamp };
     }
 
-    return Array.from(deduped.values()).slice(0, MAX_RECENTS);
+    if (!normalized) continue;
+
+    const key = normalized.term.toLowerCase();
+    const existing = deduped.get(key);
+    if (!existing || normalized.timestamp > existing.timestamp) {
+      deduped.set(key, normalized);
+    }
+  }
+
+  return Array.from(deduped.values()).slice(0, MAX_RECENTS);
+}
+
+/**
+ * Decodes a raw stored string into recents. Used for both the current
+ * envelope payload (`parse`) and legacy un-enveloped values (`migrate`), so
+ * pre-versioning recents — including string arrays — still load.
+ */
+function decodeRecents(raw: string): RecentSearchItem[] | undefined {
+  try {
+    return normalizeRecents(JSON.parse(raw));
   } catch {
-    return [];
+    return undefined;
   }
 }
 
-function saveRecents(recents: RecentSearchItem[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(recents));
-  } catch {
-    // localStorage may be unavailable (private browsing quota, etc.)
-  }
+export function loadRecents(): RecentSearchItem[] {
+  return (
+    readStoredValue<RecentSearchItem[]>(STORAGE_KEY, {
+      version: RECENTS_VERSION,
+      parse: decodeRecents,
+      migrate: decodeRecents,
+    }) ?? []
+  );
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -196,8 +213,16 @@ export interface UseSearchReturn {
 
 export function useSearch(): UseSearchReturn {
   const [query, setQuery] = useState("");
-  // Lazy initializer reads from localStorage once on mount (avoids useEffect setState)
-  const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>(loadRecents);
+  // Recents are backed by `useStoredState` under the registry key
+  // `STORAGE_KEYS.recentSearches`, stored as a version envelope. Legacy
+  // un-enveloped arrays are upgraded on read via `migrate`.
+  const { value: recentSearches, setValue: setRecentSearches } =
+    useStoredState<RecentSearchItem[]>(STORAGE_KEY, {
+      defaultValue: [],
+      version: RECENTS_VERSION,
+      parse: decodeRecents,
+      migrate: decodeRecents,
+    });
 
   // Derive suggestions from the static catalogue, filtered by current query
   const suggestions =
@@ -213,34 +238,33 @@ export function useSearch(): UseSearchReturn {
     [query, suggestions],
   );
 
-  const addRecentSearch = useCallback((term: string) => {
-    const trimmed = term.trim();
-    if (!trimmed) return;
-    setRecentSearches((prev) => {
-      // Move to front if already present, otherwise prepend
-      const filtered = prev.filter(
-        (r) => r.term.toLowerCase() !== trimmed.toLowerCase(),
-      );
-      const next = [{ term: trimmed, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENTS);
-      saveRecents(next);
-      return next;
-    });
-  }, []);
+  const addRecentSearch = useCallback(
+    (term: string) => {
+      const trimmed = term.trim();
+      if (!trimmed) return;
+      setRecentSearches((prev) => {
+        // Move to front if already present, otherwise prepend
+        const filtered = prev.filter(
+          (r) => r.term.toLowerCase() !== trimmed.toLowerCase(),
+        );
+        return [{ term: trimmed, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENTS);
+      });
+    },
+    [setRecentSearches],
+  );
 
-  const removeRecentSearch = useCallback((term: string) => {
-    setRecentSearches((prev) => {
-      const next = prev.filter(
-        (r) => r.term.toLowerCase() !== term.toLowerCase(),
+  const removeRecentSearch = useCallback(
+    (term: string) => {
+      setRecentSearches((prev) =>
+        prev.filter((r) => r.term.toLowerCase() !== term.toLowerCase()),
       );
-      saveRecents(next);
-      return next;
-    });
-  }, []);
+    },
+    [setRecentSearches],
+  );
 
   const clearRecentSearches = useCallback(() => {
     setRecentSearches([]);
-    saveRecents([]);
-  }, []);
+  }, [setRecentSearches]);
 
   return {
     query,

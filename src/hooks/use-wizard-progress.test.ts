@@ -183,9 +183,12 @@ describe("useWizardProgress", () => {
     expect(result.current.skippedIds).toEqual(["optional-1", "optional-2"]);
 
     expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "{}")).toEqual({
-      currentIndex: 0,
-      furthestIndex: 0,
-      skippedIds: ["optional-1", "optional-2"],
+      v: 1,
+      data: JSON.stringify({
+        currentIndex: 0,
+        furthestIndex: 0,
+        skippedIds: ["optional-1", "optional-2"],
+      }),
     });
 
     act(() => {
@@ -214,9 +217,12 @@ describe("useWizardProgress", () => {
     expect(result.current.furthestIndex).toBe(0);
     expect(result.current.skippedIds).toEqual([]);
     expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "{}")).toEqual({
-      currentIndex: 0,
-      furthestIndex: 0,
-      skippedIds: [],
+      v: 1,
+      data: JSON.stringify({
+        currentIndex: 0,
+        furthestIndex: 0,
+        skippedIds: [],
+      }),
     });
   });
 });

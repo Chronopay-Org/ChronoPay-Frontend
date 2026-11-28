@@ -1,97 +1,121 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { readStoredValue, useStoredState } from "@/hooks/use-stored-state";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 type WizardProgressState = {
   currentIndex: number;
   furthestIndex: number;
   skippedIds: string[];
-  resumed: boolean;
 };
+
+/** Schema version for persisted wizard progress (see STORAGE_KEYS.wizardProgress). */
+const WIZARD_PROGRESS_VERSION = STORAGE_KEYS.wizardProgress.version;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function readState(storageKey: string, stepCount: number): WizardProgressState {
+function defaultWizardState(): WizardProgressState {
+  return { currentIndex: 0, furthestIndex: 0, skippedIds: [] };
+}
+
+/**
+ * Validates and clamps a decoded wizard payload. Returns `undefined` when the
+ * payload is not a usable state object so callers fall back to the default.
+ */
+function normalizeWizardState(
+  parsed: unknown,
+  stepCount: number,
+): WizardProgressState | undefined {
+  if (typeof parsed !== "object" || parsed === null) return undefined;
+  const candidate = parsed as Partial<WizardProgressState>;
+  const maxIndex = Math.max(stepCount - 1, 0);
+  const currentIndex = clamp(
+    typeof candidate.currentIndex === "number" ? candidate.currentIndex : 0,
+    0,
+    maxIndex,
+  );
+  const furthestIndex = clamp(
+    typeof candidate.furthestIndex === "number"
+      ? candidate.furthestIndex
+      : currentIndex,
+    currentIndex,
+    maxIndex,
+  );
+  const skippedIds = Array.isArray(candidate.skippedIds)
+    ? candidate.skippedIds
+    : [];
+  return { currentIndex, furthestIndex, skippedIds };
+}
+
+/**
+ * Decodes a raw stored string into wizard state. Used for both the current
+ * envelope payload (`parse`) and legacy un-enveloped values (`migrate`), so
+ * pre-versioning progress written as plain JSON still loads.
+ */
+function decodeWizardState(
+  raw: string,
+  stepCount: number,
+): WizardProgressState | undefined {
   try {
-    const raw = sessionStorage.getItem(storageKey);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<WizardProgressState>;
-      const currentIndex = clamp(
-        typeof parsed.currentIndex === "number" ? parsed.currentIndex : 0,
-        0,
-        Math.max(stepCount - 1, 0),
-      );
-      const furthestIndex = clamp(
-        typeof parsed.furthestIndex === "number" ? parsed.furthestIndex : currentIndex,
-        currentIndex,
-        Math.max(stepCount - 1, 0),
-      );
-      const skippedIds = Array.isArray(parsed.skippedIds) ? parsed.skippedIds : [];
-      return { currentIndex, furthestIndex, skippedIds, resumed: true };
-    }
+    return normalizeWizardState(JSON.parse(raw), stepCount);
   } catch {
-    // sessionStorage may be unavailable (private browsing, storage disabled)
+    return undefined;
   }
-  return { currentIndex: 0, furthestIndex: 0, skippedIds: [], resumed: false };
 }
 
 /**
  * Persists supplier onboarding wizard progress (current step, furthest step
  * reached, and skipped optional steps) to sessionStorage, keyed per browser
- * tab session. Follows the try/catch storage pattern used by
- * `useHeatmapPreference` and `useScrollRestoration`.
+ * tab session. Backed by `useStoredState` under the registry entry
+ * `STORAGE_KEYS.wizardProgress`; values are stored as a version envelope and
+ * legacy un-enveloped progress is upgraded on read.
  */
 export function useWizardProgress(storageKey: string, stepCount: number) {
-  const [state, setState] = useState<WizardProgressState>(() =>
-    readState(storageKey, stepCount),
+  const parse = useCallback(
+    (raw: string) => decodeWizardState(raw, stepCount),
+    [stepCount],
+  );
+  const migrate = useCallback(
+    (raw: string) => decodeWizardState(raw, stepCount),
+    [stepCount],
   );
 
-  const persist = useCallback(
-    (next: WizardProgressState) => {
-      setState(next);
-      try {
-        sessionStorage.setItem(
-          storageKey,
-          JSON.stringify({
-            currentIndex: next.currentIndex,
-            furthestIndex: next.furthestIndex,
-            skippedIds: next.skippedIds,
-          }),
-        );
-      } catch {
-        // Ignore sessionStorage write errors
-      }
+  const { value: state, setValue } = useStoredState<WizardProgressState>(
+    storageKey,
+    {
+      area: "sessionStorage",
+      defaultValue: defaultWizardState(),
+      version: WIZARD_PROGRESS_VERSION,
+      parse,
+      migrate,
     },
-    [storageKey],
+  );
+
+  // `resumed` reflects whether valid progress was found in storage at mount.
+  // It is captured once so in-session navigation does not flip it.
+  const [resumed, setResumed] = useState<boolean>(
+    () =>
+      readStoredValue<WizardProgressState>(storageKey, {
+        area: "sessionStorage",
+        version: WIZARD_PROGRESS_VERSION,
+        parse,
+        migrate,
+      }) !== undefined,
   );
 
   const goToIndex = useCallback(
     (index: number) => {
       const clamped = clamp(index, 0, Math.max(stepCount - 1, 0));
-      setState((prev) => {
-        const next = {
-          ...prev,
-          currentIndex: clamped,
-          furthestIndex: Math.max(prev.furthestIndex, clamped),
-        };
-        try {
-          sessionStorage.setItem(
-            storageKey,
-            JSON.stringify({
-              currentIndex: next.currentIndex,
-              furthestIndex: next.furthestIndex,
-              skippedIds: next.skippedIds,
-            }),
-          );
-        } catch {
-          // Ignore sessionStorage write errors
-        }
-        return next;
-      });
+      setValue((prev) => ({
+        ...prev,
+        currentIndex: clamped,
+        furthestIndex: Math.max(prev.furthestIndex, clamped),
+      }));
     },
-    [stepCount, storageKey],
+    [setValue, stepCount],
   );
 
   const goNext = useCallback(() => {
@@ -104,38 +128,26 @@ export function useWizardProgress(storageKey: string, stepCount: number) {
 
   const toggleSkip = useCallback(
     (stepId: string, skipped: boolean) => {
-      setState((prev) => {
+      setValue((prev) => {
         const nextSkipped = skipped
           ? Array.from(new Set([...prev.skippedIds, stepId]))
           : prev.skippedIds.filter((id) => id !== stepId);
-        const next = { ...prev, skippedIds: nextSkipped };
-        try {
-          sessionStorage.setItem(
-            storageKey,
-            JSON.stringify({
-              currentIndex: next.currentIndex,
-              furthestIndex: next.furthestIndex,
-              skippedIds: next.skippedIds,
-            }),
-          );
-        } catch {
-          // Ignore sessionStorage write errors
-        }
-        return next;
+        return { ...prev, skippedIds: nextSkipped };
       });
     },
-    [storageKey],
+    [setValue],
   );
 
   const reset = useCallback(() => {
-    persist({ currentIndex: 0, furthestIndex: 0, skippedIds: [], resumed: false });
-  }, [persist]);
+    setResumed(false);
+    setValue(defaultWizardState());
+  }, [setValue]);
 
   return {
     currentIndex: state.currentIndex,
     furthestIndex: state.furthestIndex,
     skippedIds: state.skippedIds,
-    resumed: state.resumed,
+    resumed,
     goToIndex,
     goNext,
     goBack,

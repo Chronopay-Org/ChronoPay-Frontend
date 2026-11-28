@@ -1,21 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useMemo } from "react";
-import Image from "next/image";
-import { Suspense, useEffect } from "react";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   RecentlyViewedRail,
   useRecentlyViewed,
 } from "./components/recently-viewed-rail";
 import { PanelShell } from "@/components/dashboard/panel-shell";
+import { ResultsPerPageSelector } from "@/components/marketplace/results-per-page-selector";
 import {
-  ResultsPerPageSelector,
-  usePageSize,
-} from "@/components/marketplace/results-per-page-selector";
-import { useListings } from "@/lib/api/hooks";
-import MarketplaceLoading from "./loading";
   FilterSidebar,
   type FilterGroup,
 } from "@/components/dashboard/filter-sidebar";
@@ -30,8 +24,9 @@ import {
 } from "@/components/marketplace/sticky-filters-bar";
 import { FacetCountBadge } from "@/components/marketplace/facet-count-badge";
 import { useFacetCounts } from "@/components/marketplace/use-facet-counts";
-import { ResultsPerPageSelector } from "@/components/marketplace/results-per-page-selector";
 import { LiveRegion } from "@/components/common/LiveRegion";
+import { useStoredState } from "@/hooks/use-stored-state";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 import {
   buildCatalogue,
   MARKETPLACE_CATEGORIES,
@@ -59,6 +54,16 @@ const OPTION_LABELS: Record<string, string> = Object.fromEntries([
   ...MARKETPLACE_PRICE_TIERS.map((p) => [p.id, p.label]),
 ]);
 
+function parseVisitedFlag(raw: string): boolean | undefined {
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  return undefined;
+}
+
+function serializeVisitedFlag(value: boolean): string {
+  return value ? "true" : "false";
+}
+
 function MarketplaceGrid() {
   const {
     query,
@@ -70,26 +75,6 @@ function MarketplaceGrid() {
     setPage,
   } = useMarketplaceQuery();
   const { addItem } = useRecentlyViewed();
-  const { data: catalogue, loading, error } = useListings();
-
-  useEffect(() => {
-    if (!catalogue) return;
-
-    try {
-      if (localStorage.getItem("chronopay-marketplace-visited")) return;
-      catalogue.slice(0, 4).forEach((item, index) => {
-        setTimeout(() => {
-          addItem(item);
-        }, index * 100);
-      });
-      localStorage.setItem("chronopay-marketplace-visited", "true");
-    } catch {
-      // Storage can be disabled; listing data remains usable without the rail seed.
-    }
-  }, [addItem, catalogue]);
-
-  if (error) throw error;
-  if (loading || !catalogue) return <MarketplaceLoading />;
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const catalogue = useMemo(() => buildCatalogue(), []);
@@ -282,48 +267,6 @@ function MarketplaceGrid() {
               className="flex min-h-64 flex-col items-center justify-center rounded-lg border border-white/10 bg-zinc-900/40 p-8 text-center"
               data-testid="marketplace-empty-state"
             >
-              {item.image ? (
-                <div
-                  className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-zinc-800"
-                  aria-hidden="true"
-                >
-                  <Image
-                    src={item.image}
-                    alt=""
-                    fill
-                    sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-200 group-hover:scale-105"
-                  />
-                </div>
-              ) : (
-                <div
-                  className="flex aspect-video w-full items-center justify-center rounded-t-lg bg-gradient-to-br from-slate-900 to-slate-800 text-sm font-medium uppercase tracking-[0.18em] text-slate-500"
-                  aria-hidden="true"
-                >
-                  Demo
-                </div>
-              )}
-              <div className="p-4">
-                <h3 className="line-clamp-2 text-base font-medium text-white">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm text-zinc-400">{item.price}</p>
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ol>
-
-      {/* Per-page selector lives at the bottom of the results.
-          It owns a single source of truth via `usePageSize` so a future
-          pagination / infinite-scroll consumer can subscribe to the same
-          hook and stay automatically in sync. */}
-      <div className="mt-6 border-t border-white/10 pt-5">
-        <ResultsPerPageSelector
-          value={value}
-          onChange={setValue}
-          totalCount={catalogue.length}
-        />
               <h3 className="text-base font-semibold text-white">
                 No matching listings
               </h3>
@@ -355,13 +298,15 @@ function MarketplaceGrid() {
                   >
                     {item.image ? (
                       <div
-                        className="aspect-video w-full overflow-hidden rounded-t-lg bg-zinc-800"
+                        className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-zinc-800"
                         aria-hidden="true"
                       >
-                        <img
+                        <Image
                           src={item.image}
                           alt=""
-                          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                          fill
+                          sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                          className="object-cover transition-transform duration-200 group-hover:scale-105"
                         />
                       </div>
                     ) : (
@@ -433,31 +378,28 @@ function MarketplaceGrid() {
 
 export default function Marketplace() {
   const { addItems } = useRecentlyViewed();
+  // First-visit flag, backed by `useStoredState` under the registry key
+  // `STORAGE_KEYS.marketplaceVisited`. Stored as the plain string "true".
+  const { value: hasVisited, setValue: setHasVisited } =
+    useStoredState<boolean>(STORAGE_KEYS.marketplaceVisited.key, {
+      defaultValue: false,
+      parse: parseVisitedFlag,
+      serialize: serializeVisitedFlag,
+    });
 
   // Populate recently-viewed rail on first visit.
   useEffect(() => {
-    let hasVisited: string | null = null;
-    try {
-      hasVisited = localStorage.getItem("chronopay-marketplace-visited");
-    } catch {
-      return;
-    }
-
     if (hasVisited) return;
 
     const timerId = setTimeout(() => {
       addItems(seedItems);
-      try {
-        localStorage.setItem("chronopay-marketplace-visited", "true");
-      } catch {
-        // Ignore storage errors
-      }
+      setHasVisited(true);
     }, 0);
 
     return () => {
       clearTimeout(timerId);
     };
-  }, [addItems]);
+  }, [addItems, hasVisited, setHasVisited]);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
