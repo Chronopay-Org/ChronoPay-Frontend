@@ -2,6 +2,9 @@
  * Timezone utility helpers for ChronoPay calendar view.
  */
 
+import { readStoredValue, writeStoredValue } from "@/hooks/use-stored-state";
+import { timezoneModeKey } from "@/lib/storage-keys";
+
 export type TimezoneMode = "viewer" | "supplier";
 
 export interface TimezoneInfo {
@@ -81,7 +84,11 @@ export function getOffsetDeltaText(
  * Returns localStorage key for persisting timezone mode per supplier profile.
  */
 export function getStorageKey(supplierId: string): string {
-  return `chronopay_tz_pref_${supplierId}`;
+  return timezoneModeKey(supplierId);
+}
+
+function parseTimezoneMode(raw: string): TimezoneMode | undefined {
+  return raw === "viewer" || raw === "supplier" ? raw : undefined;
 }
 
 /**
@@ -89,12 +96,9 @@ export function getStorageKey(supplierId: string): string {
  */
 export function getStoredTimezoneMode(supplierId: string): TimezoneMode | null {
   if (typeof window === "undefined") return null;
-  try {
-    const val = localStorage.getItem(getStorageKey(supplierId));
-    return val === "viewer" || val === "supplier" ? val : null;
-  } catch {
-    return null;
-  }
+  return readStoredValue(getStorageKey(supplierId), {
+    parse: parseTimezoneMode,
+  }) ?? null;
 }
 
 /**
@@ -102,9 +106,7 @@ export function getStoredTimezoneMode(supplierId: string): TimezoneMode | null {
  */
 export function setStoredTimezoneMode(supplierId: string, mode: TimezoneMode): void {
   if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(getStorageKey(supplierId), mode);
-  } catch {
-    // Fail silently if localStorage is disabled/restricted
-  }
+  writeStoredValue(getStorageKey(supplierId), mode, {
+    serialize: (value) => value,
+  });
 }
